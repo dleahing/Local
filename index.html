@@ -23,8 +23,8 @@
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
     @keyframes tap-ripple-expand {
-      0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.9; border-width: 4px; }
-      100% { transform: translate(-50%, -50%) scale(3.2); opacity: 0; border-width: 1px; }
+      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.9; border-width: 3px; }
+      100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; border-width: 1px; }
     }
     @keyframes liquid-bounce {
       0% { transform: scale(1); }
@@ -34,7 +34,6 @@
       100% { transform: scale(1); }
     }
 
-    /* Slow Ambient Radar Waves (6 seconds) */
     .animate-wave-slow {
       animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
     }
@@ -45,62 +44,58 @@
       animation: liquid-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    /* Theme Styles */
+    /* Themes */
     .theme-sky {
       --bg-gradient: linear-gradient(to bottom right, #bae6fd, #dbeafe, #e0e7ff);
       --accent-color: #0284c7;
-      --radar-color: rgba(56, 189, 248, 0.4);
     }
     .theme-pink {
       --bg-gradient: linear-gradient(to bottom right, #fbcfe8, #fce7f3, #f472b6);
       --accent-color: #db2777;
-      --radar-color: rgba(244, 114, 182, 0.4);
     }
     .theme-emerald {
       --bg-gradient: linear-gradient(to bottom right, #a7f3d0, #d1fae5, #6ee7b7);
       --accent-color: #059669;
-      --radar-color: rgba(52, 211, 153, 0.4);
     }
     .theme-violet {
       --bg-gradient: linear-gradient(to bottom right, #ddd6fe, #ede9fe, #c084fc);
       --accent-color: #7c3aed;
-      --radar-color: rgba(192, 132, 252, 0.4);
     }
 
     /* Liquid Glass UI Styling */
     .glass-panel {
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.85);
-      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
-    }
-    .glass-card {
-      background: rgba(255, 255, 255, 0.75);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    }
-    .liquid-glass-icon {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.45) 100%);
+      background: rgba(255, 255, 255, 0.45);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border: 1.5px solid rgba(255, 255, 255, 0.9);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), inset 0 2px 4px rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    }
+    .liquid-glass-icon {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     }
     .liquid-node {
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border: 2px solid rgba(255, 255, 255, 0.95);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     }
     .glass-drawer-left {
-      background: rgba(255, 255, 255, 0.20);
+      background: rgba(255, 255, 255, 0.18);
       backdrop-filter: blur(28px);
       -webkit-backdrop-filter: blur(28px);
-      border-right: 1px solid rgba(255, 255, 255, 0.4);
-      box-shadow: 15px 0 40px rgba(0, 0, 0, 0.12);
+      border-right: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 15px 0 40px rgba(0, 0, 0, 0.08);
     }
     body {
       touch-action: manipulation;
@@ -112,15 +107,15 @@
 <body id="appBody" class="theme-pink bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
   <!-- Dynamic Liquid Map Canvas Background -->
-  <div id="mapCanvas" class="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-500 origin-center" style="background: var(--bg-gradient); transform: scale(1.1);">
+  <div id="mapCanvas" onclick="handleMapTap(event)" class="absolute inset-0 overflow-hidden cursor-grab active:cursor-grabbing transition-transform duration-500 origin-center" style="background: var(--bg-gradient); transform: scale(1.1);">
     <!-- Grid Overlay -->
-    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:24px_24px]"></div>
+    <div class="absolute inset-0 opacity-15 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
-    <!-- Slow Ambient Ripple Radar Rings originating from Center Avatar -->
+    <!-- Slow Ambient Ripple Radar Rings -->
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-500 origin-center" style="transform: translate(-50%, -50%) scale(1);">
-      <div id="wave1" class="w-[320px] h-[320px] rounded-full border-2 border-pink-400/40 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
-      <div id="wave2" class="w-[320px] h-[320px] rounded-full border-2 border-pink-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
-      <div id="wave3" class="w-[320px] h-[320px] rounded-full border-2 border-pink-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 4s;"></div>
+      <div class="w-[320px] h-[320px] rounded-full border border-pink-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
+      <div class="w-[320px] h-[320px] rounded-full border border-pink-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
+      <div class="w-[320px] h-[320px] rounded-full border border-pink-400/10 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 4s;"></div>
       
       <!-- Container for Tap Water Ripples -->
       <div id="tapRippleContainer" class="absolute inset-0"></div>
@@ -130,41 +125,40 @@
     <div id="nodesContainer" class="absolute inset-0"></div>
   </div>
 
-  <!-- Top Floating Header Bar -->
+  <!-- Fixed Top Header Bar -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
-    <div class="glass-panel px-3.5 py-2 rounded-2xl shadow-lg flex items-center gap-3 pointer-events-auto">
+    <div class="glass-panel px-3.5 py-2 rounded-2xl flex items-center gap-3 pointer-events-auto">
       <div class="relative flex items-center justify-center">
-        <div id="logoBadge" class="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500 to-rose-600 flex items-center justify-center text-white font-bold text-lg shadow-md border border-white/60">
+        <div id="logoBadge" class="w-8 h-8 rounded-xl bg-pink-500/80 flex items-center justify-center text-white font-bold text-lg border border-white/30">
           L
         </div>
-        <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-pink-400 rounded-full border-2 border-white"></div>
+        <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-pink-400 rounded-full border border-white"></div>
       </div>
       <div>
         <h1 class="font-bold text-slate-800 text-sm leading-tight tracking-tight">LocaL</h1>
         <div class="flex items-center gap-2">
-          <p id="radarStatusText" class="text-[10px] text-slate-700 font-medium">Radar: Auto-Mesh</p>
+          <p id="accountTypeDisplay" class="text-[10px] text-pink-900 font-bold uppercase tracking-wider">Personal (GPS)</p>
           <span class="text-[9px] text-slate-400">•</span>
-          <!-- Real-time Active Users Counter -->
-          <div id="activeUserBadge" class="flex items-center gap-1 text-[10px] text-emerald-800 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded-full border border-emerald-500/30">
+          <div id="activeUserBadge" class="flex items-center gap-1 text-[10px] text-emerald-800 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span id="activeUserCount">2 Active</span>
+            <span id="activeUserCount">3 Active</span>
           </div>
         </div>
       </div>
     </div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
-      <button onclick="toggleBotVisibility()" title="Toggle Bot Visibility" id="botToggleBtn" class="liquid-glass-icon px-3 py-2 rounded-2xl text-slate-900 font-bold text-xs flex items-center gap-1.5 hover:bg-white/90 transition-all active:scale-95 shadow-md">
+      <button onclick="toggleBotVisibility()" title="Toggle Bot Visibility" id="botToggleBtn" class="liquid-glass-icon px-3 py-2 rounded-2xl text-slate-900 font-bold text-xs flex items-center gap-1.5 hover:bg-white/60 transition-all active:scale-95">
         <i data-lucide="bot" class="w-4 h-4 text-pink-600"></i>
         <span id="botToggleText">Bots Visible</span>
       </button>
 
-      <button onclick="toggleP2PModal()" title="Mesh Status" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:bg-white/80 transition-all active:scale-95 relative">
+      <button onclick="toggleP2PModal()" title="Mesh Status" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:bg-white/60 transition-all active:scale-95 relative">
         <i data-lucide="wifi" class="w-5 h-5"></i>
         <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
       </button>
 
-      <button onclick="toggleHelpModal()" title="Help Guide" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:bg-white/80 transition-all active:scale-95">
+      <button onclick="toggleHelpModal()" title="Help Guide" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:bg-white/60 transition-all active:scale-95">
         <i data-lucide="help-circle" class="w-5 h-5"></i>
       </button>
     </div>
@@ -173,8 +167,8 @@
   <!-- Notification Toast Container -->
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-40 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Bottom Quick Controls Dock -->
-  <div class="absolute bottom-6 right-4 z-30 flex flex-col gap-2 pointer-events-auto">
+  <!-- FIXED Bottom Quick Controls Dock -->
+  <div class="fixed bottom-6 right-4 z-30 flex flex-col gap-2 pointer-events-auto">
     <button onclick="centerMapOnUser()" class="liquid-glass-icon p-3 rounded-2xl text-slate-800 hover:bg-white active:scale-95 flex items-center justify-center" title="Center Map">
       <i data-lucide="crosshair" class="w-5 h-5"></i>
     </button>
@@ -190,7 +184,7 @@
   </div>
 
   <!-- Range Slider Modal -->
-  <div id="rangeModal" class="hidden absolute bottom-20 right-4 z-40 glass-card p-4 rounded-3xl w-72 shadow-2xl border border-white/80">
+  <div id="rangeModal" class="hidden fixed bottom-20 right-4 z-40 glass-card p-4 rounded-3xl w-72 border border-white/30">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <i data-lucide="sliders" class="w-4 h-4 text-pink-600"></i>
@@ -204,9 +198,9 @@
     </div>
   </div>
 
-  <!-- Left Side Ultra-Transparent iPhone-Style Chat Drawer -->
+  <!-- Left Side Ultra-Transparent Chat Drawer -->
   <div id="chatDrawer" class="hidden fixed top-0 bottom-0 left-0 z-40 w-80 max-w-[85vw] glass-drawer-left p-4 flex flex-col transition-all">
-    <div class="flex items-center justify-between pb-3 pt-2 border-b border-white/30">
+    <div class="flex items-center justify-between pb-3 pt-2 border-b border-white/20">
       <div class="flex items-center gap-2.5">
         <div id="chatTargetAvatar" class="w-9 h-9 rounded-full liquid-node bg-pink-500 text-white font-bold text-sm flex items-center justify-center">?</div>
         <div>
@@ -215,82 +209,89 @@
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <button onclick="toggleRevealIdentity()" id="revealBtn" class="px-2.5 py-1 rounded-xl bg-white/50 hover:bg-white text-pink-950 font-bold text-[11px] shadow-sm transition-all border border-white/60">
+        <button onclick="toggleRevealIdentity()" id="revealBtn" class="px-2.5 py-1 rounded-xl bg-white/40 hover:bg-white text-pink-950 font-bold text-[11px] shadow-sm transition-all border border-white/30">
           Reveal
         </button>
         <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
     </div>
 
-    <!-- Main Topic Sticky Header -->
-    <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/50 backdrop-blur-md border border-white/70 shadow-sm flex items-start gap-2">
+    <!-- Pinned Question Container -->
+    <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/30 backdrop-blur-md border border-white/30 flex items-start gap-2">
       <i data-lucide="pin" class="w-4 h-4 text-pink-700 flex-shrink-0 mt-0.5"></i>
-      <div>
-        <span class="text-[10px] font-bold text-pink-900 uppercase tracking-wider block">Main Topic</span>
-        <p id="mainTopicText" class="text-xs font-semibold text-slate-900 leading-snug"></p>
-      </div>
+      <p id="mainTopicText" class="text-xs font-semibold text-slate-900 leading-snug"></p>
     </div>
 
     <!-- Messages Container -->
     <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3"></div>
 
     <!-- Input Bar -->
-    <div class="flex gap-2 pt-3 border-t border-white/30">
-      <input type="text" id="chatInput" placeholder="iMessage..." class="flex-1 px-4 py-2.5 rounded-full bg-white/40 backdrop-blur-md border border-white/60 text-slate-900 text-xs placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-pink-400" onkeypress="if(event.key==='Enter') sendChatMessage()">
+    <div class="flex gap-2 pt-3 border-t border-white/20">
+      <input type="text" id="chatInput" placeholder="iMessage..." class="flex-1 px-4 py-2.5 rounded-full bg-white/30 backdrop-blur-md border border-white/30 text-slate-900 text-xs placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-pink-400" onkeypress="if(event.key==='Enter') sendChatMessage()">
       <button onclick="sendChatMessage()" class="w-9 h-9 rounded-full bg-pink-600 text-white font-bold flex items-center justify-center shadow-md active:scale-95 transition-all flex-shrink-0">
         <i data-lucide="arrow-up" class="w-4 h-4"></i>
       </button>
     </div>
   </div>
 
-  <!-- Profile Edit Modal with Layout Theme Picker -->
+  <!-- Profile Edit Modal with Account Type Selection -->
   <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/30">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-800">Customize Profile</h3>
         <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
+        <!-- Account Type Selector (Personal vs Business) -->
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Display Alias</label>
-          <input type="text" id="avatarNameInput" value="Aqua Voyager" class="w-full px-4 py-2.5 rounded-2xl bg-white/80 border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400">
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Account Type</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="selectAccountType('personal')" id="personalTypeBtn" class="p-2.5 rounded-2xl bg-pink-500/20 border border-pink-400 flex flex-col items-center gap-1 hover:scale-102 transition-all">
+              <i data-lucide="navigation" class="w-4 h-4 text-pink-700"></i>
+              <span class="text-[11px] font-bold text-pink-900">Personal (GPS)</span>
+            </button>
+            <button onclick="selectAccountType('business')" id="businessTypeBtn" class="p-2.5 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 hover:scale-102 transition-all">
+              <i data-lucide="store" class="w-4 h-4 text-slate-600"></i>
+              <span class="text-[11px] font-bold text-slate-700">Business (Fixed)</span>
+            </button>
+          </div>
         </div>
 
-        <!-- App Layout Theme Selection -->
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">App Layout Theme</label>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Display Alias / Business Name</label>
+          <input type="text" id="avatarNameInput" value="Aqua Voyager" class="w-full px-4 py-2.5 rounded-2xl bg-white/50 border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400">
+        </div>
+
+        <!-- Business Fixed Address Input -->
+        <div id="businessAddressField" class="hidden">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Store Street Address</label>
+          <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/50 border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">App Theme</label>
           <div class="grid grid-cols-4 gap-2">
-            <button onclick="setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-pink-100 border-2 border-pink-400 flex flex-col items-center gap-1 hover:scale-105 transition-all">
-              <span class="w-5 h-5 rounded-full bg-pink-500 shadow-sm"></span>
+            <button onclick="setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-pink-100 border border-pink-400 flex flex-col items-center gap-1 hover:scale-105 transition-all">
+              <span class="w-4 h-4 rounded-full bg-pink-500"></span>
               <span class="text-[10px] font-bold text-pink-800">Pink</span>
             </button>
-            <button onclick="setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-sky-100 border-2 border-sky-300 flex flex-col items-center gap-1 hover:scale-105 transition-all">
-              <span class="w-5 h-5 rounded-full bg-sky-500 shadow-sm"></span>
+            <button onclick="setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-sky-100 border border-sky-300 flex flex-col items-center gap-1 hover:scale-105 transition-all">
+              <span class="w-4 h-4 rounded-full bg-sky-500"></span>
               <span class="text-[10px] font-bold text-sky-800">Sky</span>
             </button>
-            <button onclick="setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-emerald-100 border-2 border-emerald-300 flex flex-col items-center gap-1 hover:scale-105 transition-all">
-              <span class="w-5 h-5 rounded-full bg-emerald-500 shadow-sm"></span>
+            <button onclick="setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-emerald-100 border border-emerald-300 flex flex-col items-center gap-1 hover:scale-105 transition-all">
+              <span class="w-4 h-4 rounded-full bg-emerald-500"></span>
               <span class="text-[10px] font-bold text-emerald-800">Mint</span>
             </button>
-            <button onclick="setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-violet-100 border-2 border-violet-300 flex flex-col items-center gap-1 hover:scale-105 transition-all">
-              <span class="w-5 h-5 rounded-full bg-violet-500 shadow-sm"></span>
+            <button onclick="setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-violet-100 border border-violet-300 flex flex-col items-center gap-1 hover:scale-105 transition-all">
+              <span class="w-4 h-4 rounded-full bg-violet-500"></span>
               <span class="text-[10px] font-bold text-violet-800">Violet</span>
             </button>
           </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Avatar Accent Color</label>
-          <div class="flex gap-3">
-            <button onclick="setAvatarColor('bg-pink-500')" class="w-8 h-8 rounded-full bg-pink-500 border-2 border-white shadow-md"></button>
-            <button onclick="setAvatarColor('bg-rose-500')" class="w-8 h-8 rounded-full bg-rose-500 border-2 border-white shadow-md"></button>
-            <button onclick="setAvatarColor('bg-sky-500')" class="w-8 h-8 rounded-full bg-sky-500 border-2 border-white shadow-md"></button>
-            <button onclick="setAvatarColor('bg-indigo-500')" class="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white shadow-md"></button>
-          </div>
-        </div>
-
-        <button onclick="saveProfile()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold text-sm shadow-lg active:scale-98 transition-all">
-          Save Profile & Theme
+        <button onclick="saveProfile()" class="w-full py-3 rounded-2xl bg-pink-600 text-white font-bold text-sm shadow-md active:scale-98 transition-all">
+          Save Profile & Location
         </button>
       </div>
     </div>
@@ -298,7 +299,7 @@
 
   <!-- P2P Sync Modal -->
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/30">
       <div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-2">
           <i data-lucide="wifi" class="w-5 h-5 text-pink-600"></i>
@@ -308,7 +309,7 @@
       </div>
       
       <div class="space-y-4">
-        <div class="bg-white/60 p-3.5 rounded-2xl border border-slate-100">
+        <div class="bg-white/40 p-3.5 rounded-2xl border border-slate-100">
           <p class="text-xs text-slate-500 mb-1 font-medium">Automatic Mesh Room Key:</p>
           <div class="flex items-center justify-between">
             <span class="font-mono font-bold text-pink-800 text-sm">local-proximity-public</span>
@@ -321,14 +322,14 @@
 
   <!-- Question Board Modal -->
   <div id="questionModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/30">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-800">Ask Nearby People</h3>
         <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
-        <textarea id="questionInput" rows="3" placeholder="e.g., Any good food trucks nearby? or How is the crowd at the cafe?" class="w-full p-3.5 rounded-2xl bg-white/80 border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 resize-none"></textarea>
-        <button onclick="postQuestion()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold text-sm shadow-lg active:scale-98 transition-all">
+        <textarea id="questionInput" rows="3" placeholder="e.g., Any good food trucks nearby? or How is the crowd at the cafe?" class="w-full p-3.5 rounded-2xl bg-white/50 border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 resize-none"></textarea>
+        <button onclick="postQuestion()" class="w-full py-3 rounded-2xl bg-pink-600 text-white font-bold text-sm shadow-md active:scale-98 transition-all">
           Post Map Bubble
         </button>
       </div>
@@ -337,17 +338,17 @@
 
   <!-- Help Guide Modal -->
   <div id="helpModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80 max-h-[80vh] overflow-y-auto">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/30 max-h-[80vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-800">How to Use LocaL</h3>
         <button onclick="toggleHelpModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-3 text-xs text-slate-700">
-        <div class="p-3 bg-white/60 rounded-2xl border border-slate-100 flex items-start gap-2.5">
-          <i data-lucide="palette" class="w-5 h-5 text-pink-600 flex-shrink-0 mt-0.5"></i>
+        <div class="p-3 bg-white/40 rounded-2xl border border-slate-100 flex items-start gap-2.5">
+          <i data-lucide="store" class="w-5 h-5 text-pink-600 flex-shrink-0 mt-0.5"></i>
           <div>
-            <span class="font-bold text-slate-800 block mb-0.5">Custom App Layout Theme</span>
-            Hold your avatar node to select your favorite theme color including Pink / Rose!
+            <span class="font-bold text-slate-800 block mb-0.5">Personal vs Business Modes</span>
+            Personal accounts utilize mobile GPS tracking. Business accounts stay anchored to a fixed store street address.
           </div>
         </div>
       </div>
@@ -356,35 +357,43 @@
 
   <script>
     const MESH_ROOM_KEY = 'local-proximity-public';
+    const ONE_HOUR_MS = 60 * 60 * 1000;
 
     let userState = {
       alias: 'Aqua Voyager',
+      type: 'personal', // 'personal' or 'business'
+      address: '',
       icon: '💧',
       color: 'bg-pink-500',
       theme: 'theme-pink',
       radius: 50,
-      peerId: null
+      peerId: null,
+      lat: null,
+      lng: null
     };
 
     let peer = null;
     let activeConnections = {};
     let mainTopic = null;
+    let topicTimestamp = null;
     let holdTimer = null;
     let isHolding = false;
     let botsVisible = true;
 
-    // Initialize App & Lucide Icons
+    // Initialize App & Geolocation Tracking
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       initUserNode();
+      initGPSLocation();
       initAutoMeshPeer();
-      initBotNode();
+      initBotNodes();
+      checkChatExpiryLoop();
     });
 
     function showToast(message, icon = 'info') {
       const toastContainer = document.getElementById('toastContainer');
       const toast = document.createElement('div');
-      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-800 text-xs font-semibold border border-white/80';
+      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-800 text-xs font-semibold border border-white/30';
       toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-pink-600"></i> <span>${message}</span>`;
       toastContainer.appendChild(toast);
       lucide.createIcons();
@@ -393,14 +402,85 @@
       }, 3500);
     }
 
-    // App Theme Customization
+    // Geolocation API for Personal Mobile Users
+    function initGPSLocation() {
+      if (userState.type === 'personal' && navigator.geolocation) {
+        navigator.geolocation.watchPosition((pos) => {
+          userState.lat = pos.coords.latitude;
+          userState.lng = pos.coords.longitude;
+        }, (err) => {
+          console.warn('GPS location fallback active');
+        }, { enableHighAccuracy: true });
+      }
+    }
+
+    // Tap-Anywhere Water Ripple Wave Generator
+    function handleMapTap(event) {
+      if (event.target.closest('button') || event.target.closest('.glass-card') || event.target.closest('.glass-panel') || event.target.closest('#chatDrawer')) {
+        return;
+      }
+
+      const container = document.getElementById('tapRippleContainer');
+      const ripple = document.createElement('div');
+      
+      const x = event.clientX;
+      const y = event.clientY;
+
+      ripple.className = 'w-[140px] h-[140px] rounded-full border border-pink-400/80 absolute pointer-events-none animate-tap-ripple';
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      ripple.style.transform = 'translate(-50%, -50%)';
+
+      container.appendChild(ripple);
+      setTimeout(() => { ripple.remove(); }, 850);
+
+      // Pulse fade-in revealed nearby chats
+      pulseRevealNearbyChats();
+    }
+
+    function pulseRevealNearbyChats() {
+      const bot1 = document.getElementById('botNode1');
+      const bot2 = document.getElementById('botNode2');
+      [bot1, bot2].forEach(b => {
+        if (b && botsVisible) {
+          b.classList.remove('opacity-20');
+          b.classList.add('opacity-100');
+          setTimeout(() => {
+            b.classList.remove('opacity-100');
+            b.classList.add('opacity-80');
+          }, 3000);
+        }
+      });
+    }
+
+    // Account Type Customization (Personal vs Business)
+    function selectAccountType(type) {
+      userState.type = type;
+      const personalBtn = document.getElementById('personalTypeBtn');
+      const businessBtn = document.getElementById('businessTypeBtn');
+      const addressField = document.getElementById('businessAddressField');
+
+      if (type === 'personal') {
+        personalBtn.className = 'p-2.5 rounded-2xl bg-pink-500/20 border border-pink-400 flex flex-col items-center gap-1 hover:scale-102 transition-all';
+        businessBtn.className = 'p-2.5 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 hover:scale-102 transition-all';
+        addressField.classList.add('hidden');
+        document.getElementById('accountTypeDisplay').innerText = "Personal (GPS)";
+        initGPSLocation();
+      } else {
+        businessBtn.className = 'p-2.5 rounded-2xl bg-pink-500/20 border border-pink-400 flex flex-col items-center gap-1 hover:scale-102 transition-all';
+        personalBtn.className = 'p-2.5 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 hover:scale-102 transition-all';
+        addressField.classList.remove('hidden');
+        document.getElementById('accountTypeDisplay').innerText = "Business (Fixed)";
+      }
+    }
+
     function setAppTheme(themeClass) {
       userState.theme = themeClass;
       document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative`;
-      showToast(`App theme updated!`, 'palette');
+      showToast(`Theme updated!`, 'palette');
     }
 
-    // Render User Avatar Node
+    // Render Center User Avatar Node
     function initUserNode() {
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
@@ -411,14 +491,17 @@
 
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
-          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-lg border border-white/80 flex items-center gap-1.5 animate-bounce cursor-pointer" onclick="openChatDrawer('Anonymous User', 'bg-pink-500', mainTopic)">
+          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-lg border border-white/30 flex items-center gap-1.5 animate-bounce cursor-pointer" onclick="openChatDrawer('Anonymous User', 'bg-pink-500', mainTopic)">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-pink-600"></i>
             <span id="userTopBubbleText">...</span>
           </div>
 
-          <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-pink-400 opacity-0 transition-opacity"></div>
-          <div id="userAvatarCircle" class="w-14 h-14 rounded-full liquid-node ${userState.color} text-white font-bold flex items-center justify-center text-lg">
+          <div id="holdRing" class="absolute -inset-2 rounded-full border border-pink-400 opacity-0 transition-opacity"></div>
+          <div id="userAvatarCircle" class="w-14 h-14 rounded-full liquid-node ${userState.color} text-white font-bold flex items-center justify-center text-lg relative">
             ${displayContent}
+            <span id="businessBadgeIcon" class="hidden absolute -bottom-1 -right-1 w-5 h-5 bg-pink-600 rounded-full flex items-center justify-center text-white border border-white text-[10px]">
+              <i data-lucide="store" class="w-3 h-3"></i>
+            </span>
           </div>
           <span id="userAvatarLabel" class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[11px] font-bold text-slate-800 shadow-sm">
             ${userState.alias} (You)
@@ -440,108 +523,70 @@
       nodeElem.addEventListener('touchend', endHold);
     }
 
-    // Visible Test Bot Avatar Node
-    function initBotNode() {
+    // Render Interactive Test Bots
+    function initBotNodes() {
       const container = document.getElementById('nodesContainer');
-      const botDiv = document.createElement('div');
-      botDiv.id = 'visibleBotNode';
-      botDiv.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300';
-      botDiv.style.left = '36%';
-      botDiv.style.top = '36%';
 
-      const botQuestion = "Anyone grabbing lunch at the cafe? 🥪";
+      // Bot 1
+      const bot1Div = document.createElement('div');
+      bot1Div.id = 'botNode1';
+      bot1Div.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-300 opacity-80';
+      bot1Div.style.left = '36%';
+      bot1Div.style.top = '36%';
 
-      botDiv.innerHTML = `
+      const q1 = "Anyone grabbing lunch at the cafe? 🥪";
+      bot1Div.innerHTML = `
         <div class="relative flex flex-col items-center">
-          <div id="botTopicBubble" class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-lg border border-white/80 flex items-center gap-1.5 animate-bounce cursor-pointer" onclick="openChatDrawer('Anonymous Bot', 'bg-rose-500', '${botQuestion}')">
+          <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-lg border border-white/30 flex items-center gap-1.5 animate-bounce cursor-pointer" onclick="openChatDrawer('Anonymous User', 'bg-rose-500', '${q1}', 'bot1')">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-rose-600"></i>
-            <span>${botQuestion}</span>
+            <span>${q1}</span>
           </div>
-
-          <div class="w-12 h-12 rounded-full liquid-node bg-rose-500 text-white font-bold flex items-center justify-center text-sm shadow-lg">
-            ?
-          </div>
-          <span class="mt-1 px-2 py-0.5 rounded-full glass-panel text-[10px] font-semibold text-slate-700">
-            Anonymous User
-          </span>
+          <div class="w-12 h-12 rounded-full liquid-node bg-rose-500 text-white font-bold flex items-center justify-center text-sm shadow-lg">?</div>
+          <span class="mt-1 px-2 py-0.5 rounded-full glass-panel text-[10px] font-semibold text-slate-700">Anonymous User</span>
         </div>
       `;
-      container.appendChild(botDiv);
+
+      // Bot 2
+      const bot2Div = document.createElement('div');
+      bot2Div.id = 'botNode2';
+      bot2Div.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-300 opacity-80';
+      bot2Div.style.left = '68%';
+      bot2Div.style.top = '44%';
+
+      const q2 = "Best spot for wifi nearby? 📶";
+      bot2Div.innerHTML = `
+        <div class="relative flex flex-col items-center">
+          <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-lg border border-white/30 flex items-center gap-1.5 animate-bounce cursor-pointer" onclick="openChatDrawer('Anonymous User', 'bg-indigo-500', '${q2}', 'bot2')">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-indigo-600"></i>
+            <span>${q2}</span>
+          </div>
+          <div class="w-12 h-12 rounded-full liquid-node bg-indigo-500 text-white font-bold flex items-center justify-center text-sm shadow-lg">?</div>
+          <span class="mt-1 px-2 py-0.5 rounded-full glass-panel text-[10px] font-semibold text-slate-700">Anonymous User</span>
+        </div>
+      `;
+
+      container.appendChild(bot1Div);
+      container.appendChild(bot2Div);
       lucide.createIcons();
     }
 
     function toggleBotVisibility() {
       botsVisible = !botsVisible;
-      const botNode = document.getElementById('visibleBotNode');
+      const b1 = document.getElementById('botNode1');
+      const b2 = document.getElementById('botNode2');
       const toggleText = document.getElementById('botToggleText');
-      if (botNode) {
-        if (botsVisible) {
-          botNode.classList.remove('opacity-0', 'pointer-events-none');
-          toggleText.innerText = "Bots Visible";
-          showToast('Nearby bots shown on map', 'eye');
-        } else {
-          botNode.classList.add('opacity-0', 'pointer-events-none');
-          toggleText.innerText = "Bots Hidden";
-          showToast('Nearby bots hidden', 'eye-off');
+
+      [b1, b2].forEach(b => {
+        if (b) {
+          if (botsVisible) {
+            b.classList.remove('hidden');
+            toggleText.innerText = "Bots Visible";
+          } else {
+            b.classList.add('hidden');
+            toggleText.innerText = "Bots Hidden";
+          }
         }
-      }
-    }
-
-    function renderPeerNode(peerId) {
-      const container = document.getElementById('nodesContainer');
-      let peerDiv = document.getElementById(`peerNode-${peerId}`);
-
-      if (!peerDiv) {
-        peerDiv = document.createElement('div');
-        peerDiv.id = `peerNode-${peerId}`;
-        peerDiv.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2';
-        peerDiv.style.left = `${Math.floor(Math.random() * 30 + 35)}%`;
-        peerDiv.style.top = `${Math.floor(Math.random() * 30 + 35)}%`;
-
-        peerDiv.innerHTML = `
-          <div class="relative flex flex-col items-center">
-            <div id="peerBubble-${peerId}" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-lg border border-white/80 flex items-center gap-1.5 animate-bounce cursor-pointer">
-              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-pink-600"></i>
-              <span id="peerBubbleText-${peerId}">...</span>
-            </div>
-
-            <div class="w-12 h-12 rounded-full liquid-node bg-rose-500 text-white font-bold flex items-center justify-center text-sm shadow-lg">
-              ?
-            </div>
-            <span class="mt-1 px-2 py-0.5 rounded-full glass-panel text-[10px] font-semibold text-slate-700">
-              Anonymous User
-            </span>
-          </div>
-        `;
-        container.appendChild(peerDiv);
-        lucide.createIcons();
-      }
-    }
-
-    function removePeerNode(peerId) {
-      const peerDiv = document.getElementById(`peerNode-${peerId}`);
-      if (peerDiv) peerDiv.remove();
-    }
-
-    function setPeerTopicBubble(peerId, text) {
-      renderPeerNode(peerId);
-      const bubble = document.getElementById(`peerBubble-${peerId}`);
-      const bubbleText = document.getElementById(`peerBubbleText-${peerId}`);
-      if (bubble && bubbleText) {
-        bubbleText.innerText = text.length > 25 ? text.substring(0, 22) + '...' : text;
-        bubble.classList.remove('hidden');
-        bubble.onclick = () => openChatDrawer('Anonymous User', 'bg-rose-500', text);
-      }
-    }
-
-    function triggerWaterRipple() {
-      const container = document.getElementById('tapRippleContainer');
-      const ripple = document.createElement('div');
-      ripple.className = 'w-[120px] h-[120px] rounded-full border-2 border-pink-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-tap-ripple';
-      container.appendChild(ripple);
-      setTimeout(() => {
-        ripple.remove();
-      }, 850);
+      });
     }
 
     function startHold() {
@@ -568,14 +613,13 @@
         void avatarCircle.offsetWidth;
         avatarCircle.classList.add('animate-bounce-click');
 
-        triggerWaterRipple();
         updateActiveUserBadge();
         showToast('App refreshed! Scanning proximity mesh...', 'refresh-cw');
       }
     }
 
     function updateActiveUserBadge() {
-      const totalCount = Object.keys(activeConnections).length + 2;
+      const totalCount = Object.keys(activeConnections).length + 3;
       document.getElementById('activeUserCount').innerText = `${totalCount} Active`;
     }
 
@@ -621,7 +665,7 @@
       peer.on('connection', (conn) => {
         setupConnection(conn);
         if (mainTopic) {
-          conn.send({ type: 'NEW_QUESTION', text: mainTopic, sender: 'Anonymous User' });
+          conn.send({ type: 'NEW_QUESTION', text: mainTopic, timestamp: topicTimestamp });
         }
       });
     }
@@ -631,12 +675,11 @@
       updateActiveUserBadge();
 
       document.getElementById('p2pStatusDot').className = 'absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-      renderPeerNode(conn.peer);
 
       conn.on('data', (data) => {
         if (data.type === 'NEW_QUESTION') {
-          setPeerTopicBubble(conn.peer, data.text);
           mainTopic = data.text;
+          topicTimestamp = data.timestamp || Date.now();
           document.getElementById('mainTopicText').innerText = data.text;
           document.getElementById('mainTopicContainer').classList.remove('hidden');
         } else if (data.type === 'CHAT_MSG') {
@@ -646,9 +689,21 @@
 
       conn.on('close', () => {
         delete activeConnections[conn.peer];
-        removePeerNode(conn.peer);
         updateActiveUserBadge();
       });
+    }
+
+    // 1-Hour Chat Expiry Verification
+    function checkChatExpiryLoop() {
+      setInterval(() => {
+        if (topicTimestamp && (Date.now() - topicTimestamp > ONE_HOUR_MS)) {
+          mainTopic = null;
+          topicTimestamp = null;
+          document.getElementById('userTopBubble').classList.add('hidden');
+          document.getElementById('mainTopicContainer').classList.add('hidden');
+          showToast('Previous proximity chat expired (1 hour limit)', 'clock');
+        }
+      }, 10000);
     }
 
     function openProfileModal() {
@@ -657,19 +712,25 @@
     function closeProfileModal() {
       document.getElementById('profileModal').classList.add('hidden');
     }
-    function setAvatarColor(colorClass) {
-      userState.color = colorClass;
-      document.getElementById('userAvatarCircle').className = `w-14 h-14 rounded-full liquid-node ${colorClass} text-white font-bold flex items-center justify-center text-lg`;
-    }
+    
     function saveProfile() {
       const name = document.getElementById('avatarNameInput').value.trim();
+      const address = document.getElementById('businessAddressInput').value.trim();
+
       if (name) {
         userState.alias = name;
-        const displayContent = userState.icon === 'initial' ? name.charAt(0) : userState.icon;
-        document.getElementById('userAvatarCircle').innerText = displayContent;
         document.getElementById('userAvatarLabel').innerText = `${name} (You)`;
-        showToast('Profile and theme saved!', 'user');
       }
+
+      if (userState.type === 'business') {
+        userState.address = address;
+        document.getElementById('businessBadgeIcon').classList.remove('hidden');
+        showToast(`Business profile saved for fixed location!`, 'store');
+      } else {
+        document.getElementById('businessBadgeIcon').classList.add('hidden');
+        showToast('Personal profile saved with live GPS!', 'navigation');
+      }
+
       closeProfileModal();
     }
 
@@ -694,6 +755,7 @@
       if (!text) return;
 
       mainTopic = text;
+      topicTimestamp = Date.now();
 
       const bubbleElem = document.getElementById('userTopBubble');
       const bubbleText = document.getElementById('userTopBubbleText');
@@ -704,30 +766,36 @@
       document.getElementById('mainTopicContainer').classList.remove('hidden');
 
       Object.values(activeConnections).forEach(conn => {
-        conn.send({ type: 'NEW_QUESTION', text: text, sender: 'Anonymous User' });
+        conn.send({ type: 'NEW_QUESTION', text: text, timestamp: topicTimestamp });
       });
 
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
-      showToast('Main topic posted!', 'pin');
+      showToast('Question posted above your avatar!', 'pin');
 
       openChatDrawer('Anonymous User', 'bg-pink-500', text);
     }
 
-    function openChatDrawer(name, color, topic) {
+    let currentBotTarget = null;
+
+    function openChatDrawer(name, color, topic, botId = null) {
+      currentBotTarget = botId;
       document.getElementById('chatTargetName').innerText = name;
       document.getElementById('chatTargetAvatar').className = `w-9 h-9 rounded-full liquid-node ${color} text-white font-bold text-sm flex items-center justify-center`;
       document.getElementById('chatTargetAvatar').innerText = '?';
       
+      const revealBtn = document.getElementById('revealBtn');
+      revealBtn.innerText = 'Reveal';
+      revealBtn.className = 'px-2.5 py-1 rounded-xl bg-white/40 hover:bg-white text-pink-950 font-bold text-[11px] shadow-sm transition-all border border-white/30';
+
       if (topic || mainTopic) {
         document.getElementById('mainTopicText').innerText = topic || mainTopic;
         document.getElementById('mainTopicContainer').classList.remove('hidden');
       }
 
       const msgBox = document.getElementById('chatMessages');
-      if (msgBox.children.length === 0) {
-        appendMessage('System', 'Connected to anonymous proximity session.', false);
-      }
+      msgBox.innerHTML = '';
+      appendMessage('System', 'Connected to anonymous proximity session.', false);
 
       document.getElementById('chatDrawer').classList.remove('hidden');
     }
@@ -755,7 +823,7 @@
       div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
       div.innerHTML = `
         <span class="text-[10px] text-slate-800 font-semibold px-1 drop-shadow-sm">${sender}</span>
-        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] ${isMe ? 'bg-pink-600 text-white rounded-br-none shadow-md' : 'bg-white/50 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/60'}">
+        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] ${isMe ? 'bg-pink-600 text-white rounded-br-none shadow-md' : 'bg-white/40 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/30'}">
           ${text}
         </div>
       `;
@@ -763,15 +831,31 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
+    // Automated Test Bot Identity Reveal
     function toggleRevealIdentity() {
       const btn = document.getElementById('revealBtn');
       btn.innerText = 'Requested';
       btn.className = 'px-2.5 py-1 rounded-xl bg-pink-400 text-slate-900 font-bold text-[11px] animate-pulse shadow-sm';
+      
       showToast('Identity reveal request sent!', 'user-check');
+
+      // Bot automatically accepts reveal after 1.2s
+      setTimeout(() => {
+        const revealedAlias = currentBotTarget === 'bot2' ? 'Wanderer (Verified)' : 'Drift Node (Verified)';
+        
+        btn.innerText = 'Revealed ✓';
+        btn.className = 'px-2.5 py-1 rounded-xl bg-emerald-400 text-slate-900 font-bold text-[11px] shadow-sm';
+        
+        document.getElementById('chatTargetName').innerText = revealedAlias;
+        document.getElementById('chatTargetAvatar').innerText = '✓';
+        document.getElementById('chatTargetAvatar').className = 'w-9 h-9 rounded-full liquid-node bg-emerald-500 text-white font-bold text-sm flex items-center justify-center';
+
+        appendMessage('System', `Accepted reveal request! Identity verified: ${revealedAlias}`, false);
+        showToast(`Identity Revealed: ${revealedAlias}!`, 'user-check');
+      }, 1200);
     }
 
     function centerMapOnUser() {
-      triggerWaterRipple();
       showToast('Map centered on your location', 'crosshair');
     }
   </script>
