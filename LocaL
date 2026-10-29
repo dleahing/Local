@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LocaL - Proximity Social Network</title>
+  
+  <!-- PWA & Mobile Icons -->
+  <meta name="theme-color" content="#dbeafe">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LocaL">
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PeerJS for Real-time WebRTC P2P Data Sync -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <style>
+    @keyframes wave-expand {
+      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.9; }
+      100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+    }
+    @keyframes tap-ripple-expand {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; border-width: 4px; }
+      100% { transform: translate(-50%, -50%) scale(3); opacity: 0; border-width: 1px; }
+    }
+    .animate-wave {
+      animation: wave-expand 3s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+    }
+    .animate-tap-ripple {
+      animation: tap-ripple-expand 0.6s ease-out forwards;
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+    .glass-card {
+      background: rgba(240, 249, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(186, 230, 253, 0.7);
+    }
+    .glass-drawer {
+      background: rgba(255, 255, 255, 0.30);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    body {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative">
+
+  <!-- Dynamic Liquid Map Canvas Background -->
+  <div id="mapCanvas" class="absolute inset-0 bg-gradient-to-br from-sky-200 via-blue-100 to-indigo-200 overflow-hidden cursor-grab active:cursor-grabbing">
+    <!-- Grid Overlay -->
+    <div class="absolute inset-0 opacity-25 bg-[radial-gradient(#0284c7_1px,transparent_1px)] [background-size:24px_24px]"></div>
+
+    <!-- Ripple Radar Rings originating from Center Avatar -->
+    <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+      <div class="w-[300px] h-[300px] rounded-full border-2 border-cyan-400/40 absolute -translate-x-1/2 -translate-y-1/2 animate-wave"></div>
+      <div class="w-[300px] h-[300px] rounded-full border-2 border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave" style="animation-delay: 1s;"></div>
+      <div class="w-[300px] h-[300px] rounded-full border-2 border-blue-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave" style="animation-delay: 2s;"></div>
+      
+      <!-- Container for Tap Water Ripples -->
+      <div id="tapRippleContainer" class="absolute inset-0"></div>
+    </div>
+
+    <!-- Map Nodes Container -->
+    <div id="nodesContainer" class="absolute inset-0"></div>
+  </div>
+
+  <!-- Top Floating Header Bar -->
+  <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
+    <div class="glass-panel px-4 py-2 rounded-2xl shadow-lg shadow-sky-900/10 flex items-center gap-3 pointer-events-auto">
+      <div class="relative flex items-center justify-center">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-cyan-500/30">
+          L
+        </div>
+        <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-cyan-400 rounded-full border-2 border-white"></div>
+      </div>
+      <div>
+        <h1 class="font-bold text-slate-800 text-base leading-tight tracking-tight">LocaL</h1>
+        <p id="radarStatusText" class="text-[11px] text-sky-700 font-medium">Radar: Active (50m)</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 pointer-events-auto">
+      <button onclick="toggleP2PModal()" title="P2P Synchronization" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5 relative">
+        <i data-lucide="wifi" class="w-5 h-5"></i>
+        <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-400"></span>
+      </button>
+
+      <button onclick="toggleUpdatesModal()" title="Updates & Features" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5">
+        <i data-lucide="sparkles" class="w-5 h-5"></i>
+      </button>
+
+      <button onclick="toggleHelpModal()" title="Help Guide" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5">
+        <i data-lucide="help-circle" class="w-5 h-5"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="absolute top-20 left-4 right-4 z-40 pointer-events-none flex flex-col gap-2 items-center"></div>
+
+  <!-- Bottom Quick Controls Dock -->
+  <div class="absolute bottom-6 left-4 z-30 flex flex-col gap-2 pointer-events-auto">
+    <button onclick="centerMapOnUser()" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Center Map">
+      <i data-lucide="crosshair" class="w-5 h-5"></i>
+    </button>
+    <button onclick="openQuestionModal()" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Ask Local Question">
+      <i data-lucide="message-square-plus" class="w-5 h-5"></i>
+    </button>
+    <button onclick="toggleRangeModal()" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Adjust Radius">
+      <i data-lucide="radar" class="w-5 h-5"></i>
+    </button>
+  </div>
+
+  <!-- Range Slider Modal -->
+  <div id="rangeModal" class="hidden absolute bottom-20 left-4 z-40 glass-card p-4 rounded-3xl w-72 shadow-2xl border border-sky-200">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
+        <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Discovery Radius</span>
+      </div>
+      <button onclick="toggleRangeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="flex items-center gap-3">
+      <input type="range" id="radiusSlider" min="10" max="200" value="50" oninput="updateRadius(this.value)" class="w-full accent-sky-500 cursor-pointer">
+      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-700 min-w-[40px] text-right">50m</span>
+    </div>
+  </div>
+
+  <!-- Profile Edit Modal -->
+  <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Customize Avatar</h3>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Display Alias</label>
+          <input type="text" id="avatarNameInput" value="Aqua Voyager" class="w-full px-4 py-2.5 rounded-2xl bg-white/80 border border-sky-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Avatar Icon / Emoji</label>
+          <div class="flex gap-2">
+            <button onclick="selectAvatarIcon('💧')" class="w-10 h-10 rounded-xl bg-white/80 border border-sky-200 hover:bg-sky-100 flex items-center justify-center text-lg">💧</button>
+            <button onclick="selectAvatarIcon('🌊')" class="w-10 h-10 rounded-xl bg-white/80 border border-sky-200 hover:bg-sky-100 flex items-center justify-center text-lg">🌊</button>
+            <button onclick="selectAvatarIcon('⚡')" class="w-10 h-10 rounded-xl bg-white/80 border border-sky-200 hover:bg-sky-100 flex items-center justify-center text-lg">⚡</button>
+            <button onclick="selectAvatarIcon('🛰️')" class="w-10 h-10 rounded-xl bg-white/80 border border-sky-200 hover:bg-sky-100 flex items-center justify-center text-lg">🛰️</button>
+            <button onclick="selectAvatarIcon('🧭')" class="w-10 h-10 rounded-xl bg-white/80 border border-sky-200 hover:bg-sky-100 flex items-center justify-center text-lg">🧭</button>
+            <button onclick="selectAvatarIcon('initial')" class="w-10 h-10 rounded-xl bg-white/80 border border-sky-200 hover:bg-sky-100 flex items-center justify-center text-xs font-bold text-sky-800">Aa</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Avatar Accent Color</label>
+          <div class="flex gap-3">
+            <button onclick="setAvatarColor('bg-cyan-500')" class="w-8 h-8 rounded-full bg-cyan-500 border-2 border-white shadow-md"></button>
+            <button onclick="setAvatarColor('bg-sky-500')" class="w-8 h-8 rounded-full bg-sky-500 border-2 border-white shadow-md"></button>
+            <button onclick="setAvatarColor('bg-blue-600')" class="w-8 h-8 rounded-full bg-blue-600 border-2 border-white shadow-md"></button>
+            <button onclick="setAvatarColor('bg-indigo-500')" class="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white shadow-md"></button>
+            <button onclick="setAvatarColor('bg-teal-400')" class="w-8 h-8 rounded-full bg-teal-400 border-2 border-white shadow-md"></button>
+          </div>
+        </div>
+        <button onclick="saveProfile()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-sm shadow-lg shadow-sky-500/25 active:scale-98 transition-all">
+          Save Avatar Profile
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- P2P Sync Modal -->
+  <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80">
+      <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center gap-2">
+          <i data-lucide="wifi" class="w-5 h-5 text-sky-600"></i>
+          <h3 class="text-lg font-bold text-slate-800">PeerJS P2P Sync</h3>
+        </div>
+        <button onclick="toggleP2PModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      
+      <div class="space-y-4">
+        <div class="bg-white/60 p-3.5 rounded-2xl border border-sky-100">
+          <p class="text-xs text-slate-500 mb-1 font-medium">Your Unique Device Peer ID:</p>
+          <div class="flex items-center justify-between">
+            <span id="myPeerIdDisplay" class="font-mono font-bold text-sky-800 text-sm">Generating...</span>
+            <button onclick="copyPeerLink()" class="px-3 py-1.5 rounded-xl bg-sky-500 text-white text-xs font-bold hover:bg-sky-600 active:scale-95 transition-all">
+              Copy Link
+            </button>
+          </div>
+        </div>
+
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-sky-200"></div>
+          <span class="flex-shrink mx-3 text-xs text-slate-400 font-semibold">CONNECT TO NEARBY FRIEND</span>
+          <div class="flex-grow border-t border-sky-200"></div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Enter Friend's Peer ID or Link</label>
+          <input type="text" id="targetPeerInput" placeholder="e.g. local-8f92a1" class="w-full px-4 py-2.5 rounded-2xl bg-white/80 border border-sky-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400">
+        </div>
+
+        <button onclick="connectToPeer()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-sm shadow-lg shadow-sky-500/25 active:scale-98 transition-all">
+          Connect P2P Session
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Board Modal -->
+  <div id="questionModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Ask Nearby People</h3>
+        <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="space-y-4">
+        <textarea id="questionInput" rows="3" placeholder="e.g., Any good food trucks nearby? or How is the crowd at the cafe?" class="w-full p-3.5 rounded-2xl bg-white/80 border border-sky-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none"></textarea>
+        <button onclick="postQuestion()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-sm shadow-lg shadow-cyan-500/25 active:scale-98 transition-all">
+          Post Map Bubble
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Guide Modal -->
+  <div id="helpModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80 max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">How to Use LocaL</h3>
+        <button onclick="toggleHelpModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="space-y-3 text-xs text-slate-700">
+        <div class="p-3 bg-white/60 rounded-2xl border border-sky-100 flex items-start gap-2.5">
+          <i data-lucide="touch-pointer" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <span class="font-bold text-slate-800 block mb-0.5">Tap Icon to Refresh</span>
+            Tap your central avatar to send a fresh radar wave & water ripple signal across the map.
+          </div>
+        </div>
+        <div class="p-3 bg-white/60 rounded-2xl border border-sky-100 flex items-start gap-2.5">
+          <i data-lucide="edit-3" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <span class="font-bold text-slate-800 block mb-0.5">Hold Icon to Edit</span>
+            Press and hold your avatar node to open full customization options (alias, icons, color accents).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Updates Modal -->
+  <div id="updatesModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80 max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Version History</h3>
+        <button onclick="toggleUpdatesModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div class="p-3 bg-white/60 rounded-2xl border border-sky-100">
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-sky-800">v1.4 - Water Ripple & Translucency</span>
+            <span class="text-[10px] text-slate-400">Current</span>
+          </div>
+          <p class="text-slate-600">Added interactive tap ripple animation, icon/emoji selector, high-transparency chat box, and tap-refresh signaling.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Translucent Chat Drawer -->
+  <div id="chatDrawer" class="hidden fixed bottom-0 left-0 right-0 z-40 glass-drawer rounded-t-3xl p-4 shadow-2xl max-h-[60vh] flex flex-col transition-all">
+    <div class="flex items-center justify-between pb-3 border-b border-white/40">
+      <div class="flex items-center gap-2">
+        <div id="chatTargetAvatar" class="w-8 h-8 rounded-full bg-sky-500 text-white font-bold text-xs flex items-center justify-center shadow-md">?</div>
+        <div>
+          <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm drop-shadow-sm">Nearby Group Chat</h4>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-800 font-semibold">Anonymous Proximity Session</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleRevealIdentity()" id="revealBtn" class="px-3 py-1 rounded-xl bg-white/70 hover:bg-white text-sky-900 font-bold text-xs shadow-sm transition-all border border-white/80">
+          Request Reveal
+        </button>
+        <button onclick="closeChatDrawer()" class="text-slate-600 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+    </div>
+
+    <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-2 max-h-[220px]"></div>
+
+    <div class="flex gap-2 pt-2 border-t border-white/40">
+      <input type="text" id="chatInput" placeholder="Type a message..." class="flex-1 px-4 py-2.5 rounded-2xl bg-white/60 backdrop-blur-md border border-white/80 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400" onkeypress="if(event.key==='Enter') sendChatMessage()">
+      <button onclick="sendChatMessage()" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-sm shadow-md active:scale-95 transition-all">
+        Send
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // App State Management
+    let userState = {
+      alias: 'Aqua Voyager',
+      icon: '💧',
+      color: 'bg-sky-500',
+      radius: 50,
+      peerId: null
+    };
+
+    let peer = null;
+    let activeConnections = [];
+    let activeChatTarget = null;
+    let holdTimer = null;
+    let isHolding = false;
+
+    // Initialize App & Lucide Icons
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initUserNode();
+      initPeerJS();
+      renderMockNodes();
+      setupUrlParams();
+    });
+
+    function showToast(message, icon = 'info') {
+      const toastContainer = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-800 text-xs font-semibold border border-white/80';
+      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-sky-600"></i> <span>${message}</span>`;
+      toastContainer.appendChild(toast);
+      lucide.createIcons();
+      setTimeout(() => {
+        toast.remove();
+      }, 3500);
+    }
+
+    // Render User Avatar Node
+    function initUserNode() {
+      const container = document.getElementById('nodesContainer');
+      const userDiv = document.createElement('div');
+      userDiv.id = 'userAvatarNode';
+      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer';
+      
+      const displayContent = userState.icon === 'initial' ? userState.alias.charAt(0) : userState.icon;
+
+      userDiv.innerHTML = `
+        <div class="relative flex flex-col items-center group">
+          <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-opacity"></div>
+          <div id="userAvatarCircle" class="w-14 h-14 rounded-full ${userState.color} text-white font-bold flex items-center justify-center shadow-lg shadow-sky-500/30 border-2 border-white text-lg">
+            ${displayContent}
+          </div>
+          <span id="userAvatarLabel" class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[11px] font-bold text-slate-800 shadow-sm">
+            ${userState.alias} (You)
+          </span>
+        </div>
+      `;
+
+      container.appendChild(userDiv);
+
+      const nodeElem = document.getElementById('userAvatarCircle');
+      
+      nodeElem.addEventListener('mousedown', startHold);
+      nodeElem.addEventListener('mouseup', endHold);
+      nodeElem.addEventListener('mouseleave', endHold);
+
+      nodeElem.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startHold();
+      });
+      nodeElem.addEventListener('touchend', endHold);
+    }
+
+    function triggerWaterRipple() {
+      const container = document.getElementById('tapRippleContainer');
+      const ripple = document.createElement('div');
+      ripple.className = 'w-[120px] h-[120px] rounded-full border-2 border-cyan-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-tap-ripple';
+      container.appendChild(ripple);
+      setTimeout(() => {
+        ripple.remove();
+      }, 650);
+    }
+
+    function startHold() {
+      isHolding = false;
+      const holdRing = document.getElementById('holdRing');
+      holdRing.classList.remove('opacity-0');
+      holdRing.classList.add('animate-pulse');
+
+      holdTimer = setTimeout(() => {
+        isHolding = true;
+        openProfileModal();
+      }, 700);
+    }
+
+    function endHold() {
+      clearTimeout(holdTimer);
+      const holdRing = document.getElementById('holdRing');
+      holdRing.classList.add('opacity-0');
+      holdRing.classList.remove('animate-pulse');
+
+      if (!isHolding) {
+        triggerWaterRipple();
+        showToast('Radar refresh signal sent!', 'radar');
+      }
+    }
+
+    // PeerJS Synchronization Setup
+    function initPeerJS() {
+      const randomId = 'local-' + Math.random().toString(36).substring(2, 8);
+      peer = new Peer(randomId);
+
+      peer.on('open', (id) => {
+        userState.peerId = id;
+        document.getElementById('myPeerIdDisplay').innerText = id;
+      });
+
+      peer.on('connection', (conn) => {
+        setupConnection(conn);
+        showToast('Nearby Peer Connected!', 'wifi');
+      });
+    }
+
+    function setupConnection(conn) {
+      activeConnections.push(conn);
+      document.getElementById('p2pStatusDot').className = 'absolute top-2 right-2 w-2 h-2 rounded-full bg-sky-500 animate-ping';
+
+      conn.on('data', (data) => {
+        if (data.type === 'CHAT_MSG') {
+          appendMessage(data.sender, data.text, false);
+          showToast(`New message from ${data.sender}`, 'message-circle');
+        } else if (data.type === 'REVEAL_REQ') {
+          showToast(`${data.sender} requested identity reveal!`, 'user-check');
+        }
+      });
+    }
+
+    function connectToPeer() {
+      const input = document.getElementById('targetPeerInput').value.trim();
+      if (!input) return;
+
+      let targetId = input;
+      if (input.includes('peer=')) {
+        targetId = input.split('peer=')[1];
+      }
+
+      const conn = peer.connect(targetId);
+      conn.on('open', () => {
+        setupConnection(conn);
+        toggleP2PModal();
+        showToast('Connected to peer!', 'check-circle');
+      });
+    }
+
+    function copyPeerLink() {
+      const url = `${window.location.origin}${window.location.pathname}?peer=${userState.peerId}`;
+      navigator.clipboard.writeText(url);
+      showToast('Invite link copied to clipboard!', 'copy');
+    }
+
+    function setupUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      const targetPeer = params.get('peer');
+      if (targetPeer) {
+        document.getElementById('targetPeerInput').value = targetPeer;
+        toggleP2PModal();
+      }
+    }
+
+    // Render Mock Nodes
+    function renderMockNodes() {
+      const container = document.getElementById('nodesContainer');
+      const mocks = [
+        { id: 1, name: 'Cyan Wanderer', x: '30%', y: '35%', color: 'bg-cyan-500', question: 'Good coffee nearby?' },
+        { id: 2, name: 'Azure Traveler', x: '72%', y: '60%', color: 'bg-blue-500', question: null },
+        { id: 3, name: 'Sky Explorer', x: '65%', y: '28%', color: 'bg-sky-400', question: 'Anyone up for lunch?' }
+      ];
+
+      mocks.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition-transform';
+        div.style.left = m.x;
+        div.style.top = m.y;
+        div.onclick = () => openChatDrawer(m.name, m.color, m.question);
+
+        div.innerHTML = `
+          <div class="flex flex-col items-center">
+            ${m.question ? `<div class="mb-1 px-3 py-1 rounded-2xl glass-card text-[11px] font-semibold text-sky-900 shadow-md border border-sky-300 flex items-center gap-1"><i data-lucide="help-circle" class="w-3 h-3 text-sky-600"></i> ${m.question}</div>` : ''}
+            <div class="w-11 h-11 rounded-full ${m.color} text-white font-bold flex items-center justify-center shadow-lg border-2 border-white text-sm">
+              ${m.name.charAt(0)}
+            </div>
+            <span class="mt-1 px-2 py-0.5 rounded-full glass-panel text-[10px] font-semibold text-slate-700">${m.name}</span>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      lucide.createIcons();
+    }
+
+    // Profile & Icon Handlers
+    function openProfileModal() {
+      document.getElementById('profileModal').classList.remove('hidden');
+    }
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+    function selectAvatarIcon(iconSymbol) {
+      userState.icon = iconSymbol;
+      showToast(`Avatar icon updated to ${iconSymbol === 'initial' ? 'Initial' : iconSymbol}`, 'smile');
+    }
+    function setAvatarColor(colorClass) {
+      userState.color = colorClass;
+      document.getElementById('userAvatarCircle').className = `w-14 h-14 rounded-full ${colorClass} text-white font-bold flex items-center justify-center shadow-lg shadow-sky-500/30 border-2 border-white text-lg`;
+    }
+    function saveProfile() {
+      const name = document.getElementById('avatarNameInput').value.trim();
+      if (name) {
+        userState.alias = name;
+        const displayContent = userState.icon === 'initial' ? name.charAt(0) : userState.icon;
+        document.getElementById('userAvatarCircle').innerText = displayContent;
+        document.getElementById('userAvatarLabel').innerText = `${name} (You)`;
+        showToast('Profile saved successfully!', 'user');
+      }
+      closeProfileModal();
+    }
+
+    function toggleP2PModal() {
+      document.getElementById('p2pModal').classList.toggle('hidden');
+    }
+    function toggleHelpModal() {
+      document.getElementById('helpModal').classList.toggle('hidden');
+    }
+    function toggleUpdatesModal() {
+      document.getElementById('updatesModal').classList.toggle('hidden');
+    }
+    function toggleRangeModal() {
+      document.getElementById('rangeModal').classList.toggle('hidden');
+    }
+    function openQuestionModal() {
+      document.getElementById('questionModal').classList.remove('hidden');
+    }
+    function closeQuestionModal() {
+      document.getElementById('questionModal').classList.add('hidden');
+    }
+
+    function updateRadius(val) {
+      userState.radius = val;
+      document.getElementById('radiusValueDisplay').innerText = `${val}m`;
+      document.getElementById('radarStatusText').innerText = `Radar: Active (${val}m)`;
+    }
+
+    function postQuestion() {
+      const text = document.getElementById('questionInput').value.trim();
+      if (!text) return;
+
+      const container = document.getElementById('nodesContainer');
+      const div = document.createElement('div');
+      div.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 animate-bounce';
+      div.style.left = '48%';
+      div.style.top = '42%';
+      div.onclick = () => openChatDrawer('Nearby Group', 'bg-cyan-500', text);
+
+      div.innerHTML = `
+        <div class="flex flex-col items-center">
+          <div class="mb-1 px-3 py-1 rounded-2xl glass-card text-[11px] font-semibold text-sky-900 shadow-md border border-sky-300 flex items-center gap-1">
+            <i data-lucide="help-circle" class="w-3 h-3 text-sky-600"></i> ${text}
+          </div>
+          <div class="w-9 h-9 rounded-full bg-cyan-500 text-white font-bold flex items-center justify-center shadow-lg border-2 border-white text-xs">
+            ?
+          </div>
+        </div>
+      `;
+      container.appendChild(div);
+      lucide.createIcons();
+      closeQuestionModal();
+      document.getElementById('questionInput').value = '';
+      showToast('Question posted on nearby map!', 'message-square');
+    }
+
+    function openChatDrawer(name, color, question) {
+      activeChatTarget = name;
+      document.getElementById('chatTargetName').innerText = name;
+      document.getElementById('chatTargetAvatar').className = `w-8 h-8 rounded-full ${color} text-white font-bold text-xs flex items-center justify-center shadow-md`;
+      document.getElementById('chatTargetAvatar').innerText = name.charAt(0);
+      
+      const msgBox = document.getElementById('chatMessages');
+      msgBox.innerHTML = '';
+
+      if (question) {
+        appendMessage(name, `Question: "${question}"`, false);
+      } else {
+        appendMessage('System', 'Connected to proximity encrypted channel.', false);
+      }
+
+      document.getElementById('chatDrawer').classList.remove('hidden');
+    }
+
+    function closeChatDrawer() {
+      document.getElementById('chatDrawer').classList.add('hidden');
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage('You', text, true);
+      input.value = '';
+
+      activeConnections.forEach(conn => {
+        conn.send({ type: 'CHAT_MSG', sender: userState.alias, text: text });
+      });
+    }
+
+    function appendMessage(sender, text, isMe) {
+      const msgBox = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+      div.innerHTML = `
+        <span class="text-[10px] text-slate-700 font-semibold px-1 drop-shadow-sm">${sender}</span>
+        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[80%] ${isMe ? 'bg-sky-500 text-white rounded-br-none' : 'bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none'} shadow-sm border border-white/60">
+          ${text}
+        </div>
+      `;
+      msgBox.appendChild(div);
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+
+    function toggleRevealIdentity() {
+      const btn = document.getElementById('revealBtn');
+      btn.innerText = 'Reveal Requested';
+      btn.className = 'px-3 py-1 rounded-xl bg-cyan-400 text-slate-900 font-bold text-xs animate-pulse shadow-sm';
+      
+      activeConnections.forEach(conn => {
+        conn.send({ type: 'REVEAL_REQ', sender: userState.alias });
+      });
+
+      showToast('Identity reveal request sent!', 'user-check');
+    }
+
+    function centerMapOnUser() {
+      triggerWaterRipple();
+      showToast('Map centered on your location', 'crosshair');
+    }
+  </script>
+</body>
+</html>
