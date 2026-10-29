@@ -138,6 +138,10 @@
     </div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
+      <button onclick="openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:scale-105 transition-all active:scale-95 shadow-lg">
+        <i data-lucide="user-cog" class="w-5 h-5"></i>
+      </button>
+
       <button onclick="toggleP2PModal()" title="Mesh Status" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
         <i data-lucide="wifi" class="w-5 h-5"></i>
         <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400"></span>
@@ -147,12 +151,12 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-40 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Bottom Floating Dock -->
+  <!-- Bottom Floating Control Dock -->
   <div class="fixed bottom-6 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
-    <button onclick="openChatDrawer('Proximity Chat', 'bg-pink-500', null)" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl">
+    <button onclick="openChatDrawer('Proximity Chat', 'bg-pink-500', null)" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Open Chat">
       <i data-lucide="message-square" class="w-5 h-5"></i>
     </button>
-    <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl">
+    <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
     </button>
     <button onclick="toggleRangeModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Radius Filter">
@@ -175,6 +179,70 @@
     </div>
   </div>
 
+  <!-- Profile Customization Modal -->
+  <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-black text-slate-900">Customize Profile</h3>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      
+      <div class="space-y-4">
+        <!-- Account Type Switcher -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Account Mode</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-pink-500/20 border border-pink-400 flex flex-col items-center gap-1 transition-all">
+              <i data-lucide="navigation" class="w-4 h-4 text-pink-700"></i>
+              <span class="text-[11px] font-bold text-pink-900">Personal (GPS)</span>
+            </button>
+            <button onclick="selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
+              <i data-lucide="store" class="w-4 h-4 text-slate-600"></i>
+              <span class="text-[11px] font-bold text-slate-700">Business (Fixed)</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Display Alias / Store Name</label>
+          <input type="text" id="avatarNameInput" value="Aqua Voyager" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-pink-400 shadow-inner">
+        </div>
+
+        <div id="businessAddressField" class="hidden">
+          <label class="block text-xs font-bold text-slate-700 mb-1">Store Street Address</label>
+          <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-pink-400 shadow-inner">
+        </div>
+
+        <!-- Color Accent Selection -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button onclick="setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-pink-100 border border-pink-400 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
+              <span class="w-4 h-4 rounded-full bg-pink-500"></span>
+              <span class="text-[10px] font-bold text-pink-800">Pink</span>
+            </button>
+            <button onclick="setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-sky-100 border border-sky-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
+              <span class="w-4 h-4 rounded-full bg-sky-500"></span>
+              <span class="text-[10px] font-bold text-sky-800">Sky</span>
+            </button>
+            <button onclick="setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-emerald-100 border border-emerald-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
+              <span class="w-4 h-4 rounded-full bg-emerald-500"></span>
+              <span class="text-[10px] font-bold text-emerald-800">Mint</span>
+            </button>
+            <button onclick="setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-violet-100 border border-violet-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
+              <span class="w-4 h-4 rounded-full bg-violet-500"></span>
+              <span class="text-[10px] font-bold text-violet-800">Violet</span>
+            </button>
+          </div>
+        </div>
+
+        <button onclick="saveProfile()" class="w-full py-3.5 rounded-2xl bg-pink-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
+          Save Profile & Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Chat Drawer -->
   <div id="chatDrawer" class="hidden fixed top-0 bottom-0 left-0 z-40 w-80 max-w-[85vw] glass-drawer-left p-4.5 flex flex-col transition-all">
     <div class="flex items-center justify-between pb-3.5 pt-2 border-b border-white/30">
@@ -185,7 +253,7 @@
         </div>
         <div>
           <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Anonymous User</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-pink-900 font-bold uppercase tracking-wider">Radius Filter Active</p>
+          <p id="chatTargetStatus" class="text-[10px] text-pink-900 font-bold uppercase tracking-wider">Proximity Session</p>
         </div>
       </div>
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -193,7 +261,10 @@
 
     <div id="mainTopicContainer" class="hidden my-3 p-3.5 rounded-2xl bg-white/40 backdrop-blur-md border border-white/50 shadow-sm flex items-start gap-2.5">
       <i data-lucide="pin" class="w-4 h-4 text-pink-700 flex-shrink-0 mt-0.5"></i>
-      <p id="mainTopicText" class="text-xs font-bold text-slate-900 leading-snug"></p>
+      <div>
+        <p id="mainTopicText" class="text-xs font-bold text-slate-900 leading-snug"></p>
+        <span id="topicExpiryBadge" class="text-[9px] font-bold text-pink-800 mt-1 block">Visible for 1 hour</span>
+      </div>
     </div>
 
     <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3.5"></div>
@@ -214,7 +285,7 @@
         <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
-        <textarea id="questionInput" rows="3" placeholder="Post a question to nearby users..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-pink-400 resize-none shadow-inner"></textarea>
+        <textarea id="questionInput" rows="3" placeholder="Post a question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-pink-400 resize-none shadow-inner"></textarea>
         <button onclick="postQuestion()" class="w-full py-3.5 rounded-2xl bg-pink-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
           Post Map Bubble
         </button>
@@ -224,16 +295,24 @@
 
   <script>
     const MESH_ROOM_KEY = 'local-proximity-public';
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+
     let peer = null;
     let activeConnections = {};
-    let mainTopic = null;
+    
+    let activeTopicState = {
+      text: null,
+      createdAt: null
+    };
 
     let userState = {
       alias: 'Aqua Voyager',
       type: 'personal',
-      radius: 50, // Meters
-      lat: 27.2730, // Default location fallback
+      address: '',
+      radius: 50,
+      lat: 27.2730,
       lng: -80.3582,
+      theme: 'theme-pink',
       peerId: null
     };
 
@@ -242,6 +321,7 @@
       initGPSLocation();
       initUserNode();
       initAutoMeshPeer();
+      checkChatExpiryLoop();
     });
 
     function showToast(message, icon = 'info') {
@@ -254,22 +334,18 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    // Geolocation API Tracker
     function initGPSLocation() {
-      if (navigator.geolocation) {
+      if (userState.type === 'personal' && navigator.geolocation) {
         navigator.geolocation.watchPosition((pos) => {
           userState.lat = pos.coords.latitude;
           userState.lng = pos.coords.longitude;
-        }, (err) => {
-          console.warn('GPS location fallback active');
-        }, { enableHighAccuracy: true });
+        }, (err) => {}, { enableHighAccuracy: true });
       }
     }
 
-    // Haversine Formula for Accurate Distance Calculation (Meters)
     function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
       if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
-      const R = 6371e3; // Radius of Earth in meters
+      const R = 6371e3;
       const φ1 = lat1 * Math.PI / 180;
       const φ2 = lat2 * Math.PI / 180;
       const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -279,34 +355,32 @@
                 Math.cos(φ1) * Math.cos(φ2) *
                 Math.sin(Δλ/2) * Math.sin(Δλ/2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-      return Math.round(R * c); // Distance in meters
+      return Math.round(R * c);
     }
 
-    // Render Soap Bubble Avatar
     function initUserNode() {
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
       userDiv.id = 'userAvatarNode';
-      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20';
+      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer';
+      
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
-          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('Anonymous User', 'bg-pink-500', mainTopic)">
+          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('Anonymous User', 'bg-pink-500', activeTopicState.text)">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-pink-600"></i>
             <span id="userTopBubbleText">...</span>
           </div>
 
-          <div id="userAvatarCircle" class="w-16 h-16 rounded-full bubble-node text-white font-black flex items-center justify-center text-xl shadow-2xl animate-wobble">
+          <div id="userAvatarCircle" onclick="openProfileModal()" class="w-16 h-16 rounded-full bubble-node text-white font-black flex items-center justify-center text-xl shadow-2xl animate-wobble">
             <div class="bubble-glare"></div>
             💧
           </div>
-          <span class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md">${userState.alias} (You)</span>
+          <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md">${userState.alias} (You)</span>
         </div>
       `;
       container.appendChild(userDiv);
     }
 
-    // Auto Mesh Engine
     function initAutoMeshPeer() {
       peer = new Peer(MESH_ROOM_KEY);
 
@@ -332,9 +406,7 @@
     }
 
     function setupPeerListeners() {
-      peer.on('connection', (conn) => {
-        bindConnectionEvents(conn);
-      });
+      peer.on('connection', (conn) => { bindConnectionEvents(conn); });
     }
 
     function bindConnectionEvents(conn) {
@@ -343,25 +415,31 @@
         updateMeshUI();
         showToast('Connected to nearby peer!', 'wifi');
 
-        if (mainTopic) {
-          conn.send({ type: 'NEW_QUESTION', text: mainTopic, lat: userState.lat, lng: userState.lng });
+        // Sync active topic if not expired
+        if (activeTopicState.text && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
+          conn.send({ 
+            type: 'NEW_QUESTION', 
+            text: activeTopicState.text, 
+            createdAt: activeTopicState.createdAt,
+            lat: userState.lat, 
+            lng: userState.lng 
+          });
         }
       });
 
       conn.on('data', (data) => {
-        // Location-aware Proximity Filter Check
         const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
 
-        if (distance > userState.radius) {
-          console.log(`Payload filtered: Sender is ${distance}m away (Radius limit: ${userState.radius}m)`);
-          return; // Ignore messages outside configured discovery radius
-        }
+        if (distance > userState.radius) return;
 
         if (data.type === 'NEW_QUESTION') {
-          mainTopic = data.text;
-          document.getElementById('mainTopicText').innerText = data.text;
-          document.getElementById('mainTopicContainer').classList.remove('hidden');
-          showToast(`Question received (${distance}m away)!`, 'pin');
+          if (Date.now() - data.createdAt < ONE_HOUR_MS) {
+            activeTopicState.text = data.text;
+            activeTopicState.createdAt = data.createdAt;
+            document.getElementById('mainTopicText').innerText = data.text;
+            document.getElementById('mainTopicContainer').classList.remove('hidden');
+            showToast(`Question received (${distance}m away)!`, 'pin');
+          }
         } else if (data.type === 'CHAT_MSG') {
           appendMessage('Anonymous Peer', data.text, false);
           showToast(`New message received (${distance}m away)!`, 'message-square');
@@ -375,50 +453,108 @@
     }
 
     function broadcastData(payload) {
-      // Inject current GPS/Location coordinates into outbound payload
       payload.lat = userState.lat;
       payload.lng = userState.lng;
 
       Object.keys(activeConnections).forEach((peerId) => {
         const conn = activeConnections[peerId];
-        if (conn && conn.open) {
-          conn.send(payload);
-        }
+        if (conn && conn.open) conn.send(payload);
       });
+    }
+
+    // 1-Hour Automated Expiry Loop
+    function checkChatExpiryLoop() {
+      setInterval(() => {
+        if (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt >= ONE_HOUR_MS)) {
+          activeTopicState.text = null;
+          activeTopicState.createdAt = null;
+          document.getElementById('userTopBubble').classList.add('hidden');
+          document.getElementById('mainTopicContainer').classList.add('hidden');
+          showToast('Proximity chat expired (1 hour reached)', 'clock');
+        }
+      }, 5000);
+    }
+
+    function selectAccountType(type) {
+      userState.type = type;
+      const personalBtn = document.getElementById('personalTypeBtn');
+      const businessBtn = document.getElementById('businessTypeBtn');
+      const addressField = document.getElementById('businessAddressField');
+
+      if (type === 'personal') {
+        personalBtn.className = 'p-3 rounded-2xl bg-pink-500/20 border border-pink-400 flex flex-col items-center gap-1 transition-all';
+        businessBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
+        addressField.classList.add('hidden');
+        document.getElementById('accountTypeDisplay').innerText = "Personal (GPS)";
+        initGPSLocation();
+      } else {
+        businessBtn.className = 'p-3 rounded-2xl bg-pink-500/20 border border-pink-400 flex flex-col items-center gap-1 transition-all';
+        personalBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
+        addressField.classList.remove('hidden');
+        document.getElementById('accountTypeDisplay').innerText = "Business (Fixed)";
+      }
+    }
+
+    function setAppTheme(themeClass) {
+      userState.theme = themeClass;
+      document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative`;
+      showToast(`Theme updated!`, 'palette');
+    }
+
+    function saveProfile() {
+      const alias = document.getElementById('avatarNameInput').value.trim();
+      const address = document.getElementById('businessAddressInput').value.trim();
+
+      if (alias) {
+        userState.alias = alias;
+        document.getElementById('userAvatarLabel').innerText = `${alias} (You)`;
+      }
+
+      if (userState.type === 'business') {
+        userState.address = address;
+        showToast('Business profile saved for store address!', 'store');
+      } else {
+        showToast('Personal GPS profile saved!', 'navigation');
+      }
+
+      closeProfileModal();
     }
 
     function updateMeshUI() {
       const activeCount = Object.keys(activeConnections).length + 1;
       document.getElementById('activeUserCount').innerText = `${activeCount} Active`;
       const dot = document.getElementById('p2pStatusDot');
-      if (activeCount > 1) {
-        dot.className = 'absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-      } else {
-        dot.className = 'absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400';
-      }
+      dot.className = activeCount > 1 
+        ? 'absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping' 
+        : 'absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400';
     }
 
     function updateRadius(val) {
       userState.radius = Number(val);
       document.getElementById('radiusValueDisplay').innerText = `${val}m`;
-      showToast(`Discovery radius updated to ${val}m`, 'radar');
     }
 
     function postQuestion() {
       const text = document.getElementById('questionInput').value.trim();
       if (!text) return;
 
-      mainTopic = text;
+      activeTopicState.text = text;
+      activeTopicState.createdAt = Date.now();
+
       document.getElementById('userTopBubbleText').innerText = text.length > 25 ? text.substring(0, 22) + '...' : text;
       document.getElementById('userTopBubble').classList.remove('hidden');
       document.getElementById('mainTopicText').innerText = text;
       document.getElementById('mainTopicContainer').classList.remove('hidden');
 
-      broadcastData({ type: 'NEW_QUESTION', text: text });
+      broadcastData({ 
+        type: 'NEW_QUESTION', 
+        text: text, 
+        createdAt: activeTopicState.createdAt 
+      });
 
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
-      showToast('Question broadcasted within your radius!', 'pin');
+      showToast('Question broadcasted (1 hour timer active)!', 'pin');
       openChatDrawer('Anonymous User', 'bg-pink-500', text);
     }
 
@@ -448,8 +584,8 @@
     }
 
     function openChatDrawer(name, color, topic) {
-      if (topic || mainTopic) {
-        document.getElementById('mainTopicText').innerText = topic || mainTopic;
+      if (topic || activeTopicState.text) {
+        document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
         document.getElementById('mainTopicContainer').classList.remove('hidden');
       }
       document.getElementById('chatDrawer').classList.remove('hidden');
@@ -458,6 +594,8 @@
     function closeChatDrawer() { document.getElementById('chatDrawer').classList.add('hidden'); }
     function openQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
     function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
+    function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
+    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
     function toggleRangeModal() { document.getElementById('rangeModal').classList.toggle('hidden'); }
     function toggleP2PModal() {}
     function handleMapTap(e) {}
