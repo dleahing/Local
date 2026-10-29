@@ -34,7 +34,7 @@
       100% { transform: scale(1); }
     }
 
-    /* Slowed Down Ambient Radar Waves (6 seconds) */
+    /* Slow Ambient Radar Waves (6 seconds) */
     .animate-wave-slow {
       animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
     }
@@ -91,12 +91,12 @@
 <body class="bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
   <!-- Dynamic Liquid Map Canvas Background -->
-  <div id="mapCanvas" class="absolute inset-0 bg-gradient-to-br from-sky-200 via-blue-100 to-indigo-200 overflow-hidden cursor-grab active:cursor-grabbing">
+  <div id="mapCanvas" class="absolute inset-0 bg-gradient-to-br from-sky-200 via-blue-100 to-indigo-200 overflow-hidden cursor-grab active:cursor-grabbing transition-transform duration-500 origin-center" style="transform: scale(1.1);">
     <!-- Grid Overlay -->
     <div class="absolute inset-0 opacity-25 bg-[radial-gradient(#0284c7_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
     <!-- Slow Ambient Ripple Radar Rings originating from Center Avatar -->
-    <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+    <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-500 origin-center" style="transform: translate(-50%, -50%) scale(1);">
       <div class="w-[320px] h-[320px] rounded-full border-2 border-cyan-400/40 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
       <div class="w-[320px] h-[320px] rounded-full border-2 border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
       <div class="w-[320px] h-[320px] rounded-full border-2 border-blue-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 4s;"></div>
@@ -196,8 +196,17 @@
       </div>
     </div>
 
+    <!-- Main Topic Sticky Header -->
+    <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-sm flex items-start gap-2">
+      <i data-lucide="pin" class="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5"></i>
+      <div>
+        <span class="text-[10px] font-bold text-sky-800 uppercase tracking-wider block">Main Topic</span>
+        <p id="mainTopicText" class="text-xs font-semibold text-slate-900 leading-snug"></p>
+      </div>
+    </div>
+
     <!-- Messages Container -->
-    <div id="chatMessages" class="flex-1 overflow-y-auto py-4 space-y-3"></div>
+    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3"></div>
 
     <!-- Input Bar -->
     <div class="flex gap-2 pt-3 border-t border-white/20">
@@ -343,6 +352,7 @@
     let peer = null;
     let activeConnections = [];
     let activeChatTarget = null;
+    let mainTopic = null;
     let holdTimer = null;
     let isHolding = false;
     let activeNodeCount = 4;
@@ -352,7 +362,6 @@
       lucide.createIcons();
       initUserNode();
       initPeerJS();
-      renderMockNodes();
       setupUrlParams();
     });
 
@@ -379,6 +388,12 @@
 
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
+          <!-- Chat Bubble Floating Directly Above Avatar -->
+          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-sky-950 shadow-lg border border-sky-300 flex items-center gap-1.5 animate-bounce cursor-pointer" onclick="openChatDrawer('Anonymous User', 'bg-sky-500', mainTopic)">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600"></i>
+            <span id="userTopBubbleText">...</span>
+          </div>
+
           <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-opacity"></div>
           <div id="userAvatarCircle" class="w-14 h-14 rounded-full liquid-node ${userState.color} text-white font-bold flex items-center justify-center text-lg">
             ${displayContent}
@@ -452,6 +467,22 @@
       document.getElementById('activeUserCount').innerText = `${activeNodeCount} Active`;
     }
 
+    // Dynamic Map Zoom via Discovery Radius
+    function updateRadius(val) {
+      userState.radius = val;
+      document.getElementById('radiusValueDisplay').innerText = `${val}m`;
+      document.getElementById('radarStatusText').innerText = `Radar: ${val}m`;
+
+      // Scale factor mapping (10m = 1.4x zoomed in, 200m = 0.8x zoomed out)
+      const scaleFactor = (1.4 - ((val - 10) / 190) * 0.6).toFixed(2);
+      
+      const mapCanvas = document.getElementById('mapCanvas');
+      const radarCenter = document.getElementById('radarCenter');
+      
+      mapCanvas.style.transform = `scale(${scaleFactor})`;
+      radarCenter.style.transform = `translate(-50%, -50%) scale(${1 / scaleFactor})`;
+    }
+
     // PeerJS Synchronization Setup
     function initPeerJS() {
       const randomId = 'local-' + Math.random().toString(36).substring(2, 8);
@@ -516,36 +547,6 @@
       }
     }
 
-    // Render Mock Nodes (Anonymous User Mask with Liquid Glass look)
-    function renderMockNodes() {
-      const container = document.getElementById('nodesContainer');
-      const mocks = [
-        { id: 1, name: 'Anonymous User', x: '30%', y: '35%', color: 'bg-cyan-500', question: 'Good coffee nearby?' },
-        { id: 2, name: 'Anonymous User', x: '72%', y: '60%', color: 'bg-blue-500', question: null },
-        { id: 3, name: 'Anonymous User', x: '65%', y: '28%', color: 'bg-sky-400', question: 'Anyone up for lunch?' }
-      ];
-
-      mocks.forEach(m => {
-        const div = document.createElement('div');
-        div.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition-transform';
-        div.style.left = m.x;
-        div.style.top = m.y;
-        div.onclick = () => openChatDrawer(m.name, m.color, m.question);
-
-        div.innerHTML = `
-          <div class="flex flex-col items-center">
-            ${m.question ? `<div class="mb-1 px-3 py-1 rounded-2xl glass-card text-[11px] font-semibold text-sky-900 shadow-md border border-sky-300 flex items-center gap-1"><i data-lucide="help-circle" class="w-3 h-3 text-sky-600"></i> ${m.question}</div>` : ''}
-            <div class="w-11 h-11 rounded-full liquid-node ${m.color} text-white font-bold flex items-center justify-center text-sm">
-              ?
-            </div>
-            <span class="mt-1 px-2 py-0.5 rounded-full glass-panel text-[10px] font-semibold text-slate-700">${m.name}</span>
-          </div>
-        `;
-        container.appendChild(div);
-      });
-      lucide.createIcons();
-    }
-
     // Profile & Icon Handlers
     function openProfileModal() {
       document.getElementById('profileModal').classList.remove('hidden');
@@ -589,55 +590,44 @@
       document.getElementById('questionModal').classList.add('hidden');
     }
 
-    function updateRadius(val) {
-      userState.radius = val;
-      document.getElementById('radiusValueDisplay').innerText = `${val}m`;
-      document.getElementById('radarStatusText').innerText = `Radar: ${val}m`;
-    }
-
     function postQuestion() {
       const text = document.getElementById('questionInput').value.trim();
       if (!text) return;
 
-      const container = document.getElementById('nodesContainer');
-      const div = document.createElement('div');
-      div.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 animate-bounce';
-      div.style.left = '48%';
-      div.style.top = '42%';
-      div.onclick = () => openChatDrawer('Anonymous User', 'bg-cyan-500', text);
+      mainTopic = text;
 
-      div.innerHTML = `
-        <div class="flex flex-col items-center">
-          <div class="mb-1 px-3 py-1 rounded-2xl glass-card text-[11px] font-semibold text-sky-900 shadow-md border border-sky-300 flex items-center gap-1">
-            <i data-lucide="help-circle" class="w-3 h-3 text-sky-600"></i> ${text}
-          </div>
-          <div class="w-9 h-9 rounded-full liquid-node bg-cyan-500 text-white font-bold flex items-center justify-center text-xs">
-            ?
-          </div>
-        </div>
-      `;
-      container.appendChild(div);
-      activeNodeCount++;
-      updateActiveUserBadge();
-      lucide.createIcons();
+      // Show Chat Bubble directly above user's avatar
+      const bubbleElem = document.getElementById('userTopBubble');
+      const bubbleText = document.getElementById('userTopBubbleText');
+      bubbleText.innerText = text.length > 25 ? text.substring(0, 22) + '...' : text;
+      bubbleElem.classList.remove('hidden');
+
+      // Set Main Topic Header in Chat Box
+      document.getElementById('mainTopicText').innerText = text;
+      document.getElementById('mainTopicContainer').classList.remove('hidden');
+
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
-      showToast('Question posted on nearby map!', 'message-square');
+      showToast('Main topic posted above your avatar!', 'pin');
+
+      // Automatically launch chat drawer
+      openChatDrawer('Anonymous User', 'bg-cyan-500', text);
     }
 
-    function openChatDrawer(name, color, question) {
+    function openChatDrawer(name, color, topic) {
       activeChatTarget = name;
       document.getElementById('chatTargetName').innerText = name;
       document.getElementById('chatTargetAvatar').className = `w-9 h-9 rounded-full liquid-node ${color} text-white font-bold text-sm flex items-center justify-center`;
       document.getElementById('chatTargetAvatar').innerText = '?';
       
-      const msgBox = document.getElementById('chatMessages');
-      msgBox.innerHTML = '';
+      if (topic || mainTopic) {
+        document.getElementById('mainTopicText').innerText = topic || mainTopic;
+        document.getElementById('mainTopicContainer').classList.remove('hidden');
+      }
 
-      if (question) {
-        appendMessage(name, `Question: "${question}"`, false);
-      } else {
-        appendMessage('System', 'Connected to anonymous proximity channel.', false);
+      const msgBox = document.getElementById('chatMessages');
+      if (msgBox.children.length === 0) {
+        appendMessage('System', 'Connected to anonymous proximity session.', false);
       }
 
       document.getElementById('chatDrawer').classList.remove('hidden');
