@@ -10,8 +10,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LocaL">
 
+  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PeerJS for Real-time WebRTC P2P Data Sync -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
   <style>
@@ -23,28 +25,29 @@
       0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.95; border-width: 3px; }
       100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; border-width: 1px; }
     }
-    @keyframes liquid-bounce {
-      0% { transform: scale(1); }
-      30% { transform: scale(1.18) translateY(-3px); }
-      50% { transform: scale(0.94) translateY(1px); }
-      75% { transform: scale(1.05); }
-      100% { transform: scale(1); }
+    @keyframes bubble-wobble {
+      0%, 100% { transform: scale(1) rotate(0deg); border-radius: 50%; }
+      25% { transform: scale(1.04, 0.96) rotate(-2deg); border-radius: 48% 52% 51% 49% / 51% 48% 52% 49%; }
+      50% { transform: scale(0.97, 1.03) rotate(2deg); border-radius: 52% 48% 49% 51% / 49% 52% 48% 52%; }
+      75% { transform: scale(1.02, 0.98) rotate(-1deg); border-radius: 49% 51% 52% 48% / 52% 49% 51% 48%; }
     }
     @keyframes float-gentle {
       0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-5px); }
+      50% { transform: translateY(-6px); }
     }
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
     .animate-tap-ripple { animation: tap-ripple-expand 0.75s ease-out forwards; }
-    .animate-bounce-click { animation: liquid-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .animate-float { animation: float-gentle 3.5s ease-in-out infinite; }
+    .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
+    .animate-wobble { animation: bubble-wobble 4.5s ease-in-out infinite; }
 
-    .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%); --accent-color: #0284c7; }
-    .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent-color: #db2777; }
-    .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #ecfdf5 0%, #a7f3d0 50%, #34d399 100%); --accent-color: #059669; }
-    .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #f5f3ff 0%, #ddd6fe 50%, #a78bfa 100%); --accent-color: #7c3aed; }
+    /* Dynamic Themes */
+    .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%); --bubble-border: rgba(186, 230, 253, 0.9); }
+    .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --bubble-border: rgba(251, 207, 232, 0.9); }
+    .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #ecfdf5 0%, #a7f3d0 50%, #34d399 100%); --bubble-border: rgba(167, 243, 208, 0.9); }
+    .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #f5f3ff 0%, #ddd6fe 50%, #a78bfa 100%); --bubble-border: rgba(221, 214, 254, 0.9); }
 
+    /* Polished Glassmorphism System */
     .glass-panel {
       background: rgba(255, 255, 255, 0.55);
       backdrop-filter: blur(20px) saturate(180%);
@@ -66,12 +69,33 @@
       border: 1px solid rgba(255, 255, 255, 0.7);
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
-    .liquid-node {
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1.5px solid rgba(255, 255, 255, 0.85);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+
+    /* Soap / Liquid Bubble Node Styling */
+    .bubble-node {
+      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.35) 30%, rgba(244, 114, 182, 0.45) 70%, rgba(219, 39, 119, 0.7) 100%);
+      backdrop-filter: blur(12px) saturate(190%);
+      -webkit-backdrop-filter: blur(12px) saturate(190%);
+      border: 1.5px solid var(--bubble-border);
+      box-shadow: 
+        0 10px 25px rgba(219, 39, 119, 0.25),
+        inset 0 4px 10px rgba(255, 255, 255, 0.9),
+        inset 0 -6px 12px rgba(219, 39, 119, 0.35),
+        0 0 18px rgba(255, 255, 255, 0.6);
+      position: relative;
     }
+
+    .bubble-glare {
+      position: absolute;
+      top: 10%;
+      left: 18%;
+      width: 42%;
+      height: 25%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 100%);
+      border-radius: 50% 50% 0 0;
+      transform: rotate(-22deg);
+      pointer-events: none;
+    }
+
     .glass-drawer-left {
       background: rgba(255, 255, 255, 0.22);
       backdrop-filter: blur(32px);
@@ -83,6 +107,7 @@
 </head>
 <body id="appBody" class="theme-pink bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
+  <!-- Map Canvas Container -->
   <div id="mapCanvas" onpointerdown="handleMapTap(event)" class="absolute inset-0 overflow-hidden transition-transform duration-500 origin-center" style="background: var(--bg-gradient); transform: scale(1.1);">
     <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:28px_28px]"></div>
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-500 origin-center">
@@ -92,6 +117,7 @@
     <div id="nodesContainer" class="absolute inset-0 z-20"></div>
   </div>
 
+  <!-- Top Glass Header -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
     <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 pointer-events-auto shadow-xl">
       <div class="relative flex items-center justify-center">
@@ -121,6 +147,7 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-40 pointer-events-none flex flex-col gap-2 items-center"></div>
 
+  <!-- Bottom Floating Dock -->
   <div class="fixed bottom-6 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
     <button onclick="openChatDrawer('Proximity Chat', 'bg-pink-500', null)" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl">
       <i data-lucide="message-square" class="w-5 h-5"></i>
@@ -128,16 +155,37 @@
     <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
     </button>
+    <button onclick="toggleRangeModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Radius Filter">
+      <i data-lucide="radar" class="w-5 h-5"></i>
+    </button>
   </div>
 
-  <!-- Left Side Chat Drawer -->
+  <!-- Range Filter Modal -->
+  <div id="rangeModal" class="hidden fixed bottom-20 right-4 z-40 glass-card p-4.5 rounded-3xl w-72 border border-white/50 shadow-2xl">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <i data-lucide="sliders" class="w-4 h-4 text-pink-600"></i>
+        <span class="text-xs font-black text-slate-800 uppercase tracking-wider">Discovery Radius</span>
+      </div>
+      <button onclick="toggleRangeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="flex items-center gap-3">
+      <input type="range" id="radiusSlider" min="10" max="500" value="50" oninput="updateRadius(this.value)" class="w-full accent-pink-500 cursor-pointer">
+      <span id="radiusValueDisplay" class="text-xs font-bold text-pink-700 min-w-[40px] text-right">50m</span>
+    </div>
+  </div>
+
+  <!-- Chat Drawer -->
   <div id="chatDrawer" class="hidden fixed top-0 bottom-0 left-0 z-40 w-80 max-w-[85vw] glass-drawer-left p-4.5 flex flex-col transition-all">
     <div class="flex items-center justify-between pb-3.5 pt-2 border-b border-white/30">
       <div class="flex items-center gap-3">
-        <div id="chatTargetAvatar" class="w-10 h-10 rounded-full liquid-node bg-pink-500 text-white font-bold text-sm flex items-center justify-center shadow-md">?</div>
+        <div id="chatTargetAvatar" class="w-10 h-10 rounded-full bubble-node text-white font-bold text-sm flex items-center justify-center shadow-md">
+          <div class="bubble-glare"></div>
+          ?
+        </div>
         <div>
           <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Anonymous User</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-pink-900 font-bold uppercase tracking-wider">Mesh Connected</p>
+          <p id="chatTargetStatus" class="text-[10px] text-pink-900 font-bold uppercase tracking-wider">Radius Filter Active</p>
         </div>
       </div>
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -158,7 +206,7 @@
     </div>
   </div>
 
-  <!-- Question Board Modal -->
+  <!-- Question Modal -->
   <div id="questionModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
@@ -182,12 +230,16 @@
 
     let userState = {
       alias: 'Aqua Voyager',
-      color: 'bg-pink-500',
+      type: 'personal',
+      radius: 50, // Meters
+      lat: 27.2730, // Default location fallback
+      lng: -80.3582,
       peerId: null
     };
 
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
+      initGPSLocation();
       initUserNode();
       initAutoMeshPeer();
     });
@@ -202,6 +254,36 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
+    // Geolocation API Tracker
+    function initGPSLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition((pos) => {
+          userState.lat = pos.coords.latitude;
+          userState.lng = pos.coords.longitude;
+        }, (err) => {
+          console.warn('GPS location fallback active');
+        }, { enableHighAccuracy: true });
+      }
+    }
+
+    // Haversine Formula for Accurate Distance Calculation (Meters)
+    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+      const R = 6371e3; // Radius of Earth in meters
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+      return Math.round(R * c); // Distance in meters
+    }
+
+    // Render Soap Bubble Avatar
     function initUserNode() {
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
@@ -213,16 +295,19 @@
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-pink-600"></i>
             <span id="userTopBubbleText">...</span>
           </div>
-          <div id="userAvatarCircle" class="w-14 h-14 rounded-full liquid-node ${userState.color} text-white font-black flex items-center justify-center text-lg shadow-xl">💧</div>
+
+          <div id="userAvatarCircle" class="w-16 h-16 rounded-full bubble-node text-white font-black flex items-center justify-center text-xl shadow-2xl animate-wobble">
+            <div class="bubble-glare"></div>
+            💧
+          </div>
           <span class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md">${userState.alias} (You)</span>
         </div>
       `;
       container.appendChild(userDiv);
     }
 
-    // Auto Mesh Discovery Engine
+    // Auto Mesh Engine
     function initAutoMeshPeer() {
-      // First try to claim host node key
       peer = new Peer(MESH_ROOM_KEY);
 
       peer.on('open', (id) => {
@@ -232,7 +317,6 @@
       });
 
       peer.on('error', (err) => {
-        // If host room exists, claim sub-node ID and connect to host
         if (err.type === 'unavailable-id') {
           const clientSlot = `${MESH_ROOM_KEY}-${Math.random().toString(36).substring(2, 7)}`;
           peer = new Peer(clientSlot);
@@ -254,27 +338,33 @@
     }
 
     function bindConnectionEvents(conn) {
-      // Wait for WebRTC open state before sending or receiving
       conn.on('open', () => {
         activeConnections[conn.peer] = conn;
         updateMeshUI();
         showToast('Connected to nearby peer!', 'wifi');
 
-        // Sync active topic if present
         if (mainTopic) {
-          conn.send({ type: 'NEW_QUESTION', text: mainTopic });
+          conn.send({ type: 'NEW_QUESTION', text: mainTopic, lat: userState.lat, lng: userState.lng });
         }
       });
 
       conn.on('data', (data) => {
+        // Location-aware Proximity Filter Check
+        const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
+
+        if (distance > userState.radius) {
+          console.log(`Payload filtered: Sender is ${distance}m away (Radius limit: ${userState.radius}m)`);
+          return; // Ignore messages outside configured discovery radius
+        }
+
         if (data.type === 'NEW_QUESTION') {
           mainTopic = data.text;
           document.getElementById('mainTopicText').innerText = data.text;
           document.getElementById('mainTopicContainer').classList.remove('hidden');
-          showToast('New question received!', 'pin');
+          showToast(`Question received (${distance}m away)!`, 'pin');
         } else if (data.type === 'CHAT_MSG') {
           appendMessage('Anonymous Peer', data.text, false);
-          showToast('New message received!', 'message-square');
+          showToast(`New message received (${distance}m away)!`, 'message-square');
         }
       });
 
@@ -282,14 +372,13 @@
         delete activeConnections[conn.peer];
         updateMeshUI();
       });
-
-      conn.on('error', () => {
-        delete activeConnections[conn.peer];
-        updateMeshUI();
-      });
     }
 
     function broadcastData(payload) {
+      // Inject current GPS/Location coordinates into outbound payload
+      payload.lat = userState.lat;
+      payload.lng = userState.lng;
+
       Object.keys(activeConnections).forEach((peerId) => {
         const conn = activeConnections[peerId];
         if (conn && conn.open) {
@@ -309,6 +398,12 @@
       }
     }
 
+    function updateRadius(val) {
+      userState.radius = Number(val);
+      document.getElementById('radiusValueDisplay').innerText = `${val}m`;
+      showToast(`Discovery radius updated to ${val}m`, 'radar');
+    }
+
     function postQuestion() {
       const text = document.getElementById('questionInput').value.trim();
       if (!text) return;
@@ -323,7 +418,7 @@
 
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
-      showToast('Question broadcasted to mesh!', 'pin');
+      showToast('Question broadcasted within your radius!', 'pin');
       openChatDrawer('Anonymous User', 'bg-pink-500', text);
     }
 
@@ -363,6 +458,8 @@
     function closeChatDrawer() { document.getElementById('chatDrawer').classList.add('hidden'); }
     function openQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
     function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
+    function toggleRangeModal() { document.getElementById('rangeModal').classList.toggle('hidden'); }
+    function toggleP2PModal() {}
     function handleMapTap(e) {}
   </script>
 </body>
