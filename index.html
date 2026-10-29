@@ -44,11 +44,13 @@
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(186, 230, 253, 0.7);
     }
-    .glass-drawer {
-      background: rgba(255, 255, 255, 0.30);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(255, 255, 255, 0.6);
+    /* iPhone Left Side Glass Chat Drawer */
+    .glass-drawer-left {
+      background: rgba(255, 255, 255, 0.20);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-right: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
     }
     body {
       touch-action: manipulation;
@@ -94,13 +96,13 @@
     </div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
+      <button onclick="openProfileModal()" title="Customize Profile" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5">
+        <i data-lucide="user-cog" class="w-5 h-5"></i>
+      </button>
+
       <button onclick="toggleP2PModal()" title="P2P Synchronization" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5 relative">
         <i data-lucide="wifi" class="w-5 h-5"></i>
         <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-400"></span>
-      </button>
-
-      <button onclick="toggleUpdatesModal()" title="Updates & Features" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5">
-        <i data-lucide="sparkles" class="w-5 h-5"></i>
       </button>
 
       <button onclick="toggleHelpModal()" title="Help Guide" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5">
@@ -113,7 +115,7 @@
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-40 pointer-events-none flex flex-col gap-2 items-center"></div>
 
   <!-- Bottom Quick Controls Dock -->
-  <div class="absolute bottom-6 left-4 z-30 flex flex-col gap-2 pointer-events-auto">
+  <div class="absolute bottom-6 right-4 z-30 flex flex-col gap-2 pointer-events-auto">
     <button onclick="centerMapOnUser()" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Center Map">
       <i data-lucide="crosshair" class="w-5 h-5"></i>
     </button>
@@ -126,7 +128,7 @@
   </div>
 
   <!-- Range Slider Modal -->
-  <div id="rangeModal" class="hidden absolute bottom-20 left-4 z-40 glass-card p-4 rounded-3xl w-72 shadow-2xl border border-sky-200">
+  <div id="rangeModal" class="hidden absolute bottom-20 right-4 z-40 glass-card p-4 rounded-3xl w-72 shadow-2xl border border-sky-200">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
@@ -137,6 +139,36 @@
     <div class="flex items-center gap-3">
       <input type="range" id="radiusSlider" min="10" max="200" value="50" oninput="updateRadius(this.value)" class="w-full accent-sky-500 cursor-pointer">
       <span id="radiusValueDisplay" class="text-xs font-bold text-sky-700 min-w-[40px] text-right">50m</span>
+    </div>
+  </div>
+
+  <!-- Left Side Translucent iPhone-Style Chat Drawer -->
+  <div id="chatDrawer" class="hidden fixed top-0 bottom-0 left-0 z-40 w-80 max-w-[85vw] glass-drawer-left p-4 flex flex-col transition-all">
+    <div class="flex items-center justify-between pb-3 pt-2 border-b border-white/30">
+      <div class="flex items-center gap-2.5">
+        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full bg-sky-500 text-white font-bold text-sm flex items-center justify-center shadow-md">?</div>
+        <div>
+          <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm drop-shadow-sm">Nearby Group Chat</h4>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-800 font-semibold">Proximity Session</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button onclick="toggleRevealIdentity()" id="revealBtn" class="px-2.5 py-1 rounded-xl bg-white/60 hover:bg-white text-sky-900 font-bold text-[11px] shadow-sm transition-all border border-white/70">
+          Reveal
+        </button>
+        <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+    </div>
+
+    <!-- Messages Container (iPhone Left/Right Layout) -->
+    <div id="chatMessages" class="flex-1 overflow-y-auto py-4 space-y-3"></div>
+
+    <!-- Input Bar -->
+    <div class="flex gap-2 pt-3 border-t border-white/30">
+      <input type="text" id="chatInput" placeholder="iMessage..." class="flex-1 px-4 py-2.5 rounded-full bg-white/50 backdrop-blur-md border border-white/70 text-slate-900 text-xs placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400" onkeypress="if(event.key==='Enter') sendChatMessage()">
+      <button onclick="sendChatMessage()" class="w-9 h-9 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center shadow-md active:scale-95 transition-all flex-shrink-0">
+        <i data-lucide="arrow-up" class="w-4 h-4"></i>
+      </button>
     </div>
   </div>
 
@@ -252,60 +284,13 @@
           </div>
         </div>
         <div class="p-3 bg-white/60 rounded-2xl border border-sky-100 flex items-start gap-2.5">
-          <i data-lucide="edit-3" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
+          <i data-lucide="message-square" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
           <div>
-            <span class="font-bold text-slate-800 block mb-0.5">Hold Icon to Edit</span>
-            Press and hold your avatar node to open full customization options (alias, icons, color accents).
+            <span class="font-bold text-slate-800 block mb-0.5">Hold Icon to Open Chat</span>
+            Press and hold your avatar node to immediately open the left-side translucent chat drawer.
           </div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Updates Modal -->
-  <div id="updatesModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80 max-h-[80vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-800">Version History</h3>
-        <button onclick="toggleUpdatesModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div class="p-3 bg-white/60 rounded-2xl border border-sky-100">
-          <div class="flex justify-between items-center mb-1">
-            <span class="font-bold text-sky-800">v1.4 - Water Ripple & Translucency</span>
-            <span class="text-[10px] text-slate-400">Current</span>
-          </div>
-          <p class="text-slate-600">Added interactive tap ripple animation, icon/emoji selector, high-transparency chat box, and tap-refresh signaling.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Translucent Chat Drawer -->
-  <div id="chatDrawer" class="hidden fixed bottom-0 left-0 right-0 z-40 glass-drawer rounded-t-3xl p-4 shadow-2xl max-h-[60vh] flex flex-col transition-all">
-    <div class="flex items-center justify-between pb-3 border-b border-white/40">
-      <div class="flex items-center gap-2">
-        <div id="chatTargetAvatar" class="w-8 h-8 rounded-full bg-sky-500 text-white font-bold text-xs flex items-center justify-center shadow-md">?</div>
-        <div>
-          <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm drop-shadow-sm">Nearby Group Chat</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-800 font-semibold">Anonymous Proximity Session</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="toggleRevealIdentity()" id="revealBtn" class="px-3 py-1 rounded-xl bg-white/70 hover:bg-white text-sky-900 font-bold text-xs shadow-sm transition-all border border-white/80">
-          Request Reveal
-        </button>
-        <button onclick="closeChatDrawer()" class="text-slate-600 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-    </div>
-
-    <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-2 max-h-[220px]"></div>
-
-    <div class="flex gap-2 pt-2 border-t border-white/40">
-      <input type="text" id="chatInput" placeholder="Type a message..." class="flex-1 px-4 py-2.5 rounded-2xl bg-white/60 backdrop-blur-md border border-white/80 text-slate-900 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400" onkeypress="if(event.key==='Enter') sendChatMessage()">
-      <button onclick="sendChatMessage()" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-sm shadow-md active:scale-95 transition-all">
-        Send
-      </button>
     </div>
   </div>
 
@@ -400,8 +385,9 @@
 
       holdTimer = setTimeout(() => {
         isHolding = true;
-        openProfileModal();
-      }, 700);
+        openChatDrawer(userState.alias, userState.color, null);
+        showToast('Proximity chat opened', 'message-square');
+      }, 600);
     }
 
     function endHold() {
@@ -541,9 +527,6 @@
     function toggleHelpModal() {
       document.getElementById('helpModal').classList.toggle('hidden');
     }
-    function toggleUpdatesModal() {
-      document.getElementById('updatesModal').classList.toggle('hidden');
-    }
     function toggleRangeModal() {
       document.getElementById('rangeModal').classList.toggle('hidden');
     }
@@ -591,7 +574,7 @@
     function openChatDrawer(name, color, question) {
       activeChatTarget = name;
       document.getElementById('chatTargetName').innerText = name;
-      document.getElementById('chatTargetAvatar').className = `w-8 h-8 rounded-full ${color} text-white font-bold text-xs flex items-center justify-center shadow-md`;
+      document.getElementById('chatTargetAvatar').className = `w-9 h-9 rounded-full ${color} text-white font-bold text-sm flex items-center justify-center shadow-md`;
       document.getElementById('chatTargetAvatar').innerText = name.charAt(0);
       
       const msgBox = document.getElementById('chatMessages');
@@ -600,7 +583,7 @@
       if (question) {
         appendMessage(name, `Question: "${question}"`, false);
       } else {
-        appendMessage('System', 'Connected to proximity encrypted channel.', false);
+        appendMessage('System', 'Connected to proximity channel.', false);
       }
 
       document.getElementById('chatDrawer').classList.remove('hidden');
@@ -628,8 +611,8 @@
       const div = document.createElement('div');
       div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
       div.innerHTML = `
-        <span class="text-[10px] text-slate-700 font-semibold px-1 drop-shadow-sm">${sender}</span>
-        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[80%] ${isMe ? 'bg-sky-500 text-white rounded-br-none' : 'bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none'} shadow-sm border border-white/60">
+        <span class="text-[10px] text-slate-800 font-semibold px-1 drop-shadow-sm">${sender}</span>
+        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] ${isMe ? 'bg-blue-500 text-white rounded-br-none' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none'} shadow-sm border border-white/60">
           ${text}
         </div>
       `;
@@ -639,8 +622,8 @@
 
     function toggleRevealIdentity() {
       const btn = document.getElementById('revealBtn');
-      btn.innerText = 'Reveal Requested';
-      btn.className = 'px-3 py-1 rounded-xl bg-cyan-400 text-slate-900 font-bold text-xs animate-pulse shadow-sm';
+      btn.innerText = 'Requested';
+      btn.className = 'px-2.5 py-1 rounded-xl bg-cyan-400 text-slate-900 font-bold text-[11px] animate-pulse shadow-sm';
       
       activeConnections.forEach(conn => {
         conn.send({ type: 'REVEAL_REQ', sender: userState.alias });
