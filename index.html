@@ -44,13 +44,13 @@
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(186, 230, 253, 0.7);
     }
-    /* iPhone Left Side Glass Chat Drawer */
+    /* Ultra-Transparent iPhone Left Side Chat Drawer */
     .glass-drawer-left {
-      background: rgba(255, 255, 255, 0.20);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border-right: 1px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.10);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-right: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 15px 0 40px rgba(0, 0, 0, 0.1);
     }
     body {
       touch-action: manipulation;
@@ -96,10 +96,6 @@
     </div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
-      <button onclick="openProfileModal()" title="Customize Profile" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5">
-        <i data-lucide="user-cog" class="w-5 h-5"></i>
-      </button>
-
       <button onclick="toggleP2PModal()" title="P2P Synchronization" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5 relative">
         <i data-lucide="wifi" class="w-5 h-5"></i>
         <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-400"></span>
@@ -118,6 +114,9 @@
   <div class="absolute bottom-6 right-4 z-30 flex flex-col gap-2 pointer-events-auto">
     <button onclick="centerMapOnUser()" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Center Map">
       <i data-lucide="crosshair" class="w-5 h-5"></i>
+    </button>
+    <button onclick="openChatDrawer('Anonymous User', 'bg-sky-500', null)" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Open Chat">
+      <i data-lucide="message-square" class="w-5 h-5"></i>
     </button>
     <button onclick="openQuestionModal()" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Ask Local Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
@@ -142,30 +141,30 @@
     </div>
   </div>
 
-  <!-- Left Side Translucent iPhone-Style Chat Drawer -->
+  <!-- Left Side Ultra-Transparent iPhone-Style Chat Drawer -->
   <div id="chatDrawer" class="hidden fixed top-0 bottom-0 left-0 z-40 w-80 max-w-[85vw] glass-drawer-left p-4 flex flex-col transition-all">
-    <div class="flex items-center justify-between pb-3 pt-2 border-b border-white/30">
+    <div class="flex items-center justify-between pb-3 pt-2 border-b border-white/20">
       <div class="flex items-center gap-2.5">
         <div id="chatTargetAvatar" class="w-9 h-9 rounded-full bg-sky-500 text-white font-bold text-sm flex items-center justify-center shadow-md">?</div>
         <div>
-          <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm drop-shadow-sm">Nearby Group Chat</h4>
+          <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm drop-shadow-sm">Anonymous User</h4>
           <p id="chatTargetStatus" class="text-[10px] text-sky-800 font-semibold">Proximity Session</p>
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <button onclick="toggleRevealIdentity()" id="revealBtn" class="px-2.5 py-1 rounded-xl bg-white/60 hover:bg-white text-sky-900 font-bold text-[11px] shadow-sm transition-all border border-white/70">
+        <button onclick="toggleRevealIdentity()" id="revealBtn" class="px-2.5 py-1 rounded-xl bg-white/40 hover:bg-white/60 text-sky-900 font-bold text-[11px] shadow-sm transition-all border border-white/50">
           Reveal
         </button>
         <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
     </div>
 
-    <!-- Messages Container (iPhone Left/Right Layout) -->
+    <!-- Messages Container -->
     <div id="chatMessages" class="flex-1 overflow-y-auto py-4 space-y-3"></div>
 
     <!-- Input Bar -->
-    <div class="flex gap-2 pt-3 border-t border-white/30">
-      <input type="text" id="chatInput" placeholder="iMessage..." class="flex-1 px-4 py-2.5 rounded-full bg-white/50 backdrop-blur-md border border-white/70 text-slate-900 text-xs placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400" onkeypress="if(event.key==='Enter') sendChatMessage()">
+    <div class="flex gap-2 pt-3 border-t border-white/20">
+      <input type="text" id="chatInput" placeholder="iMessage..." class="flex-1 px-4 py-2.5 rounded-full bg-white/30 backdrop-blur-md border border-white/50 text-slate-900 text-xs placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-400" onkeypress="if(event.key==='Enter') sendChatMessage()">
       <button onclick="sendChatMessage()" class="w-9 h-9 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center shadow-md active:scale-95 transition-all flex-shrink-0">
         <i data-lucide="arrow-up" class="w-4 h-4"></i>
       </button>
@@ -176,7 +175,7 @@
   <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/20 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/80">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-800">Customize Avatar</h3>
+        <h3 class="text-lg font-bold text-slate-800">Customize Profile</h3>
         <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
@@ -206,7 +205,7 @@
           </div>
         </div>
         <button onclick="saveProfile()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-sm shadow-lg shadow-sky-500/25 active:scale-98 transition-all">
-          Save Avatar Profile
+          Save Profile
         </button>
       </div>
     </div>
@@ -284,10 +283,10 @@
           </div>
         </div>
         <div class="p-3 bg-white/60 rounded-2xl border border-sky-100 flex items-start gap-2.5">
-          <i data-lucide="message-square" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
+          <i data-lucide="user-cog" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
           <div>
-            <span class="font-bold text-slate-800 block mb-0.5">Hold Icon to Open Chat</span>
-            Press and hold your avatar node to immediately open the left-side translucent chat drawer.
+            <span class="font-bold text-slate-800 block mb-0.5">Hold Icon to Edit Profile</span>
+            Press and hold your center avatar node to open your profile customization settings.
           </div>
         </div>
       </div>
@@ -385,8 +384,7 @@
 
       holdTimer = setTimeout(() => {
         isHolding = true;
-        openChatDrawer(userState.alias, userState.color, null);
-        showToast('Proximity chat opened', 'message-square');
+        openProfileModal();
       }, 600);
     }
 
@@ -424,10 +422,10 @@
 
       conn.on('data', (data) => {
         if (data.type === 'CHAT_MSG') {
-          appendMessage(data.sender, data.text, false);
-          showToast(`New message from ${data.sender}`, 'message-circle');
+          appendMessage('Anonymous User', data.text, false);
+          showToast('New message from Anonymous User', 'message-circle');
         } else if (data.type === 'REVEAL_REQ') {
-          showToast(`${data.sender} requested identity reveal!`, 'user-check');
+          showToast('Anonymous User requested identity reveal!', 'user-check');
         }
       });
     }
@@ -464,13 +462,13 @@
       }
     }
 
-    // Render Mock Nodes
+    // Render Mock Nodes (Anonymous User Mask)
     function renderMockNodes() {
       const container = document.getElementById('nodesContainer');
       const mocks = [
-        { id: 1, name: 'Cyan Wanderer', x: '30%', y: '35%', color: 'bg-cyan-500', question: 'Good coffee nearby?' },
-        { id: 2, name: 'Azure Traveler', x: '72%', y: '60%', color: 'bg-blue-500', question: null },
-        { id: 3, name: 'Sky Explorer', x: '65%', y: '28%', color: 'bg-sky-400', question: 'Anyone up for lunch?' }
+        { id: 1, name: 'Anonymous User', x: '30%', y: '35%', color: 'bg-cyan-500', question: 'Good coffee nearby?' },
+        { id: 2, name: 'Anonymous User', x: '72%', y: '60%', color: 'bg-blue-500', question: null },
+        { id: 3, name: 'Anonymous User', x: '65%', y: '28%', color: 'bg-sky-400', question: 'Anyone up for lunch?' }
       ];
 
       mocks.forEach(m => {
@@ -484,7 +482,7 @@
           <div class="flex flex-col items-center">
             ${m.question ? `<div class="mb-1 px-3 py-1 rounded-2xl glass-card text-[11px] font-semibold text-sky-900 shadow-md border border-sky-300 flex items-center gap-1"><i data-lucide="help-circle" class="w-3 h-3 text-sky-600"></i> ${m.question}</div>` : ''}
             <div class="w-11 h-11 rounded-full ${m.color} text-white font-bold flex items-center justify-center shadow-lg border-2 border-white text-sm">
-              ${m.name.charAt(0)}
+              ?
             </div>
             <span class="mt-1 px-2 py-0.5 rounded-full glass-panel text-[10px] font-semibold text-slate-700">${m.name}</span>
           </div>
@@ -552,7 +550,7 @@
       div.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 animate-bounce';
       div.style.left = '48%';
       div.style.top = '42%';
-      div.onclick = () => openChatDrawer('Nearby Group', 'bg-cyan-500', text);
+      div.onclick = () => openChatDrawer('Anonymous User', 'bg-cyan-500', text);
 
       div.innerHTML = `
         <div class="flex flex-col items-center">
@@ -575,7 +573,7 @@
       activeChatTarget = name;
       document.getElementById('chatTargetName').innerText = name;
       document.getElementById('chatTargetAvatar').className = `w-9 h-9 rounded-full ${color} text-white font-bold text-sm flex items-center justify-center shadow-md`;
-      document.getElementById('chatTargetAvatar').innerText = name.charAt(0);
+      document.getElementById('chatTargetAvatar').innerText = '?';
       
       const msgBox = document.getElementById('chatMessages');
       msgBox.innerHTML = '';
@@ -583,7 +581,7 @@
       if (question) {
         appendMessage(name, `Question: "${question}"`, false);
       } else {
-        appendMessage('System', 'Connected to proximity channel.', false);
+        appendMessage('System', 'Connected to anonymous proximity channel.', false);
       }
 
       document.getElementById('chatDrawer').classList.remove('hidden');
@@ -602,7 +600,7 @@
       input.value = '';
 
       activeConnections.forEach(conn => {
-        conn.send({ type: 'CHAT_MSG', sender: userState.alias, text: text });
+        conn.send({ type: 'CHAT_MSG', sender: 'Anonymous User', text: text });
       });
     }
 
@@ -611,8 +609,8 @@
       const div = document.createElement('div');
       div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
       div.innerHTML = `
-        <span class="text-[10px] text-slate-800 font-semibold px-1 drop-shadow-sm">${sender}</span>
-        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] ${isMe ? 'bg-blue-500 text-white rounded-br-none' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none'} shadow-sm border border-white/60">
+        <span class="text-[10px] text-white/90 font-semibold px-1 drop-shadow-sm">${sender}</span>
+        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] ${isMe ? 'bg-blue-600/90 text-white rounded-br-none shadow-md' : 'bg-white/30 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/40'}">
           ${text}
         </div>
       `;
@@ -626,7 +624,7 @@
       btn.className = 'px-2.5 py-1 rounded-xl bg-cyan-400 text-slate-900 font-bold text-[11px] animate-pulse shadow-sm';
       
       activeConnections.forEach(conn => {
-        conn.send({ type: 'REVEAL_REQ', sender: userState.alias });
+        conn.send({ type: 'REVEAL_REQ', sender: 'Anonymous User' });
       });
 
       showToast('Identity reveal request sent!', 'user-check');
