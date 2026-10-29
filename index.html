@@ -126,13 +126,18 @@
           <!-- Real-time Active Users Counter -->
           <div id="activeUserBadge" class="flex items-center gap-1 text-[10px] text-emerald-700 font-bold bg-emerald-500/15 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span id="activeUserCount">1 Active</span>
+            <span id="activeUserCount">2 Active</span>
           </div>
         </div>
       </div>
     </div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
+      <button onclick="startBotSimulation()" title="Simulate Bot Chat" class="liquid-glass-icon px-3 py-2 rounded-2xl text-sky-900 font-bold text-xs flex items-center gap-1.5 hover:bg-white/90 transition-all active:scale-95 shadow-md">
+        <i data-lucide="bot" class="w-4 h-4 text-sky-600"></i>
+        <span>Simulate Bot Chat</span>
+      </button>
+
       <button onclick="toggleP2PModal()" title="P2P Synchronization" class="liquid-glass-icon p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 relative">
         <i data-lucide="wifi" class="w-5 h-5"></i>
         <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400"></span>
@@ -322,17 +327,10 @@
       </div>
       <div class="space-y-3 text-xs text-slate-700">
         <div class="p-3 bg-white/60 rounded-2xl border border-sky-100 flex items-start gap-2.5">
-          <i data-lucide="touch-pointer" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
+          <i data-lucide="bot" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
           <div>
-            <span class="font-bold text-slate-800 block mb-0.5">Tap Icon to Refresh & Bounce</span>
-            Tap your central avatar icon to send a radar pulse ripple and refresh the active nearby map.
-          </div>
-        </div>
-        <div class="p-3 bg-white/60 rounded-2xl border border-sky-100 flex items-start gap-2.5">
-          <i data-lucide="user-cog" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
-          <div>
-            <span class="font-bold text-slate-800 block mb-0.5">Hold Icon to Edit Profile</span>
-            Press and hold your center avatar node to open your profile customization settings.
+            <span class="font-bold text-slate-800 block mb-0.5">Simulate Bot Chat</span>
+            Click the "Simulate Bot Chat" button in the top bar to watch two nearby anonymous bots converse live!
           </div>
         </div>
       </div>
@@ -355,7 +353,7 @@
     let mainTopic = null;
     let holdTimer = null;
     let isHolding = false;
-    let activeNodeCount = 1;
+    let activeNodeCount = 2;
 
     // Initialize App & Lucide Icons
     window.addEventListener('DOMContentLoaded', () => {
@@ -407,7 +405,6 @@
       container.appendChild(userDiv);
 
       const nodeElem = document.getElementById('userAvatarCircle');
-      
       nodeElem.addEventListener('mousedown', startHold);
       nodeElem.addEventListener('mouseup', endHold);
       nodeElem.addEventListener('mouseleave', endHold);
@@ -521,6 +518,33 @@
       radarCenter.style.transform = `translate(-50%, -50%) scale(${1 / scaleFactor})`;
     }
 
+    // Automated Bot Simulation Mode
+    function startBotSimulation() {
+      showToast('Bot simulation started! Opening chat drawer...', 'bot');
+      
+      // Set main topic
+      const botTopic = "Anyone grabbing lunch at the cafe right now? 🥪";
+      mainTopic = botTopic;
+      document.getElementById('mainTopicText').innerText = botTopic;
+      document.getElementById('mainTopicContainer').classList.remove('hidden');
+
+      // Open chat drawer
+      openChatDrawer('Anonymous User', 'bg-cyan-500', botTopic);
+
+      // Simulate conversation sequence
+      setTimeout(() => {
+        appendMessage('Anonymous User', 'Hey! I am right by the patio. Line is pretty short.', false);
+      }, 1200);
+
+      setTimeout(() => {
+        appendMessage('You', 'Awesome, heading over in 2 minutes!', true);
+      }, 2600);
+
+      setTimeout(() => {
+        appendMessage('Anonymous User', 'Sounds good, grabbing a table near the window!', false);
+      }, 4200);
+    }
+
     // PeerJS Real-Time P2P WebRTC Setup
     function initPeerJS() {
       const randomId = 'local-' + Math.random().toString(36).substring(2, 8);
@@ -543,11 +567,8 @@
       updateActiveUserBadge();
 
       document.getElementById('p2pStatusDot').className = 'absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping';
-
-      // Automatically render node for connected peer
       renderPeerNode(conn.peer);
 
-      // Handle real-time incoming P2P events
       conn.on('data', (data) => {
         if (data.type === 'NEW_QUESTION') {
           setPeerTopicBubble(conn.peer, data.text);
@@ -645,17 +666,14 @@
 
       mainTopic = text;
 
-      // Show Chat Bubble directly above user avatar
       const bubbleElem = document.getElementById('userTopBubble');
       const bubbleText = document.getElementById('userTopBubbleText');
       bubbleText.innerText = text.length > 25 ? text.substring(0, 22) + '...' : text;
       bubbleElem.classList.remove('hidden');
 
-      // Set Main Topic Header in Chat Box
       document.getElementById('mainTopicText').innerText = text;
       document.getElementById('mainTopicContainer').classList.remove('hidden');
 
-      // Broadcast new question to all active P2P connections
       activeConnections.forEach(conn => {
         conn.send({ type: 'NEW_QUESTION', text: text, sender: 'Anonymous User' });
       });
@@ -664,7 +682,6 @@
       document.getElementById('questionInput').value = '';
       showToast('Main topic posted and synced to nearby peers!', 'pin');
 
-      // Open chat drawer
       openChatDrawer('Anonymous User', 'bg-cyan-500', text);
     }
 
@@ -699,7 +716,6 @@
       appendMessage('You', text, true);
       input.value = '';
 
-      // Send text message across real-time WebRTC datachannel
       activeConnections.forEach(conn => {
         conn.send({ type: 'CHAT_MSG', sender: 'Anonymous User', text: text });
       });
