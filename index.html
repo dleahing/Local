@@ -19,38 +19,67 @@
 
   <style>
     @keyframes wave-expand {
-      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.9; }
-      100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
+      100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
     @keyframes tap-ripple-expand {
-      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; border-width: 4px; }
-      100% { transform: translate(-50%, -50%) scale(3); opacity: 0; border-width: 1px; }
+      0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.9; border-width: 4px; }
+      100% { transform: translate(-50%, -50%) scale(3.2); opacity: 0; border-width: 1px; }
     }
-    .animate-wave {
-      animation: wave-expand 3s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+    @keyframes liquid-bounce {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.22) translateY(-4px); }
+      50% { transform: scale(0.92) translateY(2px); }
+      75% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    /* Slowed Down Ambient Radar Waves (6 seconds) */
+    .animate-wave-slow {
+      animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
     }
     .animate-tap-ripple {
-      animation: tap-ripple-expand 0.6s ease-out forwards;
+      animation: tap-ripple-expand 0.8s ease-out forwards;
     }
+    .animate-bounce-click {
+      animation: liquid-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Liquid Glass UI Styling */
     .glass-panel {
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.60);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
     }
     .glass-card {
-      background: rgba(240, 249, 255, 0.75);
+      background: rgba(240, 249, 255, 0.70);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(186, 230, 253, 0.75);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+    .liquid-glass-icon {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(186, 230, 253, 0.45) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 8px 20px rgba(14, 165, 233, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.9);
+    }
+    .liquid-node {
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(186, 230, 253, 0.7);
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 10px 25px rgba(2, 132, 199, 0.3), inset 0 2px 6px rgba(255, 255, 255, 0.8);
     }
     /* Ultra-Transparent iPhone Left Side Chat Drawer */
     .glass-drawer-left {
-      background: rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.12);
       backdrop-filter: blur(28px);
       -webkit-backdrop-filter: blur(28px);
-      border-right: 1px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 15px 0 40px rgba(0, 0, 0, 0.1);
+      border-right: 1px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 15px 0 40px rgba(0, 0, 0, 0.12);
     }
     body {
       touch-action: manipulation;
@@ -66,11 +95,11 @@
     <!-- Grid Overlay -->
     <div class="absolute inset-0 opacity-25 bg-[radial-gradient(#0284c7_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
-    <!-- Ripple Radar Rings originating from Center Avatar -->
+    <!-- Slow Ambient Ripple Radar Rings originating from Center Avatar -->
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-      <div class="w-[300px] h-[300px] rounded-full border-2 border-cyan-400/40 absolute -translate-x-1/2 -translate-y-1/2 animate-wave"></div>
-      <div class="w-[300px] h-[300px] rounded-full border-2 border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave" style="animation-delay: 1s;"></div>
-      <div class="w-[300px] h-[300px] rounded-full border-2 border-blue-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave" style="animation-delay: 2s;"></div>
+      <div class="w-[320px] h-[320px] rounded-full border-2 border-cyan-400/40 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
+      <div class="w-[320px] h-[320px] rounded-full border-2 border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
+      <div class="w-[320px] h-[320px] rounded-full border-2 border-blue-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 4s;"></div>
       
       <!-- Container for Tap Water Ripples -->
       <div id="tapRippleContainer" class="absolute inset-0"></div>
@@ -82,26 +111,34 @@
 
   <!-- Top Floating Header Bar -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
-    <div class="glass-panel px-4 py-2 rounded-2xl shadow-lg shadow-sky-900/10 flex items-center gap-3 pointer-events-auto">
+    <div class="glass-panel px-3.5 py-2 rounded-2xl shadow-lg shadow-sky-900/10 flex items-center gap-3 pointer-events-auto">
       <div class="relative flex items-center justify-center">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-cyan-500/30">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-cyan-500/30 border border-white/60">
           L
         </div>
         <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-cyan-400 rounded-full border-2 border-white"></div>
       </div>
       <div>
-        <h1 class="font-bold text-slate-800 text-base leading-tight tracking-tight">LocaL</h1>
-        <p id="radarStatusText" class="text-[11px] text-sky-700 font-medium">Radar: Active (50m)</p>
+        <h1 class="font-bold text-slate-800 text-sm leading-tight tracking-tight">LocaL</h1>
+        <div class="flex items-center gap-2">
+          <p id="radarStatusText" class="text-[10px] text-sky-800 font-medium">Radar: 50m</p>
+          <span class="text-[9px] text-slate-400">•</span>
+          <!-- Real-time Active Users Counter -->
+          <div id="activeUserBadge" class="flex items-center gap-1 text-[10px] text-emerald-700 font-bold bg-emerald-500/15 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="activeUserCount">4 Active</span>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
-      <button onclick="toggleP2PModal()" title="P2P Synchronization" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5 relative">
+      <button onclick="toggleP2PModal()" title="P2P Synchronization" class="liquid-glass-icon p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 relative">
         <i data-lucide="wifi" class="w-5 h-5"></i>
         <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-400"></span>
       </button>
 
-      <button onclick="toggleHelpModal()" title="Help Guide" class="glass-panel p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95 shadow-md shadow-sky-900/5">
+      <button onclick="toggleHelpModal()" title="Help Guide" class="liquid-glass-icon p-2.5 rounded-2xl text-sky-800 hover:bg-white/80 transition-all active:scale-95">
         <i data-lucide="help-circle" class="w-5 h-5"></i>
       </button>
     </div>
@@ -112,16 +149,16 @@
 
   <!-- Bottom Quick Controls Dock -->
   <div class="absolute bottom-6 right-4 z-30 flex flex-col gap-2 pointer-events-auto">
-    <button onclick="centerMapOnUser()" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Center Map">
+    <button onclick="centerMapOnUser()" class="liquid-glass-icon p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 flex items-center justify-center" title="Center Map">
       <i data-lucide="crosshair" class="w-5 h-5"></i>
     </button>
-    <button onclick="openChatDrawer('Anonymous User', 'bg-sky-500', null)" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Open Chat">
+    <button onclick="openChatDrawer('Anonymous User', 'bg-sky-500', null)" class="liquid-glass-icon p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 flex items-center justify-center" title="Open Chat">
       <i data-lucide="message-square" class="w-5 h-5"></i>
     </button>
-    <button onclick="openQuestionModal()" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Ask Local Question">
+    <button onclick="openQuestionModal()" class="liquid-glass-icon p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 flex items-center justify-center" title="Ask Local Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
     </button>
-    <button onclick="toggleRangeModal()" class="glass-panel p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 shadow-lg shadow-sky-900/10 flex items-center justify-center" title="Adjust Radius">
+    <button onclick="toggleRangeModal()" class="liquid-glass-icon p-3 rounded-2xl text-sky-800 hover:bg-white active:scale-95 flex items-center justify-center" title="Adjust Radius">
       <i data-lucide="radar" class="w-5 h-5"></i>
     </button>
   </div>
@@ -145,7 +182,7 @@
   <div id="chatDrawer" class="hidden fixed top-0 bottom-0 left-0 z-40 w-80 max-w-[85vw] glass-drawer-left p-4 flex flex-col transition-all">
     <div class="flex items-center justify-between pb-3 pt-2 border-b border-white/20">
       <div class="flex items-center gap-2.5">
-        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full bg-sky-500 text-white font-bold text-sm flex items-center justify-center shadow-md">?</div>
+        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full liquid-node bg-sky-500 text-white font-bold text-sm flex items-center justify-center">?</div>
         <div>
           <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm drop-shadow-sm">Anonymous User</h4>
           <p id="chatTargetStatus" class="text-[10px] text-sky-800 font-semibold">Proximity Session</p>
@@ -278,8 +315,8 @@
         <div class="p-3 bg-white/60 rounded-2xl border border-sky-100 flex items-start gap-2.5">
           <i data-lucide="touch-pointer" class="w-5 h-5 text-sky-600 flex-shrink-0 mt-0.5"></i>
           <div>
-            <span class="font-bold text-slate-800 block mb-0.5">Tap Icon to Refresh</span>
-            Tap your central avatar to send a fresh radar wave & water ripple signal across the map.
+            <span class="font-bold text-slate-800 block mb-0.5">Tap Icon to Refresh & Bounce</span>
+            Tap your central avatar icon to send a radar pulse ripple and refresh the active nearby map.
           </div>
         </div>
         <div class="p-3 bg-white/60 rounded-2xl border border-sky-100 flex items-start gap-2.5">
@@ -308,6 +345,7 @@
     let activeChatTarget = null;
     let holdTimer = null;
     let isHolding = false;
+    let activeNodeCount = 4;
 
     // Initialize App & Lucide Icons
     window.addEventListener('DOMContentLoaded', () => {
@@ -342,7 +380,7 @@
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
           <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-opacity"></div>
-          <div id="userAvatarCircle" class="w-14 h-14 rounded-full ${userState.color} text-white font-bold flex items-center justify-center shadow-lg shadow-sky-500/30 border-2 border-white text-lg">
+          <div id="userAvatarCircle" class="w-14 h-14 rounded-full liquid-node ${userState.color} text-white font-bold flex items-center justify-center text-lg">
             ${displayContent}
           </div>
           <span id="userAvatarLabel" class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[11px] font-bold text-slate-800 shadow-sm">
@@ -373,7 +411,7 @@
       container.appendChild(ripple);
       setTimeout(() => {
         ripple.remove();
-      }, 650);
+      }, 850);
     }
 
     function startHold() {
@@ -395,9 +433,23 @@
       holdRing.classList.remove('animate-pulse');
 
       if (!isHolding) {
+        // Trigger Liquid Bounce Animation
+        const avatarCircle = document.getElementById('userAvatarCircle');
+        avatarCircle.classList.remove('animate-bounce-click');
+        void avatarCircle.offsetWidth; // Trigger reflow
+        avatarCircle.classList.add('animate-bounce-click');
+
+        // Trigger Water Ripple Wave
         triggerWaterRipple();
-        showToast('Radar refresh signal sent!', 'radar');
+        
+        // Refresh Active User Status & Toast
+        updateActiveUserBadge();
+        showToast('App refreshed! Scanning active peers...', 'refresh-cw');
       }
+    }
+
+    function updateActiveUserBadge() {
+      document.getElementById('activeUserCount').innerText = `${activeNodeCount} Active`;
     }
 
     // PeerJS Synchronization Setup
@@ -412,6 +464,8 @@
 
       peer.on('connection', (conn) => {
         setupConnection(conn);
+        activeNodeCount++;
+        updateActiveUserBadge();
         showToast('Nearby Peer Connected!', 'wifi');
       });
     }
@@ -462,7 +516,7 @@
       }
     }
 
-    // Render Mock Nodes (Anonymous User Mask)
+    // Render Mock Nodes (Anonymous User Mask with Liquid Glass look)
     function renderMockNodes() {
       const container = document.getElementById('nodesContainer');
       const mocks = [
@@ -481,7 +535,7 @@
         div.innerHTML = `
           <div class="flex flex-col items-center">
             ${m.question ? `<div class="mb-1 px-3 py-1 rounded-2xl glass-card text-[11px] font-semibold text-sky-900 shadow-md border border-sky-300 flex items-center gap-1"><i data-lucide="help-circle" class="w-3 h-3 text-sky-600"></i> ${m.question}</div>` : ''}
-            <div class="w-11 h-11 rounded-full ${m.color} text-white font-bold flex items-center justify-center shadow-lg border-2 border-white text-sm">
+            <div class="w-11 h-11 rounded-full liquid-node ${m.color} text-white font-bold flex items-center justify-center text-sm">
               ?
             </div>
             <span class="mt-1 px-2 py-0.5 rounded-full glass-panel text-[10px] font-semibold text-slate-700">${m.name}</span>
@@ -505,7 +559,7 @@
     }
     function setAvatarColor(colorClass) {
       userState.color = colorClass;
-      document.getElementById('userAvatarCircle').className = `w-14 h-14 rounded-full ${colorClass} text-white font-bold flex items-center justify-center shadow-lg shadow-sky-500/30 border-2 border-white text-lg`;
+      document.getElementById('userAvatarCircle').className = `w-14 h-14 rounded-full liquid-node ${colorClass} text-white font-bold flex items-center justify-center text-lg`;
     }
     function saveProfile() {
       const name = document.getElementById('avatarNameInput').value.trim();
@@ -538,7 +592,7 @@
     function updateRadius(val) {
       userState.radius = val;
       document.getElementById('radiusValueDisplay').innerText = `${val}m`;
-      document.getElementById('radarStatusText').innerText = `Radar: Active (${val}m)`;
+      document.getElementById('radarStatusText').innerText = `Radar: ${val}m`;
     }
 
     function postQuestion() {
@@ -557,12 +611,14 @@
           <div class="mb-1 px-3 py-1 rounded-2xl glass-card text-[11px] font-semibold text-sky-900 shadow-md border border-sky-300 flex items-center gap-1">
             <i data-lucide="help-circle" class="w-3 h-3 text-sky-600"></i> ${text}
           </div>
-          <div class="w-9 h-9 rounded-full bg-cyan-500 text-white font-bold flex items-center justify-center shadow-lg border-2 border-white text-xs">
+          <div class="w-9 h-9 rounded-full liquid-node bg-cyan-500 text-white font-bold flex items-center justify-center text-xs">
             ?
           </div>
         </div>
       `;
       container.appendChild(div);
+      activeNodeCount++;
+      updateActiveUserBadge();
       lucide.createIcons();
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
@@ -572,7 +628,7 @@
     function openChatDrawer(name, color, question) {
       activeChatTarget = name;
       document.getElementById('chatTargetName').innerText = name;
-      document.getElementById('chatTargetAvatar').className = `w-9 h-9 rounded-full ${color} text-white font-bold text-sm flex items-center justify-center shadow-md`;
+      document.getElementById('chatTargetAvatar').className = `w-9 h-9 rounded-full liquid-node ${color} text-white font-bold text-sm flex items-center justify-center`;
       document.getElementById('chatTargetAvatar').innerText = '?';
       
       const msgBox = document.getElementById('chatMessages');
