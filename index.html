@@ -23,7 +23,7 @@
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
     @keyframes tap-ripple-expand {
-      0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.95; border-width: 3px; }
+      0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.9; border-width: 3px; }
       100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; border-width: 1px; }
     }
     @keyframes bubble-subtle {
@@ -43,12 +43,17 @@
       0%, 100% { transform: translateY(0px); }
       50% { transform: translateY(-5px); }
     }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.55; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.12); }
+    }
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
     .animate-tap-ripple { animation: tap-ripple-expand 0.75s ease-out forwards; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
+    .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
     /* Dynamic Themes (Default Sky Blue) */
     .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --bubble-border: rgba(186, 230, 253, 0.9); --accent: #0284c7; }
@@ -79,17 +84,17 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* Clean Liquid Soap Bubble Styling */
+    /* Clean Glowing Soap Bubble Styling */
     .bubble-node {
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 30%, rgba(56, 189, 248, 0.45) 70%, rgba(2, 132, 199, 0.65) 100%);
       backdrop-filter: blur(12px) saturate(190%);
       -webkit-backdrop-filter: blur(12px) saturate(190%);
       border: 1.5px solid var(--bubble-border);
       box-shadow: 
-        0 8px 20px rgba(2, 132, 199, 0.25),
+        0 8px 25px rgba(2, 132, 199, 0.35),
         inset 0 3px 8px rgba(255, 255, 255, 0.95),
         inset 0 -5px 10px rgba(2, 132, 199, 0.35),
-        0 0 15px rgba(255, 255, 255, 0.7);
+        0 0 20px rgba(56, 189, 248, 0.8);
       position: relative;
     }
 
@@ -130,7 +135,7 @@
 <body id="appBody" class="theme-sky bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
   <!-- Map Canvas Container -->
-  <div id="mapCanvas" onpointerdown="handleMapTap(event)" class="absolute inset-0 overflow-hidden transition-transform duration-500 origin-center" style="background: var(--bg-gradient); transform: scale(1.1);">
+  <div id="mapCanvas" class="absolute inset-0 overflow-hidden transition-transform duration-500 origin-center" style="background: var(--bg-gradient); transform: scale(1.1);">
     <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:28px_28px]"></div>
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-500 origin-center">
       <div class="w-[340px] h-[340px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
@@ -319,7 +324,7 @@
     let peer = null;
     let activeConnections = {};
     let processedMsgIds = new Set();
-    let nearbyPeers = {}; // Map of active peers and their map nodes
+    let nearbyPeers = {};
     
     let activeTopicState = { text: null, createdAt: null };
 
@@ -380,6 +385,22 @@
       return Math.round(R * c);
     }
 
+    function createBubbleRipple(e) {
+      const circle = document.getElementById('userAvatarCircle');
+      const rect = circle.getBoundingClientRect();
+      const ripple = document.createElement('div');
+      
+      const clickX = (e.clientX || (e.touches && e.touches[0].clientX) || (rect.left + rect.width / 2)) - rect.left;
+      const clickY = (e.clientY || (e.touches && e.touches[0].clientY) || (rect.top + rect.height / 2)) - rect.top;
+
+      ripple.className = 'absolute w-12 h-12 rounded-full border border-sky-300/80 bg-sky-200/40 pointer-events-none animate-tap-ripple';
+      ripple.style.left = `${clickX}px`;
+      ripple.style.top = `${clickY}px`;
+
+      circle.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 750);
+    }
+
     function initUserNode() {
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
@@ -393,6 +414,9 @@
             <span id="userTopBubbleText">...</span>
           </div>
 
+          <!-- Ambient Illuminated Backlight Glow -->
+          <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/40 blur-lg animate-pulse-glow pointer-events-none"></div>
+
           <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-all pointer-events-none"></div>
 
           <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle">
@@ -404,12 +428,12 @@
       container.appendChild(userDiv);
 
       const circle = document.getElementById('userAvatarCircle');
-      circle.addEventListener('mousedown', handlePressStart);
+      circle.addEventListener('mousedown', (e) => { createBubbleRipple(e); handlePressStart(); });
       circle.addEventListener('mouseup', handlePressEnd);
       circle.addEventListener('mouseleave', handlePressCancel);
 
       circle.addEventListener('touchstart', (e) => {
-        e.preventDefault();
+        createBubbleRipple(e);
         handlePressStart();
       });
       circle.addEventListener('touchend', handlePressEnd);
@@ -497,6 +521,8 @@
         updateMeshUI();
         announcePresence();
 
+        conn.send({ type: 'REQUEST_STATE' });
+
         if (activeTopicState.text && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
           conn.send({ 
             id: 'msg-' + Math.random().toString(36).substring(2, 9),
@@ -511,8 +537,23 @@
       });
 
       conn.on('data', (data) => {
-        if (!data || !data.id || processedMsgIds.has(data.id)) return;
-        processedMsgIds.add(data.id);
+        if (!data) return;
+
+        if (data.type === 'REQUEST_STATE' && activeTopicState.text) {
+          conn.send({
+            id: 'sync-' + Math.random().toString(36).substring(2, 9),
+            type: 'NEW_QUESTION',
+            text: activeTopicState.text,
+            createdAt: activeTopicState.createdAt,
+            sender: userState.alias,
+            lat: userState.lat,
+            lng: userState.lng
+          });
+          return;
+        }
+
+        if (data.id && processedMsgIds.has(data.id)) return;
+        if (data.id) processedMsgIds.add(data.id);
 
         broadcastData(data, conn.peer);
 
@@ -533,6 +574,7 @@
             showToast(`Question from ${data.sender || 'Peer'} (${distance}m away)!`, 'pin');
           }
         } else if (data.type === 'CHAT_MSG') {
+          updatePeerNodeOnMap(data.sender || 'Peer', distance, data.lat, data.lng, activeTopicState.text, activeTopicState.createdAt);
           appendMessage(data.sender || 'Anonymous Peer', data.text, false);
           showToast(`Message from ${data.sender || 'Peer'} (${distance}m away)!`, 'message-square');
         }
@@ -550,9 +592,8 @@
       let peerKey = 'node-' + alias.replace(/\s+/g, '-').toLowerCase();
       let nodeElem = document.getElementById(peerKey);
 
-      // Compute visual screen offsets relative to central user
       let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
-      let screenRadius = Math.min(Math.max(distance * 0.4, 80), 160); // Clamp to screen boundaries
+      let screenRadius = Math.min(Math.max(distance * 0.4, 80), 160);
       let leftPx = `calc(50% + ${Math.cos(angle) * screenRadius}px)`;
       let topPx = `calc(50% + ${Math.sin(angle) * screenRadius}px)`;
 
@@ -616,7 +657,6 @@
           showToast('Proximity chat expired (1 hour reached)', 'clock');
         }
 
-        // Clean expired map bubbles for nearby peers
         Object.keys(nearbyPeers).forEach(key => {
           let peerObj = nearbyPeers[key];
           if (peerObj && peerObj.createdAt && (Date.now() - peerObj.createdAt >= ONE_HOUR_MS)) {
@@ -765,7 +805,6 @@
     function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
     function toggleRangeModal() { document.getElementById('rangeModal').classList.toggle('hidden'); }
     function toggleP2PModal() {}
-    function handleMapTap(e) {}
   </script>
 </body>
 </html>
