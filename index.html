@@ -444,7 +444,7 @@
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
-    let activeDataConnections = {}; // peerId -> RTCDataChannel
+    let activeDataConnections = {}; 
     let globalActiveDirectory = {};
     let processedMsgIds = new Set();
     let nearbyPeers = {};
@@ -529,7 +529,7 @@
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
       } catch (e) {
-        console.warn("Failed to load persistent storage:", e);
+        console.warn("Failed to save persistent storage:", e);
       }
     }
 
@@ -709,7 +709,7 @@
     /* PeerJS WebRTC & Mesh Network Integration */
     function initPeerJSNetwork() {
       try {
-        peer = new Peer(); // Initializes PeerJS node connecting to cloud signaling server
+        peer = new Peer();
 
         peer.on('open', (id) => {
           myPeerId = id;
@@ -731,7 +731,6 @@
         updatePeerServerStatus(false);
       }
 
-      // Fallback cross-tab/network broadcast channel sync
       if ('BroadcastChannel' in window) {
         broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v9');
         broadcastChannel.onmessage = (event) => {
@@ -1040,7 +1039,6 @@
       payload.bubbleColor = payload.bubbleColor || userState.bubbleColor;
       payload.makeNamePublic = userState.makeNamePublic;
 
-      // Broadcast via active WebRTC P2P Data Channels (Mesh pattern)
       Object.keys(activeDataConnections).forEach(pId => {
         try {
           activeDataConnections[pId].send(payload);
@@ -1312,7 +1310,7 @@
         const room = JSON.parse(roomJson);
         const isSelected = currentActiveChatRoomId === room.id;
         const isSelf = room.id === 'room-you';
-        const bubbleStyle = isSelf ? (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUB_COLOR_MAP.blue) : BUBBLE_COLOR_MAP.violet;
+        const bubbleStyle = isSelf ? (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue) : BUBBLE_COLOR_MAP.violet;
 
         const item = document.createElement('div');
         item.className = `relative cursor-pointer transition-transform hover:scale-110 flex items-center justify-center ${isSelected ? 'ring-2 ring-sky-500 rounded-full' : ''}`;
