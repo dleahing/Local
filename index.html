@@ -204,20 +204,19 @@
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">Network & Bot Settings</h3>
+        <h3 class="text-lg font-black text-slate-900">Network & GPS Settings</h3>
         <button onclick="toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Network Sync Status</label>
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">GPS & Internet Sync Status</label>
           <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-bold">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-            <span id="serverStatusText">Broadcasting to Local Devices</span>
+            <span id="serverStatusText">Broadcasting via Device GPS & Internet</span>
           </div>
         </div>
 
-        <!-- Test Bots Hide/Show Toggle -->
         <div class="p-3 rounded-2xl bg-white/40 border border-white/60 flex items-center justify-between">
           <div>
             <span class="block text-xs font-bold text-slate-900">Show Test Bots on Map</span>
@@ -230,14 +229,14 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Your Local Peer ID</label>
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Your Device Peer ID</label>
           <div class="flex items-center gap-2">
             <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Syncing...">
             <button onclick="copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
-          <p class="text-[10px] text-slate-600 mt-1">Open this page on another phone or tab on the same network to test real-time presence.</p>
+          <p class="text-[10px] text-slate-600 mt-1">Open this app on another phone or tab with location services enabled to sync real GPS coordinates.</p>
         </div>
       </div>
     </div>
@@ -302,7 +301,7 @@
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
           <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
           <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
-            <span>Make Name Public on Map</span>
+            <span>Show My Name on Map</span>
             <input type="checkbox" id="privacyMakeNamePublic" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
           </label>
           <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
@@ -311,7 +310,7 @@
           </label>
           <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
             <span>Fuzz Location (~500m jitter)</span>
-            <input type="checkbox" id="privacyFuzzLocation" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+            <input type="checkbox" id="privacyFuzzLocation" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
           </label>
         </div>
 
@@ -361,7 +360,7 @@
         </div>
         <div>
           <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Proximity Session</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Topic-Isolated Chat Room</p>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">GPS & Internet Direct Chat</p>
         </div>
       </div>
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -381,7 +380,7 @@
     <!-- Chat Input Container -->
     <div class="pt-2.5 pb-1 flex-shrink-0">
       <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/80 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
-        <textarea id="chatInput" rows="1" placeholder="Ask or message nearby..." class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
+        <textarea id="chatInput" rows="1" placeholder="Message active user..." class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/50">
           <div class="flex items-center gap-1">
@@ -411,7 +410,7 @@
         <button onclick="closeQuestionModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
-        <textarea id="questionInput" rows="3" placeholder="Post a topic question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
+        <textarea id="questionInput" rows="3" placeholder="Post a GPS map question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
         <button onclick="postQuestion()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
           Post Map Bubble
         </button>
@@ -424,7 +423,7 @@
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v1';
-    const STORAGE_BEACON_KEY = 'local_network_beacons_v1';
+    const STORAGE_BEACON_KEY = 'local_gps_internet_beacons_v2';
 
     let myPeerId = 'local-peer-' + Math.random().toString(36).substring(2, 9);
     let activeConnections = {};
@@ -469,7 +468,7 @@
       lucide.createIcons();
       initGPSLocation();
       initUserNode();
-      initLocalBroadcastEngine();
+      initInternetAndLocalStorageSync();
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
       window.addEventListener('resize', recalculateNodePositions);
@@ -489,6 +488,7 @@
           selectAccountType(userState.type || 'personal', true);
           setAppTheme(userState.theme || 'theme-sky', true);
           applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
+          updateMyDisplayLabel();
         }
 
         const savedChats = localStorage.getItem(STORAGE_KEY_CHATS);
@@ -510,7 +510,7 @@
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
       } catch (e) {
-        console.warn("Failed to save persistent storage:", e);
+        console.warn("Failed to load persistent storage:", e);
       }
     }
 
@@ -542,7 +542,7 @@
           userState.lat = pos.coords.latitude;
           userState.lng = pos.coords.longitude;
           announcePresence();
-        }, (err) => {}, { enableHighAccuracy: true });
+        }, (err) => {}, { enableHighAccuracy: true, timeout: 10000 });
 
         navigator.geolocation.watchPosition((pos) => {
           userState.lat = pos.coords.latitude;
@@ -587,6 +587,21 @@
       setTimeout(() => ripple.remove(), 10710);
     }
 
+    function getEffectiveMyName() {
+      if (!userState.makeNamePublic) {
+        let hash = myPeerId.substring(myPeerId.length - 4).toUpperCase();
+        return `Traveler #${hash}`;
+      }
+      return userState.alias;
+    }
+
+    function updateMyDisplayLabel() {
+      const label = document.getElementById('userAvatarLabel');
+      if (label) {
+        label.innerText = `${getEffectiveMyName()} (You)`;
+      }
+    }
+
     function initUserNode() {
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
@@ -606,7 +621,7 @@
           <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="border-radius: 50%;">
             <div class="bubble-glare"></div>
           </div>
-          <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${userState.alias} (You)</span>
+          <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${getEffectiveMyName()} (You)</span>
         </div>
       `;
       container.appendChild(userDiv);
@@ -662,12 +677,12 @@
       clearTimeout(touchTimer);
     }
 
-    /* Dual-Layer Local Network & Cross-Device Engine */
-    function initLocalBroadcastEngine() {
+    /* GPS & Internet Synchronization Engine */
+    function initInternetAndLocalStorageSync() {
       document.getElementById('myPeerIdDisplay').value = myPeerId;
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_proximity_network_channel');
+        broadcastChannel = new BroadcastChannel('local_gps_network_channel');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -731,7 +746,7 @@
         if (currentActiveChatRoomId === targetRoomId) {
           appendMessage(displayName, data.text, false);
         } else {
-          showToast(`New message in "${displayName}"!`, 'message-square');
+          showToast(`New message from ${displayName}!`, 'message-square');
         }
       }
     }
@@ -782,7 +797,7 @@
       input.select();
       input.setSelectionRange(0, 99999);
       navigator.clipboard.writeText(input.value);
-      showToast('Peer ID copied to clipboard!', 'copy');
+      showToast('Device Peer ID copied!', 'copy');
     }
 
     function announcePresence() {
@@ -815,7 +830,6 @@
       let left = 50 + (Math.cos(angle) * (screenRadius / window.innerWidth) * 100);
       let top = 50 + (Math.sin(angle) * (screenRadius / window.innerHeight) * 100);
 
-      // Collision detection & stagger adjustment
       const offset = checkBubbleCollisions(left, top);
       left += offset.x;
       top += offset.y;
@@ -957,12 +971,13 @@
 
       if (alias) {
         userState.alias = alias;
-        document.getElementById('userAvatarLabel').innerText = `${alias} (You)`;
       }
 
       userState.ghostMode = ghostMode;
       userState.fuzzLocation = fuzzLocation;
       userState.makeNamePublic = makeNamePublic;
+
+      updateMyDisplayLabel();
 
       if (userState.type === 'business') {
         userState.address = address;
@@ -1027,8 +1042,8 @@
 
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
-      showToast('Question broadcasted across public network!', 'pin');
-      openChatDrawer('room-you', userState.alias, text, 'you');
+      showToast('Question broadcasted via GPS & Internet!', 'pin');
+      openChatDrawer('room-you', getEffectiveMyName(), text, 'you');
     }
 
     function autoResizeTextArea(el) {
