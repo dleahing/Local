@@ -1218,10 +1218,12 @@
     }
 
     function spawnDefaultSimulatedUsers() {
+      const latOffsetFor0_5Miles = (0.5 * METERS_PER_MILE) / 111320;
       const latOffsetFor5Miles = (5 * METERS_PER_MILE) / 111320;
       const latOffsetFor20Miles = (20 * METERS_PER_MILE) / 111320;
 
       const sampleUsers = [
+        { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', offsetLat: latOffsetFor0_5Miles, offsetLng: 0, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', interestFilter: 'Life', isBot: true, isTutorial: true },
         { name: 'Bot 5-Mile Pickleball Fan', peerId: 'sim-peer-bot-5mi', offsetLat: latOffsetFor5Miles, offsetLng: 0, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', interestFilter: 'Pickleball', isBot: true },
         { name: '20-Mile Foodie Bistro', peerId: 'sim-peer-restaurant-20mi', offsetLat: latOffsetFor20Miles, offsetLng: 0, question: 'Fine dining & wood-fired pizza!', color: 'pink', accountType: 'business', category: 'utensils', interestFilter: 'Food', isBot: true },
         { name: 'Local Hiking Club', peerId: 'sim-peer-business-1', offsetLat: 0.0018, offsetLng: 0.0015, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', interestFilter: 'Hiking', isBot: true },
@@ -1397,6 +1399,7 @@
       let angle = (rawSender.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
       let left = 50 + (Math.cos(angle) * 15), top = 50 + (Math.sin(angle) * 15);
       if (accountType === 'business') { left = 50 + ((peerId.charCodeAt(0) % 5) - 2) * 12; top = 50 + ((peerId.charCodeAt(1) % 5) - 2) * 10; }
+      if (peerId === 'sim-peer-tutorial-bot') { left = 50; top = 40; }
       if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 30; }
       if (peerId === 'sim-peer-restaurant-20mi') { left = 78; top = 22; }
 
@@ -1489,7 +1492,7 @@
                 <div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>
               </div>
               <div>
-                <h4 class="font-black text-slate-900 text-xs">${displayLabel} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
+                <h4 class="font-black text-slate-900 text-xs">${peer.rawSender} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
                 <p class="text-[10px] text-sky-900 font-bold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
               </div>
             </div>
@@ -1596,6 +1599,22 @@
       input.value = ''; 
       input.style.height = '24px';
 
+      // If chatting with the Tutorial Bot, give automatic helpful responses!
+      if (currentActiveChatRoomId === 'room-peer-sim-peer-tutorial-bot') {
+        setTimeout(() => {
+          let botReply = "Welcome to LocaL! Here are a few tips:\n1. Drag the radar boundary ring to adjust your search radius.\n2. Tap the question icon at the bottom right to broadcast a map question.\n3. Open the P2P Mesh menu (top right) to connect with peers or toggle bots.";
+          if (text.toLowerCase().includes('radius') || text.toLowerCase().includes('drag')) {
+            botReply = "To change your radar radius, click and drag the outer glowing boundary ring inward or outward!";
+          } else if (text.toLowerCase().includes('question') || text.toLowerCase().includes('bubble')) {
+            botReply = "Tap the message-plus icon in the bottom-right corner to post a 1-hour public map question bubble.";
+          }
+          const botTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          appendMessage('LocaL Guide', botReply, botTimeStr, false);
+          chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'LocaL Guide', text: botReply, time: botTimeStr, isMe: false });
+          savePersistentData();
+        }, 800);
+      }
+
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
       
@@ -1615,7 +1634,7 @@
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'}">
           <div class="flex items-center gap-1.5 px-1"><span class="text-[10px] text-slate-900 font-bold">${sender}</span><span class="text-[9px] text-slate-500">${time || ''}</span></div>
-          <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-semibold ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/60'}">${text}</div>
+          <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-semibold ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/60'}">${text.replace(/\n/g, '<br>')}</div>
         </div>
       `;
       msgBox.scrollTop = msgBox.scrollHeight;
@@ -1628,7 +1647,7 @@
       const isSelf = roomId === 'room-you';
       const iconName = isSelf && userState.type === 'business' ? userState.category : 'user';
       document.getElementById('chatTargetAvatar').style.background = BUBBLE_COLOR_MAP[userState.bubbleColor];
-      document.getElementById('chatTargetAvatar'].innerHTML = `<div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>`;
+      document.getElementById('chatTargetAvatar').innerHTML = `<div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>`;
 
       if (topic || (isSelf && activeTopicState.text)) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
