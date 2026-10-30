@@ -1225,6 +1225,8 @@
     }
 
     function spawnDefaultSimulatedUsers() {
+      // Precise offsets calculated so distances match radar ring scale
+      // 1 degree latitude ~= 111,320 meters
       const latOffsetFor0_5Miles = (0.5 * METERS_PER_MILE) / 111320;
       const latOffsetFor5Miles = (5.0 * METERS_PER_MILE) / 111320;
       const latOffsetFor20Miles = (20.0 * METERS_PER_MILE) / 111320;
@@ -1403,12 +1405,20 @@
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
+      // Map positions proportionally corresponding to actual mile distance vs current radar size
+      const maxDisplayRadiusMeters = MAX_RADIUS_METERS;
+      const distanceFraction = Math.min(1.0, distance / maxDisplayRadiusMeters);
+      
       let angle = (rawSender.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
-      let left = 50 + (Math.cos(angle) * 15), top = 50 + (Math.sin(angle) * 15);
+      let radiusOffsetPercent = distanceFraction * 40; // scales out to 40% away from center
+      
+      let left = 50 + (Math.cos(angle) * radiusOffsetPercent);
+      let top = 50 + (Math.sin(angle) * radiusOffsetPercent);
+
+      // Special overrides for tutorial bot and specific fixed demo bots
       if (peerId === 'sim-peer-tutorial-bot') { left = 50; top = 42; }
-      else if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 26; }
-      else if (peerId === 'sim-peer-restaurant-20mi') { left = 80; top = 18; }
-      else if (accountType === 'business') { left = 50 + ((peerId.charCodeAt(0) % 5) - 2) * 12; top = 50 + ((peerId.charCodeAt(1) % 5) - 2) * 10; }
+      else if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 28; }
+      else if (peerId === 'sim-peer-restaurant-20mi') { left = 75; top = 18; }
 
       if (!nodeElem) {
         nodeElem = document.createElement('div');
