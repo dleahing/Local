@@ -171,13 +171,13 @@
 </head>
 <body id="appBody" class="theme-sky bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
-  <!-- Map Canvas with Expanded 45-Mile Render Boundary & Fluid Zoom -->
+  <!-- Map Canvas with Expanded 67.5-Mile Render Boundary & Fluid Zoom -->
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center" style="background: var(--bg-gradient);">
     <div class="absolute inset-0 opacity-12 map-grid-pattern"></div>
     
-    <!-- Explicit World Border Ring highlighting the 45-Mile Maximum Boundary -->
-    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-dashed border-sky-600/30 pointer-events-none" style="width: 3750px; height: 3750px;">
-      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest border border-white/20 shadow-xl">45-Mile World Boundary Edge</div>
+    <!-- Explicit World Border Ring highlighting the 67.5-Mile Maximum Boundary -->
+    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-dashed border-sky-600/30 pointer-events-none" style="width: 5625px; height: 5625px;">
+      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest border border-white/20 shadow-xl">67.5-Mile World Boundary Edge</div>
     </div>
 
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
@@ -471,7 +471,7 @@
     const METERS_PER_MILE = 1609.34;
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
-    const MAX_RADIUS_METERS = 72420.3; // Increased by 50% to Exactly 45 Miles maximum
+    const MAX_RADIUS_METERS = 108630.4; // Increased by another 50% to Exactly 67.5 Miles maximum
     const STORAGE_KEY_PROFILE = 'local_user_profile_v11';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v11';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v21';
@@ -686,7 +686,7 @@
 
     function getPanBounds() {
       const worldRing = document.getElementById('worldMaxBoundaryRing');
-      const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 1875;
+      const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 2812.5;
       return Math.max(200, (radiusPx * currentZoomScale) - 150);
     }
 
@@ -757,7 +757,7 @@
             e.touches[0].clientY - e.touches[1].clientY
           );
           const factor = currentDistance / initialPinchDistance;
-          targetZoomScale = Math.max(0.15, Math.min(4.0, initialPinchScale * factor));
+          targetZoomScale = Math.max(0.10, Math.min(4.0, initialPinchScale * factor));
         }
       }, { passive: true });
 
@@ -795,13 +795,13 @@
       const ring = document.getElementById('radarBoundaryRing');
       
       if (ring) {
-        const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1075);
+        const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1612.5);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         if (pixelDiameter > viewportMin * 0.70) {
-          targetZoomScale = Math.max(0.15, Math.min(4.0, (viewportMin * 0.70) / pixelDiameter));
+          targetZoomScale = Math.max(0.10, Math.min(4.0, (viewportMin * 0.70) / pixelDiameter));
         } else {
           targetZoomScale = 1.0;
         }
@@ -840,7 +840,7 @@
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / currentZoomScale;
 
         const deltaPx = currentDistPx - dragStartDistancePx;
-        const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 1075;
+        const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 1612.5;
         
         const newMeters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
 
