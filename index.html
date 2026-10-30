@@ -22,11 +22,11 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
-    /* Slow, Realistic Water Ripple Animation */
+    /* Ultra-Slow Water Ripple (4.76s duration) */
     @keyframes water-ripple-expand {
       0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.9; border-width: 4px; }
-      40% { opacity: 0.6; }
-      100% { transform: translate(-50%, -50%) scale(55); opacity: 0; border-width: 1px; }
+      40% { opacity: 0.5; }
+      100% { transform: translate(-50%, -50%) scale(60); opacity: 0; border-width: 1px; }
     }
     @keyframes bubble-subtle {
       0%, 100% { transform: scale(1); border-radius: 50%; }
@@ -51,17 +51,17 @@
     }
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
-    .animate-water-ripple { animation: water-ripple-expand 2.8s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
+    .animate-water-ripple { animation: water-ripple-expand 4.76s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
     /* Dynamic Themes (Default Sky Blue) */
-    .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --bubble-border: rgba(186, 230, 253, 0.9); --accent: #0284c7; }
-    .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --bubble-border: rgba(251, 207, 232, 0.9); --accent: #db2777; }
-    .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #ecfdf5 0%, #a7f3d0 50%, #34d399 100%); --bubble-border: rgba(167, 243, 208, 0.9); --accent: #059669; }
-    .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #f5f3ff 0%, #ddd6fe 50%, #a78bfa 100%); --bubble-border: rgba(221, 214, 254, 0.9); --accent: #7c3aed; }
+    .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --accent: #0284c7; }
+    .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
+    .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #ecfdf5 0%, #a7f3d0 50%, #34d399 100%); --accent: #059669; }
+    .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #f5f3ff 0%, #ddd6fe 50%, #a78bfa 100%); --accent: #7c3aed; }
 
     /* Polished Glassmorphism System */
     .glass-panel {
@@ -86,12 +86,11 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* Soap Bubble Node with 50% Reduced Glow Shadow */
+    /* Completely Borderless Profile Bubble */
     .bubble-node {
-      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 30%, rgba(56, 189, 248, 0.45) 70%, rgba(2, 132, 199, 0.65) 100%);
+      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(56, 189, 248, 0.5) 70%, rgba(2, 132, 199, 0.7) 100%);
       backdrop-filter: blur(12px) saturate(190%);
       -webkit-backdrop-filter: blur(12px) saturate(190%);
-      border: 1.5px solid var(--bubble-border);
       box-shadow: 
         0 6px 15px rgba(2, 132, 199, 0.2),
         inset 0 3px 8px rgba(255, 255, 255, 0.95),
@@ -100,11 +99,11 @@
       position: relative;
     }
 
+    /* Borderless Peer Profile Bubble */
     .peer-bubble-node {
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 30%, rgba(168, 85, 247, 0.45) 70%, rgba(126, 34, 206, 0.65) 100%);
       backdrop-filter: blur(12px) saturate(190%);
       -webkit-backdrop-filter: blur(12px) saturate(190%);
-      border: 1.5px solid rgba(216, 180, 254, 0.9);
       box-shadow: 
         0 6px 15px rgba(126, 34, 206, 0.2),
         inset 0 3px 8px rgba(255, 255, 255, 0.95),
@@ -167,6 +166,9 @@
       </div>
     </div>
 
+    <!-- Top Active Chats Quick-Selection Tray -->
+    <div id="activeChatsBar" class="hidden glass-panel px-3 py-1.5 rounded-2xl pointer-events-auto flex items-center gap-2 overflow-x-auto shadow-lg max-w-[45vw]"></div>
+
     <div class="flex items-center gap-2 pointer-events-auto">
       <button onclick="openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:scale-105 transition-all active:scale-95 shadow-lg">
         <i data-lucide="user-cog" class="w-5 h-5"></i>
@@ -183,9 +185,6 @@
 
   <!-- Bottom Floating Control Dock -->
   <div class="fixed bottom-6 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
-    <button onclick="openChatDrawer('Proximity Chat', 'bg-sky-500', null)" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Open Chat">
-      <i data-lucide="message-square" class="w-5 h-5"></i>
-    </button>
     <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
     </button>
@@ -271,11 +270,14 @@
     </div>
   </div>
 
-  <!-- Chat Drawer -->
+  <!-- Outside Tap Backdrop Overlay for Chat Drawer -->
+  <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-xs transition-opacity"></div>
+
+  <!-- Independent Chat Drawer -->
   <div id="chatDrawer" class="hidden fixed top-0 bottom-0 left-0 z-40 w-80 max-w-[85vw] glass-drawer-left p-4.5 flex flex-col transition-all">
     <div class="flex items-center justify-between pb-3.5 pt-2 border-b border-white/30">
       <div class="flex items-center gap-3">
-        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full bubble-node text-white font-bold text-xs flex items-center justify-center shadow-md">
+        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full peer-bubble-node text-white font-bold text-xs flex items-center justify-center shadow-md">
           <div class="bubble-glare"></div>
         </div>
         <div>
@@ -331,6 +333,9 @@
     let nearbyPeers = {};
     
     let activeTopicState = { text: null, createdAt: null };
+    let currentActiveChatPeer = null;
+    let peerChatSessions = {}; // Storage for independent per-peer chat histories
+    let activeChatPeersList = new Set(); // Track peers with active chats
 
     let userState = {
       alias: 'Aqua Voyager',
@@ -389,7 +394,7 @@
       return Math.round(R * c);
     }
 
-    // Slow, Center-Originating Realistic Water Ripple Effect
+    // Ultra-Slow Water Ripple Radiating from Center of Profile Bubble (4.76s duration)
     function createBubbleRipple() {
       const circle = document.getElementById('userAvatarCircle');
       const rect = circle.getBoundingClientRect();
@@ -404,7 +409,7 @@
       ripple.style.top = `${centerY}px`;
 
       rippleContainer.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 2800);
+      setTimeout(() => ripple.remove(), 4760);
     }
 
     function initUserNode() {
@@ -413,9 +418,10 @@
       userDiv.id = 'userAvatarNode';
       userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer';
       
+      // Stack Order: Floating Question Bubble -> Soap Bubble Avatar -> Name & Distance Label
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
-          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('Anonymous User', 'bg-sky-500', activeTopicState.text)">
+          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('${userState.alias}', activeTopicState.text, 'you')">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600"></i>
             <span id="userTopBubbleText">...</span>
             <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-800 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md">60m</span>
@@ -583,8 +589,18 @@
           }
         } else if (data.type === 'CHAT_MSG') {
           updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, activeTopicState.text, activeTopicState.createdAt);
-          appendMessage(data.sender || 'Anonymous Peer', data.text, false);
-          showToast(`Message from ${data.sender || 'Peer'} (${distanceFormatted} away)!`, 'message-square');
+          
+          const peerKey = data.sender || 'Peer';
+          if (!peerChatSessions[peerKey]) peerChatSessions[peerKey] = [];
+          peerChatSessions[peerKey].push({ sender: peerKey, text: data.text, isMe: false });
+
+          registerActiveChat(peerKey);
+
+          if (currentActiveChatPeer === peerKey) {
+            appendMessage(peerKey, data.text, false);
+          } else {
+            showToast(`Message from ${peerKey} (${distanceFormatted} away)!`, 'message-square');
+          }
         }
       });
 
@@ -617,15 +633,16 @@
       nodeElem.style.left = leftPx;
       nodeElem.style.top = topPx;
 
+      // Stack Order: Floating Question Bubble -> Soap Bubble Avatar -> Name & Distance Label
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
           ${hasValidQuestion ? `
-            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${alias}', 'bg-purple-500', '${question}')">
+            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${alias}', '${question}', '${alias}')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
               <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
             </div>
           ` : ''}
-          <div onclick="openChatDrawer('${alias}', 'bg-purple-500', '${question || ''}')" class="w-11 h-11 rounded-full peer-bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle">
+          <div onclick="openChatDrawer('${alias}', '${question || ''}', '${alias}')" class="w-11 h-11 rounded-full peer-bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle">
             <div class="bubble-glare"></div>
           </div>
           <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distanceFormatted})</span>
@@ -655,7 +672,6 @@
       });
     }
 
-    // 1-Hour Countdown Loop with Live Seconds & Minutes Display
     function checkChatExpiryLoop() {
       setInterval(() => {
         if (activeTopicState.createdAt) {
@@ -779,15 +795,19 @@
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
       showToast('Question broadcasted across proximity network!', 'pin');
-      openChatDrawer('Anonymous User', 'bg-sky-500', text);
+      openChatDrawer(userState.alias, text, 'you');
     }
 
     function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
-      if (!text) return;
+      if (!text || !currentActiveChatPeer) return;
 
       appendMessage('You', text, true);
+
+      if (!peerChatSessions[currentActiveChatPeer]) peerChatSessions[currentActiveChatPeer] = [];
+      peerChatSessions[currentActiveChatPeer].push({ sender: 'You', text: text, isMe: true });
+
       input.value = '';
 
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
@@ -797,6 +817,7 @@
         id: msgId,
         type: 'CHAT_MSG', 
         sender: userState.alias,
+        target: currentActiveChatPeer,
         text: text 
       });
     }
@@ -815,16 +836,80 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
-    function openChatDrawer(name, color, topic) {
-      document.getElementById('chatTargetName').innerText = name || 'Proximity Session';
-      if (topic || activeTopicState.text) {
-        document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
-        document.getElementById('mainTopicContainer').classList.remove('hidden');
-      }
-      document.getElementById('chatDrawer').classList.remove('hidden');
+    function registerActiveChat(peerId) {
+      activeChatPeersList.add(peerId);
+      renderActiveChatsBar();
     }
 
-    function closeChatDrawer() { document.getElementById('chatDrawer').classList.add('hidden'); }
+    function renderActiveChatsBar() {
+      const bar = document.getElementById('activeChatsBar');
+      if (activeChatPeersList.size === 0) {
+        bar.classList.add('hidden');
+        return;
+      }
+
+      bar.classList.remove('hidden');
+      bar.innerHTML = '';
+
+      activeChatPeersList.forEach(peerId => {
+        const isSelected = currentActiveChatPeer === peerId;
+        const isSelf = peerId === 'you';
+        const displayName = isSelf ? userState.alias : peerId;
+        const bubbleClass = isSelf ? 'bubble-node' : 'peer-bubble-node';
+
+        const item = document.createElement('div');
+        item.className = `relative cursor-pointer transition-transform hover:scale-110 flex items-center justify-center ${isSelected ? 'ring-2 ring-sky-500 rounded-full' : ''}`;
+        item.title = `Chat with ${displayName}`;
+        item.innerHTML = `
+          <div class="w-8 h-8 rounded-full ${bubbleClass} text-white font-bold text-[10px] flex items-center justify-center shadow-md">
+            <div class="bubble-glare"></div>
+            <span>${displayName.charAt(0).toUpperCase()}</span>
+          </div>
+        `;
+        item.onclick = () => {
+          const topic = (isSelf ? activeTopicState.text : null);
+          openChatDrawer(displayName, topic, peerId);
+        };
+        bar.appendChild(item);
+      });
+    }
+
+    function openChatDrawer(name, topic, peerId) {
+      currentActiveChatPeer = peerId || name;
+      registerActiveChat(currentActiveChatPeer);
+
+      const isSelf = currentActiveChatPeer === 'you' || name === userState.alias;
+      document.getElementById('chatTargetName').innerText = isSelf ? 'Proximity Session (You)' : `Chat with ${name}`;
+      
+      const avatarElem = document.getElementById('chatTargetAvatar');
+      avatarElem.className = `w-9 h-9 rounded-full ${isSelf ? 'bubble-node' : 'peer-bubble-node'} text-white font-bold text-xs flex items-center justify-center shadow-md`;
+      avatarElem.innerHTML = `<div class="bubble-glare"></div><span>${name.charAt(0).toUpperCase()}</span>`;
+
+      if (topic || (isSelf && activeTopicState.text)) {
+        document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
+        document.getElementById('mainTopicContainer').classList.remove('hidden');
+      } else {
+        document.getElementById('mainTopicContainer').classList.add('hidden');
+      }
+
+      const msgBox = document.getElementById('chatMessages');
+      msgBox.innerHTML = '';
+      if (peerChatSessions[currentActiveChatPeer]) {
+        peerChatSessions[currentActiveChatPeer].forEach(msg => {
+          appendMessage(msg.sender, msg.text, msg.isMe);
+        });
+      }
+
+      document.getElementById('chatDrawer').classList.remove('hidden');
+      document.getElementById('chatBackdrop').classList.remove('hidden');
+    }
+
+    function closeChatDrawer() { 
+      document.getElementById('chatDrawer').classList.add('hidden'); 
+      document.getElementById('chatBackdrop').classList.add('hidden');
+      currentActiveChatPeer = null;
+    }
+
     function openQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
     function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
