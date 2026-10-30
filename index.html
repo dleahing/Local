@@ -71,7 +71,7 @@
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
-    /* Expanded Canvas & Explicit World Edge Boundary Indicator */
+    /* Expanded Canvas with Smooth Hardware Acceleration */
     #mapCanvas {
       transform: translate3d(var(--pan-x), var(--pan-y), 0) scale(var(--zoom-scale));
       transform-origin: center center;
@@ -192,11 +192,11 @@
     <div id="activeChatsBar" class="hidden glass-panel px-3 py-1.5 rounded-2xl pointer-events-auto flex items-center gap-2 overflow-x-auto shadow-lg max-w-[45vw]"></div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
-      <button onclick="openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
+      <button onclick="playAudioEffect('click'); openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
         <i data-lucide="user-cog" class="w-5 h-5"></i>
       </button>
 
-      <button onclick="toggleP2PModal()" title="WebRTC P2P Mesh Connections" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
+      <button onclick="playAudioEffect('click'); toggleP2PModal()" title="WebRTC P2P Mesh Connections" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
         <i data-lucide="share-2" class="w-5 h-5"></i>
         <span id="p2pStatusPingDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
       </button>
@@ -207,10 +207,10 @@
 
   <!-- Bottom Floating Control Dock -->
   <div class="fixed bottom-24 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
-    <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
+    <button onclick="playAudioEffect('click'); openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
     </button>
-    <button onclick="toggleRangeModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Radius Filter">
+    <button onclick="playAudioEffect('click'); toggleRangeModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Radius Filter">
       <i data-lucide="radar" class="w-5 h-5"></i>
     </button>
   </div>
@@ -222,7 +222,7 @@
         <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
         <span class="text-xs font-black text-slate-900 uppercase tracking-wider">Discovery Radius (5 - 30 mi)</span>
       </div>
-      <button onclick="toggleRangeModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <button onclick="playAudioEffect('click'); toggleRangeModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div class="flex items-center gap-3">
       <input type="range" id="radiusSlider" min="8046.7" max="48280.2" value="8046.7" step="1609.34" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
@@ -238,7 +238,7 @@
           <h3 class="text-lg font-black text-slate-900">WebRTC P2P Mesh & Bots</h3>
           <p class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Manage connections and individual bot toggles</p>
         </div>
-        <button onclick="toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="playAudioEffect('click'); toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4 overflow-y-auto flex-1 pr-1">
@@ -249,7 +249,7 @@
               <span id="peerServerDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
               <span id="peerServerStatusText">Connected to PeerServer Mesh</span>
             </div>
-            <button onclick="connectToPeerPrompt()" class="px-2.5 py-1 rounded-xl bg-sky-600 text-white text-[10px] font-extrabold shadow-sm active:scale-95">Connect ID</button>
+            <button onclick="playAudioEffect('click'); connectToPeerPrompt()" class="px-2.5 py-1 rounded-xl bg-sky-600 text-white text-[10px] font-extrabold shadow-sm active:scale-95">Connect ID</button>
           </div>
         </div>
 
@@ -268,7 +268,7 @@
           <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Your PeerJS ID</label>
           <div class="flex items-center gap-2">
             <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Initializing PeerJS...">
-            <button onclick="copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
+            <button onclick="playAudioEffect('click'); copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
@@ -282,18 +282,18 @@
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-black text-slate-900">Customize Profile</h3>
-        <button onclick="closeProfileModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="playAudioEffect('click'); closeProfileModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
           <div class="grid grid-cols-2 gap-2">
-            <button onclick="selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all">
+            <button onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all">
               <i data-lucide="navigation" class="w-4 h-4 text-sky-800"></i>
               <span class="text-[11px] font-bold text-sky-950">Personal (GPS)</span>
             </button>
-            <button onclick="selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
+            <button onclick="playAudioEffect('click'); selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
               <i data-lucide="store" class="w-4 h-4 text-slate-700"></i>
               <span class="text-[11px] font-bold text-slate-800">Business (Fixed)</span>
             </button>
@@ -341,11 +341,11 @@
         <div>
           <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">Profile Bubble Color</label>
           <div class="grid grid-cols-5 gap-2">
-            <button onclick="setBubbleColor('blue')" class="p-2.5 rounded-2xl bg-sky-500 border border-sky-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
-            <button onclick="setBubbleColor('yellow')" class="p-2.5 rounded-2xl bg-amber-400 border border-amber-200 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
-            <button onclick="setBubbleColor('pink')" class="p-2.5 rounded-2xl bg-pink-500 border border-pink-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
-            <button onclick="setBubbleColor('emerald')" class="p-2.5 rounded-2xl bg-emerald-500 border border-emerald-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
-            <button onclick="setBubbleColor('violet')" class="p-2.5 rounded-2xl bg-purple-600 border border-purple-400 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
+            <button onclick="playAudioEffect('bubble'); setBubbleColor('blue')" class="p-2.5 rounded-2xl bg-sky-500 border border-sky-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
+            <button onclick="playAudioEffect('bubble'); setBubbleColor('yellow')" class="p-2.5 rounded-2xl bg-amber-400 border border-amber-200 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
+            <button onclick="playAudioEffect('bubble'); setBubbleColor('pink')" class="p-2.5 rounded-2xl bg-pink-500 border border-pink-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
+            <button onclick="playAudioEffect('bubble'); setBubbleColor('emerald')" class="p-2.5 rounded-2xl bg-emerald-500 border border-emerald-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
+            <button onclick="playAudioEffect('bubble'); setBubbleColor('violet')" class="p-2.5 rounded-2xl bg-purple-600 border border-purple-400 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
           </div>
         </div>
 
@@ -368,15 +368,15 @@
         <div>
           <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
           <div class="grid grid-cols-5 gap-1.5">
-            <button onclick="setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-pink-100 border border-pink-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-pink-400"></span><span class="text-[9px] font-bold text-pink-900">Pink</span></button>
-            <button onclick="setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-sky-100 border border-sky-400 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-sky-500"></span><span class="text-[9px] font-bold text-sky-800">Blue</span></button>
-            <button onclick="setAppTheme('theme-yellow')" class="p-2 rounded-2xl bg-amber-100 border border-amber-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-amber-400"></span><span class="text-[9px] font-bold text-amber-900">Yellow</span></button>
-            <button onclick="setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-fuchsia-100 border border-fuchsia-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-fuchsia-400"></span><span class="text-[9px] font-bold text-fuchsia-900">Fuchsia</span></button>
-            <button onclick="setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-red-100 border border-red-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-red-400"></span><span class="text-[9px] font-bold text-red-900">Sunset</span></button>
+            <button onclick="playAudioEffect('chime'); setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-pink-100 border border-pink-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-pink-400"></span><span class="text-[9px] font-bold text-pink-900">Pink</span></button>
+            <button onclick="playAudioEffect('chime'); setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-sky-100 border border-sky-400 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-sky-500"></span><span class="text-[9px] font-bold text-sky-800">Blue</span></button>
+            <button onclick="playAudioEffect('chime'); setAppTheme('theme-yellow')" class="p-2 rounded-2xl bg-amber-100 border border-amber-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-amber-400"></span><span class="text-[9px] font-bold text-amber-900">Yellow</span></button>
+            <button onclick="playAudioEffect('chime'); setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-fuchsia-100 border border-fuchsia-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-fuchsia-400"></span><span class="text-[9px] font-bold text-fuchsia-900">Fuchsia</span></button>
+            <button onclick="playAudioEffect('chime'); setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-red-100 border border-red-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-red-400"></span><span class="text-[9px] font-bold text-red-900">Sunset</span></button>
           </div>
         </div>
 
-        <button onclick="saveProfile()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
+        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
           Save Profile & Settings
         </button>
       </div>
@@ -384,7 +384,7 @@
   </div>
 
   <!-- Chat Drawer Overlay & Container -->
-  <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
+  <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
   <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[85vh]">
     <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
       <div class="flex items-center gap-3">
@@ -396,7 +396,7 @@
           <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Direct P2P Data Channel</p>
         </div>
       </div>
-      <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <button onclick="playAudioEffect('click'); closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
 
     <!-- Message Search Bar -->
@@ -421,8 +421,8 @@
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/50">
           <div class="flex items-center gap-1">
-            <button onclick="showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="plus" class="w-4 h-4"></i></button>
-            <button onclick="showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="mic" class="w-4 h-4"></i></button>
+            <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="plus" class="w-4 h-4"></i></button>
+            <button onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="mic" class="w-4 h-4"></i></button>
           </div>
           <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center shadow-md active:scale-95 hover:bg-sky-500 transition-all"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
         </div>
@@ -435,11 +435,11 @@
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-black text-slate-900">Ask the LocaLs</h3>
-        <button onclick="closeQuestionModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="playAudioEffect('click'); closeQuestionModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
         <textarea id="questionInput" rows="3" placeholder="Post a GPS map question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
-        <button onclick="postQuestion()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
+        <button onclick="playAudioEffect('chime'); postQuestion()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
           Post Map Bubble
         </button>
       </div>
@@ -455,9 +455,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 48280.2; // Exactly 30 Miles maximum
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v6';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v6';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v16';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v8';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v8';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v18';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -471,6 +471,11 @@
     let panY = 0;
     let targetPanX = 0;
     let targetPanY = 0;
+    
+    // Ultra-smooth Lerp zoom variables
+    let currentZoomScale = 1.0;
+    let targetZoomScale = 1.0;
+
     let isDraggingMap = false;
     let startDragX = 0;
     let startDragY = 0;
@@ -511,6 +516,82 @@
     let dragStartRadiusMeters = MIN_RADIUS_METERS;
     let dragStartDistancePx = 175;
 
+    // Web Audio Synthesized Sound Effect System
+    let audioCtx = null;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playAudioEffect(type = 'click') {
+      try {
+        initAudioContext();
+        if (!audioCtx) return;
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'click') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(200, now + 0.04);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } else if (type === 'bubble') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'chime') {
+          [523.25, 659.25, 783.99].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const noteTime = now + (idx * 0.05);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, noteTime);
+            gain.gain.setValueAtTime(0.12, noteTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.25);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(noteTime);
+            osc.stop(noteTime + 0.25);
+          });
+        } else if (type === 'radar') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(1200, now);
+          osc.frequency.exponentialRampToValueAtTime(400, now + 0.12);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        }
+      } catch(e) {}
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       loadPersistentData();
       lucide.createIcons();
@@ -534,7 +615,8 @@
       initRadiusDragHandlers();
       initTapRippleHandler();
       initMapPanHandlers();
-      startSmoothPanLoop();
+      initPinchZoomHandlers();
+      startSmoothAnimationLoop();
     });
 
     async function requestScreenWakeLock() {
@@ -599,8 +681,7 @@
     function getPanBounds() {
       const worldRing = document.getElementById('worldMaxBoundaryRing');
       const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 1250;
-      const zoomScale = parseFloat(getComputedStyle(document.getElementById('mapCanvas')).getPropertyValue('--zoom-scale')) || 1;
-      return Math.max(200, (radiusPx * zoomScale) - 150);
+      return Math.max(200, (radiusPx * currentZoomScale) - 150);
     }
 
     function initMapPanHandlers() {
@@ -611,7 +692,7 @@
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rangeModal')) {
           return;
         }
-        if (isDraggingRadius) return;
+        if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
         isDraggingMap = true;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -620,7 +701,7 @@
       };
 
       const handlePanMove = (e) => {
-        if (!isDraggingMap) return;
+        if (!isDraggingMap || (e.touches && e.touches.length > 1)) return;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
@@ -645,7 +726,43 @@
       window.addEventListener('touchend', handlePanEnd);
     }
 
-    function startSmoothPanLoop() {
+    let initialPinchDistance = null;
+    let initialPinchScale = 1.0;
+
+    function initPinchZoomHandlers() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+
+      mapCanvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          isDraggingMap = false;
+          initialPinchDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          initialPinchScale = targetZoomScale;
+        }
+      }, { passive: true });
+
+      mapCanvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && initialPinchDistance) {
+          const currentDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          const factor = currentDistance / initialPinchDistance;
+          targetZoomScale = Math.max(0.15, Math.min(4.0, initialPinchScale * factor));
+        }
+      }, { passive: true });
+
+      mapCanvas.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) {
+          initialPinchDistance = null;
+        }
+      });
+    }
+
+    function startSmoothAnimationLoop() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
 
@@ -653,8 +770,12 @@
         panX += (targetPanX - panX) * 0.22;
         panY += (targetPanY - panY) * 0.22;
 
+        currentZoomScale += (targetZoomScale - currentZoomScale) * 0.18;
+
         mapCanvas.style.setProperty('--pan-x', `${panX}px`);
         mapCanvas.style.setProperty('--pan-y', `${panY}px`);
+        mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
+        document.documentElement.style.setProperty('--zoom-scale', (1 / currentZoomScale).toFixed(4));
 
         animationFrameId = requestAnimationFrame(renderLoop);
       };
@@ -675,7 +796,6 @@
       }
 
       const ring = document.getElementById('radarBoundaryRing');
-      const mapCanvas = document.getElementById('mapCanvas');
       
       if (ring) {
         const pixelDiameter = Math.round(350 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1750);
@@ -684,12 +804,9 @@
 
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         if (pixelDiameter > viewportMin * 0.70) {
-          const zoomScale = Math.max(0.18, (viewportMin * 0.70) / pixelDiameter);
-          mapCanvas.style.setProperty('--zoom-scale', zoomScale.toFixed(3));
-          document.documentElement.style.setProperty('--zoom-scale', (1 / zoomScale).toFixed(3));
+          targetZoomScale = Math.max(0.15, Math.min(4.0, (viewportMin * 0.70) / pixelDiameter));
         } else {
-          mapCanvas.style.setProperty('--zoom-scale', '1');
-          document.documentElement.style.setProperty('--zoom-scale', '1');
+          targetZoomScale = 1.0;
         }
       }
 
@@ -706,13 +823,14 @@
         e.stopPropagation();
         e.preventDefault();
 
+        playAudioEffect('radar');
+
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
-        const zoomScale = parseFloat(getComputedStyle(document.getElementById('mapCanvas')).getPropertyValue('--zoom-scale')) || 1;
         
-        dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / zoomScale;
+        dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / currentZoomScale;
         dragStartRadiusMeters = userState.radius;
       };
 
@@ -724,12 +842,10 @@
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
         
-        const zoomScale = parseFloat(getComputedStyle(document.getElementById('mapCanvas')).getPropertyValue('--zoom-scale')) || 1;
-        const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / zoomScale;
+        const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / currentZoomScale;
 
-        // Calculate delta distance: dragging outward (current > start) increases radius, dragging inward decreases radius
         const deltaPx = currentDistPx - dragStartDistancePx;
-        const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 1075; // scale factor
+        const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 1075;
         
         const newMeters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
 
@@ -827,6 +943,7 @@
     function createBubbleRipple() {
       if (userState.type === 'business') return;
 
+      playAudioEffect('bubble');
       triggerHapticFeedback(50);
       const ringContainer = document.getElementById('radiusRippleContainer');
       const targetRing = document.getElementById('radarBoundaryRing');
@@ -896,7 +1013,7 @@
           </div>
 
           <div class="scale-compensator flex flex-col items-center relative z-50 pointer-events-auto">
-            <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
+            <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
               <span id="userTopBubbleText" class="truncate">...</span>
               <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
@@ -960,7 +1077,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v16');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v18');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -1010,6 +1127,7 @@
     function setupIncomingConnection(conn) {
       conn.on('open', () => {
         activeDataConnections[conn.peer] = conn;
+        playAudioEffect('chime');
         showToast(`Connected via WebRTC with ${conn.peer}!`, 'check-circle');
         updateMeshUI();
 
@@ -1087,6 +1205,7 @@
         chatRoomsSessions[targetRoomId].push({ sender: displayName, text: data.text, time: timeStr, isMe: false });
         savePersistentData();
         registerActiveChat(targetRoomId, displayName);
+        playAudioEffect('bubble');
         triggerHapticFeedback([70, 50, 70]);
         if (currentActiveChatRoomId === targetRoomId) appendMessage(displayName, data.text, timeStr, false);
       }
@@ -1135,6 +1254,7 @@
       if (globalActiveDirectory[peerId]) {
         globalActiveDirectory[peerId].enabled = enabled;
       }
+      playAudioEffect('click');
       refreshAllNodeVisibilities();
       renderGlobalUsersDirectory();
       showToast(enabled ? 'Bot enabled on map' : 'Bot turned off', 'bot');
@@ -1241,12 +1361,12 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none z-0" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           ${hasValidQuestion ? `
-            <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question}', '${peerId}')">
+            <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question}', '${peerId}')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0"></i>
               <span class="truncate">${question}</span>
             </div>
           ` : ''}
-          <div onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer" style="background: ${customBg}; border-radius: 50%;">
+          <div onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer" style="background: ${customBg}; border-radius: 50%;">
             <div class="bubble-glare"></div>
             <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
           </div>
@@ -1292,7 +1412,7 @@
                 <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleIndividualBot('${peerId}', this.checked)" class="sr-only peer">
                 <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-600"></div>
               </label>
-              <button onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${peer.name}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-extrabold text-xs shadow-md">Connect</button>
+              <button onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${peer.name}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-extrabold text-xs shadow-md">Connect</button>
             </div>
           </div>
         `;
@@ -1373,6 +1493,7 @@
       const text = input.value.trim();
       if (!text || !currentActiveChatRoomId) return;
 
+      playAudioEffect('bubble');
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       appendMessage('You', text, timeStr, true);
       if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
@@ -1413,7 +1534,7 @@
       activeChatRoomsList.forEach(roomJson => {
         const room = JSON.parse(roomJson);
         bar.innerHTML += `
-          <div class="relative cursor-pointer transition-transform hover:scale-110 flex items-center justify-center ${currentActiveChatRoomId === room.id ? 'ring-2 ring-sky-500 rounded-full' : ''}" onclick="openChatDrawer('${room.id}', '${room.name}', null, '${room.name}')">
+          <div class="relative cursor-pointer transition-transform hover:scale-110 flex items-center justify-center ${currentActiveChatRoomId === room.id ? 'ring-2 ring-sky-500 rounded-full' : ''}" onclick="playAudioEffect('chime'); openChatDrawer('${room.id}', '${room.name}', null, '${room.name}')">
             <div class="w-8 h-8 rounded-full text-white font-bold text-[10px] flex items-center justify-center shadow-md bubble-node" style="background: ${BUBBLE_COLOR_MAP[userState.bubbleColor]}; border-radius: 50%;">
               <div class="bubble-glare"></div><i data-lucide="${room.id === 'room-you' && userState.type === 'business' ? userState.category : 'user'}" class="w-3.5 h-3.5 text-white z-10"></i>
             </div>
