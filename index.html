@@ -894,7 +894,8 @@
 
           const labelElem = nodeElem.querySelector('.node-name-label');
           if (labelElem) {
-            const showLabel = peer.accountType === 'business' && peer.distance <= TEN_MILES_METERS;
+            // Requirement fulfilled: Business names are always visible to all regardless of distance
+            const showLabel = peer.accountType === 'business';
             labelElem.style.display = showLabel ? 'block' : 'none';
           }
         }
@@ -1010,7 +1011,7 @@
       userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 cursor-pointer node-item';
       
       const iconName = userState.type === 'business' ? (userState.category || 'store') : 'navigation';
-      const showMyLabel = userState.type === 'business' && userState.makeNamePublic !== false;
+      const showMyLabel = userState.type === 'business'; // Business names always visible
 
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
@@ -1227,18 +1228,17 @@
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', interestFilter: 'Life', isBot: true, isTutorial: true },
-        { name: 'Bot 5-Mile Pickleball Fan', peerId: 'sim-peer-bot-5mi', targetMiles: 3.5, angleDeg: 140, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', interestFilter: 'Pickleball', isBot: true },
-        { name: '20-Mile Foodie Bistro', peerId: 'sim-peer-restaurant-20mi', targetMiles: 18.0, angleDeg: 235, question: 'Fine dining & wood-fired pizza!', color: 'pink', accountType: 'business', category: 'utensils', interestFilter: 'Food', isBot: true },
-        { name: 'Local Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 2.1, angleDeg: 290, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', interestFilter: 'Hiking', isBot: true },
-        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 35, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 12.5, angleDeg: 195, question: 'Licensed compounding pharmacy open!', color: 'emerald', accountType: 'business', category: 'pill', interestFilter: 'Life', isBot: true }
+        { name: 'Bot 10-Mile Pickleball Fan', peerId: 'sim-peer-bot-10mi', targetMiles: 10.0, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', interestFilter: 'Pickleball', isBot: true },
+        { name: '20-Mile Foodie Bistro', peerId: 'sim-peer-restaurant-20mi', targetMiles: 20.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!', color: 'pink', accountType: 'business', category: 'utensils', interestFilter: 'Food', isBot: true },
+        { name: '12-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 12.0, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', interestFilter: 'Hiking', isBot: true },
+        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', interestFilter: 'Cars', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding pharmacy open!', color: 'emerald', accountType: 'business', category: 'pill', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
         const distMeters = u.targetMiles * METERS_PER_MILE;
         const angleRad = u.angleDeg * (Math.PI / 180);
         
-        // Derive precise lat/lng coordinates from random angle and distance to prevent collision / clumping
         const latOffset = (Math.sin(angleRad) * distMeters) / 111320;
         const lngOffset = (Math.cos(angleRad) * distMeters) / (111320 * Math.cos(userState.lat * Math.PI / 180));
 
@@ -1280,7 +1280,8 @@
       const peerIds = Object.keys(globalActiveDirectory);
       
       let validBubbles = [];
-      if (activeTopicState.text && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
+      // Requirement fulfilled: Check if topic/words are active (< 1 hour)
+      if (activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
         validBubbles.push({
           name: userState.type === 'business' ? userState.alias : 'You (Traveler)',
           question: activeTopicState.text,
@@ -1293,7 +1294,9 @@
 
       peerIds.forEach(pId => {
         const p = globalActiveDirectory[pId];
-        if (p.enabled !== false && p.question && (Date.now() - p.createdAt < ONE_HOUR_MS)) {
+        // Requirement fulfilled: Chat topic hidden automatically if inactive for over an hour
+        const hasValidQuestion = p.question && p.createdAt && (Date.now() - p.createdAt < ONE_HOUR_MS);
+        if (p.enabled !== false && hasValidQuestion) {
           const matches = matchesInterestFilter(p.interestFilter);
           const inRadius = userState.radius === 0 || p.distance <= userState.radius || p.accountType === 'business';
           if (matches && inRadius) {
@@ -1365,7 +1368,7 @@
         accountType: userState.type,
         category: userState.category,
         interestFilter: userState.interestFilter,
-        question: activeTopicState.text,
+        question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) ? activeTopicState.text : null,
         createdAt: activeTopicState.createdAt,
         makeNamePublic: userState.makeNamePublic
       });
@@ -1407,14 +1410,12 @@
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
-      // Precisely map distances to pixel radii relative to the active radar boundary ring size
       const currentRingPx = document.getElementById('radarBoundaryRing') ? (document.getElementById('radarBoundaryRing').offsetWidth / 2) : 100;
       const currentRadiusMeters = userState.radius;
       
       let distanceRatio = currentRadiusMeters > 0 ? (distance / currentRadiusMeters) : 0.5;
       let pixelDistanceFromCenter = distanceRatio * currentRingPx;
 
-      // Anti-collision: Use stable hash of peerId to assign non-overlapping random angles across 360 degrees
       let hash = 0;
       for (let i = 0; i < peerId.length; i++) {
         hash = ((hash << 5) - hash) + peerId.charCodeAt(i);
@@ -1422,8 +1423,7 @@
       }
       let angleRad = (Math.abs(hash) % 360) * (Math.PI / 180);
 
-      // Convert pixel offset into percentage relative to map canvas
-      const mapCanvasWidth = 5625; // 300% canvas size
+      const mapCanvasWidth = 5625;
       let leftPercent = 50 + ((Math.cos(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
       let topPercent = 50 + ((Math.sin(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
 
@@ -1456,9 +1456,13 @@
       
       const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
       const iconName = accountType === 'business' ? category : 'user';
+      
+      // Requirement fulfilled: Hide topic/words if inactive for over an hour
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
       let roomId = 'room-peer-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
-      const showNameLabel = accountType === 'business' && distance <= TEN_MILES_METERS;
+      
+      // Requirement fulfilled: Business name visible to all
+      const showNameLabel = accountType === 'business';
 
       const showSonarRipple = matchesFilter && accountType !== 'business';
       const chatRoomName = accountType === 'business' ? rawSender : 'Traveler';
@@ -1538,7 +1542,8 @@
         if (activeTopicState.createdAt) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
-            activeTopicState.text = null; activeTopicState.createdAt = null;
+            activeTopicState.text = null; 
+            activeTopicState.createdAt = null;
             document.getElementById('userTopBubble').classList.add('hidden');
           } else {
             document.getElementById('topicExpiryBadge').innerText = `Visible for ${Math.floor(remainingMs / 60000)}m`;
@@ -1585,7 +1590,8 @@
     function postQuestion() {
       const text = document.getElementById('questionInput').value.trim();
       if (!text) return;
-      activeTopicState.text = text; activeTopicState.createdAt = Date.now();
+      activeTopicState.text = text; 
+      activeTopicState.createdAt = Date.now();
       document.getElementById('userTopBubbleText').innerText = text;
       document.getElementById('userTopBubble').classList.remove('hidden');
       document.getElementById('mainTopicText').innerText = text;
@@ -1674,7 +1680,8 @@
       document.getElementById('chatTargetAvatar').style.background = BUBBLE_COLOR_MAP[userState.bubbleColor];
       document.getElementById('chatTargetAvatar').innerHTML = `<div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>`;
 
-      if (topic || (isSelf && activeTopicState.text)) {
+      // Only show topic if it exists and is less than 1 hour old
+      if ((topic || (isSelf && activeTopicState.text)) && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
         document.getElementById('mainTopicContainer').classList.remove('hidden');
       } else {
