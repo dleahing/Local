@@ -418,12 +418,6 @@
       <button onclick="playAudioEffect('click'); closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
 
-    <!-- Message Search Bar -->
-    <div class="mt-2.5 px-3 py-2 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex items-center gap-2 flex-shrink-0">
-      <i data-lucide="search" class="w-3.5 h-3.5 text-sky-700 flex-shrink-0"></i>
-      <input type="text" id="chatSearchInput" placeholder="Search chat history..." oninput="filterChatMessages(this.value)" class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none">
-    </div>
-
     <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex items-start gap-2.5 flex-shrink-0">
       <i data-lucide="pin" class="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5"></i>
       <div>
@@ -432,7 +426,7 @@
       </div>
     </div>
 
-    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3 max-h-52"></div>
+    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3 max-h-56"></div>
 
     <div class="pt-2.5 pb-1 flex-shrink-0">
       <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/80 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
@@ -1332,7 +1326,12 @@
       payload.makeNamePublic = userState.makeNamePublic;
 
       Object.keys(activeDataConnections).forEach(pId => {
-        try { activeDataConnections[pId].send(payload); } catch(e) {}
+        try {
+          const conn = activeDataConnections[pId];
+          if (conn && conn.open) {
+            conn.send(payload);
+          }
+        } catch(e) {}
       });
 
       if (broadcastChannel) {
@@ -1533,7 +1532,6 @@
       const input = document.getElementById('chatInput');
       const text = input ? input.value.trim() : '';
       
-      // Auto-fallback default room if none is explicitly bound
       if (!currentActiveChatRoomId) {
         currentActiveChatRoomId = 'room-you';
       }
@@ -1568,19 +1566,12 @@
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
       msgBox.innerHTML += `
-        <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'}" data-text="${text.toLowerCase()}">
+        <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'}">
           <div class="flex items-center gap-1.5 px-1"><span class="text-[10px] text-slate-900 font-bold">${sender}</span><span class="text-[9px] text-slate-500">${time || ''}</span></div>
           <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-semibold ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/60'}">${text}</div>
         </div>
       `;
       msgBox.scrollTop = msgBox.scrollHeight;
-    }
-
-    function filterChatMessages(query) {
-      const q = query.toLowerCase();
-      Array.from(document.getElementById('chatMessages').getElementsByClassName('message-item')).forEach(item => {
-        item.style.display = (item.getAttribute('data-text') || '').includes(q) ? 'flex' : 'none';
-      });
     }
 
     function registerActiveChat(roomId, roomName) {
@@ -1605,7 +1596,6 @@
       currentActiveChatRoomId = roomId;
       registerActiveChat(roomId, roomName);
       document.getElementById('chatTargetName').innerText = roomName;
-      document.getElementById('chatSearchInput').value = '';
       
       const isSelf = roomId === 'room-you';
       const iconName = isSelf && userState.type === 'business' ? userState.category : 'user';
