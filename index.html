@@ -93,6 +93,19 @@
       position: relative;
     }
 
+    .peer-bubble-node {
+      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 30%, rgba(168, 85, 247, 0.45) 70%, rgba(126, 34, 206, 0.65) 100%);
+      backdrop-filter: blur(12px) saturate(190%);
+      -webkit-backdrop-filter: blur(12px) saturate(190%);
+      border: 1.5px solid rgba(216, 180, 254, 0.9);
+      box-shadow: 
+        0 8px 20px rgba(126, 34, 206, 0.25),
+        inset 0 3px 8px rgba(255, 255, 255, 0.95),
+        inset 0 -5px 10px rgba(126, 34, 206, 0.35),
+        0 0 15px rgba(255, 255, 255, 0.7);
+      position: relative;
+    }
+
     .bubble-glare {
       position: absolute;
       top: 10%;
@@ -258,8 +271,8 @@
           <div class="bubble-glare"></div>
         </div>
         <div>
-          <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Anonymous Network</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">P2P Proximity Room</p>
+          <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Proximity Session</h4>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Active Peer Mesh</p>
         </div>
       </div>
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -306,6 +319,7 @@
     let peer = null;
     let activeConnections = {};
     let processedMsgIds = new Set();
+    let nearbyPeers = {}; // Map of active peers and their map nodes
     
     let activeTopicState = { text: null, createdAt: null };
 
@@ -346,6 +360,7 @@
         navigator.geolocation.watchPosition((pos) => {
           userState.lat = pos.coords.latitude;
           userState.lng = pos.coords.longitude;
+          announcePresence();
         }, (err) => {}, { enableHighAccuracy: true });
       }
     }
@@ -380,7 +395,6 @@
 
           <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-all pointer-events-none"></div>
 
-          <!-- Clean Soap Bubble Center without Emojis -->
           <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle">
             <div class="bubble-glare"></div>
           </div>
@@ -442,6 +456,7 @@
         userState.peerId = id;
         setupPeerListeners();
         updateMeshUI();
+        announcePresence();
       });
 
       peer.on('error', (err) => {
@@ -454,6 +469,7 @@
             setupPeerListeners();
             const hostConn = peer.connect(MESH_ROOM_KEY, { reliable: true });
             bindConnectionEvents(hostConn);
+            announcePresence();
           });
         }
       });
@@ -463,11 +479,23 @@
       peer.on('connection', (conn) => { bindConnectionEvents(conn); });
     }
 
+    function announcePresence() {
+      broadcastData({
+        id: 'ping-' + Math.random().toString(36).substring(2, 9),
+        type: 'PEER_PRESENCE',
+        sender: userState.alias,
+        lat: userState.lat,
+        lng: userState.lng,
+        question: activeTopicState.text,
+        createdAt: activeTopicState.createdAt
+      });
+    }
+
     function bindConnectionEvents(conn) {
       conn.on('open', () => {
         activeConnections[conn.peer] = conn;
         updateMeshUI();
-        showToast('Connected to nearby peer!', 'wifi');
+        announcePresence();
 
         if (activeTopicState.text && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
           conn.send({ 
@@ -492,6 +520,10 @@
 
         if (userState.radius > 0 && distance > userState.radius) return;
 
+        if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
+          updatePeerNodeOnMap(data.sender || 'Peer', distance, data.lat, data.lng, data.text || data.question, data.createdAt);
+        }
+
         if (data.type === 'NEW_QUESTION') {
           if (Date.now() - data.createdAt < ONE_HOUR_MS) {
             activeTopicState.text = data.text;
@@ -508,8 +540,58 @@
 
       conn.on('close', () => {
         delete activeConnections[conn.peer];
+        removePeerNodeFromMap(conn.peer);
         updateMeshUI();
       });
+    }
+
+    function updatePeerNodeOnMap(alias, distance, lat, lng, question, createdAt) {
+      const container = document.getElementById('nodesContainer');
+      let peerKey = 'node-' + alias.replace(/\s+/g, '-').toLowerCase();
+      let nodeElem = document.getElementById(peerKey);
+
+      // Compute visual screen offsets relative to central user
+      let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
+      let screenRadius = Math.min(Math.max(distance * 0.4, 80), 160); // Clamp to screen boundaries
+      let leftPx = `calc(50% + ${Math.cos(angle) * screenRadius}px)`;
+      let topPx = `calc(50% + ${Math.sin(angle) * screenRadius}px)`;
+
+      let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
+
+      if (!nodeElem) {
+        nodeElem = document.createElement('div');
+        nodeElem.id = peerKey;
+        nodeElem.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500';
+        container.appendChild(nodeElem);
+      }
+
+      nodeElem.style.left = leftPx;
+      nodeElem.style.top = topPx;
+
+      nodeElem.innerHTML = `
+        <div class="relative flex flex-col items-center group">
+          ${hasValidQuestion ? `
+            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${alias}', 'bg-purple-500', '${question}')">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
+              <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
+            </div>
+          ` : ''}
+          <div onclick="openChatDrawer('${alias}', 'bg-purple-500', '${question || ''}')" class="w-11 h-11 rounded-full peer-bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle">
+            <div class="bubble-glare"></div>
+          </div>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distance}m)</span>
+        </div>
+      `;
+      lucide.createIcons();
+
+      nearbyPeers[peerKey] = { elem: nodeElem, createdAt: createdAt };
+    }
+
+    function removePeerNodeFromMap(peerId) {
+      let peerKey = 'node-' + peerId;
+      let node = document.getElementById(peerKey);
+      if (node) node.remove();
+      delete nearbyPeers[peerKey];
     }
 
     function broadcastData(payload, excludePeerId = null) {
@@ -533,6 +615,15 @@
           document.getElementById('mainTopicContainer').classList.add('hidden');
           showToast('Proximity chat expired (1 hour reached)', 'clock');
         }
+
+        // Clean expired map bubbles for nearby peers
+        Object.keys(nearbyPeers).forEach(key => {
+          let peerObj = nearbyPeers[key];
+          if (peerObj && peerObj.createdAt && (Date.now() - peerObj.createdAt >= ONE_HOUR_MS)) {
+            let topMsg = peerObj.elem.querySelector('.animate-float');
+            if (topMsg) topMsg.remove();
+          }
+        });
       }, 5000);
     }
 
@@ -578,6 +669,7 @@
         showToast('Personal GPS profile saved!', 'navigation');
       }
 
+      announcePresence();
       closeProfileModal();
     }
 
@@ -658,6 +750,7 @@
     }
 
     function openChatDrawer(name, color, topic) {
+      document.getElementById('chatTargetName').innerText = name || 'Proximity Session';
       if (topic || activeTopicState.text) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
         document.getElementById('mainTopicContainer').classList.remove('hidden');
