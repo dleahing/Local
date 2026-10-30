@@ -78,6 +78,7 @@
       will-change: transform;
       cursor: grab;
       touch-action: none;
+      transition: transform 0.2s cubic-bezier(0.15, 0.85, 0.35, 1);
     }
     #mapCanvas:active {
       cursor: grabbing;
@@ -795,6 +796,7 @@
       const badge = document.getElementById('radarRingDistanceLabel');
       
       if (ring) {
+        // Calculate radar ring visual diameter proportional to radius size
         const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1612.5);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
@@ -804,12 +806,10 @@
           badge.innerText = `${miles} Mi Radius`;
         }
 
+        // Dynamically adjust map zoom in and out in direct relation to the radius size
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
-        if (pixelDiameter > viewportMin * 0.70) {
-          targetZoomScale = Math.max(0.10, Math.min(4.0, (viewportMin * 0.70) / pixelDiameter));
-        } else {
-          targetZoomScale = 1.0;
-        }
+        const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
+        targetZoomScale = Math.max(0.15, Math.min(2.5, targetScaleFactor));
       }
 
       refreshAllNodeVisibilities();
@@ -1225,8 +1225,6 @@
     }
 
     function spawnDefaultSimulatedUsers() {
-      // Precise offsets calculated so distances match radar ring scale
-      // 1 degree latitude ~= 111,320 meters
       const latOffsetFor0_5Miles = (0.5 * METERS_PER_MILE) / 111320;
       const latOffsetFor5Miles = (5.0 * METERS_PER_MILE) / 111320;
       const latOffsetFor20Miles = (20.0 * METERS_PER_MILE) / 111320;
@@ -1405,17 +1403,15 @@
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
-      // Map positions proportionally corresponding to actual mile distance vs current radar size
       const maxDisplayRadiusMeters = MAX_RADIUS_METERS;
       const distanceFraction = Math.min(1.0, distance / maxDisplayRadiusMeters);
       
       let angle = (rawSender.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
-      let radiusOffsetPercent = distanceFraction * 40; // scales out to 40% away from center
+      let radiusOffsetPercent = distanceFraction * 40; 
       
       let left = 50 + (Math.cos(angle) * radiusOffsetPercent);
       let top = 50 + (Math.sin(angle) * radiusOffsetPercent);
 
-      // Special overrides for tutorial bot and specific fixed demo bots
       if (peerId === 'sim-peer-tutorial-bot') { left = 50; top = 42; }
       else if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 28; }
       else if (peerId === 'sim-peer-restaurant-20mi') { left = 75; top = 18; }
@@ -1616,14 +1612,13 @@
       input.value = ''; 
       input.style.height = '24px';
 
-      // If chatting with the Tutorial Bot, give automatic helpful responses!
       if (currentActiveChatRoomId === 'room-peer-sim-peer-tutorial-bot') {
         setTimeout(() => {
-          let botReply = "Welcome to LocaL! Here is how everything works:\n1. Pressing your own icon will refresh the radar that searches for new chats in the area shown within the radar.\n2. Pressing and dragging your finger within the radar will adjust its size.\n3. There is a drop-down menu in the top right that can change how chat bubbles are shown (Map view vs. Right-side list).";
+          let botReply = "Welcome to LocaL! Here is how everything works:\n1. Pressing your own icon will refresh the radar that searches for new chats in the area shown within the radar.\n2. Pressing and dragging your finger within the radar will adjust its size (and automatically zoom the map in/out accordingly!).\n3. There is a drop-down menu in the top right that can change how chat bubbles are shown (Map view vs. Right-side list).";
           if (text.toLowerCase().includes('refresh') || text.toLowerCase().includes('icon')) {
             botReply = "Simply tap your own profile icon anytime to refresh your radar and search for new chats in your surrounding area!";
-          } else if (text.toLowerCase().includes('size') || text.toLowerCase().includes('drag') || text.toLowerCase().includes('radius')) {
-            botReply = "Press and drag your finger on the outer glowing boundary ring within the radar to scale and adjust its size!";
+          } else if (text.toLowerCase().includes('size') || text.toLowerCase().includes('drag') || text.toLowerCase().includes('radius') || text.toLowerCase().includes('zoom')) {
+            botReply = "Press and drag your finger on the outer glowing boundary ring within the radar to scale its size and automatically zoom the map in and out!";
           } else if (text.toLowerCase().includes('menu') || text.toLowerCase().includes('drop') || text.toLowerCase().includes('layout')) {
             botReply = "Use the layout dropdown menu in the top right header to switch how chat bubbles are displayed!";
           }
