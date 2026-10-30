@@ -135,7 +135,6 @@
 
     <!-- Water Ripple Container -->
     <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
-    <!-- Nodes Z-20 -->
     <div id="nodesContainer" class="absolute inset-0 z-20"></div>
   </div>
 
@@ -473,6 +472,7 @@
       initLocalBroadcastEngine();
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
+      window.addEventListener('resize', recalculateNodePositions);
     });
 
     function loadPersistentData() {
@@ -591,15 +591,14 @@
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
       userDiv.id = 'userAvatarNode';
-      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer';
+      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer node-item';
       
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
-          <!-- Main Question Bubble Floats Above Map Icons with High Z-Index -->
-          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
-            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600"></i>
-            <span id="userTopBubbleText">...</span>
-            <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md">60m</span>
+          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40 max-w-[220px] text-center" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
+            <span id="userTopBubbleText" class="truncate">...</span>
+            <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
           </div>
 
           <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
@@ -607,7 +606,7 @@
           <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="border-radius: 50%;">
             <div class="bubble-glare"></div>
           </div>
-          <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md">${userState.alias} (You)</span>
+          <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${userState.alias} (You)</span>
         </div>
       `;
       container.appendChild(userDiv);
@@ -704,11 +703,10 @@
         ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
         : Math.max(distance, 10) + 'm';
 
-      // Anonymous name handling: if user did not make name public, show anonymized hash tag
       let displayName = data.sender;
       let isPublic = data.makeNamePublic !== false;
       if (!isPublic) {
-        let hash = (data.peerId || 'user').substring(data.peerId.length - 4).toUpperCase();
+        let hash = (data.peerId || 'user').substring((data.peerId || 'user').length - 4).toUpperCase();
         displayName = `Traveler #${hash}`;
       }
 
@@ -813,9 +811,14 @@
       let nodeElem = document.getElementById(peerKey);
 
       let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
-      let screenRadius = Math.min(Math.max(distance * 0.005, 85), 160);
-      let leftPx = `calc(50% + ${Math.cos(angle) * screenRadius}px)`;
-      let topPx = `calc(50% + ${Math.sin(angle) * screenRadius}px)`;
+      let screenRadius = Math.min(Math.max(distance * 0.005, 90), 175);
+      let left = 50 + (Math.cos(angle) * (screenRadius / window.innerWidth) * 100);
+      let top = 50 + (Math.sin(angle) * (screenRadius / window.innerHeight) * 100);
+
+      // Collision detection & stagger adjustment
+      const offset = checkBubbleCollisions(left, top);
+      left += offset.x;
+      top += offset.y;
 
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
       let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
@@ -823,38 +826,57 @@
       if (!nodeElem) {
         nodeElem = document.createElement('div');
         nodeElem.id = peerKey;
-        nodeElem.className = `absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ${isBot ? 'bot-node-elem' : ''}`;
+        nodeElem.className = `absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item ${isBot ? 'bot-node-elem' : ''}`;
         container.appendChild(nodeElem);
       }
 
-      nodeElem.style.left = leftPx;
-      nodeElem.style.top = topPx;
+      nodeElem.style.left = `${left}%`;
+      nodeElem.style.top = `${top}%`;
       if (isBot && !showTestBots) {
         nodeElem.style.display = 'none';
       }
       
       const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
 
-      // Question bubble has high z-index (z-40) so it floats cleanly above all icons
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
           <div class="absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none" style="border-radius: 50%;"></div>
 
           ${hasValidQuestion ? `
-            <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-40 cursor-pointer" onclick="openChatDrawer('${roomId}', '${alias}', '${question}', '${alias}')">
-              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
-              <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
+            <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-40 cursor-pointer max-w-[220px] text-center" onclick="openChatDrawer('${roomId}', '${alias}', '${question}', '${alias}')">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0"></i>
+              <span class="truncate">${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
             </div>
           ` : ''}
           <div onclick="createBubbleRipple('${peerKey}-circle'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="background: ${customBg}; border-radius: 50%;">
             <div class="bubble-glare"></div>
           </div>
-          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md">${alias} (${distanceFormatted})</span>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${alias} (${distanceFormatted})</span>
         </div>
       `;
       lucide.createIcons();
 
-      nearbyPeers[peerKey] = { elem: nodeElem, createdAt: createdAt };
+      nearbyPeers[peerKey] = { elem: nodeElem, createdAt: createdAt, posX: left, posY: top };
+    }
+
+    const occupiedPositions = [];
+    function checkBubbleCollisions(x, y) {
+      let offsetX = 0;
+      let offsetY = 0;
+      for (let pos of occupiedPositions) {
+        let dx = Math.abs(pos.x - x);
+        let dy = Math.abs(pos.y - y);
+        if (dx < 6 && dy < 6) {
+          offsetY += (Math.random() > 0.5 ? 4 : -4);
+          offsetX += (Math.random() > 0.5 ? 3 : -3);
+        }
+      }
+      occupiedPositions.push({ x: x + offsetX, y: y + offsetY });
+      return { x: offsetX, y: offsetY };
+    }
+
+    function recalculateNodePositions() {
+      occupiedPositions.length = 0;
     }
 
     function broadcastData(payload) {
