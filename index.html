@@ -65,18 +65,29 @@
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
+    /* Fluid Map Canvas Transform */
+    #mapCanvas {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
     /* Inverse scale wrapper so nodes/bubbles stay constant size when map zooms out */
     .scale-compensator {
       transform: scale(var(--zoom-scale, 1));
-      transition: transform 0.2s ease-out;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Background Theme Presets */
+    /* Background Theme Presets with Expanded Repeatable Grid */
     .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
     .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --accent: #0284c7; }
     .theme-yellow { --bg-gradient: radial-gradient(circle at 50% 50%, #fefce8 0%, #fef08a 50%, #eab308 100%); --accent: #ca8a04; }
     .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf4ff 0%, #f5d0fe 50%, #e879f9 100%); --accent: #c084fc; }
     .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #fef2f2 0%, #fecaca 50%, #f87171 100%); --accent: #ef4444; }
+
+    .map-grid-pattern {
+      background-image: radial-gradient(#000 1.2px, transparent 1.2px);
+      background-size: 40px 40px;
+      background-repeat: repeat;
+    }
 
     /* Glassmorphism UI Panels */
     .glass-panel {
@@ -135,11 +146,11 @@
   <!-- 2. MAIN LAYOUT & DOM ELEMENTS SECTION     -->
   <!-- ========================================== -->
   
-  <!-- Map Canvas with Smooth Zoom & Pan Transform -->
-  <div id="mapCanvas" class="absolute inset-0 overflow-hidden transition-transform duration-200 origin-center scale-100" style="background: var(--bg-gradient);">
-    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:28px_28px]"></div>
+  <!-- Map Canvas with Expanded Background & Fluid Zoom -->
+  <div id="mapCanvas" class="absolute -inset-[150%] overflow-hidden scale-100 origin-center" style="background: var(--bg-gradient);">
+    <div class="absolute inset-0 opacity-12 map-grid-pattern"></div>
     
-    <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-200 origin-center">
+    <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
       <div class="w-[420px] h-[420px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
       <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
     </div>
@@ -428,6 +439,7 @@
   <script>
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
+    const TEN_MILES_METERS = 16093.4;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v2';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v2';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v12';
@@ -447,7 +459,7 @@
     let chatRoomsSessions = {}; 
     let activeChatRoomsList = new Set(); 
 
-    // User Profile State (Personal / Business & Bubble Customization) - Default Radius 5 Miles (8046.7 meters)
+    // User Profile State (Default Radius: 5 Miles / 8046.7 meters)
     let userState = {
       alias: 'Traveler',
       type: 'personal',
@@ -544,7 +556,7 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    // Dynamic Discovery Radius, Ring Dragging & Zoom Out Scaling with Fixed Bubble Size
+    // Dynamic Discovery Radius, Fluid Zoom & Name Visibility Rule (>10 Miles)
     function updateRadius(val, updateSliderInput = true) {
       const meters = Math.max(100, Math.min(80467, Number(val)));
       userState.radius = meters;
@@ -567,12 +579,12 @@
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
-        // Smoothly zoom out map canvas when radius exceeds viewing area and apply inverse CSS scale to nodes
+        // Fluid zoom scaling & inverse bubble size compensation
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         if (pixelDiameter > viewportMin * 0.70) {
-          const zoomScale = Math.max(0.2, (viewportMin * 0.70) / pixelDiameter);
-          mapCanvas.style.transform = `scale(${zoomScale.toFixed(2)})`;
-          document.documentElement.style.setProperty('--zoom-scale', (1 / zoomScale).toFixed(2));
+          const zoomScale = Math.max(0.18, (viewportMin * 0.70) / pixelDiameter);
+          mapCanvas.style.transform = `scale(${zoomScale.toFixed(3)})`;
+          document.documentElement.style.setProperty('--zoom-scale', (1 / zoomScale).toFixed(3));
         } else {
           mapCanvas.style.transform = 'scale(1)';
           document.documentElement.style.setProperty('--zoom-scale', '1');
@@ -633,6 +645,12 @@
           const isWithinRadius = userState.radius === 0 || peer.distance <= userState.radius || peer.accountType === 'business';
           nodeElem.style.opacity = isWithinRadius ? '1' : '0.15';
           nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
+
+          // Hide name label if distance is greater than 10 miles
+          const labelElem = nodeElem.querySelector('.node-name-label');
+          if (labelElem) {
+            labelElem.style.display = peer.distance > TEN_MILES_METERS ? 'none' : 'block';
+          }
         }
       });
       renderGlobalUsersDirectory();
@@ -747,7 +765,7 @@
               <div class="bubble-glare"></div>
               <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
             </div>
-            <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-10">${getEffectiveMyName()}${userState.type === 'business' ? ' (Store)' : ' (You)'}</span>
+            <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-10 node-name-label">${getEffectiveMyName()}${userState.type === 'business' ? ' (Store)' : ' (You)'}</span>
           </div>
         </div>
       `;
@@ -1024,6 +1042,7 @@
       const iconName = accountType === 'business' ? category : 'user';
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
       let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
+      const showNameLabel = distance <= TEN_MILES_METERS;
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator">
@@ -1038,7 +1057,7 @@
             <div class="bubble-glare"></div>
             <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
           </div>
-          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${alias} (${distanceFormatted})</span>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap node-name-label" style="display: ${showNameLabel ? 'block' : 'none'};">${alias} (${distanceFormatted})</span>
         </div>
       `;
       lucide.createIcons();
