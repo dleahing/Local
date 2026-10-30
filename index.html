@@ -450,8 +450,8 @@
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const TEN_MILES_METERS = 16093.4;
-    const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum (5 * 1609.34)
-    const MAX_RADIUS_METERS = 80467.0; // Exactly 50 Miles maximum (50 * 1609.34)
+    const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
+    const MAX_RADIUS_METERS = 80467.0; // Exactly 50 Miles maximum
     const STORAGE_KEY_PROFILE = 'local_user_profile_v2';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v2';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v12';
@@ -515,7 +515,6 @@
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
       
-      // Enforce strictly 5 miles min and 50 miles max constraint
       if (!userState.radius || userState.radius < MIN_RADIUS_METERS) {
         userState.radius = MIN_RADIUS_METERS;
       }
@@ -590,14 +589,12 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    // Strict boundary clipping for map panning based on maximum 50-mile rendered area
     function getPanBounds() {
       const ring = document.getElementById('radarBoundaryRing');
       const radiusPx = ring ? (ring.offsetWidth / 2) : 3200;
       return radiusPx * 0.90;
     }
 
-    // High-Performance Butter-Smooth Inertial Drag Panning Loop with strict boundary locking
     function initMapPanHandlers() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
@@ -622,7 +619,6 @@
         let newX = clientX - startDragX;
         let newY = clientY - startDragY;
 
-        // Enforce strict map boundary limits (cannot go beyond 50-mile rendered area)
         const maxLimit = getPanBounds();
         targetPanX = Math.max(-maxLimit, Math.min(maxLimit, newX));
         targetPanY = Math.max(-maxLimit, Math.min(maxLimit, newY));
@@ -657,7 +653,6 @@
       animationFrameId = requestAnimationFrame(renderLoop);
     }
 
-    // Dynamic Discovery Radius (5 to 50 miles), Fluid Zoom & Max Zoom-Out Mapping
     function updateRadius(val, updateSliderInput = true) {
       const meters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val)));
       userState.radius = meters;
@@ -675,12 +670,10 @@
       const mapCanvas = document.getElementById('mapCanvas');
       
       if (ring) {
-        // Pixel diameter mapping: 5mi (8046.7m) maps to ~350px up to 50mi (80467m) mapping to ~3200px
         const pixelDiameter = Math.round(350 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 2850);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
-        // Fluid zoom scaling & inverse bubble size compensation so max zoom-out displays the full 50-mile terrain area
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         if (pixelDiameter > viewportMin * 0.70) {
           const zoomScale = Math.max(0.12, (viewportMin * 0.70) / pixelDiameter);
@@ -696,6 +689,7 @@
       savePersistentData();
     }
 
+    // Direct Finger-Following Radius Drag Handlers
     function initRadiusDragHandlers() {
       const ring = document.getElementById('radarBoundaryRing');
       if (!ring) return;
@@ -713,9 +707,10 @@
 
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
+        
         const distPx = Math.hypot(clientX - centerX, clientY - centerY);
 
-        const minPx = 150, maxPx = 1600;
+        const minPx = 175, maxPx = 1600;
         const clampedPx = Math.max(minPx, Math.min(maxPx, distPx));
         const ratio = (clampedPx - minPx) / (maxPx - minPx);
         const newMeters = Math.round(MIN_RADIUS_METERS + (ratio * (MAX_RADIUS_METERS - MIN_RADIUS_METERS)));
@@ -759,7 +754,6 @@
       renderGlobalUsersDirectory();
     }
 
-    // Coordinates & GPS management
     function getBroadcastCoordinates() {
       if (userState.type === 'business') { return { lat: userState.lat, lng: userState.lng }; }
       if (!userState.lat || !userState.lng) return { lat: 27.2730, lng: -80.3582 };
@@ -799,7 +793,6 @@
       return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))));
     }
 
-    // Map Node Rendering & Interaction (User icon locked precisely in center)
     function createBubbleRipple() {
       triggerHapticFeedback(50);
       const ringContainer = document.getElementById('radiusRippleContainer');
@@ -863,15 +856,12 @@
 
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
-          <!-- Radius Ripple Animation Container centered at User Avatar -->
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
-          <!-- Clickable & Draggable Radius Ring anchored around User Icon -->
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/10 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/20 shadow-lg" style="width: 900px; height: 900px;" title="Click & drag to adjust radius">
-            <div class="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10px] font-black tracking-wider uppercase shadow-md pointer-events-none">Drag Ring to Adjust Radius</div>
+            <div class="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10px] font-black tracking-wider uppercase shadow-md pointer-events-none">Drag Ring to Follow Finger</div>
           </div>
 
-          <!-- Scale Compensator locks chat bubble & icon size when map zooms out -->
           <div class="scale-compensator flex flex-col items-center relative z-10">
             <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40 max-w-[220px] text-center" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
@@ -914,9 +904,6 @@
       touchTimer = setTimeout(() => { openProfileModal(); }, 500);
     }
 
-    // ========================================== -->
-    // 5. WEBRTC P2P MESH & DATA SYNC SECTION     -->
-    // ========================================== -->
     function initPeerJSNetwork() {
       try {
         peer = new Peer();
@@ -1071,11 +1058,12 @@
     }
 
     function spawnDefaultSimulatedUsers() {
-      // Precise 5 miles offset calculation using accurate earth degrees per meter
       const latOffsetFor5Miles = (5 * METERS_PER_MILE) / 111320;
+      const latOffsetFor40Miles = (40 * METERS_PER_MILE) / 111320;
 
       const sampleUsers = [
         { name: 'Bot 5-Mile Scout', peerId: 'sim-peer-bot-5mi', offsetLat: latOffsetFor5Miles, offsetLng: 0, question: 'Hello from exactly 5 miles away!', color: 'emerald', accountType: 'personal', category: 'store', isBot: true },
+        { name: '40-Mile Gourmet Bistro', peerId: 'sim-peer-restaurant-40mi', offsetLat: latOffsetFor40Miles, offsetLng: 0, question: 'Fine dining & wood-fired pizza 40 miles away!', color: 'pink', accountType: 'business', category: 'utensils', isBot: true },
         { name: 'Local Brews Café', peerId: 'sim-peer-business-1', offsetLat: 0.0018, offsetLng: 0.0015, question: 'Fresh artisan espresso & pastries open until 6 PM!', color: 'yellow', accountType: 'business', category: 'coffee', isBot: true },
         { name: 'Bot_Buddy', peerId: 'sim-peer-bot-buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'violet', accountType: 'personal', category: 'store', isBot: true },
         { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', offsetLat: -0.0025, offsetLng: 0.0022, question: 'Licensed compounding pharmacy & medical supplies open!', color: 'emerald', accountType: 'business', category: 'pill', isBot: true }
@@ -1173,7 +1161,8 @@
       let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
       let left = 50 + (Math.cos(angle) * 15), top = 50 + (Math.sin(angle) * 15);
       if (accountType === 'business') { left = 50 + ((peerId.charCodeAt(0) % 5) - 2) * 12; top = 50 + ((peerId.charCodeAt(1) % 5) - 2) * 10; }
-      if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 30; } // Position 5-mile bot neatly north within radius ring
+      if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 30; }
+      if (peerId === 'sim-peer-restaurant-40mi') { left = 85; top = 15; } // Positioned far out towards the 40-mile edge
 
       if (!nodeElem) {
         nodeElem = document.createElement('div');
@@ -1267,7 +1256,6 @@
       lucide.createIcons();
     }
 
-    // Chat Drawer & Messaging Logic
     function checkChatExpiryLoop() {
       setInterval(() => {
         if (activeTopicState.createdAt) {
@@ -1409,7 +1397,7 @@
       }
 
       const msgBox = document.getElementById('chatMessages');
-      msgBox.innerHTML = '';
+      msgBox.innerHTML =';'
       if (chatRoomsSessions[roomId]) {
         chatRoomsSessions[roomId].forEach(msg => { appendMessage(msg.sender, msg.text, msg.time, msg.isMe); });
       }
