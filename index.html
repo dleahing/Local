@@ -18,11 +18,13 @@
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
   <style>
+    :root {
+      --zoom-scale: 1;
+    }
     @keyframes wave-expand {
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
-    /* Ultra-Slow Water Ripple (7.14s duration) */
     @keyframes water-ripple-expand {
       0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.9; border-width: 4px; }
       40% { opacity: 0.5; }
@@ -51,19 +53,23 @@
     }
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
-    .animate-water-ripple { animation: water-ripple-expand 7.14s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
+    .animate-water-ripple { animation: water-ripple-expand 4.76s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
-    /* Dynamic Themes (Default Sky Blue) */
+    .scale-compensator {
+      transform: scale(calc(1 / var(--zoom-scale)));
+      will-change: transform;
+    }
+
+    /* Dynamic Themes */
     .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --accent: #0284c7; }
     .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
     .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #ecfdf5 0%, #a7f3d0 50%, #34d399 100%); --accent: #059669; }
     .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #f5f3ff 0%, #ddd6fe 50%, #a78bfa 100%); --accent: #7c3aed; }
 
-    /* Polished Glassmorphism System */
     .glass-panel {
       background: rgba(255, 255, 255, 0.55);
       backdrop-filter: blur(20px) saturate(180%);
@@ -86,7 +92,6 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* Completely Borderless Profile Bubble & removed focus ring outline on click */
     .bubble-node {
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(56, 189, 248, 0.5) 70%, rgba(2, 132, 199, 0.7) 100%);
       backdrop-filter: blur(12px) saturate(190%);
@@ -97,20 +102,8 @@
         inset 0 -5px 10px rgba(2, 132, 199, 0.25),
         0 0 10px rgba(56, 189, 248, 0.4);
       position: relative;
-      outline: none;
-      border: none;
-    }
-    .bubble-node:focus, .bubble-node:active {
-      outline: none;
-      border: none;
-      box-shadow: 
-        0 6px 15px rgba(2, 132, 199, 0.2),
-        inset 0 3px 8px rgba(255, 255, 255, 0.95),
-        inset 0 -5px 10px rgba(2, 132, 199, 0.25),
-        0 0 10px rgba(56, 189, 248, 0.4);
     }
 
-    /* Borderless Peer Profile Bubble */
     .peer-bubble-node {
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 30%, rgba(168, 85, 247, 0.45) 70%, rgba(126, 34, 206, 0.65) 100%);
       backdrop-filter: blur(12px) saturate(190%);
@@ -121,12 +114,6 @@
         inset 0 -5px 10px rgba(126, 34, 206, 0.25),
         0 0 10px rgba(216, 180, 254, 0.4);
       position: relative;
-      outline: none;
-      border: none;
-    }
-    .peer-bubble-node:focus, .peer-bubble-node:active {
-      outline: none;
-      border: none;
     }
 
     .bubble-glare {
@@ -425,7 +412,7 @@
       ripple.style.top = `${centerY}px`;
 
       rippleContainer.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 7140);
+      setTimeout(() => ripple.remove(), 4760);
     }
 
     function initUserNode() {
@@ -435,14 +422,13 @@
       userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer';
       
       userDiv.innerHTML = `
-        <div class="relative flex flex-col items-center group">
+        <div class="relative flex flex-col items-center group scale-compensator">
           <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('${userState.alias}', activeTopicState.text, 'you')">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600"></i>
             <span id="userTopBubbleText">...</span>
             <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-800 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md">60m</span>
           </div>
 
-          <!-- 50% Reduced Ambient Glow -->
           <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none"></div>
 
           <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-all pointer-events-none"></div>
@@ -649,7 +635,7 @@
       nodeElem.style.top = topPx;
 
       nodeElem.innerHTML = `
-        <div class="relative flex flex-col items-center group">
+        <div class="relative flex flex-col items-center group scale-compensator">
           ${hasValidQuestion ? `
             <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${alias}', '${question}', '${alias}')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
@@ -809,6 +795,8 @@
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
       showToast('Question broadcasted across proximity network!', 'pin');
+      
+      // Automatically open chat drawer and start chatting immediately
       openChatDrawer(userState.alias, text, 'you');
     }
 
