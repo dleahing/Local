@@ -305,6 +305,21 @@
           <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
+        <!-- Interest Filter Option Added Here -->
+        <div>
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter (Chat Matching)</label>
+          <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+            <option value="none">No Filter At All</option>
+            <option value="Life">Life</option>
+            <option value="Cars">Cars</option>
+            <option value="Moms">Moms</option>
+            <option value="Dads">Dads</option>
+            <option value="Food">Food</option>
+            <option value="Hiking">Hiking</option>
+            <option value="Pickleball">Pickleball</option>
+          </select>
+        </div>
+
         <div id="businessFields" class="hidden space-y-3">
           <div>
             <label class="block text-xs font-bold text-slate-800 mb-1">Business Category & Flat Icon</label>
@@ -440,9 +455,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 48280.2; // Exactly 30 Miles maximum
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v2';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v2';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v12';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v3';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v3';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v13';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -466,12 +481,13 @@
     let chatRoomsSessions = {}; 
     let activeChatRoomsList = new Set(); 
 
-    // User Profile State (Default Radius: exactly 5 Miles / 8046.7 meters)
+    // User Profile State (Default Radius: 5 Miles, Interest Filter: none)
     let userState = {
       alias: 'Traveler',
       type: 'personal',
       category: 'store',
       address: '',
+      interestFilter: 'none',
       radius: MIN_RADIUS_METERS,
       lat: 27.2730,
       lng: -80.3582,
@@ -540,6 +556,7 @@
           document.getElementById('avatarNameInput').value = userState.alias;
           document.getElementById('businessAddressInput').value = userState.address || '';
           document.getElementById('businessCategorySelect').value = userState.category || 'store';
+          document.getElementById('userInterestFilterSelect').value = userState.interestFilter || 'none';
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
           document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
@@ -589,7 +606,7 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        if (e.target.closest('header, button, input, textarea, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rangeModal')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rangeModal')) {
           return;
         }
         if (isDraggingRadius) return;
@@ -678,7 +695,6 @@
       savePersistentData();
     }
 
-    // Direct 1:1 Finger Tracking Radius Ring Dragging Handler (No Exaggeration)
     function initRadiusDragHandlers() {
       const ring = document.getElementById('radarBoundaryRing');
       if (!ring) return;
@@ -723,6 +739,12 @@
       window.addEventListener('touchend', handleEnd);
     }
 
+    function matchesInterestFilter(peerInterestFilter) {
+      if (!userState.interestFilter || userState.interestFilter === 'none') return true;
+      if (!peerInterestFilter || peerInterestFilter === 'none') return true;
+      return userState.interestFilter.toLowerCase() === peerInterestFilter.toLowerCase();
+    }
+
     function refreshAllNodeVisibilities() {
       Object.keys(globalActiveDirectory).forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
@@ -731,7 +753,8 @@
 
         if (nodeElem) {
           const isEnabled = peer.enabled !== false;
-          const isWithinRadius = userState.radius === 0 || peer.distance <= userState.radius || peer.accountType === 'business';
+          const matchesFilter = matchesInterestFilter(peer.interestFilter);
+          const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius || peer.accountType === 'business') && matchesFilter;
           
           nodeElem.style.display = isEnabled ? 'block' : 'none';
           nodeElem.style.opacity = isWithinRadius ? '1' : '0.15';
@@ -807,7 +830,7 @@
       if (!mapCanvas) return;
 
       const triggerRipple = (e) => {
-        if (e.target.closest('header, button, input, textarea, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rangeModal')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rangeModal')) {
           return;
         }
         createBubbleRipple();
@@ -919,7 +942,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v12');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v13');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -982,6 +1005,7 @@
           lng: userState.lng,
           accountType: userState.type,
           category: userState.category,
+          interestFilter: userState.interestFilter,
           makeNamePublic: userState.makeNamePublic
         });
       });
@@ -1020,6 +1044,7 @@
         bubbleColor: data.bubbleColor || 'violet',
         accountType: data.accountType || 'personal',
         category: data.category || 'store',
+        interestFilter: data.interestFilter || 'none',
         lastSeen: Date.now()
       };
 
@@ -1034,7 +1059,7 @@
         updatePeerNodeOnMap(
           displayName, distance, distanceFormatted, data.lat, data.lng, 
           data.text || data.question, data.createdAt, data.peerId, 
-          data.bubbleColor, data.accountType, data.category, false
+          data.bubbleColor, data.accountType, data.category, data.interestFilter, false
         );
       } else if (data.type === 'CHAT_MSG') {
         const targetRoomId = data.roomId;
@@ -1054,11 +1079,11 @@
       const latOffsetFor20Miles = (20 * METERS_PER_MILE) / 111320;
 
       const sampleUsers = [
-        { name: 'Bot 5-Mile Scout', peerId: 'sim-peer-bot-5mi', offsetLat: latOffsetFor5Miles, offsetLng: 0, question: 'Hello from exactly 5 miles away!', color: 'emerald', accountType: 'personal', category: 'store', isBot: true },
-        { name: '20-Mile Gourmet Bistro', peerId: 'sim-peer-restaurant-20mi', offsetLat: latOffsetFor20Miles, offsetLng: 0, question: 'Fine dining & wood-fired pizza 20 miles away!', color: 'pink', accountType: 'business', category: 'utensils', isBot: true },
-        { name: 'Local Brews Café', peerId: 'sim-peer-business-1', offsetLat: 0.0018, offsetLng: 0.0015, question: 'Fresh artisan espresso & pastries open until 6 PM!', color: 'yellow', accountType: 'business', category: 'coffee', isBot: true },
-        { name: 'Bot_Buddy', peerId: 'sim-peer-bot-buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'violet', accountType: 'personal', category: 'store', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', offsetLat: -0.0025, offsetLng: 0.0022, question: 'Licensed compounding pharmacy & medical supplies open!', color: 'emerald', accountType: 'business', category: 'pill', isBot: true }
+        { name: 'Bot 5-Mile Pickleball Fan', peerId: 'sim-peer-bot-5mi', offsetLat: latOffsetFor5Miles, offsetLng: 0, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', interestFilter: 'Pickleball', isBot: true },
+        { name: '20-Mile Foodie Bistro', peerId: 'sim-peer-restaurant-20mi', offsetLat: latOffsetFor20Miles, offsetLng: 0, question: 'Fine dining & wood-fired pizza!', color: 'pink', accountType: 'business', category: 'utensils', interestFilter: 'Food', isBot: true },
+        { name: 'Local Hiking Club', peerId: 'sim-peer-business-1', offsetLat: 0.0018, offsetLng: 0.0015, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', interestFilter: 'Hiking', isBot: true },
+        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Cars & coffee meetup tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', interestFilter: 'Cars', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', offsetLat: -0.0025, offsetLng: 0.0022, question: 'Licensed compounding pharmacy open!', color: 'emerald', accountType: 'business', category: 'pill', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -1079,10 +1104,11 @@
           bubbleColor: u.color,
           accountType: u.accountType,
           category: u.category,
+          interestFilter: u.interestFilter,
           lastSeen: Date.now()
         };
 
-        updatePeerNodeOnMap(u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, true);
+        updatePeerNodeOnMap(u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, u.interestFilter, true);
       });
       renderGlobalUsersDirectory();
     }
@@ -1114,6 +1140,7 @@
         lng: coords.lng,
         accountType: userState.type,
         category: userState.category,
+        interestFilter: userState.interestFilter,
         question: activeTopicState.text,
         createdAt: activeTopicState.createdAt,
         makeNamePublic: userState.makeNamePublic
@@ -1130,6 +1157,7 @@
       payload.bubbleColor = payload.bubbleColor || userState.bubbleColor; 
       payload.accountType = userState.type;
       payload.category = userState.category; 
+      payload.interestFilter = userState.interestFilter;
       payload.makeNamePublic = userState.makeNamePublic;
 
       Object.keys(activeDataConnections).forEach(pId => {
@@ -1145,7 +1173,7 @@
       } catch(e) {}
     }
 
-    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, isBot) {
+    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, interestFilter, isBot) {
       const container = document.getElementById('nodesContainer');
       let peerKey = 'node-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
@@ -1168,10 +1196,13 @@
 
       const peerRecord = globalActiveDirectory[peerId] || {};
       const isEnabled = peerRecord.enabled !== false;
-      const isWithinRadius = userState.radius === 0 || distance <= userState.radius || accountType === 'business';
+      const matchesFilter = matchesInterestFilter(interestFilter);
+      const isWithinRadius = (userState.radius === 0 || distance <= userState.radius || accountType === 'business') && matchesFilter;
       
       let opacityVal = 1;
-      if (distance > userState.radius) {
+      if (!matchesFilter) {
+        opacityVal = 0.05;
+      } else if (distance > userState.radius) {
         const excess = distance - userState.radius;
         opacityVal = Math.max(0.05, 1 - (excess / (userState.radius * 0.75)));
       }
@@ -1199,7 +1230,7 @@
             <div class="bubble-glare"></div>
             <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
           </div>
-          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap node-name-label" style="display: ${showNameLabel ? 'block' : 'none'};">${alias} (${distanceFormatted})</span>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap node-name-label" style="display: ${showNameLabel ? 'block' : 'none'};">${alias} (${distanceFormatted})${interestFilter && interestFilter !== 'none' ? ' • ' + interestFilter : ''}</span>
         </div>
       `;
       lucide.createIcons();
@@ -1218,7 +1249,8 @@
       container.innerHTML = '';
       peerIds.forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
-        const isWithinRadius = userState.radius === 0 || peer.distance <= userState.radius || peer.accountType === 'business';
+        const matchesFilter = matchesInterestFilter(peer.interestFilter);
+        const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius || peer.accountType === 'business') && matchesFilter;
         const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const iconName = peer.accountType === 'business' ? (peer.category || 'store') : 'user';
@@ -1231,8 +1263,8 @@
                 <div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>
               </div>
               <div>
-                <h4 class="font-black text-slate-900 text-xs">${peer.name} ${isWithinRadius ? '' : '(Out of Range)'}</h4>
-                <p class="text-[10px] text-sky-900 font-bold">Distance: ${distStr}</p>
+                <h4 class="font-black text-slate-900 text-xs">${peer.name} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
+                <p class="text-[10px] text-sky-900 font-bold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
               </div>
             </div>
             <div class="flex items-center gap-2">
@@ -1280,6 +1312,7 @@
     function saveProfile() {
       userState.alias = document.getElementById('avatarNameInput').value.trim() || 'Traveler';
       userState.category = document.getElementById('businessCategorySelect').value;
+      userState.interestFilter = document.getElementById('userInterestFilterSelect').value;
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
       userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
       userState.makeNamePublic = document.getElementById('privacyMakeNamePublic').checked;
@@ -1308,7 +1341,7 @@
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
       const coords = getBroadcastCoordinates();
-      broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
+      broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
       closeQuestionModal();
       openChatDrawer('room-you', getEffectiveMyName(), text, 'you');
     }
