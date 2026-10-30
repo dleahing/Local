@@ -421,7 +421,7 @@
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v2';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v2';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v11';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v12';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -661,32 +661,53 @@
       touchTimer = setTimeout(() => { openProfileModal(); }, 500);
     }
 
-    // WebRTC P2P Network & Directory
+    // ========================================== -->
+    // 5. WEBRTC P2P MESH & DATA SYNC SECTION     -->
+    // ========================================== -->
     function initPeerJSNetwork() {
       try {
         peer = new Peer();
+
         peer.on('open', (id) => {
           myPeerId = id;
           document.getElementById('myPeerIdDisplay').value = myPeerId;
           updatePeerServerStatus(true);
           announcePresence();
         });
-        peer.on('connection', (conn) => { setupIncomingConnection(conn); });
-        peer.on('error', () => { updatePeerServerStatus(false); });
-      } catch(e) { updatePeerServerStatus(false); }
 
-      if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v11');
-        broadcastChannel.onmessage = (event) => { handleIncomingNetworkPayload(event.data); };
+        // Handle incoming P2P connections from other peers
+        peer.on('connection', (conn) => {
+          setupIncomingConnection(conn);
+        });
+
+        peer.on('error', () => {
+          updatePeerServerStatus(false);
+        });
+      } catch(e) {
+        updatePeerServerStatus(false);
       }
 
+      // Local browser tab broadcast fallback
+      if ('BroadcastChannel' in window) {
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v12');
+        broadcastChannel.onmessage = (event) => {
+          handleIncomingNetworkPayload(event.data);
+        };
+      }
+
+      // Storage sync fallback for instant multi-tab visibility
       window.addEventListener('storage', (event) => {
         if (event.key === STORAGE_BEACON_KEY && event.newValue) {
-          try { handleIncomingNetworkPayload(JSON.parse(event.newValue)); } catch(e) {}
+          try {
+            handleIncomingNetworkPayload(JSON.parse(event.newValue));
+          } catch(e) {}
         }
       });
 
-      setInterval(() => { announcePresence(); }, 3000);
+      // Continuous heartbeat announcement loop
+      setInterval(() => {
+        announcePresence();
+      }, 3000);
     }
 
     function updatePeerServerStatus(connected) {
@@ -709,7 +730,12 @@
     function connectToPeer(targetPeerId) {
       if (!peer || targetPeerId === myPeerId) return;
       showToast(`Connecting to ${targetPeerId}...`, 'wifi');
-      try { setupIncomingConnection(peer.connect(targetPeerId)); } catch(e) { showToast('Connection failed', 'alert-circle'); }
+      try {
+        const conn = peer.connect(targetPeerId);
+        setupIncomingConnection(conn);
+      } catch(e) {
+        showToast('Connection failed', 'alert-circle');
+      }
     }
 
     function setupIncomingConnection(conn) {
@@ -717,9 +743,30 @@
         activeDataConnections[conn.peer] = conn;
         showToast(`Connected via WebRTC with ${conn.peer}!`, 'check-circle');
         updateMeshUI();
+
+        // Immediately transmit our profile state upon successful connection handshake
+        conn.send({
+          id: 'handshake-' + Math.random().toString(36).substring(2, 9),
+          type: 'PEER_PRESENCE',
+          sender: userState.alias,
+          bubbleColor: userState.bubbleColor,
+          peerId: myPeerId,
+          lat: userState.lat,
+          lng: userState.lng,
+          accountType: userState.type,
+          category: userState.category,
+          makeNamePublic: userState.makeNamePublic
+        });
       });
-      conn.on('data', (data) => { handleIncomingNetworkPayload(data); });
-      conn.on('close', () => { delete activeDataConnections[conn.peer]; updateMeshUI(); });
+
+      conn.on('data', (data) => {
+        handleIncomingNetworkPayload(data);
+      });
+
+      conn.on('close', () => {
+        delete activeDataConnections[conn.peer];
+        updateMeshUI();
+      });
     }
 
     function handleIncomingNetworkPayload(data) {
@@ -732,10 +779,17 @@
         displayName = `Traveler #${data.peerId.substring(data.peerId.length - 4).toUpperCase()}`;
       }
 
+      // Store in global active directory with verified category and account type
       globalActiveDirectory[data.peerId] = {
-        name: displayName, peerId: data.peerId, lat: data.lat, lng: data.lng,
-        distance: distance, bubbleColor: data.bubbleColor || 'violet',
-        accountType: data.accountType || 'personal', category: data.category || 'store', lastSeen: Date.now()
+        name: displayName,
+        peerId: data.peerId,
+        lat: data.lat,
+        lng: data.lng,
+        distance: distance,
+        bubbleColor: data.bubbleColor || 'violet',
+        accountType: data.accountType || 'personal',
+        category: data.category || 'store',
+        lastSeen: Date.now()
       };
 
       updateMeshUI();
@@ -743,10 +797,16 @@
 
       if (userState.radius > 0 && distance > userState.radius && data.accountType !== 'business') return;
 
-      let distanceFormatted = distance >= 1000 ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(distance, 10) + 'm';
+      let distanceFormatted = distance >= 1000 
+        ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
+        : Math.max(distance, 10) + 'm';
 
       if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
-        updatePeerNodeOnMap(displayName, distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor, data.accountType, data.category, false);
+        updatePeerNodeOnMap(
+          displayName, distance, distanceFormatted, data.lat, data.lng, 
+          data.text || data.question, data.createdAt, data.peerId, 
+          data.bubbleColor, data.accountType, data.category, false
+        );
       } else if (data.type === 'CHAT_MSG') {
         const targetRoomId = data.roomId;
         if (!targetRoomId) return;
@@ -791,10 +851,44 @@
       const coords = getBroadcastCoordinates();
       broadcastData({
         id: 'ping-' + Math.random().toString(36).substring(2, 9),
-        type: 'PEER_PRESENCE', sender: userState.alias, bubbleColor: userState.bubbleColor,
-        peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type,
-        category: userState.category, question: activeTopicState.text, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic
+        type: 'PEER_PRESENCE',
+        sender: userState.alias,
+        bubbleColor: userState.bubbleColor,
+        peerId: myPeerId,
+        lat: coords.lat,
+        lng: coords.lng,
+        accountType: userState.type,
+        category: userState.category,
+        question: activeTopicState.text,
+        createdAt: activeTopicState.createdAt,
+        makeNamePublic: userState.makeNamePublic
       });
+    }
+
+    function broadcastData(payload) {
+      if (userState.ghostMode && userState.type !== 'business') return;
+      const coords = getBroadcastCoordinates();
+      payload.lat = payload.lat || coords.lat; 
+      payload.lng = payload.lng || coords.lng;
+      payload.sender = payload.sender || userState.alias; 
+      payload.peerId = payload.peerId || myPeerId;
+      payload.bubbleColor = payload.bubbleColor || userState.bubbleColor; 
+      payload.accountType = userState.type;
+      payload.category = userState.category; 
+      payload.makeNamePublic = userState.makeNamePublic;
+
+      // Broadcast over all active WebRTC data connections
+      Object.keys(activeDataConnections).forEach(pId => {
+        try { activeDataConnections[pId].send(payload); } catch(e) {}
+      });
+
+      if (broadcastChannel) {
+        try { broadcastChannel.postMessage(payload); } catch(e) {}
+      }
+
+      try {
+        localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload));
+      } catch(e) {}
     }
 
     function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, isBot) {
@@ -838,19 +932,6 @@
         </div>
       `;
       lucide.createIcons();
-    }
-
-    function broadcastData(payload) {
-      if (userState.ghostMode && userState.type !== 'business') return;
-      const coords = getBroadcastCoordinates();
-      payload.lat = payload.lat || coords.lat; payload.lng = payload.lng || coords.lng;
-      payload.sender = payload.sender || userState.alias; payload.peerId = payload.peerId || myPeerId;
-      payload.bubbleColor = payload.bubbleColor || userState.bubbleColor; payload.accountType = userState.type;
-      payload.category = userState.category; payload.makeNamePublic = userState.makeNamePublic;
-
-      Object.keys(activeDataConnections).forEach(pId => { try { activeDataConnections[pId].send(payload); } catch(e) {} });
-      if (broadcastChannel) { try { broadcastChannel.postMessage(payload); } catch(e) {} }
-      try { localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload)); } catch(e) {}
     }
 
     function renderGlobalUsersDirectory() {
