@@ -84,7 +84,7 @@
     #mapCanvas {
       transform: translate(var(--pan-x), var(--pan-y)) scale(var(--zoom-scale));
       transform-origin: center center;
-      transition: transform 0.1s ease-out;
+      transition: transform 0.15s ease-out;
       cursor: grab;
     }
     #mapCanvas:active {
@@ -94,7 +94,7 @@
     /* Inverse scale wrapper so nodes/bubbles stay constant size when map zooms out */
     .scale-compensator {
       transform: scale(calc(1 / var(--zoom-scale)));
-      transition: transform 0.1s ease-out;
+      transition: transform 0.15s ease-out;
     }
 
     /* Background Theme Presets with Expanded Repeatable Grid */
@@ -168,7 +168,7 @@
   <!-- ========================================== -->
   
   <!-- Map Canvas with Expanded Background, Fluid Zoom & Panning -->
-  <div id="mapCanvas" class="absolute -inset-[200%] overflow-hidden scale-100 origin-center" style="background: var(--bg-gradient);">
+  <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center" style="background: var(--bg-gradient);">
     <div class="absolute inset-0 opacity-12 map-grid-pattern"></div>
     
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
@@ -226,17 +226,17 @@
     </button>
   </div>
 
-  <!-- Radius Range Control Modal (Min 5 Miles / 8046.7 meters) -->
+  <!-- Radius Range Control Modal (Min 5 Miles, Max 50 Miles) -->
   <div id="rangeModal" class="hidden fixed bottom-32 right-4 z-40 glass-card p-4.5 rounded-3xl w-72 border border-white/50 shadow-2xl">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
-        <span class="text-xs font-black text-slate-900 uppercase tracking-wider">Discovery Radius (Min 5 Mi)</span>
+        <span class="text-xs font-black text-slate-900 uppercase tracking-wider">Discovery Radius (5 - 50 mi)</span>
       </div>
       <button onclick="toggleRangeModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div class="flex items-center gap-3">
-      <input type="range" id="radiusSlider" min="8046.7" max="80467" value="80467" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
+      <input type="range" id="radiusSlider" min="8046.7" max="80467" value="8046.7" step="1609.34" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
       <span id="radiusValueDisplay" class="text-xs font-bold text-sky-900 min-w-[55px] text-right">5.0 mi</span>
     </div>
   </div>
@@ -460,7 +460,8 @@
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const TEN_MILES_METERS = 16093.4;
-    const MIN_RADIUS_METERS = 8046.7; // 5 Miles
+    const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles
+    const MAX_RADIUS_METERS = 80467.0; // Exactly 50 Miles
     const STORAGE_KEY_PROFILE = 'local_user_profile_v2';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v2';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v12';
@@ -486,13 +487,13 @@
     let chatRoomsSessions = {}; 
     let activeChatRoomsList = new Set(); 
 
-    // User Profile State (Default Radius: 5 Miles / 8046.7 meters)
+    // User Profile State (Default Radius: exactly 5 Miles / 8046.7 meters)
     let userState = {
       alias: 'Traveler',
       type: 'personal',
       category: 'store',
       address: '',
-      radius: 8046.7,
+      radius: MIN_RADIUS_METERS,
       lat: 27.2730,
       lng: -80.3582,
       theme: 'theme-sky',
@@ -523,11 +524,14 @@
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
       
-      // Enforce minimum 5 miles radius constraint right out of the box
+      // Enforce 5 miles min and 50 miles max constraint
       if (!userState.radius || userState.radius < MIN_RADIUS_METERS) {
         userState.radius = MIN_RADIUS_METERS;
       }
-      document.getElementById('radiusSlider').min = MIN_RADIUS_METERS;
+      const slider = document.getElementById('radiusSlider');
+      slider.min = MIN_RADIUS_METERS;
+      slider.max = MAX_RADIUS_METERS;
+      slider.step = 1609.34;
       updateRadius(userState.radius, false);
 
       window.addEventListener('resize', recalculateNodePositions);
@@ -553,6 +557,7 @@
           const parsed = JSON.parse(savedProfile);
           userState = { ...userState, ...parsed };
           if (userState.radius < MIN_RADIUS_METERS) userState.radius = MIN_RADIUS_METERS;
+          if (userState.radius > MAX_RADIUS_METERS) userState.radius = MAX_RADIUS_METERS;
           document.getElementById('avatarNameInput').value = userState.alias;
           document.getElementById('businessAddressInput').value = userState.address || '';
           document.getElementById('businessCategorySelect').value = userState.category || 'store';
@@ -593,7 +598,7 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    // Touch Drag Panning Support for Map Canvas (keeps user icon locked in center)
+    // Touch Drag Panning Support for Map Canvas (User icon stays locked in center)
     function initMapPanHandlers() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
@@ -631,9 +636,9 @@
       window.addEventListener('touchend', handlePanEnd);
     }
 
-    // Dynamic Discovery Radius (Min 5 Miles), Fluid Zoom & Name Visibility Rule (>10 Miles)
+    // Dynamic Discovery Radius (5 to 50 miles), Fluid Zoom & Max Zoom-Out Mapping
     function updateRadius(val, updateSliderInput = true) {
-      const meters = Math.max(MIN_RADIUS_METERS, Math.min(80467, Number(val)));
+      const meters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val)));
       userState.radius = meters;
       
       let formattedText = meters >= 1000 
@@ -649,15 +654,15 @@
       const mapCanvas = document.getElementById('mapCanvas');
       
       if (ring) {
-        // Pixel diameter mapping (5mi min = 350px up to 80467m = 3200px)
-        const pixelDiameter = Math.round(350 + ((meters - MIN_RADIUS_METERS) / (80467 - MIN_RADIUS_METERS)) * 2850);
+        // Pixel diameter mapping: 5mi (8046.7m) maps to ~350px up to 50mi (80467m) mapping to ~3200px
+        const pixelDiameter = Math.round(350 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 2850);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
-        // Fluid zoom scaling & inverse bubble size compensation
+        // Fluid zoom scaling & inverse bubble size compensation so max zoom-out displays the full 50-mile terrain area
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         if (pixelDiameter > viewportMin * 0.70) {
-          const zoomScale = Math.max(0.18, (viewportMin * 0.70) / pixelDiameter);
+          const zoomScale = Math.max(0.12, (viewportMin * 0.70) / pixelDiameter);
           mapCanvas.style.setProperty('--zoom-scale', zoomScale.toFixed(3));
           document.documentElement.style.setProperty('--zoom-scale', (1 / zoomScale).toFixed(3));
         } else {
@@ -692,7 +697,7 @@
         const minPx = 150, maxPx = 1600;
         const clampedPx = Math.max(minPx, Math.min(maxPx, distPx));
         const ratio = (clampedPx - minPx) / (maxPx - minPx);
-        const newMeters = Math.round(MIN_RADIUS_METERS + (ratio * (80467 - MIN_RADIUS_METERS)));
+        const newMeters = Math.round(MIN_RADIUS_METERS + (ratio * (MAX_RADIUS_METERS - MIN_RADIUS_METERS)));
 
         updateRadius(newMeters, true);
       };
