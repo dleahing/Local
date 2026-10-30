@@ -27,6 +27,15 @@
       40% { opacity: 0.3; }
       100% { transform: translate(-50%, -50%) scale(60); opacity: 0; border-width: 0.5px; }
     }
+    @keyframes peer-sonar-pulse {
+      0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
+      70% { transform: scale(1.4); opacity: 0; box-shadow: 0 0 0 25px rgba(168, 85, 247, 0); }
+      100% { transform: scale(1); opacity: 0; }
+    }
+    @keyframes radar-sweep {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
     @keyframes bubble-subtle {
       0%, 100% { transform: scale(1); border-radius: 50%; }
       50% { transform: scale(1.02, 0.98); border-radius: 49% 51% 50% 50%; }
@@ -51,6 +60,8 @@
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
     .animate-water-ripple { animation: water-ripple-expand 10.71s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
+    .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; }
+    .animate-radar-beam { animation: radar-sweep 5s linear infinite; transform-origin: center; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
@@ -116,12 +127,15 @@
       pointer-events: none;
     }
 
-    .glass-drawer-left {
-      background: rgba(255, 255, 255, 0.22);
+    /* Beveled Top Drop-Down Glass Drawer */
+    .glass-drawer-top {
+      background: rgba(255, 255, 255, 0.35);
       backdrop-filter: blur(32px);
       -webkit-backdrop-filter: blur(32px);
+      border-bottom: 1.5px solid rgba(255, 255, 255, 0.6);
+      border-left: 1px solid rgba(255, 255, 255, 0.4);
       border-right: 1px solid rgba(255, 255, 255, 0.4);
-      box-shadow: 20px 0 50px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
   </style>
 </head>
@@ -130,9 +144,14 @@
   <!-- Map Canvas Container -->
   <div id="mapCanvas" class="absolute inset-0 overflow-hidden transition-transform duration-500 origin-center" style="background: var(--bg-gradient); transform: scale(1.1);">
     <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:28px_28px]"></div>
+    
+    <!-- Radar Sweep Beam & Waves -->
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-500 origin-center">
-      <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
+      <div class="w-[420px] h-[420px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
+      <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
+      <div class="w-[340px] h-[340px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-radar-beam pointer-events-none" style="background: conic-gradient(from 0deg at 50% 50%, rgba(56, 189, 248, 0.25) 0deg, transparent 60deg, transparent 360deg); mask-image: radial-gradient(circle, black 60%, transparent 100%);"></div>
     </div>
+
     <!-- Water Ripple Container -->
     <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
     <div id="nodesContainer" class="absolute inset-0 z-20"></div>
@@ -280,8 +299,8 @@
   <!-- Outside Tap Backdrop Overlay for Chat Drawer -->
   <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-xs transition-opacity"></div>
 
-  <!-- Independent Chat Drawer with Gemini Pill-Shaped Multi-Action Input Container -->
-  <div id="chatDrawer" class="hidden fixed top-0 bottom-0 left-0 z-40 w-80 max-w-[85vw] glass-drawer-left p-4 flex flex-col transition-all">
+  <!-- Top Beveled Drop-Down Chat Drawer -->
+  <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[80vh]">
     <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
       <div class="flex items-center gap-3">
         <div id="chatTargetAvatar" class="w-9 h-9 rounded-full peer-bubble-node text-white font-bold text-xs flex items-center justify-center shadow-md">
@@ -304,17 +323,14 @@
     </div>
 
     <!-- Messages Container -->
-    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3"></div>
+    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3 max-h-60"></div>
 
-    <!-- Gemini-Style Pill-Shaped Multi-Action Chat Input Container -->
+    <!-- Chat Input Container -->
     <div class="pt-2.5 pb-1 flex-shrink-0">
       <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/70 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
-        <!-- Text Area / Input -->
         <textarea id="chatInput" rows="1" placeholder="Ask or message nearby..." class="w-full bg-transparent text-slate-900 text-xs font-medium focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
         
-        <!-- Multi-Action Toolbar Bottom Row -->
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/40">
-          <!-- Left Action Icons (Attachments / Tools) -->
           <div class="flex items-center gap-1">
             <button onclick="showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-500 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Attach file">
               <i data-lucide="plus" class="w-4 h-4"></i>
@@ -324,7 +340,6 @@
             </button>
           </div>
 
-          <!-- Right Action (Send Pill Button) -->
           <div class="flex items-center gap-1.5">
             <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center shadow-md active:scale-95 hover:bg-sky-500 transition-all">
               <i data-lucide="arrow-up" class="w-4 h-4"></i>
@@ -335,7 +350,7 @@
     </div>
   </div>
 
-  <!-- Question Modal with Reverted Standard Textarea & "Ask the LocaLs" Heading -->
+  <!-- Question Modal -->
   <div id="questionModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
@@ -373,12 +388,12 @@
       alias: 'Traveler',
       type: 'personal',
       address: '',
-      radius: 80467, // Expanded default radius to ensure peers are visible
+      radius: 80467,
       lat: 27.2730,
       lng: -80.3582,
       theme: 'theme-sky',
       ghostMode: false,
-      fuzzLocation: false // Disabled fuzzing by default for reliable testing discovery
+      fuzzLocation: false
     };
 
     let touchTimer = null;
@@ -569,7 +584,6 @@
       const uniqueSuffix = Math.random().toString(36).substring(2, 8);
       myPeerId = MESH_PREFIX + uniqueSuffix;
       
-      // Explicit public PeerJS cloud server configuration for reliable multi-client discovery
       peer = new Peer(myPeerId, {
         host: '0.peerjs.com',
         port: 443,
@@ -594,7 +608,6 @@
     }
 
     function startPeerDiscoveryLoop() {
-      // Periodic ping & seed connection attempts to discover other active users
       const seedIds = [
         MESH_PREFIX + 'seed1',
         MESH_PREFIX + 'seed2',
@@ -753,6 +766,9 @@
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
+          <!-- Sonar radar ping animation ring on newly discovered peers -->
+          <div class="absolute -inset-2 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none"></div>
+
           ${hasValidQuestion ? `
             <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${roomId}', '${alias}', '${question}', '${alias}')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
