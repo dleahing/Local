@@ -22,7 +22,7 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
-    /* Ultra-Slow Water Ripple (4.76s duration) */
+    /* Ultra-Slow Water Ripple (7.14s duration) */
     @keyframes water-ripple-expand {
       0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.9; border-width: 4px; }
       40% { opacity: 0.5; }
@@ -51,7 +51,7 @@
     }
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
-    .animate-water-ripple { animation: water-ripple-expand 4.76s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
+    .animate-water-ripple { animation: water-ripple-expand 7.14s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
@@ -98,9 +98,11 @@
         0 0 10px rgba(56, 189, 248, 0.4);
       position: relative;
       outline: none;
+      border: none;
     }
     .bubble-node:focus, .bubble-node:active {
       outline: none;
+      border: none;
       box-shadow: 
         0 6px 15px rgba(2, 132, 199, 0.2),
         inset 0 3px 8px rgba(255, 255, 255, 0.95),
@@ -120,9 +122,11 @@
         0 0 10px rgba(216, 180, 254, 0.4);
       position: relative;
       outline: none;
+      border: none;
     }
     .peer-bubble-node:focus, .peer-bubble-node:active {
       outline: none;
+      border: none;
     }
 
     .bubble-glare {
@@ -421,7 +425,7 @@
       ripple.style.top = `${centerY}px`;
 
       rippleContainer.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 4760);
+      setTimeout(() => ripple.remove(), 7140);
     }
 
     function initUserNode() {
