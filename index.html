@@ -393,7 +393,7 @@
   </div>
 
   <script>
-    const MESH_PREFIX = 'local-proximity-mesh-global-v3-';
+    const MESH_PREFIX = 'local-proximity-mesh-global-v4-';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
@@ -648,7 +648,7 @@
         });
         
         announcePresence();
-      }, 3000);
+      }, 2500);
     }
 
     function tryConnectPeer(peerId) {
