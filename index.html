@@ -27,11 +27,6 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(5.7); opacity: 0; }
     }
-    @keyframes water-ripple-expand {
-      0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.6; border-width: 1.5px; }
-      40% { opacity: 0.35; }
-      100% { transform: translate(-50%, -50%) scale(90); opacity: 0; border-width: 0.5px; }
-    }
     @keyframes peer-sonar-pulse {
       0% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
       70% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; box-shadow: 0 0 0 35px rgba(168, 85, 247, 0); }
@@ -57,8 +52,26 @@
       50% { opacity: 0.42; transform: scale(1.08); }
     }
 
+    /* Outward Pulsing Radius Ring Ripple Animation */
+    @keyframes radius-ring-pulse {
+      0% {
+        transform: translate(-50%, -50%) scale(0.01);
+        opacity: 0.85;
+      }
+      80% {
+        opacity: 0.5;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+      }
+    }
+
+    .animate-radius-ripple {
+      animation: radius-ring-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+    }
+
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
-    .animate-water-ripple { animation: water-ripple-expand 10.71s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
@@ -155,7 +168,6 @@
       <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
     </div>
 
-    <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
     <div id="nodesContainer" class="absolute inset-0 z-25"></div>
   </div>
 
@@ -498,6 +510,7 @@
       updateRadius(userState.radius || 8046.7, false);
       window.addEventListener('resize', recalculateNodePositions);
       initRadiusDragHandlers();
+      initTapRippleHandler();
     });
 
     async function requestScreenWakeLock() {
@@ -697,21 +710,36 @@
     }
 
     // Map Node Rendering & Interaction
-    function createBubbleRipple(sourceNodeId = 'userAvatarCircle') {
+    function createBubbleRipple() {
       triggerHapticFeedback(50);
-      const circle = document.getElementById(sourceNodeId);
-      if (!circle) return;
+      const ringContainer = document.getElementById('radiusRippleContainer');
+      const targetRing = document.getElementById('radarBoundaryRing');
+      if (!ringContainer || !targetRing) return;
 
-      const rect = circle.getBoundingClientRect();
-      const rippleContainer = document.getElementById('tapRippleContainer');
+      const sizePx = targetRing.offsetWidth || 900;
       const ripple = document.createElement('div');
       
-      ripple.className = 'absolute w-14 h-14 rounded-full border border-sky-400/60 bg-sky-300/20 pointer-events-none animate-water-ripple';
-      ripple.style.left = `${rect.left + rect.width / 2}px`;
-      ripple.style.top = `${rect.top + rect.height / 2}px`;
+      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border-2 border-sky-400 bg-sky-400/20 pointer-events-none animate-radius-ripple';
+      ripple.style.width = `${sizePx}px`;
+      ripple.style.height = `${sizePx}px`;
 
-      rippleContainer.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 10710);
+      ringContainer.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 2200);
+    }
+
+    function initTapRippleHandler() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+
+      const triggerRipple = (e) => {
+        // Prevent triggering ripple when interacting with UI modals, buttons, or input drawers
+        if (e.target.closest('header, button, input, textarea, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rangeModal')) {
+          return;
+        }
+        createBubbleRipple();
+      };
+
+      mapCanvas.addEventListener('click', triggerRipple);
     }
 
     function getEffectiveMyName() {
@@ -746,6 +774,9 @@
 
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
+          <!-- Radius Ripple Animation Container centered at User Avatar -->
+          <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
+
           <!-- Clickable & Draggable Radius Ring anchored around User Icon -->
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/10 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/20 shadow-lg" style="width: 900px; height: 900px;" title="Click & drag to adjust radius">
             <div class="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10px] font-black tracking-wider uppercase shadow-md pointer-events-none">Drag Ring to Adjust Radius</div>
@@ -773,7 +804,7 @@
       applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
 
       const circle = document.getElementById('userAvatarCircle');
-      circle.addEventListener('mousedown', () => { createBubbleRipple('userAvatarCircle'); triggerBubbleBounce('userAvatarCircle'); handlePressStart(); });
+      circle.addEventListener('mousedown', () => { createBubbleRipple(); triggerBubbleBounce('userAvatarCircle'); handlePressStart(); });
       circle.addEventListener('mouseup', () => clearTimeout(touchTimer));
     }
 
