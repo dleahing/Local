@@ -305,7 +305,7 @@
           <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
-        <!-- Interest Filter Option Added Here -->
+        <!-- Interest Filter Option -->
         <div>
           <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter (Chat Matching)</label>
           <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
@@ -455,9 +455,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 48280.2; // Exactly 30 Miles maximum
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v3';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v3';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v13';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v4';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v4';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v14';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -481,7 +481,7 @@
     let chatRoomsSessions = {}; 
     let activeChatRoomsList = new Set(); 
 
-    // User Profile State (Default Radius: 5 Miles, Interest Filter: none)
+    // User Profile State
     let userState = {
       alias: 'Traveler',
       type: 'personal',
@@ -760,6 +760,13 @@
           nodeElem.style.opacity = isWithinRadius ? '1' : '0.15';
           nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
 
+          const sonarRing = nodeElem.querySelector('.peer-sonar-ring');
+          if (sonarRing) {
+            // Business nodes and nodes not matching filter do NOT get sonar ripples
+            const shouldRipple = matchesFilter && peer.accountType !== 'business';
+            sonarRing.style.display = shouldRipple ? 'block' : 'none';
+          }
+
           const labelElem = nodeElem.querySelector('.node-name-label');
           if (labelElem) {
             labelElem.style.display = peer.distance > TEN_MILES_METERS ? 'none' : 'block';
@@ -809,6 +816,9 @@
     }
 
     function createBubbleRipple() {
+      // Businesses do NOT emit ripples when tapped/clicked
+      if (userState.type === 'business') return;
+
       triggerHapticFeedback(50);
       const ringContainer = document.getElementById('radiusRippleContainer');
       const targetRing = document.getElementById('radarBoundaryRing');
@@ -942,7 +952,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v13');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v14');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -1217,9 +1227,12 @@
       let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
       const showNameLabel = distance <= TEN_MILES_METERS;
 
+      // Business nodes and non-matching filter nodes NEVER render sonar ripple rings
+      const showSonarRipple = matchesFilter && accountType !== 'business';
+
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator">
-          <div class="absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none" style="border-radius: 50%;"></div>
+          <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           ${hasValidQuestion ? `
             <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-40 cursor-pointer max-w-[220px] text-center" onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question}', '${peerId}')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0"></i>
