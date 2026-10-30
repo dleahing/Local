@@ -60,18 +60,6 @@
       100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
     }
 
-    @keyframes wiggle {
-      0%, 100% { transform: rotate(0deg); }
-      20% { transform: rotate(-6deg); }
-      40% { transform: rotate(6deg); }
-      60% { transform: rotate(-4deg); }
-      80% { transform: rotate(4deg); }
-    }
-
-    .animate-wiggle {
-      animation: wiggle 0.5s ease-in-out infinite;
-    }
-
     .animate-radius-ripple {
       animation: radius-ring-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
     }
@@ -1232,34 +1220,7 @@
         savePersistentData();
         playAudioEffect('bubble');
         triggerHapticFeedback([70, 50, 70]);
-        if (currentActiveChatRoomId === targetRoomId) {
-          appendMessage(senderLabel, data.text, timeStr, false);
-        } else {
-          triggerChatBubbleWiggle(targetRoomId, data.peerId);
-        }
-      }
-    }
-
-    function triggerChatBubbleWiggle(roomId, peerId) {
-      if (roomId === 'room-you') {
-        const bubble = document.getElementById('userTopBubble');
-        if (bubble) {
-          bubble.classList.add('animate-wiggle');
-          setTimeout(() => bubble.classList.remove('animate-wiggle'), 3000);
-        }
-      } else if (peerId) {
-        const peerKey = 'node-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
-        const nodeElem = document.getElementById(peerKey);
-        if (nodeElem) {
-          const chatBubble = nodeElem.querySelector('.animate-float') || nodeElem.querySelector('.bubble-node');
-          if (chatBubble) {
-            chatBubble.classList.add('animate-wiggle');
-            setTimeout(() => chatBubble.classList.remove('animate-wiggle'), 3000);
-          }
-        }
-      }
-      if (currentLayoutMode === 'right') {
-        renderRightSidebarBubbles();
+        if (currentActiveChatRoomId === targetRoomId) appendMessage(senderLabel, data.text, timeStr, false);
       }
     }
 
@@ -1645,7 +1606,6 @@
 
     function postQuestion() {
       const text = document.getElementById('questionInput').value.trim();
-      const textarea = document.getElementById('questionInput');
       if (!text) return;
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
@@ -1658,12 +1618,9 @@
       processedMsgIds.add(msgId);
       const coords = getBroadcastCoordinates();
       broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
-      
-      textarea.value = '';
       closeQuestionModal();
-      closeChatDrawer();
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
-      showToast('Map bubble posted!', 'message-circle');
+      openChatDrawer('room-you', userState.type === 'business' ? userState.alias : 'Traveler', text, 'you');
     }
 
     function autoResizeTextArea(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; }
@@ -1717,8 +1674,6 @@
         text,
         accountType: userState.type 
       });
-
-      closeChatDrawer();
     }
 
     function appendMessage(sender, text, time, isMe) {
