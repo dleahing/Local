@@ -80,7 +80,7 @@
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
-    /* Fluid Map Canvas Transform with Constrained Panning & Zoom */
+    /* Fluid Map Canvas Transform with Strict Panning & Zoom */
     #mapCanvas {
       transform: translate3d(var(--pan-x), var(--pan-y), 0) scale(var(--zoom-scale));
       transform-origin: center center;
@@ -450,8 +450,8 @@
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const TEN_MILES_METERS = 16093.4;
-    const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
-    const MAX_RADIUS_METERS = 80467.0; // Exactly 50 Miles maximum
+    const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum (5 * 1609.34)
+    const MAX_RADIUS_METERS = 80467.0; // Exactly 50 Miles maximum (50 * 1609.34)
     const STORAGE_KEY_PROFILE = 'local_user_profile_v2';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v2';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v12';
@@ -590,12 +590,11 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    // Strict boundary clipping for map panning so it never goes beyond the 50-mile rendered area
+    // Strict boundary clipping for map panning based on maximum 50-mile rendered area
     function getPanBounds() {
       const ring = document.getElementById('radarBoundaryRing');
-      const radiusPx = ring ? (ring.offsetWidth / 2) : 900;
-      // Allow panning up to the rendered radius edge limit
-      return radiusPx * 0.95;
+      const radiusPx = ring ? (ring.offsetWidth / 2) : 3200;
+      return radiusPx * 0.90;
     }
 
     // High-Performance Butter-Smooth Inertial Drag Panning Loop with strict boundary locking
@@ -612,7 +611,7 @@
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         startDragX = clientX - targetPanX;
-        startDragY = clientY - startDragY;
+        startDragY = clientY - targetPanY;
       };
 
       const handlePanMove = (e) => {
@@ -623,7 +622,7 @@
         let newX = clientX - startDragX;
         let newY = clientY - startDragY;
 
-        // Enforce strict map boundary limits (cannot go beyond rendered area)
+        // Enforce strict map boundary limits (cannot go beyond 50-mile rendered area)
         const maxLimit = getPanBounds();
         targetPanX = Math.max(-maxLimit, Math.min(maxLimit, newX));
         targetPanY = Math.max(-maxLimit, Math.min(maxLimit, newY));
@@ -751,7 +750,6 @@
           nodeElem.style.opacity = isWithinRadius ? '1' : '0.15';
           nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
 
-          // Hide name label if distance is greater than 10 miles
           const labelElem = nodeElem.querySelector('.node-name-label');
           if (labelElem) {
             labelElem.style.display = peer.distance > TEN_MILES_METERS ? 'none' : 'block';
@@ -1073,11 +1071,11 @@
     }
 
     function spawnDefaultSimulatedUsers() {
-      // Offset calculated precisely for 5 miles distance (~0.0724 degrees latitude/longitude offset)
-      const fiveMilesDeg = 5 * (METERS_PER_MILE / 111320);
+      // Precise 5 miles offset calculation using accurate earth degrees per meter
+      const latOffsetFor5Miles = (5 * METERS_PER_MILE) / 111320;
 
       const sampleUsers = [
-        { name: 'Bot 5-Mile Scout', peerId: 'sim-peer-bot-5mi', offsetLat: fiveMilesDeg, offsetLng: 0, question: 'Hello from exactly 5 miles away!', color: 'emerald', accountType: 'personal', category: 'store', isBot: true },
+        { name: 'Bot 5-Mile Scout', peerId: 'sim-peer-bot-5mi', offsetLat: latOffsetFor5Miles, offsetLng: 0, question: 'Hello from exactly 5 miles away!', color: 'emerald', accountType: 'personal', category: 'store', isBot: true },
         { name: 'Local Brews Café', peerId: 'sim-peer-business-1', offsetLat: 0.0018, offsetLng: 0.0015, question: 'Fresh artisan espresso & pastries open until 6 PM!', color: 'yellow', accountType: 'business', category: 'coffee', isBot: true },
         { name: 'Bot_Buddy', peerId: 'sim-peer-bot-buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'violet', accountType: 'personal', category: 'store', isBot: true },
         { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', offsetLat: -0.0025, offsetLng: 0.0022, question: 'Licensed compounding pharmacy & medical supplies open!', color: 'emerald', accountType: 'business', category: 'pill', isBot: true }
@@ -1175,7 +1173,7 @@
       let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
       let left = 50 + (Math.cos(angle) * 15), top = 50 + (Math.sin(angle) * 15);
       if (accountType === 'business') { left = 50 + ((peerId.charCodeAt(0) % 5) - 2) * 12; top = 50 + ((peerId.charCodeAt(1) % 5) - 2) * 10; }
-      if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 30; } // Position 5-mile bot neatly north
+      if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 30; } // Position 5-mile bot neatly north within radius ring
 
       if (!nodeElem) {
         nodeElem = document.createElement('div');
