@@ -22,7 +22,7 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
-    /* Ultra-Slow Water Ripple (7.14s duration) */
+    /* Ultra-Slow Water Ripple (10.71s duration) */
     @keyframes water-ripple-expand {
       0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.9; border-width: 4px; }
       40% { opacity: 0.5; }
@@ -51,7 +51,7 @@
     }
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
-    .animate-water-ripple { animation: water-ripple-expand 7.14s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
+    .animate-water-ripple { animation: water-ripple-expand 10.71s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
@@ -86,7 +86,7 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* Completely Borderless Profile Bubble & removed focus ring outline on click */
+    /* Completely Borderless Profile Bubble */
     .bubble-node {
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(56, 189, 248, 0.5) 70%, rgba(2, 132, 199, 0.7) 100%);
       backdrop-filter: blur(12px) saturate(190%);
@@ -299,7 +299,7 @@
         </div>
         <div>
           <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Proximity Session</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Active Peer Mesh</p>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Topic-Isolated Chat Room</p>
         </div>
       </div>
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -331,7 +331,7 @@
         <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
-        <textarea id="questionInput" rows="3" placeholder="Post a question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
+        <textarea id="questionInput" rows="3" placeholder="Post a topic question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
         <button onclick="postQuestion()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
           Post Map Bubble
         </button>
@@ -350,9 +350,9 @@
     let nearbyPeers = {};
     
     let activeTopicState = { text: null, createdAt: null };
-    let currentActiveChatPeer = null;
-    let peerChatSessions = {}; 
-    let activeChatPeersList = new Set(); 
+    let currentActiveChatRoomId = null; // Uniquely identifies each isolated chat room
+    let chatRoomsSessions = {}; // Map of roomId -> array of message objects
+    let activeChatRoomsList = new Set(); // Track rooms in top tray
 
     let userState = {
       alias: 'Aqua Voyager',
@@ -425,7 +425,7 @@
       ripple.style.top = `${centerY}px`;
 
       rippleContainer.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 7140);
+      setTimeout(() => ripple.remove(), 10710);
     }
 
     function initUserNode() {
@@ -436,15 +436,13 @@
       
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
-          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('${userState.alias}', activeTopicState.text, 'you')">
+          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600"></i>
             <span id="userTopBubbleText">...</span>
             <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-800 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md">60m</span>
           </div>
 
-          <!-- 50% Reduced Ambient Glow -->
           <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none"></div>
-
           <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-all pointer-events-none"></div>
 
           <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle">
@@ -586,7 +584,6 @@
         broadcastData(data, conn.peer);
 
         const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
-
         if (userState.radius > 0 && distance > userState.radius) return;
 
         let distanceFormatted = distance >= 1000 
@@ -603,25 +600,25 @@
             showToast(`Question from ${data.sender || 'Peer'} (${distanceFormatted} away)!`, 'pin');
           }
         } else if (data.type === 'CHAT_MSG') {
-          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, activeTopicState.text, activeTopicState.createdAt);
-          
-          const peerKey = data.sender || 'Peer';
-          if (!peerChatSessions[peerKey]) peerChatSessions[peerKey] = [];
-          peerChatSessions[peerKey].push({ sender: peerKey, text: data.text, isMe: false });
+          // Route message exclusively to the specified isolated chat room
+          const targetRoomId = data.roomId;
+          if (!targetRoomId) return;
 
-          registerActiveChat(peerKey);
+          if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
+          chatRoomsSessions[targetRoomId].push({ sender: data.sender, text: data.text, isMe: false });
 
-          if (currentActiveChatPeer === peerKey) {
-            appendMessage(peerKey, data.text, false);
+          registerActiveChat(targetRoomId, data.roomName || data.sender);
+
+          if (currentActiveChatRoomId === targetRoomId) {
+            appendMessage(data.sender, data.text, false);
           } else {
-            showToast(`Message from ${peerKey} (${distanceFormatted} away)!`, 'message-square');
+            showToast(`New message in "${data.roomName || data.sender}"!`, 'message-square');
           }
         }
       });
 
       conn.on('close', () => {
         delete activeConnections[conn.peer];
-        removePeerNodeFromMap(conn.peer);
         updateMeshUI();
       });
     }
@@ -637,6 +634,7 @@
       let topPx = `calc(50% + ${Math.sin(angle) * screenRadius}px)`;
 
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
+      let roomId = 'room-peer-' + alias.replace(/\s+/g, '-').toLowerCase();
 
       if (!nodeElem) {
         nodeElem = document.createElement('div');
@@ -651,12 +649,12 @@
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
           ${hasValidQuestion ? `
-            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${alias}', '${question}', '${alias}')">
+            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${roomId}', '${alias}: ${question}', '${question}', '${alias}')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
               <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
             </div>
           ` : ''}
-          <div onclick="openChatDrawer('${alias}', '${question || ''}', '${alias}')" class="w-11 h-11 rounded-full peer-bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle">
+          <div onclick="openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" class="w-11 h-11 rounded-full peer-bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle">
             <div class="bubble-glare"></div>
           </div>
           <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distanceFormatted})</span>
@@ -665,13 +663,6 @@
       lucide.createIcons();
 
       nearbyPeers[peerKey] = { elem: nodeElem, createdAt: createdAt };
-    }
-
-    function removePeerNodeFromMap(peerId) {
-      let peerKey = 'node-' + peerId;
-      let node = document.getElementById(peerKey);
-      if (node) node.remove();
-      delete nearbyPeers[peerKey];
     }
 
     function broadcastData(payload, excludePeerId = null) {
@@ -706,14 +697,6 @@
             document.getElementById('userTopBubbleBadge').innerText = `${minutesLeft}m`;
           }
         }
-
-        Object.keys(nearbyPeers).forEach(key => {
-          let peerObj = nearbyPeers[key];
-          if (peerObj && peerObj.createdAt && (Date.now() - peerObj.createdAt >= ONE_HOUR_MS)) {
-            let topMsg = peerObj.elem.querySelector('.animate-float');
-            if (topMsg) topMsg.remove();
-          }
-        });
       }, 1000);
     }
 
@@ -809,29 +792,32 @@
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
       showToast('Question broadcasted across proximity network!', 'pin');
-      openChatDrawer(userState.alias, text, 'you');
+      openChatDrawer('room-you', `${userState.alias}: ${text}`, text, 'you');
     }
 
     function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
-      if (!text || !currentActiveChatPeer) return;
+      if (!text || !currentActiveChatRoomId) return;
 
       appendMessage('You', text, true);
 
-      if (!peerChatSessions[currentActiveChatPeer]) peerChatSessions[currentActiveChatPeer] = [];
-      peerChatSessions[currentActiveChatPeer].push({ sender: 'You', text: text, isMe: true });
+      if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
+      chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'You', text: text, isMe: true });
 
       input.value = '';
 
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
 
+      const activeRoomName = document.getElementById('chatTargetName').innerText;
+
       broadcastData({ 
         id: msgId,
         type: 'CHAT_MSG', 
         sender: userState.alias,
-        target: currentActiveChatPeer,
+        roomId: currentActiveChatRoomId,
+        roomName: activeRoomName,
         text: text 
       });
     }
@@ -850,14 +836,14 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
-    function registerActiveChat(peerId) {
-      activeChatPeersList.add(peerId);
+    function registerActiveChat(roomId, roomName) {
+      activeChatRoomsList.add(JSON.stringify({ id: roomId, name: roomName }));
       renderActiveChatsBar();
     }
 
     function renderActiveChatsBar() {
       const bar = document.getElementById('activeChatsBar');
-      if (activeChatPeersList.size === 0) {
+      if (activeChatRoomsList.size === 0) {
         bar.classList.add('hidden');
         return;
       }
@@ -865,39 +851,38 @@
       bar.classList.remove('hidden');
       bar.innerHTML = '';
 
-      activeChatPeersList.forEach(peerId => {
-        const isSelected = currentActiveChatPeer === peerId;
-        const isSelf = peerId === 'you';
-        const displayName = isSelf ? userState.alias : peerId;
+      activeChatRoomsList.forEach(roomJson => {
+        const room = JSON.parse(roomJson);
+        const isSelected = currentActiveChatRoomId === room.id;
+        const isSelf = room.id === 'room-you';
         const bubbleClass = isSelf ? 'bubble-node' : 'peer-bubble-node';
 
         const item = document.createElement('div');
         item.className = `relative cursor-pointer transition-transform hover:scale-110 flex items-center justify-center ${isSelected ? 'ring-2 ring-sky-500 rounded-full' : ''}`;
-        item.title = `Chat with ${displayName}`;
+        item.title = `Chat: ${room.name}`;
         item.innerHTML = `
           <div class="w-8 h-8 rounded-full ${bubbleClass} text-white font-bold text-[10px] flex items-center justify-center shadow-md">
             <div class="bubble-glare"></div>
-            <span>${displayName.charAt(0).toUpperCase()}</span>
+            <span>${room.name.charAt(0).toUpperCase()}</span>
           </div>
         `;
         item.onclick = () => {
-          const topic = (isSelf ? activeTopicState.text : null);
-          openChatDrawer(displayName, topic, peerId);
+          openChatDrawer(room.id, room.name, room.id === 'room-you' ? activeTopicState.text : null, room.name);
         };
         bar.appendChild(item);
       });
     }
 
-    function openChatDrawer(name, topic, peerId) {
-      currentActiveChatPeer = peerId || name;
-      registerActiveChat(currentActiveChatPeer);
+    function openChatDrawer(roomId, roomName, topic, peerId) {
+      currentActiveChatRoomId = roomId;
+      registerActiveChat(roomId, roomName);
 
-      const isSelf = currentActiveChatPeer === 'you' || name === userState.alias;
-      document.getElementById('chatTargetName').innerText = isSelf ? 'Proximity Session (You)' : `Chat with ${name}`;
+      document.getElementById('chatTargetName').innerText = roomName;
       
+      const isSelf = roomId === 'room-you';
       const avatarElem = document.getElementById('chatTargetAvatar');
       avatarElem.className = `w-9 h-9 rounded-full ${isSelf ? 'bubble-node' : 'peer-bubble-node'} text-white font-bold text-xs flex items-center justify-center shadow-md`;
-      avatarElem.innerHTML = `<div class="bubble-glare"></div><span>${name.charAt(0).toUpperCase()}</span>`;
+      avatarElem.innerHTML = `<div class="bubble-glare"></div><span>${roomName.charAt(0).toUpperCase()}</span>`;
 
       if (topic || (isSelf && activeTopicState.text)) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
@@ -908,8 +893,8 @@
 
       const msgBox = document.getElementById('chatMessages');
       msgBox.innerHTML = '';
-      if (peerChatSessions[currentActiveChatPeer]) {
-        peerChatSessions[currentActiveChatPeer].forEach(msg => {
+      if (chatRoomsSessions[currentActiveChatRoomId]) {
+        chatRoomsSessions[currentActiveChatRoomId].forEach(msg => {
           appendMessage(msg.sender, msg.text, msg.isMe);
         });
       }
@@ -921,7 +906,7 @@
     function closeChatDrawer() { 
       document.getElementById('chatDrawer').classList.add('hidden'); 
       document.getElementById('chatBackdrop').classList.add('hidden');
-      currentActiveChatPeer = null;
+      currentActiveChatRoomId = null;
     }
 
     function openQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
