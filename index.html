@@ -181,8 +181,8 @@
     </div>
 
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
-      <div class="w-[420px] h-[420px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
-      <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
+      <div class="w-[210px] h-[210px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
+      <div class="w-[170px] h-[170px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
     </div>
 
     <div id="nodesContainer" class="absolute inset-0 z-50"></div>
@@ -227,6 +227,24 @@
     <button onclick="playAudioEffect('click'); openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
     </button>
+    <button onclick="playAudioEffect('click'); toggleRangeModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Radius Filter">
+      <i data-lucide="radar" class="w-5 h-5"></i>
+    </button>
+  </div>
+
+  <!-- Radius Range Control Modal (Min 5 Miles, Max 30 Miles) -->
+  <div id="rangeModal" class="hidden fixed bottom-32 right-4 z-40 glass-card p-4.5 rounded-3xl w-72 border border-white/50 shadow-2xl">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
+        <span class="text-xs font-black text-slate-900 uppercase tracking-wider">Discovery Radius (5 - 30 mi)</span>
+      </div>
+      <button onclick="playAudioEffect('click'); toggleRangeModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="flex items-center gap-3">
+      <input type="range" id="radiusSlider" min="8046.7" max="48280.2" value="8046.7" step="1609.34" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
+      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-900 min-w-[55px] text-right">5.0 mi</span>
+    </div>
   </div>
 
   <!-- WebRTC P2P Mesh & Directory Modal -->
@@ -446,7 +464,8 @@
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const TEN_MILES_METERS = 16093.4;
-    const DEFAULT_RADIUS_METERS = 16093.4; // Fixed 10-mile operational radius
+    const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
+    const MAX_RADIUS_METERS = 48280.2; // Exactly 30 Miles maximum
     const STORAGE_KEY_PROFILE = 'local_user_profile_v11';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v11';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v21';
@@ -484,7 +503,7 @@
       category: 'store',
       address: '',
       interestFilter: 'none',
-      radius: DEFAULT_RADIUS_METERS,
+      radius: MIN_RADIUS_METERS,
       lat: 27.2730,
       lng: -80.3582,
       theme: 'theme-sky',
@@ -504,10 +523,10 @@
 
     let touchTimer = null;
     let isDraggingRadius = false;
-    let dragStartRadiusMeters = DEFAULT_RADIUS_METERS;
+    let dragStartRadiusMeters = MIN_RADIUS_METERS;
     let dragStartDistancePx = 175;
 
-    // Web Audio Synthesized Sound Effect System (Radar drag sound completely removed)
+    // Web Audio Synthesized Sound Effect System
     let audioCtx = null;
 
     function initAudioContext() {
@@ -581,7 +600,13 @@
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
       
-      userState.radius = DEFAULT_RADIUS_METERS;
+      if (!userState.radius || userState.radius < MIN_RADIUS_METERS) {
+        userState.radius = MIN_RADIUS_METERS;
+      }
+      const slider = document.getElementById('radiusSlider');
+      slider.min = MIN_RADIUS_METERS;
+      slider.max = MAX_RADIUS_METERS;
+      slider.step = 1609.34;
       updateRadius(userState.radius, false);
 
       window.addEventListener('resize', recalculateNodePositions);
@@ -608,7 +633,8 @@
         if (savedProfile) {
           const parsed = JSON.parse(savedProfile);
           userState = { ...userState, ...parsed };
-          userState.radius = DEFAULT_RADIUS_METERS;
+          if (userState.radius < MIN_RADIUS_METERS) userState.radius = MIN_RADIUS_METERS;
+          if (userState.radius > MAX_RADIUS_METERS) userState.radius = MAX_RADIUS_METERS;
           document.getElementById('avatarNameInput').value = userState.alias;
           document.getElementById('businessAddressInput').value = userState.address || '';
           document.getElementById('businessCategorySelect').value = userState.category || 'store';
@@ -616,6 +642,7 @@
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
           document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
+          document.getElementById('radiusSlider').value = userState.radius;
           selectAccountType(userState.type || 'personal', true);
           setAppTheme(userState.theme || 'theme-sky', true);
           applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
@@ -657,7 +684,7 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rangeModal')) {
           return;
         }
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
@@ -751,14 +778,31 @@
     }
 
     function updateRadius(val, updateSliderInput = true) {
-      const meters = DEFAULT_RADIUS_METERS;
+      const meters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val)));
       userState.radius = meters;
+      
+      let formattedText = meters >= 1000 
+        ? (meters / METERS_PER_MILE).toFixed(1) + ' mi' 
+        : meters + 'm';
+        
+      document.getElementById('radiusValueDisplay').innerText = formattedText;
+      if (updateSliderInput) {
+        document.getElementById('radiusSlider').value = meters;
+      }
 
       const ring = document.getElementById('radarBoundaryRing');
+      
       if (ring) {
-        const pixelDiameter = 900;
+        const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 850);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
+
+        const viewportMin = Math.min(window.innerWidth, window.innerHeight);
+        if (pixelDiameter > viewportMin * 0.70) {
+          targetZoomScale = Math.max(0.15, Math.min(4.0, (viewportMin * 0.70) / pixelDiameter));
+        } else {
+          targetZoomScale = 1.0;
+        }
       }
 
       refreshAllNodeVisibilities();
@@ -787,14 +831,18 @@
         if (!isDraggingRadius) return;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
+        
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / currentZoomScale;
+
         const deltaPx = currentDistPx - dragStartDistancePx;
-        const metersPerPx = 48280.2 / 1075;
-        const newMeters = Math.max(8046.7, Math.min(48280.2, dragStartRadiusMeters + (deltaPx * metersPerPx)));
-        userState.radius = newMeters;
-        refreshAllNodeVisibilities();
+        const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 850;
+        
+        const newMeters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
+
+        updateRadius(newMeters, true);
       };
 
       const handleEnd = () => {
@@ -895,7 +943,7 @@
       const targetRing = document.getElementById('radarBoundaryRing');
       if (!ringContainer || !targetRing) return;
 
-      const sizePx = targetRing.offsetWidth || 900;
+      const sizePx = targetRing.offsetWidth || 450;
       const ripple = document.createElement('div');
       
       ripple.className = 'absolute top-1/2 left-1/2 rounded-full border-2 border-sky-400 bg-sky-400/20 pointer-events-none animate-radius-ripple';
@@ -911,7 +959,7 @@
       if (!mapCanvas) return;
 
       const triggerRipple = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rangeModal')) {
           return;
         }
         createBubbleRipple();
@@ -953,7 +1001,7 @@
         <div class="relative flex flex-col items-center group">
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/15 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/25 shadow-lg pointer-events-auto" style="width: 900px; height: 900px;" title="Click & drag to scale boundary">
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/15 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/25 shadow-lg pointer-events-auto" style="width: 450px; height: 450px;" title="Click & drag to scale boundary">
             <div class="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10px] font-black tracking-wider uppercase shadow-md pointer-events-none">Drag Ring In/Out to Adjust Bounds</div>
           </div>
 
@@ -1533,6 +1581,7 @@
     function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
     function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
+    function toggleRangeModal() { document.getElementById('rangeModal').classList.toggle('hidden'); }
     function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
     function recalculateNodePositions() {}
   </script>
