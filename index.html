@@ -455,9 +455,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 48280.2; // Exactly 30 Miles maximum
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v4';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v4';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v14';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v5';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v5';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v15';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -762,7 +762,6 @@
 
           const sonarRing = nodeElem.querySelector('.peer-sonar-ring');
           if (sonarRing) {
-            // Business nodes and nodes not matching filter do NOT get sonar ripples
             const shouldRipple = matchesFilter && peer.accountType !== 'business';
             sonarRing.style.display = shouldRipple ? 'block' : 'none';
           }
@@ -816,7 +815,6 @@
     }
 
     function createBubbleRipple() {
-      // Businesses do NOT emit ripples when tapped/clicked
       if (userState.type === 'business') return;
 
       triggerHapticFeedback(50);
@@ -883,12 +881,14 @@
         <div class="relative flex flex-col items-center group">
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/10 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/20 shadow-lg" style="width: 900px; height: 900px;" title="Click & drag to adjust radius">
+          <!-- Radar ring placed below nodes (z-0) -->
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/10 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/20 shadow-lg pointer-events-auto" style="width: 900px; height: 900px;" title="Click & drag to adjust radius">
             <div class="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10px] font-black tracking-wider uppercase shadow-md pointer-events-none">Drag Ring to Scale Radius</div>
           </div>
 
-          <div class="scale-compensator flex flex-col items-center relative z-10">
-            <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40 max-w-[220px] text-center" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
+          <!-- Scale compensator and chat bubble given strict z-50 to ALWAYS stay above radar ring -->
+          <div class="scale-compensator flex flex-col items-center relative z-50 pointer-events-auto">
+            <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
               <span id="userTopBubbleText" class="truncate">...</span>
               <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
@@ -896,11 +896,11 @@
 
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
-            <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-10" style="border-radius: 50%;">
+            <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 cursor-pointer" style="border-radius: 50%;">
               <div class="bubble-glare"></div>
               <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
             </div>
-            <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-10 node-name-label">${getEffectiveMyName()}${userState.type === 'business' ? ' (Store)' : ' (You)'}</span>
+            <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label">${getEffectiveMyName()}${userState.type === 'business' ? ' (Store)' : ' (You)'}</span>
           </div>
         </div>
       `;
@@ -952,7 +952,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v14');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v15');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -1197,7 +1197,8 @@
       if (!nodeElem) {
         nodeElem = document.createElement('div');
         nodeElem.id = peerKey;
-        nodeElem.className = `absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item ${isBot ? 'bot-node-elem' : ''}`;
+        // Ensure peer nodes have z-50 so they always sit above the radar ring (z-0)
+        nodeElem.className = `absolute z-50 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item ${isBot ? 'bot-node-elem' : ''}`;
         container.appendChild(nodeElem);
       }
 
@@ -1227,23 +1228,22 @@
       let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
       const showNameLabel = distance <= TEN_MILES_METERS;
 
-      // Business nodes and non-matching filter nodes NEVER render sonar ripple rings
       const showSonarRipple = matchesFilter && accountType !== 'business';
 
       nodeElem.innerHTML = `
-        <div class="relative flex flex-col items-center group scale-compensator">
-          <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'};"></div>
+        <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto">
+          <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none z-0" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           ${hasValidQuestion ? `
-            <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-40 cursor-pointer max-w-[220px] text-center" onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question}', '${peerId}')">
+            <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question}', '${peerId}')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0"></i>
               <span class="truncate">${question}</span>
             </div>
           ` : ''}
-          <div onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="background: ${customBg}; border-radius: 50%;">
+          <div onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer" style="background: ${customBg}; border-radius: 50%;">
             <div class="bubble-glare"></div>
             <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
           </div>
-          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap node-name-label" style="display: ${showNameLabel ? 'block' : 'none'};">${alias} (${distanceFormatted})${interestFilter && interestFilter !== 'none' ? ' • ' + interestFilter : ''}</span>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label" style="display: ${showNameLabel ? 'block' : 'none'};">${alias} (${distanceFormatted})${interestFilter && interestFilter !== 'none' ? ' • ' + interestFilter : ''}</span>
         </div>
       `;
       lucide.createIcons();
@@ -1427,12 +1427,13 @@
       document.getElementById('chatTargetAvatar').style.background = BUBBLE_COLOR_MAP[userState.bubbleColor];
       document.getElementById('chatTargetAvatar').innerHTML = `<div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>`;
 
-      if (topic || (isSelf && activeTopicState.text)) {
-        document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
-        document.getElementById('mainTopicContainer').classList.remove('hidden');
-      } else {
-        document.getElementById('mainTopicContainer').classList.add('hidden');
-      }
+-      if (topic || (isSelf && activeTopicState.text)) {
++      if (topic || (isSelf && activeTopicState.text)) {
+         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
+         document.getElementById('mainTopicContainer').classList.remove('hidden');
+       } else {
+         document.getElementById('mainTopicContainer').classList.add('hidden');
+       }
 
       const msgBox = document.getElementById('chatMessages');
       msgBox.innerHTML = '';
