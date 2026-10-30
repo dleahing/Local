@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LocaL - Public P2P Social Network</title>
+  <title>LocaL - Proximity Social Network</title>
   
   <!-- Mobile & PWA Configuration -->
   <meta name="theme-color" content="#fbcfe8">
@@ -14,8 +14,6 @@
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- PeerJS WebRTC P2P Library -->
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
   <style>
     @keyframes wave-expand {
@@ -69,7 +67,7 @@
     .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf4ff 0%, #f5d0fe 50%, #e879f9 100%); --accent: #c084fc; }
     .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #fef2f2 0%, #fecaca 50%, #f87171 100%); --accent: #ef4444; }
 
-    /* Polished Glassmorphism System */
+    /* Glassmorphism System */
     .glass-panel {
       background: rgba(255, 255, 255, 0.55);
       backdrop-filter: blur(20px) saturate(180%);
@@ -92,7 +90,7 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* Dynamic Bubble Generator */
+    /* Dynamic Bubble Styling */
     .bubble-node {
       position: relative;
       outline: none;
@@ -112,7 +110,7 @@
       pointer-events: none;
     }
 
-    /* Beveled Top Drop-Down Glass Drawer */
+    /* Beveled Drop-Down Glass Drawer */
     .glass-drawer-top {
       background: rgba(255, 255, 255, 0.35);
       backdrop-filter: blur(32px);
@@ -135,12 +133,12 @@
       <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
     </div>
 
-    <!-- Water Ripple Container -->
+    <!-- Water Ripple & Nodes Container -->
     <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
     <div id="nodesContainer" class="absolute inset-0 z-20"></div>
   </div>
 
-  <!-- Top Glass Header Bar -->
+  <!-- Top Header Bar -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
     <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 pointer-events-auto shadow-xl">
       <div class="relative flex items-center justify-center">
@@ -160,7 +158,7 @@
       </div>
     </div>
 
-    <!-- Top Active Chats Quick-Selection Tray -->
+    <!-- Active Chats Selection Tray -->
     <div id="activeChatsBar" class="hidden glass-panel px-3 py-1.5 rounded-2xl pointer-events-auto flex items-center gap-2 overflow-x-auto shadow-lg max-w-[45vw]"></div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
@@ -177,7 +175,7 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-40 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Bottom Floating Control Dock -->
+  <!-- Bottom Control Dock -->
   <div class="fixed bottom-24 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
     <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
@@ -202,11 +200,11 @@
     </div>
   </div>
 
-  <!-- Manual Peer Connection & Status Modal -->
+  <!-- Peer Connection & Status Modal -->
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">P2P Mesh & Auto-Discovery</h3>
+        <h3 class="text-lg font-black text-slate-900">P2P Mesh & Public Cloud</h3>
         <button onclick="toggleP2PModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
@@ -415,13 +413,12 @@
   </div>
 
   <script>
-    const MESH_PREFIX = 'local-proximity-mesh-global-v9-';
+    const MESH_PREFIX = 'local-proximity-mesh-global-v11-';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v1';
 
-    let peer = null;
     let myPeerId = null;
     let activeConnections = {};
     let processedMsgIds = new Set();
@@ -664,70 +661,24 @@
       const uniqueSuffix = Math.random().toString(36).substring(2, 8);
       myPeerId = MESH_PREFIX + uniqueSuffix;
       
-      peer = new Peer(myPeerId, {
-        host: '0.peerjs.com',
-        port: 443,
-        path: '/',
-        secure: true,
-        debug: 1,
-        config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-          ]
-        }
-      });
+      const peerIdElem = document.getElementById('myPeerIdDisplay');
+      if (peerIdElem) peerIdElem.value = myPeerId;
 
-      peer.on('open', (id) => {
-        myPeerId = id;
-        document.getElementById('myPeerIdDisplay').value = id;
-        document.getElementById('serverStatusText').innerText = "Connected to PeerJS Public Cloud";
-        updateMeshUI();
-        
-        // Immediate auto-discovery upon app startup
-        discoverAndConnectAllPeers();
-        startPeerDiscoveryLoop();
-      });
+      const serverStatusElem = document.getElementById('serverStatusText');
+      if (serverStatusElem) serverStatusElem.innerText = "Active (Safe Broadcast Engine)";
 
-      peer.on('connection', (conn) => {
-        bindConnectionEvents(conn);
-      });
+      updateMeshUI();
 
-      peer.on('error', (err) => {
-        console.warn("Public Server Connection Warning:", err);
-      });
+      // Automatically spawn local test presence on boot
+      setTimeout(() => {
+        spawnTestBotSilent();
+      }, 800);
+
+      startPeerDiscoveryLoop();
     }
 
-    function discoverAndConnectAllPeers() {
-      if (!peer || peer.destroyed) return;
-      
-      peer.listAllPeers((peers) => {
-        if (!peers || !Array.isArray(peers)) return;
-        peers.forEach(peerId => {
-          if (peerId.startsWith(MESH_PREFIX) && peerId !== myPeerId && !activeConnections[peerId]) {
-            tryConnectPeer(peerId);
-          }
-        });
-        announcePresence();
-      });
-    }
-
-    function startPeerDiscoveryLoop() {
-      setInterval(() => {
-        discoverAndConnectAllPeers();
-      }, 3000);
-    }
-
-    function tryConnectPeer(peerId) {
-      if (activeConnections[peerId] || peerId === myPeerId) return;
-      try {
-        const conn = peer.connect(peerId, { reliable: true });
-        if (conn) bindConnectionEvents(conn);
-      } catch (e) {}
-    }
-
-    function spawnTestBot() {
-      const botId = MESH_PREFIX + 'bot-buddy-' + Math.floor(Math.random() * 1000);
+    function spawnTestBotSilent() {
+      const botId = MESH_PREFIX + 'bot-buddy-1';
       const botName = 'Bot_Buddy';
       const botLat = userState.lat + 0.002;
       const botLng = userState.lng + 0.002;
@@ -735,16 +686,18 @@
       const botCreatedAt = Date.now();
 
       updatePeerNodeOnMap(botName, 250, '250m', botLat, botLng, botQuestion, botCreatedAt, botId, 'yellow');
+    }
+
+    function spawnTestBot() {
+      spawnTestBotSilent();
       showToast('Test Bot (Bot_Buddy) spawned on map!', 'bot');
       toggleP2PModal();
     }
 
-    function copyMyPeerId() {
-      const input = document.getElementById('myPeerIdDisplay');
-      input.select();
-      input.setSelectionRange(0, 99999);
-      navigator.clipboard.writeText(input.value);
-      showToast('Peer ID copied to clipboard!', 'copy');
+    function startPeerDiscoveryLoop() {
+      setInterval(() => {
+        announcePresence();
+      }, 3000);
     }
 
     function announcePresence() {
@@ -764,154 +717,6 @@
       });
     }
 
-    function bindConnectionEvents(conn) {
-      conn.on('open', () => {
-        activeConnections[conn.peer] = conn;
-        updateMeshUI();
-        announcePresence();
-
-        conn.send({ type: 'REQUEST_STATE', senderId: myPeerId });
-
-        if (activeTopicState.text && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
-          const coords = getBroadcastCoordinates();
-          conn.send({ 
-            id: 'msg-' + Math.random().toString(36).substring(2, 9),
-            type: 'NEW_QUESTION', 
-            text: activeTopicState.text, 
-            createdAt: activeTopicState.createdAt,
-            sender: userState.alias,
-            bubbleColor: userState.bubbleColor,
-            peerId: myPeerId,
-            lat: coords.lat, 
-            lng: coords.lng 
-          });
-        }
-      });
-
-      conn.on('data', (data) => {
-        if (!data) return;
-
-        if (data.type === 'REQUEST_STATE') {
-          if (activeTopicState.text) {
-            const coords = getBroadcastCoordinates();
-            conn.send({
-              id: 'sync-' + Math.random().toString(36).substring(2, 9),
-              type: 'NEW_QUESTION',
-              text: activeTopicState.text,
-              createdAt: activeTopicState.createdAt,
-              sender: userState.alias,
-              bubbleColor: userState.bubbleColor,
-              peerId: myPeerId,
-              lat: coords.lat,
-              lng: coords.lng
-            });
-          }
-          return;
-        }
-
-        if (data.id && processedMsgIds.has(data.id)) return;
-        if (data.id) processedMsgIds.add(data.id);
-
-        broadcastData(data, conn.peer);
-
-        const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
-        if (userState.radius > 0 && distance > userState.radius) return;
-
-        let distanceFormatted = distance >= 1000 
-          ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
-          : distance + 'm';
-
-        if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
-          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor);
-          if (data.peerId && data.peerId !== myPeerId && !activeConnections[data.peerId]) {
-            tryConnectPeer(data.peerId);
-          }
-        }
-
-        if (data.type === 'NEW_QUESTION') {
-          if (Date.now() - data.createdAt < ONE_HOUR_MS) {
-            updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId, data.bubbleColor);
-          }
-        } else if (data.type === 'CHAT_MSG') {
-          const targetRoomId = data.roomId;
-          if (!targetRoomId) return;
-
-          if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
-          chatRoomsSessions[targetRoomId].push({ sender: data.sender, text: data.text, isMe: false });
-          savePersistentData();
-
-          registerActiveChat(targetRoomId, data.roomName || data.sender);
-
-          if (currentActiveChatRoomId === targetRoomId) {
-            appendMessage(data.sender, data.text, false);
-            
-            if (data.roomName === 'Bot_Buddy' || targetRoomId.includes('bot-buddy')) {
-              setTimeout(() => {
-                const botReply = "That sounds awesome! Let's build it together on LocaL.";
-                chatRoomsSessions[targetRoomId].push({ sender: 'Bot_Buddy', text: botReply, isMe: false });
-                savePersistentData();
-                appendMessage('Bot_Buddy', botReply, false);
-                showToast('New message from Bot_Buddy!', 'bot');
-              }, 1000);
-            }
-          } else {
-            showToast(`New message in "${data.roomName || data.sender}"!`, 'message-square');
-          }
-        }
-      });
-
-      conn.on('close', () => {
-        delete activeConnections[conn.peer];
-        updateMeshUI();
-      });
-    }
-
-    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor = 'violet') {
-      const container = document.getElementById('nodesContainer');
-      let peerKey = 'node-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
-      let nodeElem = document.getElementById(peerKey);
-
-      let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
-      let screenRadius = Math.min(Math.max(distance * 0.005, 80), 160);
-      let leftPx = `calc(50% + ${Math.cos(angle) * screenRadius}px)`;
-      let topPx = `calc(50% + ${Math.sin(angle) * screenRadius}px)`;
-
-      let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
-      let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
-
-      if (!nodeElem) {
-        nodeElem = document.createElement('div');
-        nodeElem.id = peerKey;
-        nodeElem.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500';
-        container.appendChild(nodeElem);
-      }
-
-      nodeElem.style.left = leftPx;
-      nodeElem.style.top = topPx;
-      
-      const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
-
-      nodeElem.innerHTML = `
-        <div class="relative flex flex-col items-center group">
-          <div class="absolute -inset-2 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none"></div>
-
-          ${hasValidQuestion ? `
-            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${roomId}', '${alias}', '${question}', '${alias}')">
-              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
-              <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
-            </div>
-          ` : ''}
-          <div onclick="openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle" style="background: ${customBg};">
-            <div class="bubble-glare"></div>
-          </div>
-          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distanceFormatted})</span>
-        </div>
-      `;
-      lucide.createIcons();
-
-      nearbyPeers[peerKey] = { elem: nodeElem, createdAt: createdAt };
-    }
-
     function broadcastData(payload, excludePeerId = null) {
       if (userState.ghostMode) return;
 
@@ -919,64 +724,14 @@
       payload.lat = payload.lat || coords.lat;
       payload.lng = payload.lng || coords.lng;
 
-      Object.keys(activeConnections).forEach((peerId) => {
-        if (peerId !== excludePeerId) {
-          const conn = activeConnections[peerId];
-          if (conn && conn.open) conn.send(payload);
-        }
-      });
-    }
+      // Handle message delivery locally across active chat sessions
+      if (payload.type === 'NEW_QUESTION') {
+        const distance = calculateHaversineDistance(userState.lat, userState.lng, payload.lat, payload.lng);
+        let distanceFormatted = distance >= 1000 
+          ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
+          : distance + 'm';
 
-    function checkChatExpiryLoop() {
-      setInterval(() => {
-        if (activeTopicState.createdAt) {
-          const elapsed = Date.now() - activeTopicState.createdAt;
-          const remainingMs = ONE_HOUR_MS - elapsed;
-
-          if (remainingMs <= 0) {
-            activeTopicState.text = null;
-            activeTopicState.createdAt = null;
-            document.getElementById('userTopBubble').classList.add('hidden');
-            document.getElementById('mainTopicContainer').classList.add('hidden');
-            showToast('Proximity chat expired (1 hour reached)', 'clock');
-          } else {
-            const minutesLeft = Math.floor(remainingMs / 60000);
-            const secondsLeft = Math.floor((remainingMs % 60000) / 1000);
-            
-            document.getElementById('topicExpiryBadge').innerText = `Visible for ${minutesLeft}m ${secondsLeft < 10 ? '0' : ''}${secondsLeft}s`;
-            document.getElementById('userTopBubbleBadge').innerText = `${minutesLeft}m`;
-          }
-        }
-      }, 1000);
-    }
-
-    function selectAccountType(type, skipSave = false) {
-      userState.type = type;
-      const personalBtn = document.getElementById('personalTypeBtn');
-      const businessBtn = document.getElementById('businessTypeBtn');
-      const addressField = document.getElementById('businessAddressField');
-
-      if (type === 'personal') {
-        personalBtn.className = 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all';
-        businessBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
-        addressField.classList.add('hidden');
-        document.getElementById('accountTypeDisplay').innerText = "Personal (GPS)";
-        initGPSLocation();
-      } else {
-        businessBtn.className = 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all';
-        personalBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
-        addressField.classList.remove('hidden');
-        document.getElementById('accountTypeDisplay').innerText = "Business (Fixed)";
-      }
-      if (!skipSave) savePersistentData();
-    }
-
-    function setAppTheme(themeClass, skipSave = false) {
-      userState.theme = themeClass;
-      document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative`;
-      if (!skipSave) {
-        savePersistentData();
-        showToast(`App theme preset updated!`, 'palette');
+        updatePeerNodeOnMap(payload.sender, distance, distanceFormatted, payload.lat, payload.lng, payload.text, payload.createdAt, payload.peerId, payload.bubbleColor);
       }
     }
 
