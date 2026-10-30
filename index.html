@@ -1226,8 +1226,8 @@
 
     function spawnDefaultSimulatedUsers() {
       const latOffsetFor0_5Miles = (0.5 * METERS_PER_MILE) / 111320;
-      const latOffsetFor5Miles = (5 * METERS_PER_MILE) / 111320;
-      const latOffsetFor20Miles = (20 * METERS_PER_MILE) / 111320;
+      const latOffsetFor5Miles = (5.0 * METERS_PER_MILE) / 111320;
+      const latOffsetFor20Miles = (20.0 * METERS_PER_MILE) / 111320;
 
       const sampleUsers = [
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', offsetLat: latOffsetFor0_5Miles, offsetLng: 0, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', interestFilter: 'Life', isBot: true, isTutorial: true },
@@ -1405,10 +1405,10 @@
 
       let angle = (rawSender.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
       let left = 50 + (Math.cos(angle) * 15), top = 50 + (Math.sin(angle) * 15);
-      if (accountType === 'business') { left = 50 + ((peerId.charCodeAt(0) % 5) - 2) * 12; top = 50 + ((peerId.charCodeAt(1) % 5) - 2) * 10; }
-      if (peerId === 'sim-peer-tutorial-bot') { left = 50; top = 40; }
-      if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 30; }
-      if (peerId === 'sim-peer-restaurant-20mi') { left = 78; top = 22; }
+      if (peerId === 'sim-peer-tutorial-bot') { left = 50; top = 42; }
+      else if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 26; }
+      else if (peerId === 'sim-peer-restaurant-20mi') { left = 80; top = 18; }
+      else if (accountType === 'business') { left = 50 + ((peerId.charCodeAt(0) % 5) - 2) * 12; top = 50 + ((peerId.charCodeAt(1) % 5) - 2) * 10; }
 
       if (!nodeElem) {
         nodeElem = document.createElement('div');
