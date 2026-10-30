@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LocaL - Proximity Social Network</title>
+  <title>LocaL - Public P2P Social Network</title>
   
   <!-- Mobile & PWA Configuration -->
   <meta name="theme-color" content="#fbcfe8">
@@ -206,20 +206,28 @@
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">P2P Mesh & Bot Tester</h3>
+        <h3 class="text-lg font-black text-slate-900">P2P Mesh & Public Server</h3>
         <button onclick="toggleP2PModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4">
         <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Public Server Signaling Status</label>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-900 text-xs font-bold">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <span id="serverStatusText">Connected to PeerJS Public Cloud</span>
+          </div>
+        </div>
+
+        <div>
           <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Your Device Peer ID</label>
           <div class="flex items-center gap-2">
-            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Generating...">
+            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Connecting...">
             <button onclick="copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
-          <p class="text-[10px] text-slate-500 mt-1">Share ID with another device or test with the bot below.</p>
+          <p class="text-[10px] text-slate-500 mt-1">This ID is registered on the public cloud relay for global discovery.</p>
         </div>
 
         <div>
@@ -230,9 +238,9 @@
         </div>
 
         <div class="pt-2 border-t border-slate-200/60">
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Connect to Peer ID</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Connect Directly via Peer ID</label>
           <div class="flex items-center gap-2">
-            <input type="text" id="manualPeerInput" placeholder="Paste peer ID here..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+            <input type="text" id="manualPeerInput" placeholder="Paste remote Peer ID..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
             <button onclick="connectManualPeer()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all whitespace-nowrap">
               Connect
             </button>
@@ -417,7 +425,7 @@
   </div>
 
   <script>
-    const MESH_PREFIX = 'local-proximity-mesh-global-v7-';
+    const MESH_PREFIX = 'local-proximity-mesh-global-v8-';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
@@ -660,17 +668,25 @@
       const uniqueSuffix = Math.random().toString(36).substring(2, 8);
       myPeerId = MESH_PREFIX + uniqueSuffix;
       
+      // Explicit connection to public cloud WebRTC signaling server
       peer = new Peer(myPeerId, {
         host: '0.peerjs.com',
         port: 443,
         path: '/',
         secure: true,
-        debug: 1
+        debug: 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
+        }
       });
 
       peer.on('open', (id) => {
         myPeerId = id;
         document.getElementById('myPeerIdDisplay').value = id;
+        document.getElementById('serverStatusText').innerText = "Connected to PeerJS Public Cloud";
         updateMeshUI();
         startPeerDiscoveryLoop();
       });
@@ -680,7 +696,7 @@
       });
 
       peer.on('error', (err) => {
-        console.warn("PeerJS connection warning:", err);
+        console.warn("Public Server Connection Warning:", err);
       });
     }
 
@@ -847,7 +863,6 @@
           if (currentActiveChatRoomId === targetRoomId) {
             appendMessage(data.sender, data.text, false);
             
-            // Bot auto-reply logic if chatting with Bot_Buddy
             if (data.roomName === 'Bot_Buddy' || targetRoomId.includes('bot-buddy')) {
               setTimeout(() => {
                 const botReply = "That sounds awesome! Let's build it together on LocaL.";
@@ -1059,7 +1074,7 @@
 
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
-      showToast('Question broadcasted across proximity network!', 'pin');
+      showToast('Question broadcasted across public network!', 'pin');
       openChatDrawer('room-you', userState.alias, text, 'you');
     }
 
@@ -1087,7 +1102,6 @@
 
       const activeRoomName = document.getElementById('chatTargetName').innerText;
 
-      // If chatting with Bot_Buddy, simulate bot response
       if (activeRoomName === 'Bot_Buddy' || currentActiveChatRoomId.includes('bot-buddy')) {
         setTimeout(() => {
           const botReply = `Got your message ("${text}")! That's super interesting. Let's keep exploring the map.`;
