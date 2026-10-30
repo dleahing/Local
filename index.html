@@ -61,7 +61,7 @@
     }
 
     .animate-radius-ripple {
-      animation: radius-radius-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+      animation: radius-ring-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
     }
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
@@ -71,6 +71,7 @@
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
+    /* Expanded Canvas & Explicit World Edge Boundary Indicator */
     #mapCanvas {
       transform: translate3d(var(--pan-x), var(--pan-y), 0) scale(var(--zoom-scale));
       transform-origin: center center;
@@ -85,18 +86,6 @@
     .scale-compensator {
       transform: scale(calc(1 / var(--zoom-scale)));
       will-change: transform;
-    }
-
-    /* Ensure radar ring allows clicks to pass through its center body except the draggable border */
-    #radarBoundaryRing {
-      pointer-events: none;
-    }
-    #radarBoundaryRing::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      pointer-events: auto;
     }
 
     .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
@@ -138,7 +127,6 @@
       border: none;
       backdrop-filter: blur(12px) saturate(190%);
       -webkit-backdrop-filter: blur(12px) saturate(190%);
-      pointer-events: auto !important;
     }
     .bubble-glare {
       position: absolute;
@@ -166,19 +154,19 @@
 
   <!-- Map Canvas with Expanded 30-Mile Render Boundary & Fluid Zoom -->
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center" style="background: var(--bg-gradient);">
-    <div class="absolute inset-0 opacity-12 map-grid-pattern pointer-events-none"></div>
+    <div class="absolute inset-0 opacity-12 map-grid-pattern"></div>
     
-    <!-- Explicit World Border Ring -->
+    <!-- Explicit World Border Ring highlighting the 30-Mile Maximum Boundary -->
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-dashed border-sky-600/30 pointer-events-none" style="width: 2500px; height: 2500px;">
-      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest border border-white/20 shadow-xl pointer-events-none">30-Mile World Boundary Edge</div>
+      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
     </div>
 
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
-      <div class="w-[420px] h-[420px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow pointer-events-none"></div>
-      <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow pointer-events-none" style="animation-delay: 2s;"></div>
+      <div class="w-[420px] h-[420px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
+      <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
     </div>
 
-    <div id="nodesContainer" class="absolute inset-0 z-25 pointer-events-none"></div>
+    <div id="nodesContainer" class="absolute inset-0 z-25"></div>
   </div>
 
   <!-- Top Glass Header Bar -->
@@ -227,8 +215,8 @@
     </button>
   </div>
 
-  <!-- Radius Range Control Modal -->
-  <div id="rangeModal" class="hidden fixed bottom-32 right-4 z-40 glass-card p-4.5 rounded-3xl w-72 border border-white/50 shadow-2xl pointer-events-auto">
+  <!-- Radius Range Control Modal (Min 5 Miles, Max 30 Miles) -->
+  <div id="rangeModal" class="hidden fixed bottom-32 right-4 z-40 glass-card p-4.5 rounded-3xl w-72 border border-white/50 shadow-2xl">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
@@ -243,7 +231,7 @@
   </div>
 
   <!-- WebRTC P2P Mesh & Directory Modal -->
-  <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4 pointer-events-auto">
+  <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 flex-shrink-0">
         <div>
@@ -290,7 +278,7 @@
   </div>
 
   <!-- Profile Customization Modal -->
-  <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4 pointer-events-auto">
+  <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-black text-slate-900">Customize Profile</h3>
@@ -317,6 +305,7 @@
           <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
+        <!-- Interest Filter Option -->
         <div>
           <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter (Chat Matching)</label>
           <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
@@ -395,8 +384,8 @@
   </div>
 
   <!-- Chat Drawer Overlay & Container -->
-  <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity pointer-events-auto"></div>
-  <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[85vh] pointer-events-auto">
+  <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
+  <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[85vh]">
     <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
       <div class="flex items-center gap-3">
         <div id="chatTargetAvatar" class="w-9 h-9 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md">
@@ -442,7 +431,7 @@
   </div>
 
   <!-- Question Modal -->
-  <div id="questionModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4 pointer-events-auto">
+  <div id="questionModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-black text-slate-900">Ask the LocaLs</h3>
@@ -464,11 +453,11 @@
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const TEN_MILES_METERS = 16093.4;
-    const MIN_RADIUS_METERS = 8046.7;
-    const MAX_RADIUS_METERS = 48280.2;
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v5';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v5';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v15';
+    const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
+    const MAX_RADIUS_METERS = 48280.2; // Exactly 30 Miles maximum
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v4';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v4';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v14';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -492,6 +481,7 @@
     let chatRoomsSessions = {}; 
     let activeChatRoomsList = new Set(); 
 
+    // User Profile State
     let userState = {
       alias: 'Traveler',
       type: 'personal',
@@ -597,7 +587,7 @@
     function showToast(message, icon = 'info') {
       const toastContainer = document.getElementById('toastContainer');
       const toast = document.createElement('div');
-      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-900 text-xs font-bold border border-white/60 pointer-events-auto';
+      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-900 text-xs font-bold border border-white/60';
       toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-sky-600"></i> <span>${message}</span>`;
       toastContainer.appendChild(toast);
       lucide.createIcons();
@@ -772,6 +762,7 @@
 
           const sonarRing = nodeElem.querySelector('.peer-sonar-ring');
           if (sonarRing) {
+            // Business nodes and nodes not matching filter do NOT get sonar ripples
             const shouldRipple = matchesFilter && peer.accountType !== 'business';
             sonarRing.style.display = shouldRipple ? 'block' : 'none';
           }
@@ -825,6 +816,7 @@
     }
 
     function createBubbleRipple() {
+      // Businesses do NOT emit ripples when tapped/clicked
       if (userState.type === 'business') return;
 
       triggerHapticFeedback(50);
@@ -883,20 +875,20 @@
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
       userDiv.id = 'userAvatarNode';
-      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer node-item pointer-events-auto';
+      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer node-item';
       
       const iconName = userState.type === 'business' ? (userState.category || 'store') : 'navigation';
 
       userDiv.innerHTML = `
-        <div class="relative flex flex-col items-center group pointer-events-auto">
+        <div class="relative flex flex-col items-center group">
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/10 transition-all duration-75 z-0 shadow-lg" style="width: 900px; height: 900px;" title="Click & drag to adjust radius">
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/10 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/20 shadow-lg" style="width: 900px; height: 900px;" title="Click & drag to adjust radius">
             <div class="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10px] font-black tracking-wider uppercase shadow-md pointer-events-none">Drag Ring to Scale Radius</div>
           </div>
 
-          <div class="scale-compensator flex flex-col items-center relative z-10 pointer-events-auto">
-            <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40 max-w-[220px] text-center pointer-events-auto" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
+          <div class="scale-compensator flex flex-col items-center relative z-10">
+            <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40 max-w-[220px] text-center" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
               <span id="userTopBubbleText" class="truncate">...</span>
               <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
@@ -904,11 +896,11 @@
 
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
-            <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-10 pointer-events-auto cursor-pointer" style="border-radius: 50%;">
+            <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-10" style="border-radius: 50%;">
               <div class="bubble-glare"></div>
               <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
             </div>
-            <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-10 node-name-label pointer-events-auto">${getEffectiveMyName()}${userState.type === 'business' ? ' (Store)' : ' (You)'}</span>
+            <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-10 node-name-label">${getEffectiveMyName()}${userState.type === 'business' ? ' (Store)' : ' (You)'}</span>
           </div>
         </div>
       `;
@@ -960,7 +952,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v15');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v14');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -1205,7 +1197,7 @@
       if (!nodeElem) {
         nodeElem = document.createElement('div');
         nodeElem.id = peerKey;
-        nodeElem.className = `absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item ${isBot ? 'bot-node-elem' : ''} pointer-events-auto`;
+        nodeElem.className = `absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item ${isBot ? 'bot-node-elem' : ''}`;
         container.appendChild(nodeElem);
       }
 
@@ -1234,22 +1226,24 @@
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
       let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
       const showNameLabel = distance <= TEN_MILES_METERS;
+
+      // Business nodes and non-matching filter nodes NEVER render sonar ripple rings
       const showSonarRipple = matchesFilter && accountType !== 'business';
 
       nodeElem.innerHTML = `
-        <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto">
+        <div class="relative flex flex-col items-center group scale-compensator">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           ${hasValidQuestion ? `
-            <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-40 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question}', '${peerId}')">
+            <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-40 cursor-pointer max-w-[220px] text-center" onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question}', '${peerId}')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0"></i>
               <span class="truncate">${question}</span>
             </div>
           ` : ''}
-          <div onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle pointer-events-auto cursor-pointer" style="background: ${customBg}; border-radius: 50%;">
+          <div onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="background: ${customBg}; border-radius: 50%;">
             <div class="bubble-glare"></div>
             <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
           </div>
-          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap node-name-label pointer-events-auto" style="display: ${showNameLabel ? 'block' : 'none'};">${alias} (${distanceFormatted})${interestFilter && interestFilter !== 'none' ? ' • ' + interestFilter : ''}</span>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap node-name-label" style="display: ${showNameLabel ? 'block' : 'none'};">${alias} (${distanceFormatted})${interestFilter && interestFilter !== 'none' ? ' • ' + interestFilter : ''}</span>
         </div>
       `;
       lucide.createIcons();
@@ -1276,7 +1270,7 @@
         const isEnabled = peer.enabled !== false;
 
         container.innerHTML += `
-          <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'} pointer-events-auto">
+          <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node" style="background: ${BUBBLE_COLOR_MAP[peer.bubbleColor]}; border-radius: 50%;">
                 <div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>
