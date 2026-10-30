@@ -792,11 +792,17 @@
       userState.radius = meters;
 
       const ring = document.getElementById('radarBoundaryRing');
+      const badge = document.getElementById('radarRingDistanceLabel');
       
       if (ring) {
         const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1612.5);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
+
+        if (badge) {
+          const miles = (meters / METERS_PER_MILE).toFixed(1);
+          badge.innerText = `${miles} Mi Radius`;
+        }
 
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         if (pixelDiameter > viewportMin * 0.70) {
@@ -1004,7 +1010,7 @@
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/15 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/25 shadow-lg pointer-events-auto" style="width: 200px; height: 200px;" title="Click & drag to scale boundary">
-            <div class="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10px] font-black tracking-wider uppercase shadow-md pointer-events-none">Drag Ring In/Out to Adjust Bounds</div>
+            <div id="radarRingDistanceLabel" class="absolute top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-sky-600/95 text-white text-[11px] font-black tracking-wider uppercase shadow-xl pointer-events-none whitespace-nowrap border border-white/30">5.0 Mi Radius</div>
           </div>
 
           <div class="scale-compensator flex flex-col items-center relative z-50 pointer-events-auto">
@@ -1622,7 +1628,7 @@
       const isSelf = roomId === 'room-you';
       const iconName = isSelf && userState.type === 'business' ? userState.category : 'user';
       document.getElementById('chatTargetAvatar').style.background = BUBBLE_COLOR_MAP[userState.bubbleColor];
-      document.getElementById('chatTargetAvatar').innerHTML = `<div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>`;
+      document.getElementById('chatTargetAvatar'].innerHTML = `<div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>`;
 
       if (topic || (isSelf && activeTopicState.text)) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
