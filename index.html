@@ -340,19 +340,20 @@
   </div>
 
   <script>
-    const MESH_ROOM_KEY = 'local-proximity-public';
+    const MESH_PREFIX = 'local-proximity-mesh-v2-';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
 
     let peer = null;
+    let myPeerId = null;
     let activeConnections = {};
     let processedMsgIds = new Set();
     let nearbyPeers = {};
     
     let activeTopicState = { text: null, createdAt: null };
-    let currentActiveChatRoomId = null; // Uniquely identifies each isolated chat room
-    let chatRoomsSessions = {}; // Map of roomId -> array of message objects
-    let activeChatRoomsList = new Set(); // Track rooms in top tray
+    let currentActiveChatRoomId = null;
+    let chatRoomsSessions = {}; 
+    let activeChatRoomsList = new Set(); 
 
     let userState = {
       alias: 'Aqua Voyager',
@@ -361,8 +362,7 @@
       radius: 8046,
       lat: 27.2730,
       lng: -80.3582,
-      theme: 'theme-sky',
-      peerId: null
+      theme: 'theme-sky'
     };
 
     let touchTimer = null;
@@ -372,7 +372,7 @@
       lucide.createIcons();
       initGPSLocation();
       initUserNode();
-      initAutoMeshPeer();
+      initRobustMesh();
       checkChatExpiryLoop();
     });
 
@@ -499,34 +499,55 @@
       ring.classList.add('opacity-0');
     }
 
-    function initAutoMeshPeer() {
-      peer = new Peer(MESH_ROOM_KEY);
+    /* Robust Decentralized Mesh using Dynamic Unique ID + Discovery Registry */
+    function initRobustMesh() {
+      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+      myPeerId = MESH_PREFIX + uniqueSuffix;
+      
+      peer = new Peer(myPeerId);
 
       peer.on('open', (id) => {
-        userState.peerId = id;
-        setupPeerListeners();
+        myPeerId = id;
         updateMeshUI();
-        announcePresence();
+        startPeerDiscoveryLoop();
+      });
+
+      peer.on('connection', (conn) => {
+        bindConnectionEvents(conn);
       });
 
       peer.on('error', (err) => {
-        if (err.type === 'unavailable-id') {
-          const clientSlot = `${MESH_ROOM_KEY}-${Math.random().toString(36).substring(2, 7)}`;
-          peer = new Peer(clientSlot);
-
-          peer.on('open', (id) => {
-            userState.peerId = id;
-            setupPeerListeners();
-            const hostConn = peer.connect(MESH_ROOM_KEY, { reliable: true });
-            bindConnectionEvents(hostConn);
-            announcePresence();
-          });
-        }
+        console.warn("PeerJS error:", err);
       });
     }
 
-    function setupPeerListeners() {
-      peer.on('connection', (conn) => { bindConnectionEvents(conn); });
+    function startPeerDiscoveryLoop() {
+      // Connect to known or standard seed nodes for discovery exchange
+      const seedIds = [
+        MESH_PREFIX + 'seed1',
+        MESH_PREFIX + 'seed2',
+        MESH_PREFIX + 'alpha',
+        MESH_PREFIX + 'beta'
+      ];
+
+      seedIds.forEach(targetId => {
+        if (targetId !== myPeerId && !activeConnections[targetId]) {
+          tryConnectPeer(targetId);
+        }
+      });
+
+      // Periodically announce presence and request peer lists
+      setInterval(() => {
+        announcePresence();
+      }, 10000);
+    }
+
+    function tryConnectPeer(peerId) {
+      if (activeConnections[peerId]) return;
+      try {
+        const conn = peer.connect(peerId, { reliable: true });
+        if (conn) bindConnectionEvents(conn);
+      } catch (e) {}
     }
 
     function announcePresence() {
@@ -534,6 +555,7 @@
         id: 'ping-' + Math.random().toString(36).substring(2, 9),
         type: 'PEER_PRESENCE',
         sender: userState.alias,
+        peerId: myPeerId,
         lat: userState.lat,
         lng: userState.lng,
         question: activeTopicState.text,
@@ -547,7 +569,7 @@
         updateMeshUI();
         announcePresence();
 
-        conn.send({ type: 'REQUEST_STATE' });
+        conn.send({ type: 'REQUEST_STATE', senderId: myPeerId });
 
         if (activeTopicState.text && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
           conn.send({ 
@@ -556,6 +578,7 @@
             text: activeTopicState.text, 
             createdAt: activeTopicState.createdAt,
             sender: userState.alias,
+            peerId: myPeerId,
             lat: userState.lat, 
             lng: userState.lng 
           });
@@ -565,22 +588,26 @@
       conn.on('data', (data) => {
         if (!data) return;
 
-        if (data.type === 'REQUEST_STATE' && activeTopicState.text) {
-          conn.send({
-            id: 'sync-' + Math.random().toString(36).substring(2, 9),
-            type: 'NEW_QUESTION',
-            text: activeTopicState.text,
-            createdAt: activeTopicState.createdAt,
-            sender: userState.alias,
-            lat: userState.lat,
-            lng: userState.lng
-          });
+        if (data.type === 'REQUEST_STATE') {
+          if (activeTopicState.text) {
+            conn.send({
+              id: 'sync-' + Math.random().toString(36).substring(2, 9),
+              type: 'NEW_QUESTION',
+              text: activeTopicState.text,
+              createdAt: activeTopicState.createdAt,
+              sender: userState.alias,
+              peerId: myPeerId,
+              lat: userState.lat,
+              lng: userState.lng
+            });
+          }
           return;
         }
 
         if (data.id && processedMsgIds.has(data.id)) return;
         if (data.id) processedMsgIds.add(data.id);
 
+        // Gossip protocol: forward to other peers except sender
         broadcastData(data, conn.peer);
 
         const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
@@ -591,16 +618,20 @@
           : distance + 'm';
 
         if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
-          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt);
+          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId);
+          // Try to discover new peers if shared in payload
+          if (data.peerId && data.peerId !== myPeerId && !activeConnections[data.peerId]) {
+            tryConnectPeer(data.peerId);
+          }
         }
 
         if (data.type === 'NEW_QUESTION') {
           if (Date.now() - data.createdAt < ONE_HOUR_MS) {
-            updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt);
+            updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId);
             showToast(`Question from ${data.sender || 'Peer'} (${distanceFormatted} away)!`, 'pin');
           }
         } else if (data.type === 'CHAT_MSG') {
-          // Route message exclusively to the specified isolated chat room
+          // Strictly route message ONLY if it matches the current active open chat room
           const targetRoomId = data.roomId;
           if (!targetRoomId) return;
 
@@ -623,9 +654,9 @@
       });
     }
 
-    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt) {
+    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId) {
       const container = document.getElementById('nodesContainer');
-      let peerKey = 'node-' + alias.replace(/\s+/g, '-').toLowerCase();
+      let peerKey = 'node-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
       let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
@@ -634,7 +665,7 @@
       let topPx = `calc(50% + ${Math.sin(angle) * screenRadius}px)`;
 
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
-      let roomId = 'room-peer-' + alias.replace(/\s+/g, '-').toLowerCase();
+      let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
 
       if (!nodeElem) {
         nodeElem = document.createElement('div');
@@ -649,7 +680,7 @@
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
           ${hasValidQuestion ? `
-            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${roomId}', '${alias}: ${question}', '${question}', '${alias}')">
+            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${roomId}', '${alias}', '${question}', '${alias}')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
               <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
             </div>
@@ -786,13 +817,14 @@
         type: 'NEW_QUESTION', 
         text: text, 
         sender: userState.alias,
+        peerId: myPeerId,
         createdAt: activeTopicState.createdAt 
       });
 
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
       showToast('Question broadcasted across proximity network!', 'pin');
-      openChatDrawer('room-you', `${userState.alias}: ${text}`, text, 'you');
+      openChatDrawer('room-you', userState.alias, text, 'you');
     }
 
     function sendChatMessage() {
@@ -812,6 +844,7 @@
 
       const activeRoomName = document.getElementById('chatTargetName').innerText;
 
+      // Broadcast chat message tagged with roomId so only recipients in that specific room process it
       broadcastData({ 
         id: msgId,
         type: 'CHAT_MSG', 
@@ -892,7 +925,7 @@
       }
 
       const msgBox = document.getElementById('chatMessages');
-      msgBox.innerHTML = '';
+      msgBox.innerHTML = ``;
       if (chatRoomsSessions[currentActiveChatRoomId]) {
         chatRoomsSessions[currentActiveChatRoomId].forEach(msg => {
           appendMessage(msg.sender, msg.text, msg.isMe);
