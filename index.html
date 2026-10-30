@@ -34,14 +34,12 @@
       0%, 100% { transform: scale(1); border-radius: 50%; }
       50% { transform: scale(1.02, 0.98); border-radius: 49% 51% 50% 50%; }
     }
-    @keyframes bubble-jiggle {
+    @keyframes bubble-bounce-press {
       0% { transform: scale(1); }
-      15% { transform: scale(1.25, 0.78) rotate(-4deg); }
-      30% { transform: scale(0.82, 1.2) rotate(4deg); }
-      45% { transform: scale(1.12, 0.88) rotate(-2deg); }
-      60% { transform: scale(0.92, 1.06) rotate(1deg); }
-      75% { transform: scale(1.04, 0.97); }
-      100% { transform: scale(1); }
+      30% { transform: scale(1.25, 0.75) translateY(4px); }
+      50% { transform: scale(0.85, 1.15) translateY(-8px); }
+      75% { transform: scale(1.1, 0.9) translateY(-3px); }
+      100% { transform: scale(1) translateY(0); }
     }
     @keyframes float-gentle {
       0%, 100% { transform: translateY(0px); }
@@ -57,7 +55,7 @@
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
-    .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
+    .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
     /* Theme Presets */
@@ -166,7 +164,7 @@
         <i data-lucide="user-cog" class="w-5 h-5"></i>
       </button>
 
-      <button onclick="toggleP2PModal()" title="Mesh Status & Connect" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
+      <button onclick="toggleP2PModal()" title="Network Status" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
         <i data-lucide="wifi" class="w-5 h-5"></i>
         <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400"></span>
       </button>
@@ -200,7 +198,7 @@
     </div>
   </div>
 
-  <!-- Local Network Broadcast & Status Modal -->
+  <!-- Network Status Modal -->
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
@@ -210,10 +208,10 @@
       
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">GPS & Internet Sync Status</label>
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Phone Network & GPS Sync</label>
           <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-bold">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-            <span id="serverStatusText">Broadcasting via Device GPS & Internet</span>
+            <span id="serverStatusText">Broadcasting via Phone Network & GPS</span>
           </div>
         </div>
 
@@ -229,14 +227,14 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Your Device Peer ID</label>
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Your Device ID</label>
           <div class="flex items-center gap-2">
             <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Syncing...">
             <button onclick="copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
-          <p class="text-[10px] text-slate-600 mt-1">Open this app on another phone or tab with location services enabled to sync real GPS coordinates.</p>
+          <p class="text-[10px] text-slate-600 mt-1">Open this page on another phone or tab with location services enabled to sync real-time GPS coordinates.</p>
         </div>
       </div>
     </div>
@@ -360,7 +358,7 @@
         </div>
         <div>
           <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Proximity Session</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">GPS & Internet Direct Chat</p>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Phone Network Direct Chat</p>
         </div>
       </div>
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -423,7 +421,7 @@
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v1';
-    const STORAGE_BEACON_KEY = 'local_gps_internet_beacons_v2';
+    const STORAGE_BEACON_KEY = 'local_phone_network_beacons_v3';
 
     let myPeerId = 'local-peer-' + Math.random().toString(36).substring(2, 9);
     let activeConnections = {};
@@ -468,7 +466,7 @@
       lucide.createIcons();
       initGPSLocation();
       initUserNode();
-      initInternetAndLocalStorageSync();
+      initPhoneNetworkSync();
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
       window.addEventListener('resize', recalculateNodePositions);
@@ -510,7 +508,7 @@
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
       } catch (e) {
-        console.warn("Failed to load persistent storage:", e);
+        console.warn("Failed to save persistent storage:", e);
       }
     }
 
@@ -542,7 +540,10 @@
           userState.lat = pos.coords.latitude;
           userState.lng = pos.coords.longitude;
           announcePresence();
-        }, (err) => {}, { enableHighAccuracy: true, timeout: 10000 });
+          showToast('GPS Location acquired via phone network!', 'navigation');
+        }, (err) => {
+          showToast('GPS unavailable. Using network fallback coordinates.', 'alert-triangle');
+        }, { enableHighAccuracy: true, timeout: 10000 });
 
         navigator.geolocation.watchPosition((pos) => {
           userState.lat = pos.coords.latitude;
@@ -602,6 +603,14 @@
       }
     }
 
+    function triggerBubbleBounce(elementId) {
+      const circle = document.getElementById(elementId);
+      if (!circle) return;
+      circle.classList.remove('animate-bounce-press');
+      void circle.offsetWidth;
+      circle.classList.add('animate-bounce-press');
+    }
+
     function initUserNode() {
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
@@ -629,12 +638,17 @@
       applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
 
       const circle = document.getElementById('userAvatarCircle');
-      circle.addEventListener('mousedown', () => { createBubbleRipple('userAvatarCircle'); handlePressStart(); });
+      circle.addEventListener('mousedown', () => { 
+        createBubbleRipple('userAvatarCircle'); 
+        triggerBubbleBounce('userAvatarCircle');
+        handlePressStart(); 
+      });
       circle.addEventListener('mouseup', handlePressEnd);
       circle.addEventListener('mouseleave', handlePressCancel);
 
       circle.addEventListener('touchstart', (e) => {
         createBubbleRipple('userAvatarCircle');
+        triggerBubbleBounce('userAvatarCircle');
         handlePressStart();
       });
       circle.addEventListener('touchend', handlePressEnd);
@@ -665,24 +679,18 @@
 
     function handlePressEnd() {
       clearTimeout(touchTimer);
-      if (!isLongPress) {
-        const circle = document.getElementById('userAvatarCircle');
-        circle.classList.remove('animate-jiggle');
-        void circle.offsetWidth;
-        circle.classList.add('animate-jiggle');
-      }
     }
 
     function handlePressCancel() {
       clearTimeout(touchTimer);
     }
 
-    /* GPS & Internet Synchronization Engine */
-    function initInternetAndLocalStorageSync() {
+    /* Phone Network & GPS Synchronization Engine */
+    function initPhoneNetworkSync() {
       document.getElementById('myPeerIdDisplay').value = myPeerId;
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_gps_network_channel');
+        broadcastChannel = new BroadcastChannel('local_phone_network_sync_v4');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -797,7 +805,7 @@
       input.select();
       input.setSelectionRange(0, 99999);
       navigator.clipboard.writeText(input.value);
-      showToast('Device Peer ID copied!', 'copy');
+      showToast('Device ID copied!', 'copy');
     }
 
     function announcePresence() {
@@ -862,7 +870,7 @@
               <span class="truncate">${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
             </div>
           ` : ''}
-          <div onclick="createBubbleRipple('${peerKey}-circle'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="background: ${customBg}; border-radius: 50%;">
+          <div onclick="createBubbleRipple('${peerKey}-circle'); triggerBubbleBounce('${peerKey}-circle'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="background: ${customBg}; border-radius: 50%;">
             <div class="bubble-glare"></div>
           </div>
           <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${alias} (${distanceFormatted})</span>
@@ -1042,7 +1050,7 @@
 
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
-      showToast('Question broadcasted via GPS & Internet!', 'pin');
+      showToast('Question broadcasted via Phone Network & GPS!', 'pin');
       openChatDrawer('room-you', getEffectiveMyName(), text, 'you');
     }
 
