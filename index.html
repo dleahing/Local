@@ -22,9 +22,10 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
+    /* Extended full-screen tap ripple keyframe */
     @keyframes tap-ripple-expand {
-      0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.9; border-width: 3px; }
-      100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; border-width: 1px; }
+      0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.85; border-width: 3px; }
+      100% { transform: translate(-50%, -50%) scale(60); opacity: 0; border-width: 1px; }
     }
     @keyframes bubble-subtle {
       0%, 100% { transform: scale(1); border-radius: 50%; }
@@ -43,13 +44,14 @@
       0%, 100% { transform: translateY(0px); }
       50% { transform: translateY(-5px); }
     }
+    /* 50% Reduced Glow Animation */
     @keyframes pulse-glow {
-      0%, 100% { opacity: 0.55; transform: scale(1); }
-      50% { opacity: 0.85; transform: scale(1.12); }
+      0%, 100% { opacity: 0.25; transform: scale(1); }
+      50% { opacity: 0.42; transform: scale(1.08); }
     }
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
-    .animate-tap-ripple { animation: tap-ripple-expand 0.75s ease-out forwards; }
+    .animate-tap-ripple { animation: tap-ripple-expand 1.8s ease-out forwards; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
@@ -84,17 +86,17 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* Clean Glowing Soap Bubble Styling */
+    /* Soap Bubble Node with 50% Reduced Glow Shadow */
     .bubble-node {
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 30%, rgba(56, 189, 248, 0.45) 70%, rgba(2, 132, 199, 0.65) 100%);
       backdrop-filter: blur(12px) saturate(190%);
       -webkit-backdrop-filter: blur(12px) saturate(190%);
       border: 1.5px solid var(--bubble-border);
       box-shadow: 
-        0 8px 25px rgba(2, 132, 199, 0.35),
+        0 6px 15px rgba(2, 132, 199, 0.2),
         inset 0 3px 8px rgba(255, 255, 255, 0.95),
-        inset 0 -5px 10px rgba(2, 132, 199, 0.35),
-        0 0 20px rgba(56, 189, 248, 0.8);
+        inset 0 -5px 10px rgba(2, 132, 199, 0.25),
+        0 0 10px rgba(56, 189, 248, 0.4);
       position: relative;
     }
 
@@ -104,10 +106,10 @@
       -webkit-backdrop-filter: blur(12px) saturate(190%);
       border: 1.5px solid rgba(216, 180, 254, 0.9);
       box-shadow: 
-        0 8px 20px rgba(126, 34, 206, 0.25),
+        0 6px 15px rgba(126, 34, 206, 0.2),
         inset 0 3px 8px rgba(255, 255, 255, 0.95),
-        inset 0 -5px 10px rgba(126, 34, 206, 0.35),
-        0 0 15px rgba(255, 255, 255, 0.7);
+        inset 0 -5px 10px rgba(126, 34, 206, 0.25),
+        0 0 10px rgba(216, 180, 254, 0.4);
       position: relative;
     }
 
@@ -140,7 +142,8 @@
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-500 origin-center">
       <div class="w-[340px] h-[340px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
     </div>
-    <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10"></div>
+    <!-- Container for Full-Screen Centered Tap Ripples -->
+    <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
     <div id="nodesContainer" class="absolute inset-0 z-20"></div>
   </div>
 
@@ -191,7 +194,7 @@
     </button>
   </div>
 
-  <!-- Range Filter Modal -->
+  <!-- Range Filter Modal (Max 50 Miles / 80,467m) -->
   <div id="rangeModal" class="hidden fixed bottom-20 right-4 z-40 glass-card p-4.5 rounded-3xl w-72 border border-white/50 shadow-2xl">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
@@ -201,8 +204,9 @@
       <button onclick="toggleRangeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div class="flex items-center gap-3">
-      <input type="range" id="radiusSlider" min="10" max="5000" value="500" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
-      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-800 min-w-[50px] text-right">500m</span>
+      <!-- Max slider value set to 80,467 meters = 50 miles -->
+      <input type="range" id="radiusSlider" min="10" max="80467" value="8046" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
+      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-800 min-w-[55px] text-right">5.0 mi</span>
     </div>
   </div>
 
@@ -287,7 +291,7 @@
       <i data-lucide="pin" class="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5"></i>
       <div>
         <p id="mainTopicText" class="text-xs font-bold text-slate-900 leading-snug"></p>
-        <span id="topicExpiryBadge" class="text-[9px] font-bold text-sky-800 mt-1 block">Visible for 1 hour</span>
+        <span id="topicExpiryBadge" class="text-[9px] font-bold text-sky-800 mt-1 block">Visible for 60m 00s</span>
       </div>
     </div>
 
@@ -320,6 +324,7 @@
   <script>
     const MESH_ROOM_KEY = 'local-proximity-public';
     const ONE_HOUR_MS = 60 * 60 * 1000;
+    const METERS_PER_MILE = 1609.34;
 
     let peer = null;
     let activeConnections = {};
@@ -332,7 +337,7 @@
       alias: 'Aqua Voyager',
       type: 'personal',
       address: '',
-      radius: 500,
+      radius: 8046, // ~5 miles default
       lat: 27.2730,
       lng: -80.3582,
       theme: 'theme-sky',
@@ -385,20 +390,22 @@
       return Math.round(R * c);
     }
 
+    // Full-Screen Center-Anchored Tap Ripple
     function createBubbleRipple(e) {
       const circle = document.getElementById('userAvatarCircle');
       const rect = circle.getBoundingClientRect();
+      const rippleContainer = document.getElementById('tapRippleContainer');
       const ripple = document.createElement('div');
       
-      const clickX = (e.clientX || (e.touches && e.touches[0].clientX) || (rect.left + rect.width / 2)) - rect.left;
-      const clickY = (e.clientY || (e.touches && e.touches[0].clientY) || (rect.top + rect.height / 2)) - rect.top;
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
 
-      ripple.className = 'absolute w-12 h-12 rounded-full border border-sky-300/80 bg-sky-200/40 pointer-events-none animate-tap-ripple';
-      ripple.style.left = `${clickX}px`;
-      ripple.style.top = `${clickY}px`;
+      ripple.className = 'absolute w-12 h-12 rounded-full border-2 border-sky-300/80 bg-sky-200/30 pointer-events-none animate-tap-ripple';
+      ripple.style.left = `${centerX}px`;
+      ripple.style.top = `${centerY}px`;
 
-      circle.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 750);
+      rippleContainer.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 1800);
     }
 
     function initUserNode() {
@@ -412,10 +419,11 @@
           <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('Anonymous User', 'bg-sky-500', activeTopicState.text)">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600"></i>
             <span id="userTopBubbleText">...</span>
+            <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-800 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md">60m</span>
           </div>
 
-          <!-- Ambient Illuminated Backlight Glow -->
-          <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/40 blur-lg animate-pulse-glow pointer-events-none"></div>
+          <!-- 50% Reduced Ambient Glow -->
+          <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none"></div>
 
           <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-all pointer-events-none"></div>
 
@@ -561,8 +569,12 @@
 
         if (userState.radius > 0 && distance > userState.radius) return;
 
+        let distanceFormatted = distance >= 1000 
+          ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
+          : distance + 'm';
+
         if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
-          updatePeerNodeOnMap(data.sender || 'Peer', distance, data.lat, data.lng, data.text || data.question, data.createdAt);
+          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt);
         }
 
         if (data.type === 'NEW_QUESTION') {
@@ -571,12 +583,12 @@
             activeTopicState.createdAt = data.createdAt;
             document.getElementById('mainTopicText').innerText = data.text;
             document.getElementById('mainTopicContainer').classList.remove('hidden');
-            showToast(`Question from ${data.sender || 'Peer'} (${distance}m away)!`, 'pin');
+            showToast(`Question from ${data.sender || 'Peer'} (${distanceFormatted} away)!`, 'pin');
           }
         } else if (data.type === 'CHAT_MSG') {
-          updatePeerNodeOnMap(data.sender || 'Peer', distance, data.lat, data.lng, activeTopicState.text, activeTopicState.createdAt);
+          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, activeTopicState.text, activeTopicState.createdAt);
           appendMessage(data.sender || 'Anonymous Peer', data.text, false);
-          showToast(`Message from ${data.sender || 'Peer'} (${distance}m away)!`, 'message-square');
+          showToast(`Message from ${data.sender || 'Peer'} (${distanceFormatted} away)!`, 'message-square');
         }
       });
 
@@ -587,13 +599,13 @@
       });
     }
 
-    function updatePeerNodeOnMap(alias, distance, lat, lng, question, createdAt) {
+    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt) {
       const container = document.getElementById('nodesContainer');
       let peerKey = 'node-' + alias.replace(/\s+/g, '-').toLowerCase();
       let nodeElem = document.getElementById(peerKey);
 
       let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
-      let screenRadius = Math.min(Math.max(distance * 0.4, 80), 160);
+      let screenRadius = Math.min(Math.max(distance * 0.005, 80), 160);
       let leftPx = `calc(50% + ${Math.cos(angle) * screenRadius}px)`;
       let topPx = `calc(50% + ${Math.sin(angle) * screenRadius}px)`;
 
@@ -620,7 +632,7 @@
           <div onclick="openChatDrawer('${alias}', 'bg-purple-500', '${question || ''}')" class="w-11 h-11 rounded-full peer-bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle">
             <div class="bubble-glare"></div>
           </div>
-          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distance}m)</span>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distanceFormatted})</span>
         </div>
       `;
       lucide.createIcons();
@@ -647,16 +659,29 @@
       });
     }
 
+    // 1-Hour Countdown Loop with Live Seconds & Minutes Display
     function checkChatExpiryLoop() {
       setInterval(() => {
-        if (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt >= ONE_HOUR_MS)) {
-          activeTopicState.text = null;
-          activeTopicState.createdAt = null;
-          document.getElementById('userTopBubble').classList.add('hidden');
-          document.getElementById('mainTopicContainer').classList.add('hidden');
-          showToast('Proximity chat expired (1 hour reached)', 'clock');
+        if (activeTopicState.createdAt) {
+          const elapsed = Date.now() - activeTopicState.createdAt;
+          const remainingMs = ONE_HOUR_MS - elapsed;
+
+          if (remainingMs <= 0) {
+            activeTopicState.text = null;
+            activeTopicState.createdAt = null;
+            document.getElementById('userTopBubble').classList.add('hidden');
+            document.getElementById('mainTopicContainer').classList.add('hidden');
+            showToast('Proximity chat expired (1 hour reached)', 'clock');
+          } else {
+            const minutesLeft = Math.floor(remainingMs / 60000);
+            const secondsLeft = Math.floor((remainingMs % 60000) / 1000);
+            
+            document.getElementById('topicExpiryBadge').innerText = `Visible for ${minutesLeft}m ${secondsLeft < 10 ? '0' : ''}${secondsLeft}s`;
+            document.getElementById('userTopBubbleBadge').innerText = `${minutesLeft}m`;
+          }
         }
 
+        // Clean expired map bubbles for nearby peers
         Object.keys(nearbyPeers).forEach(key => {
           let peerObj = nearbyPeers[key];
           if (peerObj && peerObj.createdAt && (Date.now() - peerObj.createdAt >= ONE_HOUR_MS)) {
@@ -664,7 +689,7 @@
             if (topMsg) topMsg.remove();
           }
         });
-      }, 5000);
+      }, 1000);
     }
 
     function selectAccountType(type) {
@@ -722,9 +747,16 @@
         : 'absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400';
     }
 
-    function updateRadius(val) {
-      userState.radius = Number(val);
-      document.getElementById('radiusValueDisplay').innerText = `${val}m`;
+    // Dynamic Meters to Miles Converter for Slider UI
+    function updateRadius(valMeters) {
+      const meters = Number(valMeters);
+      userState.radius = meters;
+      
+      let formattedText = meters >= 1000 
+        ? (meters / METERS_PER_MILE).toFixed(1) + ' mi' 
+        : meters + 'm';
+        
+      document.getElementById('radiusValueDisplay').innerText = formattedText;
     }
 
     function postQuestion() {
@@ -800,7 +832,7 @@
 
     function closeChatDrawer() { document.getElementById('chatDrawer').classList.add('hidden'); }
     function openQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
-    function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
+    function closeQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
     function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
     function toggleRangeModal() { document.getElementById('rangeModal').classList.toggle('hidden'); }
