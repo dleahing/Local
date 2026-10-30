@@ -369,7 +369,7 @@
   <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
 
   <!-- Top Beveled Drop-Down Chat Drawer (Z-40) -->
-  <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[80vh]">
+  <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[85vh]">
     <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
       <div class="flex items-center gap-3">
         <div id="chatTargetAvatar" class="w-9 h-9 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md">
@@ -383,6 +383,12 @@
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
 
+    <!-- Encrypted Message Search Bar -->
+    <div class="mt-2.5 px-3 py-2 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex items-center gap-2 flex-shrink-0">
+      <i data-lucide="search" class="w-3.5 h-3.5 text-sky-700 flex-shrink-0"></i>
+      <input type="text" id="chatSearchInput" placeholder="Search chat history..." oninput="filterChatMessages(this.value)" class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none">
+    </div>
+
     <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex items-start gap-2.5 flex-shrink-0">
       <i data-lucide="pin" class="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5"></i>
       <div>
@@ -392,7 +398,7 @@
     </div>
 
     <!-- Messages Container -->
-    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3 max-h-60"></div>
+    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3 max-h-52"></div>
 
     <!-- Chat Input Container -->
     <div class="pt-2.5 pb-1 flex-shrink-0">
@@ -440,7 +446,7 @@
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v1';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v9';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v10';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -449,6 +455,7 @@
     let processedMsgIds = new Set();
     let nearbyPeers = {};
     let showTestBots = true;
+    let wakeLock = null;
     
     let broadcastChannel = null;
 
@@ -488,10 +495,25 @@
       initGPSLocation();
       initUserNode();
       initPeerJSNetwork();
+      requestScreenWakeLock();
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
       window.addEventListener('resize', recalculateNodePositions);
     });
+
+    async function requestScreenWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+        } catch (err) {}
+      }
+    }
+
+    function triggerHapticFeedback(pattern = 40) {
+      if ('vibrate' in navigator) {
+        try { navigator.vibrate(pattern); } catch(e) {}
+      }
+    }
 
     function loadPersistentData() {
       try {
@@ -519,18 +541,14 @@
             }
           });
         }
-      } catch (e) {
-        console.warn("Failed to load persistent storage:", e);
-      }
+      } catch (e) {}
     }
 
     function savePersistentData() {
       try {
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
-      } catch (e) {
-        console.warn("Failed to save persistent storage:", e);
-      }
+      } catch (e) {}
     }
 
     function showToast(message, icon = 'info') {
@@ -590,6 +608,7 @@
     }
 
     function createBubbleRipple(sourceNodeId = 'userAvatarCircle') {
+      triggerHapticFeedback(50);
       const circle = document.getElementById(sourceNodeId);
       if (!circle) return;
 
@@ -723,16 +742,14 @@
         });
 
         peer.on('error', (err) => {
-          console.warn("PeerJS connection error:", err);
           updatePeerServerStatus(false);
         });
       } catch(e) {
-        console.warn("PeerJS initialization fallback:", e);
         updatePeerServerStatus(false);
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v9');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v10');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -851,14 +868,16 @@
         const targetRoomId = data.roomId;
         if (!targetRoomId) return;
 
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
-        chatRoomsSessions[targetRoomId].push({ sender: displayName, text: data.text, isMe: false });
+        chatRoomsSessions[targetRoomId].push({ sender: displayName, text: data.text, time: timeStr, isMe: false });
         savePersistentData();
 
         registerActiveChat(targetRoomId, displayName);
+        triggerHapticFeedback([70, 50, 70]);
 
         if (currentActiveChatRoomId === targetRoomId) {
-          appendMessage(displayName, data.text, false);
+          appendMessage(displayName, data.text, timeStr, false);
         } else {
           showToast(`New P2P message from ${displayName}!`, 'message-square');
         }
@@ -1238,10 +1257,11 @@
       const text = input.value.trim();
       if (!text || !currentActiveChatRoomId) return;
 
-      appendMessage('You', text, true);
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      appendMessage('You', text, timeStr, true);
 
       if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
-      chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'You', text: text, isMe: true });
+      chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'You', text: text, time: timeStr, isMe: true });
       savePersistentData();
 
       input.value = '';
@@ -1255,10 +1275,11 @@
       if (activeRoomName.includes('Bot_Buddy') || currentActiveChatRoomId.includes('bot-buddy')) {
         setTimeout(() => {
           const botReply = `Got your message ("${text}")! That's super interesting. Let's keep exploring the map.`;
+          const botTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
-          chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'Bot_Buddy', text: botReply, isMe: false });
+          chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'Bot_Buddy', text: botReply, time: botTime, isMe: false });
           savePersistentData();
-          appendMessage('Bot_Buddy', botReply, false);
+          appendMessage('Bot_Buddy', botReply, botTime, false);
           showToast('New message from Bot_Buddy!', 'bot');
         }, 1200);
       }
@@ -1277,18 +1298,37 @@
       sendChatMessage();
     }
 
-    function appendMessage(sender, text, isMe) {
+    function appendMessage(sender, text, time, isMe) {
       const msgBox = document.getElementById('chatMessages');
       const div = document.createElement('div');
-      div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+      div.className = `flex flex-col message-item ${isMe ? 'items-end' : 'items-start'}`;
+      div.setAttribute('data-text', text.toLowerCase());
       div.innerHTML = `
-        <span class="text-[10px] text-slate-900 font-bold px-1 drop-shadow-sm">${sender}</span>
+        <div class="flex items-center gap-1.5 px-1">
+          <span class="text-[10px] text-slate-900 font-bold drop-shadow-sm">${sender}</span>
+          <span class="text-[9px] text-slate-500 font-medium">${time || ''}</span>
+        </div>
         <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-semibold ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/60'}">
           ${text}
         </div>
       `;
       msgBox.appendChild(div);
       msgBox.scrollTop = msgBox.scrollHeight;
+    }
+
+    function filterChatMessages(query) {
+      const q = query.toLowerCase();
+      const msgBox = document.getElementById('chatMessages');
+      const items = msgBox.getElementsByClassName('message-item');
+      
+      Array.from(items).forEach(item => {
+        const text = item.getAttribute('data-text') || '';
+        if (text.includes(q)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
     }
 
     function registerActiveChat(roomId, roomName) {
@@ -1333,6 +1373,7 @@
       registerActiveChat(roomId, roomName);
 
       document.getElementById('chatTargetName').innerText = roomName;
+      document.getElementById('chatSearchInput').value = '';
       
       const isSelf = roomId === 'room-you';
       const avatarElem = document.getElementById('chatTargetAvatar');
@@ -1354,7 +1395,7 @@
       msgBox.innerHTML = ``;
       if (chatRoomsSessions[currentActiveChatRoomId]) {
         chatRoomsSessions[currentActiveChatRoomId].forEach(msg => {
-          appendMessage(msg.sender, msg.text, msg.isMe);
+          appendMessage(msg.sender, msg.text, msg.time, msg.isMe);
         });
       }
 
