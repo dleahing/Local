@@ -22,6 +22,7 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
+    /* Ultra-Slow Water Ripple with thinner, translucent lines for seamless background blending */
     @keyframes water-ripple-expand {
       0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.6; border-width: 1.5px; }
       40% { opacity: 0.3; }
@@ -56,7 +57,7 @@
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
-    /* Theme Presets */
+    /* Theme Presets (Harmonized Pink Backgrounds with Inverted Accent Schemes) */
     .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
     .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --accent: #0284c7; }
     .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf4ff 0%, #f5d0fe 50%, #e879f9 100%); --accent: #c084fc; }
@@ -85,25 +86,49 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* Borderless Profile Bubbles */
+    /* Completely Borderless Profile Bubble */
     .bubble-node {
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(56, 189, 248, 0.5) 70%, rgba(2, 132, 199, 0.7) 100%);
       backdrop-filter: blur(12px) saturate(190%);
       -webkit-backdrop-filter: blur(12px) saturate(190%);
-      box-shadow: 0 6px 15px rgba(2, 132, 199, 0.2), inset 0 3px 8px rgba(255, 255, 255, 0.95), inset 0 -5px 10px rgba(2, 132, 199, 0.25), 0 0 10px rgba(56, 189, 248, 0.4);
+      box-shadow: 
+        0 6px 15px rgba(2, 132, 199, 0.2),
+        inset 0 3px 8px rgba(255, 255, 255, 0.95),
+        inset 0 -5px 10px rgba(2, 132, 199, 0.25),
+        0 0 10px rgba(56, 189, 248, 0.4);
       position: relative;
       outline: none;
       border: none;
     }
+    .bubble-node:focus, .bubble-node:active {
+      outline: none;
+      border: none;
+      box-shadow: 
+        0 6px 15px rgba(2, 132, 199, 0.2),
+        inset 0 3px 8px rgba(255, 255, 255, 0.95),
+        inset 0 -5px 10px rgba(2, 132, 199, 0.25),
+        0 0 10px rgba(56, 189, 248, 0.4);
+    }
+
+    /* Borderless Peer Profile Bubble */
     .peer-bubble-node {
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 30%, rgba(168, 85, 247, 0.45) 70%, rgba(126, 34, 206, 0.65) 100%);
       backdrop-filter: blur(12px) saturate(190%);
       -webkit-backdrop-filter: blur(12px) saturate(190%);
-      box-shadow: 0 6px 15px rgba(126, 34, 206, 0.2), inset 0 3px 8px rgba(255, 255, 255, 0.95), inset 0 -5px 10px rgba(126, 34, 206, 0.25), 0 0 10px rgba(216, 180, 254, 0.4);
+      box-shadow: 
+        0 6px 15px rgba(126, 34, 206, 0.2),
+        inset 0 3px 8px rgba(255, 255, 255, 0.95),
+        inset 0 -5px 10px rgba(126, 34, 206, 0.25),
+        0 0 10px rgba(216, 180, 254, 0.4);
       position: relative;
       outline: none;
       border: none;
     }
+    .peer-bubble-node:focus, .peer-bubble-node:active {
+      outline: none;
+      border: none;
+    }
+
     .bubble-glare {
       position: absolute;
       top: 10%;
@@ -176,7 +201,7 @@
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-40 pointer-events-none flex flex-col gap-2 items-center"></div>
 
   <!-- Bottom Floating Control Dock -->
-  <div class="fixed bottom-24 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
+  <div class="fixed bottom-6 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
     <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
     </button>
@@ -186,7 +211,7 @@
   </div>
 
   <!-- Range Filter Modal -->
-  <div id="rangeModal" class="hidden fixed bottom-32 right-4 z-40 glass-card p-4.5 rounded-3xl w-72 border border-white/50 shadow-2xl">
+  <div id="rangeModal" class="hidden fixed bottom-20 right-4 z-40 glass-card p-4.5 rounded-3xl w-72 border border-white/50 shadow-2xl">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
@@ -280,9 +305,9 @@
   <!-- Outside Tap Backdrop Overlay for Chat Drawer -->
   <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-xs transition-opacity"></div>
 
-  <!-- Independent Chat Drawer with Gemini Pill-Shaped Multi-Action Input Container -->
-  <div id="chatDrawer" class="hidden fixed top-0 bottom-0 left-0 z-40 w-80 max-w-[85vw] glass-drawer-left p-4 flex flex-col transition-all">
-    <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
+  <!-- Independent Chat Drawer -->
+  <div id="chatDrawer" class="hidden fixed top-0 bottom-0 left-0 z-40 w-80 max-w-[85vw] glass-drawer-left p-4.5 flex flex-col transition-all">
+    <div class="flex items-center justify-between pb-3.5 pt-2 border-b border-white/30">
       <div class="flex items-center gap-3">
         <div id="chatTargetAvatar" class="w-9 h-9 rounded-full peer-bubble-node text-white font-bold text-xs flex items-center justify-center shadow-md">
           <div class="bubble-glare"></div>
@@ -295,43 +320,21 @@
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
 
-    <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/40 backdrop-blur-md border border-white/50 shadow-sm flex items-start gap-2.5 flex-shrink-0">
+    <div id="mainTopicContainer" class="hidden my-3 p-3.5 rounded-2xl bg-white/40 backdrop-blur-md border border-white/50 shadow-sm flex items-start gap-2.5">
       <i data-lucide="pin" class="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5"></i>
       <div>
         <p id="mainTopicText" class="text-xs font-bold text-slate-900 leading-snug"></p>
-        <span id="topicExpiryBadge" class="text-[9px] font-bold text-sky-800 mt-0.5 block">Visible for 60m 00s</span>
+        <span id="topicExpiryBadge" class="text-[9px] font-bold text-sky-800 mt-1 block">Visible for 60m 00s</span>
       </div>
     </div>
 
-    <!-- Messages Container -->
-    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3"></div>
+    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3.5"></div>
 
-    <!-- Gemini-Style Pill-Shaped Multi-Action Chat Input Container -->
-    <div class="pt-2.5 pb-1 flex-shrink-0">
-      <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/70 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
-        <!-- Text Area / Input -->
-        <textarea id="chatInput" rows="1" placeholder="Ask or message nearby..." class="w-full bg-transparent text-slate-900 text-xs font-medium focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
-        
-        <!-- Multi-Action Toolbar Bottom Row -->
-        <div class="flex items-center justify-between pt-1 border-t border-slate-200/40">
-          <!-- Left Action Icons (Attachments / Tools) -->
-          <div class="flex items-center gap-1">
-            <button onclick="showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-500 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Attach file">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-            </button>
-            <button onclick="showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-500 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Voice input">
-              <i data-lucide="mic" class="w-4 h-4"></i>
-            </button>
-          </div>
-
-          <!-- Right Action (Send Pill Button) -->
-          <div class="flex items-center gap-1.5">
-            <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center shadow-md active:scale-95 hover:bg-sky-500 transition-all">
-              <i data-lucide="arrow-up" class="w-4 h-4"></i>
-            </button>
-          </div>
-        </div>
-      </div>
+    <div class="flex gap-2 pt-3.5 border-t border-white/30">
+      <input type="text" id="chatInput" placeholder="Type a message..." class="flex-1 px-4 py-2.5 rounded-full bg-white/40 backdrop-blur-md border border-white/40 text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-400" onkeypress="if(event.key==='Enter') sendChatMessage()">
+      <button onclick="sendChatMessage()" class="w-9 h-9 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center shadow-md active:scale-95 transition-all flex-shrink-0">
+        <i data-lucide="arrow-up" class="w-4 h-4"></i>
+      </button>
     </div>
   </div>
 
@@ -909,11 +912,6 @@
       openChatDrawer('room-you', userState.alias, text, 'you');
     }
 
-    function autoResizeTextArea(el) {
-      el.style.height = 'auto';
-      el.style.height = (el.scrollHeight) + 'px';
-    }
-
     function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
@@ -926,7 +924,6 @@
       savePersistentData();
 
       input.value = '';
-      input.style.height = '24px';
 
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
@@ -941,10 +938,6 @@
         roomName: activeRoomName,
         text: text 
       });
-    }
-
-    function send() {
-      sendChatMessage();
     }
 
     function appendMessage(sender, text, isMe) {
