@@ -22,11 +22,11 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
-    /* Ultra-Slow Water Ripple (10.71s duration) */
+    /* Ultra-Slow Water Ripple (10.71s duration) with thinner, translucent lines for seamless background blending */
     @keyframes water-ripple-expand {
-      0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.9; border-width: 4px; }
-      40% { opacity: 0.5; }
-      100% { transform: translate(-50%, -50%) scale(60); opacity: 0; border-width: 1px; }
+      0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.6; border-width: 1.5px; }
+      40% { opacity: 0.3; }
+      100% { transform: translate(-50%, -50%) scale(60); opacity: 0; border-width: 0.5px; }
     }
     @keyframes bubble-subtle {
       0%, 100% { transform: scale(1); border-radius: 50%; }
@@ -156,7 +156,7 @@
   <div id="mapCanvas" class="absolute inset-0 overflow-hidden transition-transform duration-500 origin-center" style="background: var(--bg-gradient); transform: scale(1.1);">
     <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:28px_28px]"></div>
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-500 origin-center">
-      <div class="w-[340px] h-[340px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
+      <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
     </div>
     <!-- Water Ripple Container -->
     <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
@@ -489,7 +489,8 @@
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
-      ripple.className = 'absolute w-14 h-14 rounded-full border-2 border-sky-400/90 bg-sky-300/30 pointer-events-none animate-water-ripple';
+      // Soft blue translucent ripple with decreased line thickness (0.5px to 1.5px) for seamless background blending
+      ripple.className = 'absolute w-14 h-14 rounded-full border border-sky-400/50 bg-sky-300/15 pointer-events-none animate-water-ripple';
       ripple.style.left = `${centerX}px`;
       ripple.style.top = `${centerY}px`;
 
@@ -1017,8 +1018,8 @@
         });
       }
 
-      document.getElementById('chatDrawer').classList.remove('hidden');
-      document.getElementById('chatBackdrop').classList.remove('hidden');
+      document.getElementById('chatDrawer').classList.add('hidden');
+      document.getElementById('chatBackdrop').classList.add('hidden');
     }
 
     function closeChatDrawer() { 
