@@ -6,7 +6,7 @@
   <title>LocaL - Proximity Social Network</title>
   
   <!-- Mobile & PWA Configuration -->
-  <meta name="theme-color" content="#bae6fd">
+  <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LocaL">
@@ -57,11 +57,11 @@
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
-    /* Dynamic Themes (Default Sky Blue) */
-    .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --accent: #0284c7; }
-    .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
-    .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #ecfdf5 0%, #a7f3d0 50%, #34d399 100%); --accent: #059669; }
-    .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #f5f3ff 0%, #ddd6fe 50%, #a78bfa 100%); --accent: #7c3aed; }
+    /* Dynamic Themes with Pink Background & Blue Ripple/Inverted Color Scheme */
+    .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
+    .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --accent: #0284c7; }
+    .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf4ff 0%, #f5d0fe 50%, #e879f9 100%); --accent: #c084fc; }
+    .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #fef2f2 0%, #fecaca 50%, #f87171 100%); --accent: #ef4444; }
 
     /* Polished Glassmorphism System */
     .glass-panel {
@@ -274,23 +274,23 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">App Theme Preset (Inverted)</label>
           <div class="grid grid-cols-4 gap-2">
-            <button onclick="setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-sky-100 border border-sky-400 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
+            <button onclick="setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-pink-100 border border-pink-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
+              <span class="w-4 h-4 rounded-full bg-pink-400"></span>
+              <span class="text-[10px] font-bold text-pink-900">Pink/Blue</span>
+            </button>
+            <button onclick="setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-sky-100 border border-sky-400 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
               <span class="w-4 h-4 rounded-full bg-sky-500"></span>
-              <span class="text-[10px] font-bold text-sky-800">Sky</span>
+              <span class="text-[10px] font-bold text-sky-800">Blue/Pink</span>
             </button>
-            <button onclick="setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-pink-100 border border-pink-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
-              <span class="w-4 h-4 rounded-full bg-pink-500"></span>
-              <span class="text-[10px] font-bold text-pink-800">Pink</span>
+            <button onclick="setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-fuchsia-100 border border-fuchsia-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
+              <span class="w-4 h-4 rounded-full bg-fuchsia-400"></span>
+              <span class="text-[10px] font-bold text-fuchsia-900">Fuchsia</span>
             </button>
-            <button onclick="setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-emerald-100 border border-emerald-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
-              <span class="w-4 h-4 rounded-full bg-emerald-500"></span>
-              <span class="text-[10px] font-bold text-emerald-800">Mint</span>
-            </button>
-            <button onclick="setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-violet-100 border border-violet-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
-              <span class="w-4 h-4 rounded-full bg-violet-500"></span>
-              <span class="text-[10px] font-bold text-violet-800">Violet</span>
+            <button onclick="setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-red-100 border border-red-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
+              <span class="w-4 h-4 rounded-full bg-red-400"></span>
+              <span class="text-[10px] font-bold text-red-900">Sunset</span>
             </button>
           </div>
         </div>
@@ -447,7 +447,6 @@
       if (!userState.lat || !userState.lng) return { lat: 27.2730, lng: -80.3582 };
       if (!userState.fuzzLocation) return { lat: userState.lat, lng: userState.lng };
 
-      // Apply privacy jitter (~500m coordinate obfuscation)
       const jitterLat = (Math.random() - 0.5) * 0.005;
       const jitterLng = (Math.random() - 0.5) * 0.005;
       return {
@@ -490,7 +489,7 @@
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
-      ripple.className = 'absolute w-14 h-14 rounded-full border-2 border-sky-300/80 bg-sky-200/25 pointer-events-none animate-water-ripple';
+      ripple.className = 'absolute w-14 h-14 rounded-full border-2 border-sky-400/90 bg-sky-300/30 pointer-events-none animate-water-ripple';
       ripple.style.left = `${centerX}px`;
       ripple.style.top = `${centerY}px`;
 
@@ -569,7 +568,6 @@
       ring.classList.add('opacity-0');
     }
 
-    /* Robust Decentralized Mesh using Dynamic Unique ID + Discovery Registry */
     function initRobustMesh() {
       const uniqueSuffix = Math.random().toString(36).substring(2, 8);
       myPeerId = MESH_PREFIX + uniqueSuffix;
@@ -619,7 +617,7 @@
     }
 
     function announcePresence() {
-      if (userState.ghostMode) return; // Respect ghost mode privacy
+      if (userState.ghostMode) return;
 
       const coords = getBroadcastCoordinates();
       broadcastData({
@@ -831,7 +829,7 @@
       document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative`;
       if (!skipSave) {
         savePersistentData();
-        showToast(`Theme updated!`, 'palette');
+        showToast(`Theme updated with Pink/Blue inverse!`, 'palette');
       }
     }
 
