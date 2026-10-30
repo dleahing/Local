@@ -460,8 +460,8 @@
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const TEN_MILES_METERS = 16093.4;
-    const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles
-    const MAX_RADIUS_METERS = 80467.0; // Exactly 50 Miles
+    const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
+    const MAX_RADIUS_METERS = 80467.0; // Exactly 50 Miles maximum
     const STORAGE_KEY_PROFILE = 'local_user_profile_v2';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v2';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v12';
@@ -524,7 +524,7 @@
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
       
-      // Enforce 5 miles min and 50 miles max constraint
+      // Enforce strictly 5 miles min and 50 miles max constraint
       if (!userState.radius || userState.radius < MIN_RADIUS_METERS) {
         userState.radius = MIN_RADIUS_METERS;
       }
