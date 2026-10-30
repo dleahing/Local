@@ -78,9 +78,10 @@
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
-    /* Fluid Map Canvas Transform */
+    /* Fluid Map Canvas Transform with Locked Center Origin */
     #mapCanvas {
       transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: center center;
     }
 
     /* Inverse scale wrapper so nodes/bubbles stay constant size when map zooms out */
@@ -159,7 +160,7 @@
   <!-- 2. MAIN LAYOUT & DOM ELEMENTS SECTION     -->
   <!-- ========================================== -->
   
-  <!-- Map Canvas with Expanded Background & Fluid Zoom -->
+  <!-- Map Canvas with Locked Center Origin & Expanded Background -->
   <div id="mapCanvas" class="absolute -inset-[150%] overflow-hidden scale-100 origin-center cursor-crosshair" style="background: var(--bg-gradient);">
     <div class="absolute inset-0 opacity-12 map-grid-pattern"></div>
     
@@ -568,7 +569,7 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    // Dynamic Discovery Radius & Fluid Zoom
+    // Dynamic Discovery Radius & Fluid Zoom (Preserving Center State)
     function updateRadius(val, updateSliderInput = true) {
       const meters = Math.max(100, Math.min(80467, Number(val)));
       userState.radius = meters;
@@ -605,7 +606,7 @@
       savePersistentData();
     }
 
-    // Anywhere on screen drag to adjust radius & dim visibility to 0 at/past radius
+    // Anywhere on screen drag to adjust radius without shifting view position
     function initGlobalDragHandlers() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
@@ -652,7 +653,6 @@
       updateRadius(newMeters, true);
     }
 
-    // Dim visibility smoothly to 0 as nodes reach/exceed the set radius
     function refreshAllNodeVisibilities() {
       Object.keys(globalActiveDirectory).forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
@@ -663,9 +663,8 @@
           let opacity = 1;
           if (userState.radius > 0 && peer.accountType !== 'business') {
             if (peer.distance >= userState.radius) {
-              opacity = 0; // Dim to 0 as it passes the set radius
+              opacity = 0;
             } else {
-              // Smooth falloff curve approaching radius
               const ratio = peer.distance / userState.radius;
               opacity = Math.max(0, 1 - Math.pow(ratio, 3));
             }
@@ -674,7 +673,6 @@
           nodeElem.style.opacity = opacity;
           nodeElem.style.pointerEvents = opacity > 0.05 ? 'auto' : 'none';
 
-          // Hide name label if distance is greater than 10 miles
           const labelElem = nodeElem.querySelector('.node-name-label');
           if (labelElem) {
             labelElem.style.display = (peer.distance > TEN_MILES_METERS || opacity <= 0.05) ? 'none' : 'block';
