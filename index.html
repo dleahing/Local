@@ -164,7 +164,7 @@
         <i data-lucide="user-cog" class="w-5 h-5"></i>
       </button>
 
-      <button onclick="toggleP2PModal()" title="Network Status" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
+      <button onclick="toggleP2PModal()" title="Global Connect & Network" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
         <i data-lucide="wifi" class="w-5 h-5"></i>
         <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400"></span>
       </button>
@@ -198,20 +198,38 @@
     </div>
   </div>
 
-  <!-- Network Status Modal -->
+  <!-- Global Mesh & Active User Directory Modal -->
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">Network & GPS Settings</h3>
+    <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center mb-4 flex-shrink-0">
+        <div>
+          <h3 class="text-lg font-black text-slate-900">Global User Mesh</h3>
+          <p class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Connect with all active network peers</p>
+        </div>
         <button onclick="toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
-      <div class="space-y-4">
+      <div class="space-y-4 overflow-y-auto flex-1 pr-1">
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Phone Network & GPS Sync</label>
-          <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-bold">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-            <span id="serverStatusText">Broadcasting via Phone Network & GPS</span>
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Network Status</label>
+          <div class="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-bold">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span id="serverStatusText">Broadcasting via Phone Network & GPS</span>
+            </div>
+            <button onclick="broadcastData({type:'BROADCAST_PING'})" class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-extrabold shadow-sm active:scale-95">Ping All</button>
+          </div>
+        </div>
+
+        <!-- Live Active Users Directory List -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">Active Users Online (<span id="modalActiveCount">1</span>)</label>
+          </div>
+          <div id="globalUsersDirectory" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+            <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">
+              Scanning for active network users...
+            </div>
           </div>
         </div>
 
@@ -234,7 +252,6 @@
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
-          <p class="text-[10px] text-slate-600 mt-1">Open this page on another phone or tab with location services enabled to sync real-time GPS coordinates.</p>
         </div>
       </div>
     </div>
@@ -358,7 +375,7 @@
         </div>
         <div>
           <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Proximity Session</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Phone Network Direct Chat</p>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Global Mesh Connected Chat</p>
         </div>
       </div>
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -378,7 +395,7 @@
     <!-- Chat Input Container -->
     <div class="pt-2.5 pb-1 flex-shrink-0">
       <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/80 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
-        <textarea id="chatInput" rows="1" placeholder="Message active user..." class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
+        <textarea id="chatInput" rows="1" placeholder="Message connected user..." class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/50">
           <div class="flex items-center gap-1">
@@ -421,10 +438,11 @@
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v1';
-    const STORAGE_BEACON_KEY = 'local_phone_network_beacons_v3';
+    const STORAGE_BEACON_KEY = 'local_global_mesh_beacons_v5';
 
     let myPeerId = 'local-peer-' + Math.random().toString(36).substring(2, 9);
     let activeConnections = {};
+    let globalActiveDirectory = {};
     let processedMsgIds = new Set();
     let nearbyPeers = {};
     let showTestBots = true;
@@ -466,7 +484,7 @@
       lucide.createIcons();
       initGPSLocation();
       initUserNode();
-      initPhoneNetworkSync();
+      initGlobalMeshSync();
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
       window.addEventListener('resize', recalculateNodePositions);
@@ -508,7 +526,7 @@
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
       } catch (e) {
-        console.warn("Failed to save persistent storage:", e);
+        console.warn("Failed to load persistent storage:", e);
       }
     }
 
@@ -540,7 +558,7 @@
           userState.lat = pos.coords.latitude;
           userState.lng = pos.coords.longitude;
           announcePresence();
-          showToast('GPS Location acquired via phone network!', 'navigation');
+          showToast('GPS Location acquired!', 'navigation');
         }, (err) => {
           showToast('GPS unavailable. Using network fallback coordinates.', 'alert-triangle');
         }, { enableHighAccuracy: true, timeout: 10000 });
@@ -685,12 +703,12 @@
       clearTimeout(touchTimer);
     }
 
-    /* Phone Network & GPS Synchronization Engine */
-    function initPhoneNetworkSync() {
+    /* Global Mesh & Active User Synchronization Engine */
+    function initGlobalMeshSync() {
       document.getElementById('myPeerIdDisplay').value = myPeerId;
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_phone_network_sync_v4');
+        broadcastChannel = new BroadcastChannel('local_global_mesh_channel_v6');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -717,15 +735,9 @@
       if (data.id) processedMsgIds.add(data.id);
 
       activeConnections[data.peerId] = Date.now();
-      updateMeshUI();
-
+      
       const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
-      if (userState.radius > 0 && distance > userState.radius) return;
-
-      let distanceFormatted = distance >= 1000 
-        ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
-        : Math.max(distance, 10) + 'm';
-
+      
       let displayName = data.sender;
       let isPublic = data.makeNamePublic !== false;
       if (!isPublic) {
@@ -733,7 +745,26 @@
         displayName = `Traveler #${hash}`;
       }
 
-      if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
+      globalActiveDirectory[data.peerId] = {
+        name: displayName,
+        peerId: data.peerId,
+        lat: data.lat,
+        lng: data.lng,
+        distance: distance,
+        bubbleColor: data.bubbleColor || 'violet',
+        lastSeen: Date.now()
+      };
+
+      updateMeshUI();
+      renderGlobalUsersDirectory();
+
+      if (userState.radius > 0 && distance > userState.radius) return;
+
+      let distanceFormatted = distance >= 1000 
+        ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
+        : Math.max(distance, 10) + 'm';
+
+      if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION' || data.type === 'BROADCAST_PING') {
         updatePeerNodeOnMap(displayName, distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor, false);
       }
 
@@ -761,21 +792,31 @@
 
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
-        { name: 'Bot_Buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'yellow', isBot: true },
-        { name: 'Maya (Artist)', offsetLat: -0.003, offsetLng: 0.001, question: 'Hosting an open art studio session downtown!', color: 'emerald', isBot: true },
-        { name: 'Alex_Dev', offsetLat: 0.001, offsetLng: -0.003, question: 'Where is the best local coffee shop for working?', color: 'pink', isBot: true },
-        { name: 'Sora_Waves', offsetLat: -0.002, offsetLng: -0.002, question: 'Checking maritime safety radar for afternoon boating!', color: 'violet', isBot: true }
+        { name: 'Bot_Buddy', peerId: 'sim-peer-bot-buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'yellow', isBot: true },
+        { name: 'Maya (Artist)', peerId: 'sim-peer-maya', offsetLat: -0.003, offsetLng: 0.001, question: 'Hosting an open art studio session downtown!', color: 'emerald', isBot: true },
+        { name: 'Alex_Dev', peerId: 'sim-peer-alex', offsetLat: 0.001, offsetLng: -0.003, question: 'Where is the best local coffee shop for working?', color: 'pink', isBot: true },
+        { name: 'Sora_Waves', peerId: 'sim-peer-sora', offsetLat: -0.002, offsetLng: -0.002, question: 'Checking maritime safety radar for afternoon boating!', color: 'violet', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
-        const peerId = 'sim-peer-' + u.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
         const lat = userState.lat + u.offsetLat;
         const lng = userState.lng + u.offsetLng;
         const dist = calculateHaversineDistance(userState.lat, userState.lng, lat, lng);
         const distFormatted = (dist / METERS_PER_MILE).toFixed(1) + 'mi';
 
-        updatePeerNodeOnMap(u.name, dist, distFormatted, lat, lng, u.question, Date.now() - (i * 300000), peerId, u.color, u.isBot);
+        globalActiveDirectory[u.peerId] = {
+          name: u.name,
+          peerId: u.peerId,
+          lat: lat,
+          lng: lng,
+          distance: dist,
+          bubbleColor: u.color,
+          lastSeen: Date.now()
+        };
+
+        updatePeerNodeOnMap(u.name, dist, distFormatted, lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.isBot);
       });
+      renderGlobalUsersDirectory();
     }
 
     function spawnTestBot() {
@@ -786,7 +827,18 @@
       const botQuestion = 'Anyone want to collaborate on a new P2P app?';
       const botCreatedAt = Date.now();
 
+      globalActiveDirectory[botId] = {
+        name: botName,
+        peerId: botId,
+        lat: botLat,
+        lng: botLng,
+        distance: 250,
+        bubbleColor: 'yellow',
+        lastSeen: Date.now()
+      };
+
       updatePeerNodeOnMap(botName, 250, '250m', botLat, botLng, botQuestion, botCreatedAt, botId, 'yellow', true);
+      renderGlobalUsersDirectory();
       showToast('Test Bot (Bot_Buddy) spawned on map!', 'bot');
       toggleP2PModal();
     }
@@ -907,6 +959,10 @@
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat;
       payload.lng = payload.lng || coords.lng;
+      payload.sender = payload.sender || userState.alias;
+      payload.peerId = payload.peerId || myPeerId;
+      payload.bubbleColor = payload.bubbleColor || userState.bubbleColor;
+      payload.makeNamePublic = userState.makeNamePublic;
 
       if (broadcastChannel) {
         try { broadcastChannel.postMessage(payload); } catch(e) {}
@@ -915,6 +971,47 @@
       try {
         localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload));
       } catch(e) {}
+    }
+
+    function renderGlobalUsersDirectory() {
+      const container = document.getElementById('globalUsersDirectory');
+      const activeCountElem = document.getElementById('modalActiveCount');
+      
+      const peerIds = Object.keys(globalActiveDirectory);
+      const totalActive = peerIds.length + 1;
+      activeCountElem.innerText = totalActive;
+
+      if (peerIds.length === 0) {
+        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">No other peers detected yet. Open another tab or device!</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      peerIds.forEach(peerId => {
+        const peer = globalActiveDirectory[peerId];
+        const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
+        const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
+        const bubbleBg = BUBBLE_COLOR_MAP[peer.bubbleColor] || BUBBLE_COLOR_MAP.violet;
+
+        const card = document.createElement('div');
+        card.className = 'p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between';
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node" style="background: ${bubbleBg}; border-radius: 50%;">
+              <div class="bubble-glare"></div>
+              <span>${peer.name.charAt(0).toUpperCase()}</span>
+            </div>
+            <div>
+              <h4 class="font-black text-slate-900 text-xs">${peer.name}</h4>
+              <p class="text-[10px] text-sky-900 font-bold">Distance: ${distStr}</p>
+            </div>
+          </div>
+          <button onclick="toggleP2PModal(); openChatDrawer('${roomId}', '${peer.name}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-95 transition-all">
+            Connect
+          </button>
+        `;
+        container.appendChild(card);
+      });
     }
 
     function checkChatExpiryLoop() {
@@ -1050,7 +1147,7 @@
 
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
-      showToast('Question broadcasted via Phone Network & GPS!', 'pin');
+      showToast('Question broadcasted across global mesh!', 'pin');
       openChatDrawer('room-you', getEffectiveMyName(), text, 'you');
     }
 
