@@ -69,24 +69,24 @@
 
     /* Polished Glassmorphism System */
     .glass-panel {
-      background: rgba(255, 255, 255, 0.55);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.6);
-      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(24px) saturate(190%);
+      -webkit-backdrop-filter: blur(24px) saturate(190%);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.08);
     }
     .glass-card {
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.7);
-      box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.08);
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
     }
     .liquid-glass-icon {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.35) 100%);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.45) 100%);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.8);
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
@@ -112,17 +112,17 @@
 
     /* Beveled Top Drop-Down Glass Drawer */
     .glass-drawer-top {
-      background: rgba(255, 255, 255, 0.35);
-      backdrop-filter: blur(32px);
-      -webkit-backdrop-filter: blur(32px);
-      border-bottom: 1.5px solid rgba(255, 255, 255, 0.6);
-      border-left: 1px solid rgba(255, 255, 255, 0.4);
-      border-right: 1px solid rgba(255, 255, 255, 0.4);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(36px);
+      -webkit-backdrop-filter: blur(36px);
+      border-bottom: 1.5px solid rgba(255, 255, 255, 0.7);
+      border-left: 1px solid rgba(255, 255, 255, 0.5);
+      border-right: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
   </style>
 </head>
-<body id="appBody" class="theme-sky bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative">
+<body id="appBody" class="theme-sky bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
   <!-- Map Canvas Container -->
   <div id="mapCanvas" class="absolute inset-0 overflow-hidden transition-transform duration-500 origin-center" style="background: var(--bg-gradient); transform: scale(1.1);">
@@ -135,10 +135,11 @@
 
     <!-- Water Ripple Container -->
     <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+    <!-- Nodes Z-20 -->
     <div id="nodesContainer" class="absolute inset-0 z-20"></div>
   </div>
 
-  <!-- Top Glass Header Bar -->
+  <!-- Top Glass Header Bar (Z-30) -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
     <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 pointer-events-auto shadow-xl">
       <div class="relative flex items-center justify-center">
@@ -162,25 +163,25 @@
     <div id="activeChatsBar" class="hidden glass-panel px-3 py-1.5 rounded-2xl pointer-events-auto flex items-center gap-2 overflow-x-auto shadow-lg max-w-[45vw]"></div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
-      <button onclick="openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:scale-105 transition-all active:scale-95 shadow-lg">
+      <button onclick="openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
         <i data-lucide="user-cog" class="w-5 h-5"></i>
       </button>
 
-      <button onclick="toggleP2PModal()" title="Mesh Status & Connect" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
+      <button onclick="toggleP2PModal()" title="Mesh Status & Connect" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
         <i data-lucide="wifi" class="w-5 h-5"></i>
         <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400"></span>
       </button>
     </div>
   </header>
 
-  <div id="toastContainer" class="absolute top-20 left-4 right-4 z-40 pointer-events-none flex flex-col gap-2 items-center"></div>
+  <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Bottom Floating Control Dock -->
+  <!-- Bottom Floating Control Dock (Z-30) -->
   <div class="fixed bottom-24 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
-    <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
+    <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
     </button>
-    <button onclick="toggleRangeModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Radius Filter">
+    <button onclick="toggleRangeModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Radius Filter">
       <i data-lucide="radar" class="w-5 h-5"></i>
     </button>
   </div>
@@ -190,13 +191,13 @@
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
-        <span class="text-xs font-black text-slate-800 uppercase tracking-wider">Discovery Radius</span>
+        <span class="text-xs font-black text-slate-900 uppercase tracking-wider">Discovery Radius</span>
       </div>
-      <button onclick="toggleRangeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <button onclick="toggleRangeModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div class="flex items-center gap-3">
       <input type="range" id="radiusSlider" min="10" max="80467" value="80467" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
-      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-800 min-w-[55px] text-right">50.0 mi</span>
+      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-900 min-w-[55px] text-right">50.0 mi</span>
     </div>
   </div>
 
@@ -204,35 +205,40 @@
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">Local Network Broadcast</h3>
-        <button onclick="toggleP2PModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <h3 class="text-lg font-black text-slate-900">Network & Bot Settings</h3>
+        <button onclick="toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Network Sync Status</label>
-          <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-900 text-xs font-bold">
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Network Sync Status</label>
+          <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-bold">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
             <span id="serverStatusText">Broadcasting to Local Devices</span>
           </div>
         </div>
 
+        <!-- Test Bots Hide/Show Toggle -->
+        <div class="p-3 rounded-2xl bg-white/40 border border-white/60 flex items-center justify-between">
+          <div>
+            <span class="block text-xs font-bold text-slate-900">Show Test Bots on Map</span>
+            <span class="block text-[10px] text-slate-600">Display simulated bots (Bot_Buddy, etc.)</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="toggleTestBots" checked onchange="toggleTestBotsVisibility(this.checked)" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-600"></div>
+          </label>
+        </div>
+
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Your Local Peer ID</label>
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Your Local Peer ID</label>
           <div class="flex items-center gap-2">
-            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Syncing...">
+            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Syncing...">
             <button onclick="copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
-          <p class="text-[10px] text-slate-500 mt-1">Open this page on another phone or tab on the same network to test real-time presence.</p>
-        </div>
-
-        <div>
-          <button onclick="spawnTestBot()" class="w-full py-3 rounded-2xl bg-purple-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all flex items-center justify-center gap-2">
-            <i data-lucide="bot" class="w-4 h-4"></i>
-            <span>Spawn Extra Test Bot (Bot_Buddy)</span>
-          </button>
+          <p class="text-[10px] text-slate-600 mt-1">Open this page on another phone or tab on the same network to test real-time presence.</p>
         </div>
       </div>
     </div>
@@ -243,37 +249,37 @@
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-black text-slate-900">Customize Profile</h3>
-        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="closeProfileModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Account Mode</label>
+          <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
           <div class="grid grid-cols-2 gap-2">
             <button onclick="selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all">
-              <i data-lucide="navigation" class="w-4 h-4 text-sky-700"></i>
-              <span class="text-[11px] font-bold text-sky-900">Personal (GPS)</span>
+              <i data-lucide="navigation" class="w-4 h-4 text-sky-800"></i>
+              <span class="text-[11px] font-bold text-sky-950">Personal (GPS)</span>
             </button>
             <button onclick="selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
-              <i data-lucide="store" class="w-4 h-4 text-slate-600"></i>
-              <span class="text-[11px] font-bold text-slate-700">Business (Fixed)</span>
+              <i data-lucide="store" class="w-4 h-4 text-slate-700"></i>
+              <span class="text-[11px] font-bold text-slate-800">Business (Fixed)</span>
             </button>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Display Alias / Store Name</label>
-          <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <label class="block text-xs font-bold text-slate-800 mb-1">Display Alias / Store Name</label>
+          <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
         <div id="businessAddressField" class="hidden">
-          <label class="block text-xs font-bold text-slate-700 mb-1">Store Street Address</label>
-          <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <label class="block text-xs font-bold text-slate-800 mb-1">Store Street Address</label>
+          <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
         <!-- Profile Bubble Color Picker -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Profile Bubble Color</label>
+          <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">Profile Bubble Color</label>
           <div class="grid grid-cols-5 gap-2">
             <button onclick="setBubbleColor('blue')" class="p-2.5 rounded-2xl bg-sky-500 border border-sky-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm" title="Blue Bubble">
               <span class="w-4 h-4 rounded-full bg-white/90"></span>
@@ -293,24 +299,26 @@
           </div>
         </div>
 
-        <!-- Location Privacy Controls -->
-        <div class="pt-2 border-t border-slate-200/60">
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Location Privacy & Visibility</label>
-          <div class="space-y-2">
-            <label class="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
-              <span>Ghost Mode (Invisible on map)</span>
-              <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
-            </label>
-            <label class="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
-              <span>Fuzz Location (~500m jitter)</span>
-              <input type="checkbox" id="privacyFuzzLocation" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
-            </label>
-          </div>
+        <!-- Location Privacy & Name Public Controls -->
+        <div class="pt-2 border-t border-slate-200/60 space-y-2">
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
+          <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
+            <span>Make Name Public on Map</span>
+            <input type="checkbox" id="privacyMakeNamePublic" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+          </label>
+          <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
+            <span>Ghost Mode (Invisible on map)</span>
+            <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+          </label>
+          <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
+            <span>Fuzz Location (~500m jitter)</span>
+            <input type="checkbox" id="privacyFuzzLocation" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+          </label>
         </div>
 
         <!-- App Background Theme Presets -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
+          <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
           <div class="grid grid-cols-5 gap-1.5">
             <button onclick="setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-pink-100 border border-pink-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
               <span class="w-3.5 h-3.5 rounded-full bg-pink-400"></span>
@@ -342,10 +350,10 @@
     </div>
   </div>
 
-  <!-- Outside Tap Backdrop Overlay for Chat Drawer -->
-  <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-xs transition-opacity"></div>
+  <!-- Outside Tap Backdrop Overlay for Chat Drawer (Z-35) -->
+  <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
 
-  <!-- Top Beveled Drop-Down Chat Drawer -->
+  <!-- Top Beveled Drop-Down Chat Drawer (Z-40) -->
   <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[80vh]">
     <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
       <div class="flex items-center gap-3">
@@ -360,11 +368,11 @@
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
 
-    <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/40 backdrop-blur-md border border-white/50 shadow-sm flex items-start gap-2.5 flex-shrink-0">
+    <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex items-start gap-2.5 flex-shrink-0">
       <i data-lucide="pin" class="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5"></i>
       <div>
         <p id="mainTopicText" class="text-xs font-bold text-slate-900 leading-snug"></p>
-        <span id="topicExpiryBadge" class="text-[9px] font-bold text-sky-800 mt-0.5 block">Visible for 60m 00s</span>
+        <span id="topicExpiryBadge" class="text-[9px] font-bold text-sky-900 mt-0.5 block">Visible for 60m 00s</span>
       </div>
     </div>
 
@@ -373,15 +381,15 @@
 
     <!-- Chat Input Container -->
     <div class="pt-2.5 pb-1 flex-shrink-0">
-      <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/70 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
-        <textarea id="chatInput" rows="1" placeholder="Ask or message nearby..." class="w-full bg-transparent text-slate-900 text-xs font-medium focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
+      <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/80 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
+        <textarea id="chatInput" rows="1" placeholder="Ask or message nearby..." class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
         
-        <div class="flex items-center justify-between pt-1 border-t border-slate-200/40">
+        <div class="flex items-center justify-between pt-1 border-t border-slate-200/50">
           <div class="flex items-center gap-1">
-            <button onclick="showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-500 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Attach file">
+            <button onclick="showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Attach file">
               <i data-lucide="plus" class="w-4 h-4"></i>
             </button>
-            <button onclick="showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-500 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Voice input">
+            <button onclick="showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Voice input">
               <i data-lucide="mic" class="w-4 h-4"></i>
             </button>
           </div>
@@ -401,10 +409,10 @@
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-black text-slate-900">Ask the LocaLs</h3>
-        <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="closeQuestionModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
-        <textarea id="questionInput" rows="3" placeholder="Post a topic question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
+        <textarea id="questionInput" rows="3" placeholder="Post a topic question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
         <button onclick="postQuestion()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
           Post Map Bubble
         </button>
@@ -423,6 +431,7 @@
     let activeConnections = {};
     let processedMsgIds = new Set();
     let nearbyPeers = {};
+    let showTestBots = true;
     
     let broadcastChannel = null;
 
@@ -441,7 +450,8 @@
       theme: 'theme-sky',
       bubbleColor: 'blue',
       ghostMode: false,
-      fuzzLocation: false
+      fuzzLocation: false,
+      makeNamePublic: true
     };
 
     const BUBBLE_COLOR_MAP = {
@@ -475,6 +485,7 @@
           document.getElementById('businessAddressInput').value = userState.address || '';
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
+          document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
           selectAccountType(userState.type || 'personal', true);
           setAppTheme(userState.theme || 'theme-sky', true);
           applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
@@ -506,7 +517,7 @@
     function showToast(message, icon = 'info') {
       const toastContainer = document.getElementById('toastContainer');
       const toast = document.createElement('div');
-      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-800 text-xs font-bold border border-white/50';
+      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-900 text-xs font-bold border border-white/60';
       toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-sky-600"></i> <span>${message}</span>`;
       toastContainer.appendChild(toast);
       lucide.createIcons();
@@ -584,10 +595,11 @@
       
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
-          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
+          <!-- Main Question Bubble Floats Above Map Icons with High Z-Index -->
+          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600"></i>
             <span id="userTopBubbleText">...</span>
-            <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-800 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md">60m</span>
+            <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md">60m</span>
           </div>
 
           <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
@@ -631,7 +643,6 @@
 
     function handlePressStart() {
       isLongPress = false;
-
       touchTimer = setTimeout(() => {
         isLongPress = true;
         openProfileModal();
@@ -640,7 +651,6 @@
 
     function handlePressEnd() {
       clearTimeout(touchTimer);
-
       if (!isLongPress) {
         const circle = document.getElementById('userAvatarCircle');
         circle.classList.remove('animate-jiggle');
@@ -694,38 +704,46 @@
         ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
         : Math.max(distance, 10) + 'm';
 
+      // Anonymous name handling: if user did not make name public, show anonymized hash tag
+      let displayName = data.sender;
+      let isPublic = data.makeNamePublic !== false;
+      if (!isPublic) {
+        let hash = (data.peerId || 'user').substring(data.peerId.length - 4).toUpperCase();
+        displayName = `Traveler #${hash}`;
+      }
+
       if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
-        updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor);
+        updatePeerNodeOnMap(displayName, distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor, false);
       }
 
       if (data.type === 'NEW_QUESTION') {
         if (Date.now() - data.createdAt < ONE_HOUR_MS) {
-          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId, data.bubbleColor);
+          updatePeerNodeOnMap(displayName, distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId, data.bubbleColor, false);
         }
       } else if (data.type === 'CHAT_MSG') {
         const targetRoomId = data.roomId;
         if (!targetRoomId) return;
 
         if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
-        chatRoomsSessions[targetRoomId].push({ sender: data.sender, text: data.text, isMe: false });
+        chatRoomsSessions[targetRoomId].push({ sender: displayName, text: data.text, isMe: false });
         savePersistentData();
 
-        registerActiveChat(targetRoomId, data.roomName || data.sender);
+        registerActiveChat(targetRoomId, displayName);
 
         if (currentActiveChatRoomId === targetRoomId) {
-          appendMessage(data.sender, data.text, false);
+          appendMessage(displayName, data.text, false);
         } else {
-          showToast(`New message in "${data.roomName || data.sender}"!`, 'message-square');
+          showToast(`New message in "${displayName}"!`, 'message-square');
         }
       }
     }
 
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
-        { name: 'Bot_Buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'yellow' },
-        { name: 'Maya (Artist)', offsetLat: -0.003, offsetLng: 0.001, question: 'Hosting an open art studio session downtown!', color: 'emerald' },
-        { name: 'Alex_Dev', offsetLat: 0.001, offsetLng: -0.003, question: 'Where is the best local coffee shop for working?', color: 'pink' },
-        { name: 'Sora_Waves', offsetLat: -0.002, offsetLng: -0.002, question: 'Checking maritime safety radar for afternoon boating!', color: 'violet' }
+        { name: 'Bot_Buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'yellow', isBot: true },
+        { name: 'Maya (Artist)', offsetLat: -0.003, offsetLng: 0.001, question: 'Hosting an open art studio session downtown!', color: 'emerald', isBot: true },
+        { name: 'Alex_Dev', offsetLat: 0.001, offsetLng: -0.003, question: 'Where is the best local coffee shop for working?', color: 'pink', isBot: true },
+        { name: 'Sora_Waves', offsetLat: -0.002, offsetLng: -0.002, question: 'Checking maritime safety radar for afternoon boating!', color: 'violet', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -735,7 +753,7 @@
         const dist = calculateHaversineDistance(userState.lat, userState.lng, lat, lng);
         const distFormatted = (dist / METERS_PER_MILE).toFixed(1) + 'mi';
 
-        updatePeerNodeOnMap(u.name, dist, distFormatted, lat, lng, u.question, Date.now() - (i * 300000), peerId, u.color);
+        updatePeerNodeOnMap(u.name, dist, distFormatted, lat, lng, u.question, Date.now() - (i * 300000), peerId, u.color, u.isBot);
       });
     }
 
@@ -747,9 +765,18 @@
       const botQuestion = 'Anyone want to collaborate on a new P2P app?';
       const botCreatedAt = Date.now();
 
-      updatePeerNodeOnMap(botName, 250, '250m', botLat, botLng, botQuestion, botCreatedAt, botId, 'yellow');
+      updatePeerNodeOnMap(botName, 250, '250m', botLat, botLng, botQuestion, botCreatedAt, botId, 'yellow', true);
       showToast('Test Bot (Bot_Buddy) spawned on map!', 'bot');
       toggleP2PModal();
+    }
+
+    function toggleTestBotsVisibility(show) {
+      showTestBots = show;
+      const botNodes = document.querySelectorAll('.bot-node-elem');
+      botNodes.forEach(node => {
+        node.style.display = show ? 'block' : 'none';
+      });
+      showToast(show ? 'Test bots displayed' : 'Test bots hidden', 'bot');
     }
 
     function copyMyPeerId() {
@@ -773,13 +800,14 @@
         lat: coords.lat,
         lng: coords.lng,
         question: activeTopicState.text,
-        createdAt: activeTopicState.createdAt
+        createdAt: activeTopicState.createdAt,
+        makeNamePublic: userState.makeNamePublic
       };
 
       broadcastData(payload);
     }
 
-    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor = 'violet') {
+    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor = 'violet', isBot = false) {
       const container = document.getElementById('nodesContainer');
       let peerKey = 'node-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
@@ -795,29 +823,33 @@
       if (!nodeElem) {
         nodeElem = document.createElement('div');
         nodeElem.id = peerKey;
-        nodeElem.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500';
+        nodeElem.className = `absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ${isBot ? 'bot-node-elem' : ''}`;
         container.appendChild(nodeElem);
       }
 
       nodeElem.style.left = leftPx;
       nodeElem.style.top = topPx;
+      if (isBot && !showTestBots) {
+        nodeElem.style.display = 'none';
+      }
       
       const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
 
+      // Question bubble has high z-index (z-40) so it floats cleanly above all icons
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
           <div class="absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none" style="border-radius: 50%;"></div>
 
           ${hasValidQuestion ? `
-            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${roomId}', '${alias}', '${question}', '${alias}')">
+            <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-40 cursor-pointer" onclick="openChatDrawer('${roomId}', '${alias}', '${question}', '${alias}')">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
               <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
             </div>
           ` : ''}
-          <div onclick="createBubbleRipple('${peerKey}-circle'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle" style="background: ${customBg}; border-radius: 50%;">
+          <div onclick="createBubbleRipple('${peerKey}-circle'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="background: ${customBg}; border-radius: 50%;">
             <div class="bubble-glare"></div>
           </div>
-          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distanceFormatted})</span>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md">${alias} (${distanceFormatted})</span>
         </div>
       `;
       lucide.createIcons();
@@ -887,7 +919,7 @@
 
     function setAppTheme(themeClass, skipSave = false) {
       userState.theme = themeClass;
-      document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative`;
+      document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative`;
       if (!skipSave) {
         savePersistentData();
         showToast(`App theme preset updated!`, 'palette');
@@ -899,6 +931,7 @@
       const address = document.getElementById('businessAddressInput').value.trim();
       const ghostMode = document.getElementById('privacyGhostMode').checked;
       const fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
+      const makeNamePublic = document.getElementById('privacyMakeNamePublic').checked;
 
       if (alias) {
         userState.alias = alias;
@@ -907,6 +940,7 @@
 
       userState.ghostMode = ghostMode;
       userState.fuzzLocation = fuzzLocation;
+      userState.makeNamePublic = makeNamePublic;
 
       if (userState.type === 'business') {
         userState.address = address;
@@ -965,7 +999,8 @@
         peerId: myPeerId,
         lat: coords.lat,
         lng: coords.lng,
-        createdAt: activeTopicState.createdAt 
+        createdAt: activeTopicState.createdAt,
+        makeNamePublic: userState.makeNamePublic
       });
 
       closeQuestionModal();
@@ -1028,8 +1063,8 @@
       const div = document.createElement('div');
       div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
       div.innerHTML = `
-        <span class="text-[10px] text-slate-800 font-bold px-1 drop-shadow-sm">${sender}</span>
-        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-medium ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/50 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/40'}">
+        <span class="text-[10px] text-slate-900 font-bold px-1 drop-shadow-sm">${sender}</span>
+        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-semibold ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/60'}">
           ${text}
         </div>
       `;
