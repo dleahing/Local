@@ -171,13 +171,13 @@
 </head>
 <body id="appBody" class="theme-sky bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
-  <!-- Map Canvas with Expanded 30-Mile Render Boundary & Fluid Zoom -->
+  <!-- Map Canvas with Expanded 45-Mile Render Boundary & Fluid Zoom -->
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center" style="background: var(--bg-gradient);">
     <div class="absolute inset-0 opacity-12 map-grid-pattern"></div>
     
-    <!-- Explicit World Border Ring highlighting the 30-Mile Maximum Boundary -->
-    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-dashed border-sky-600/30 pointer-events-none" style="width: 2500px; height: 2500px;">
-      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
+    <!-- Explicit World Border Ring highlighting the 45-Mile Maximum Boundary -->
+    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-dashed border-sky-600/30 pointer-events-none" style="width: 3750px; height: 3750px;">
+      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest border border-white/20 shadow-xl">45-Mile World Boundary Edge</div>
     </div>
 
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
@@ -188,7 +188,7 @@
     <div id="nodesContainer" class="absolute inset-0 z-50"></div>
   </div>
 
-  <!-- Right-Side Chat Bubbles Sidebar (Toggled via Header Dropdown) -->
+  <!-- Right-Side Chat Bubbles Sidebar -->
   <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-24 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
@@ -251,24 +251,6 @@
     <button onclick="playAudioEffect('click'); openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
     </button>
-    <button onclick="playAudioEffect('click'); toggleRangeModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Radius Filter">
-      <i data-lucide="radar" class="w-5 h-5"></i>
-    </button>
-  </div>
-
-  <!-- Radius Range Control Modal (Min 5 Miles, Max 30 Miles) -->
-  <div id="rangeModal" class="hidden fixed bottom-32 right-4 z-40 glass-card p-4.5 rounded-3xl w-72 border border-white/50 shadow-2xl">
-    <div class="flex items-center justify-between mb-3">
-      <div class="flex items-center gap-2">
-        <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
-        <span class="text-xs font-black text-slate-900 uppercase tracking-wider">Discovery Radius (5 - 30 mi)</span>
-      </div>
-      <button onclick="playAudioEffect('click'); toggleRangeModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
-    </div>
-    <div class="flex items-center gap-3">
-      <input type="range" id="radiusSlider" min="8046.7" max="48280.2" value="8046.7" step="1609.34" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
-      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-900 min-w-[55px] text-right">5.0 mi</span>
-    </div>
   </div>
 
   <!-- WebRTC P2P Mesh & Directory Modal -->
@@ -489,7 +471,7 @@
     const METERS_PER_MILE = 1609.34;
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
-    const MAX_RADIUS_METERS = 48280.2; // Exactly 30 Miles maximum
+    const MAX_RADIUS_METERS = 72420.3; // Increased by 50% to Exactly 45 Miles maximum
     const STORAGE_KEY_PROFILE = 'local_user_profile_v11';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v11';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v21';
@@ -623,11 +605,7 @@
       if (!userState.radius || userState.radius < MIN_RADIUS_METERS) {
         userState.radius = MIN_RADIUS_METERS;
       }
-      const slider = document.getElementById('radiusSlider');
-      slider.min = MIN_RADIUS_METERS;
-      slider.max = MAX_RADIUS_METERS;
-      slider.step = 1609.34;
-      updateRadius(userState.radius, false);
+      updateRadius(userState.radius);
 
       window.addEventListener('resize', recalculateNodePositions);
       initRadiusDragHandlers();
@@ -662,7 +640,6 @@
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
           document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
-          document.getElementById('radiusSlider').value = userState.radius;
           selectAccountType(userState.type || 'personal', true);
           setAppTheme(userState.theme || 'theme-sky', true);
           applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
@@ -709,7 +686,7 @@
 
     function getPanBounds() {
       const worldRing = document.getElementById('worldMaxBoundaryRing');
-      const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 1250;
+      const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 1875;
       return Math.max(200, (radiusPx * currentZoomScale) - 150);
     }
 
@@ -718,7 +695,7 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rangeModal, #rightSideBubblesSidebar')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar')) {
           return;
         }
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
@@ -811,23 +788,14 @@
       animationFrameId = requestAnimationFrame(renderLoop);
     }
 
-    function updateRadius(val, updateSliderInput = true) {
+    function updateRadius(val) {
       const meters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val)));
       userState.radius = meters;
-      
-      let formattedText = meters >= 1000 
-        ? (meters / METERS_PER_MILE).toFixed(1) + ' mi' 
-        : meters + 'm';
-        
-      document.getElementById('radiusValueDisplay').innerText = formattedText;
-      if (updateSliderInput) {
-        document.getElementById('radiusSlider').value = meters;
-      }
 
       const ring = document.getElementById('radarBoundaryRing');
       
       if (ring) {
-        const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 850);
+        const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1075);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
@@ -872,11 +840,11 @@
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / currentZoomScale;
 
         const deltaPx = currentDistPx - dragStartDistancePx;
-        const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 850;
+        const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 1075;
         
         const newMeters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
 
-        updateRadius(newMeters, true);
+        updateRadius(newMeters);
       };
 
       const handleEnd = () => {
@@ -994,7 +962,7 @@
       if (!mapCanvas) return;
 
       const triggerRipple = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rangeModal, #rightSideBubblesSidebar')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar')) {
           return;
         }
         createBubbleRipple();
@@ -1684,7 +1652,6 @@
     function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
     function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
-    function toggleRangeModal() { document.getElementById('rangeModal').classList.toggle('hidden'); }
     function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
     function recalculateNodePositions() {}
   </script>
