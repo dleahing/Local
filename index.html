@@ -126,11 +126,11 @@
   <!-- 2. MAIN LAYOUT & DOM ELEMENTS SECTION     -->
   <!-- ========================================== -->
   
-  <!-- Map Canvas with Dynamic Zoom Transform -->
-  <div id="mapCanvas" class="absolute inset-0 overflow-hidden transition-transform duration-500 origin-center scale-100" style="background: var(--bg-gradient);">
+  <!-- Map Canvas with Smooth Zoom & Pan Transform -->
+  <div id="mapCanvas" class="absolute inset-0 overflow-hidden transition-transform duration-200 origin-center scale-100" style="background: var(--bg-gradient);">
     <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:28px_28px]"></div>
     
-    <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-500 origin-center">
+    <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-200 origin-center">
       <div class="w-[420px] h-[420px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
       <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
     </div>
@@ -444,7 +444,7 @@
       type: 'personal',
       category: 'store',
       address: '',
-      radius: 80467,
+      radius: 15000,
       lat: 27.2730,
       lng: -80.3582,
       theme: 'theme-sky',
@@ -463,6 +463,7 @@
     };
 
     let touchTimer = null;
+    let isDraggingRadius = false;
 
     window.addEventListener('DOMContentLoaded', () => {
       loadPersistentData();
@@ -473,8 +474,9 @@
       requestScreenWakeLock();
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
-      updateRadius(userState.radius || 80467);
+      updateRadius(userState.radius || 15000, false);
       window.addEventListener('resize', recalculateNodePositions);
+      initRadiusDragHandlers();
     });
 
     async function requestScreenWakeLock() {
@@ -499,7 +501,7 @@
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
           document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
-          document.getElementById('radiusSlider').value = userState.radius || 80467;
+          document.getElementById('radiusSlider').value = userState.radius || 15000;
           selectAccountType(userState.type || 'personal', true);
           setAppTheme(userState.theme || 'theme-sky', true);
           applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
@@ -533,9 +535,9 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    // Dynamic Discovery Radius, Ring Anchoring & Zoom Out Scaling
-    function updateRadius(val) {
-      const meters = Number(val);
+    // Dynamic Discovery Radius, Ring Dragging & Zoom Out Scaling
+    function updateRadius(val, updateSliderInput = true) {
+      const meters = Math.max(100, Math.min(80467, Number(val)));
       userState.radius = meters;
       
       let formattedText = meters >= 1000 
@@ -543,22 +545,23 @@
         : meters + 'm';
         
       document.getElementById('radiusValueDisplay').innerText = formattedText;
-      document.getElementById('radiusSlider').value = meters;
+      if (updateSliderInput) {
+        document.getElementById('radiusSlider').value = meters;
+      }
 
-      // Scale visual radius ring anchored around user icon & zoom out map canvas if needed
       const ring = document.getElementById('radarBoundaryRing');
       const mapCanvas = document.getElementById('mapCanvas');
       
       if (ring) {
-        // Map slider meters (100m to 80467m) to pixel diameter (e.g. 120px to 2400px)
-        const pixelDiameter = Math.round(120 + ((meters - 100) / (80467 - 100)) * 2280);
+        // Pixel diameter mapping (100m = 120px up to 80467m = 3200px)
+        const pixelDiameter = Math.round(120 + ((meters - 100) / (80467 - 100)) * 3080);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
-        // If radius ring exceeds standard viewing window, smoothly zoom out map canvas
-        const viewportWidth = window.innerWidth;
-        if (pixelDiameter > viewportWidth * 0.75) {
-          const zoomScale = Math.max(0.35, (viewportWidth * 0.75) / pixelDiameter);
+        // Smoothly zoom out map canvas when radius exceeds viewing area
+        const viewportMin = Math.min(window.innerWidth, window.innerHeight);
+        if (pixelDiameter > viewportMin * 0.70) {
+          const zoomScale = Math.max(0.2, (viewportMin * 0.70) / pixelDiameter);
           mapCanvas.style.transform = `scale(${zoomScale.toFixed(2)})`;
         } else {
           mapCanvas.style.transform = 'scale(1)';
@@ -567,6 +570,47 @@
 
       refreshAllNodeVisibilities();
       savePersistentData();
+    }
+
+    function initRadiusDragHandlers() {
+      const ring = document.getElementById('radarBoundaryRing');
+      if (!ring) return;
+
+      const handleStart = (e) => {
+        isDraggingRadius = true;
+        e.stopPropagation();
+        e.preventDefault();
+      };
+
+      const handleMove = (e) => {
+        if (!isDraggingRadius) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        const distPx = Math.hypot(clientX - centerX, clientY - centerY);
+
+        // Convert drag pixel distance back to meters
+        const minPx = 60, maxPx = 1600;
+        const clampedPx = Math.max(minPx, Math.min(maxPx, distPx));
+        const ratio = (clampedPx - minPx) / (maxPx - minPx);
+        const newMeters = Math.round(100 + (ratio * (80467 - 100)));
+
+        updateRadius(newMeters, true);
+      };
+
+      const handleEnd = () => {
+        isDraggingRadius = false;
+      };
+
+      ring.addEventListener('mousedown', handleStart);
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+
+      ring.addEventListener('touchstart', handleStart, { passive: false });
+      window.addEventListener('touchmove', handleMove, { passive: false });
+      window.addEventListener('touchend', handleEnd);
     }
 
     function refreshAllNodeVisibilities() {
@@ -674,8 +718,10 @@
 
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
-          <!-- Anchored Radius Ring around User Icon -->
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/50 bg-sky-400/5 pointer-events-none transition-all duration-300 z-0" style="width: 450px; height: 450px;"></div>
+          <!-- Clickable & Draggable Radius Ring anchored around User Icon -->
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/10 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/20 shadow-lg" style="width: 900px; height: 900px;" title="Click & drag to adjust radius">
+            <div class="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10px] font-black tracking-wider uppercase shadow-md pointer-events-none">Drag Ring to Adjust Radius</div>
+          </div>
 
           <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40 max-w-[220px] text-center" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
