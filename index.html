@@ -20,13 +20,11 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(5.7); opacity: 0; }
     }
-    /* Expanded outward 50% more (scale 60 -> scale 90) */
     @keyframes water-ripple-expand {
       0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.6; border-width: 1.5px; }
       40% { opacity: 0.35; }
       100% { transform: translate(-50%, -50%) scale(90); opacity: 0; border-width: 0.5px; }
     }
-    /* Extended sonar pulse 50% more (scale 1.4 -> scale 2.1) */
     @keyframes peer-sonar-pulse {
       0% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
       70% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; box-shadow: 0 0 0 35px rgba(168, 85, 247, 0); }
@@ -569,7 +567,6 @@
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
-      // Ensure exact 1:1 circle shape centered precisely on the node
       ripple.className = 'absolute w-14 h-14 rounded-full border border-sky-400/60 bg-sky-300/20 pointer-events-none animate-water-ripple';
       ripple.style.left = `${centerX}px`;
       ripple.style.top = `${centerY}px`;
@@ -594,7 +591,6 @@
           </div>
 
           <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
-          <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-all pointer-events-none" style="border-radius: 50%;"></div>
 
           <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="border-radius: 50%;">
             <div class="bubble-glare"></div>
@@ -635,22 +631,15 @@
 
     function handlePressStart() {
       isLongPress = false;
-      const ring = document.getElementById('holdRing');
-      ring.classList.remove('opacity-0', 'scale-90');
-      ring.classList.add('opacity-100', 'scale-110');
 
       touchTimer = setTimeout(() => {
         isLongPress = true;
-        ring.classList.add('opacity-0');
         openProfileModal();
       }, 500);
     }
 
     function handlePressEnd() {
       clearTimeout(touchTimer);
-      const ring = document.getElementById('holdRing');
-      ring.classList.add('opacity-0');
-      ring.classList.remove('scale-110');
 
       if (!isLongPress) {
         const circle = document.getElementById('userAvatarCircle');
@@ -662,8 +651,6 @@
 
     function handlePressCancel() {
       clearTimeout(touchTimer);
-      const ring = document.getElementById('holdRing');
-      ring.classList.add('opacity-0');
     }
 
     /* Dual-Layer Local Network & Cross-Device Engine */
@@ -817,7 +804,6 @@
       
       const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
 
-      // Perfectly centered 1:1 circle sonar ring positioned exactly at node center (50%, 50%)
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
           <div class="absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none" style="border-radius: 50%;"></div>
