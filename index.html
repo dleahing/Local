@@ -1225,21 +1225,25 @@
     }
 
     function spawnDefaultSimulatedUsers() {
-      const latOffsetFor0_5Miles = (0.5 * METERS_PER_MILE) / 111320;
-      const latOffsetFor5Miles = (5.0 * METERS_PER_MILE) / 111320;
-      const latOffsetFor20Miles = (20.0 * METERS_PER_MILE) / 111320;
-
       const sampleUsers = [
-        { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', offsetLat: latOffsetFor0_5Miles, offsetLng: 0, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', interestFilter: 'Life', isBot: true, isTutorial: true },
-        { name: 'Bot 5-Mile Pickleball Fan', peerId: 'sim-peer-bot-5mi', offsetLat: latOffsetFor5Miles, offsetLng: 0, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', interestFilter: 'Pickleball', isBot: true },
-        { name: '20-Mile Foodie Bistro', peerId: 'sim-peer-restaurant-20mi', offsetLat: latOffsetFor20Miles, offsetLng: 0, question: 'Fine dining & wood-fired pizza!', color: 'pink', accountType: 'business', category: 'utensils', interestFilter: 'Food', isBot: true },
-        { name: 'Local Hiking Club', peerId: 'sim-peer-business-1', offsetLat: 0.0018, offsetLng: 0.0015, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', interestFilter: 'Hiking', isBot: true },
-        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', offsetLat: -0.0025, offsetLng: 0.0022, question: 'Licensed compounding pharmacy open!', color: 'emerald', accountType: 'business', category: 'pill', interestFilter: 'Life', isBot: true }
+        { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', interestFilter: 'Life', isBot: true, isTutorial: true },
+        { name: 'Bot 5-Mile Pickleball Fan', peerId: 'sim-peer-bot-5mi', targetMiles: 3.5, angleDeg: 140, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', interestFilter: 'Pickleball', isBot: true },
+        { name: '20-Mile Foodie Bistro', peerId: 'sim-peer-restaurant-20mi', targetMiles: 18.0, angleDeg: 235, question: 'Fine dining & wood-fired pizza!', color: 'pink', accountType: 'business', category: 'utensils', interestFilter: 'Food', isBot: true },
+        { name: 'Local Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 2.1, angleDeg: 290, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', interestFilter: 'Hiking', isBot: true },
+        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 35, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', interestFilter: 'Cars', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 12.5, angleDeg: 195, question: 'Licensed compounding pharmacy open!', color: 'emerald', accountType: 'business', category: 'pill', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
-        const lat = userState.lat + u.offsetLat, lng = userState.lng + u.offsetLng;
+        const distMeters = u.targetMiles * METERS_PER_MILE;
+        const angleRad = u.angleDeg * (Math.PI / 180);
+        
+        // Derive precise lat/lng coordinates from random angle and distance to prevent collision / clumping
+        const latOffset = (Math.sin(angleRad) * distMeters) / 111320;
+        const lngOffset = (Math.cos(angleRad) * distMeters) / (111320 * Math.cos(userState.lat * Math.PI / 180));
+
+        const lat = userState.lat + latOffset;
+        const lng = userState.lng + lngOffset;
         const dist = calculateHaversineDistance(userState.lat, userState.lng, lat, lng);
         
         if (!globalActiveDirectory[u.peerId]) {
@@ -1403,24 +1407,25 @@
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
-      // Precisely map distances to pixel radii relative to the active radar boundary ring size (200px to 1812.5px diameter)
+      // Precisely map distances to pixel radii relative to the active radar boundary ring size
       const currentRingPx = document.getElementById('radarBoundaryRing') ? (document.getElementById('radarBoundaryRing').offsetWidth / 2) : 100;
       const currentRadiusMeters = userState.radius;
       
       let distanceRatio = currentRadiusMeters > 0 ? (distance / currentRadiusMeters) : 0.5;
       let pixelDistanceFromCenter = distanceRatio * currentRingPx;
 
-      let angle = (rawSender.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
+      // Anti-collision: Use stable hash of peerId to assign non-overlapping random angles across 360 degrees
+      let hash = 0;
+      for (let i = 0; i < peerId.length; i++) {
+        hash = ((hash << 5) - hash) + peerId.charCodeAt(i);
+        hash |= 0;
+      }
+      let angleRad = (Math.abs(hash) % 360) * (Math.PI / 180);
 
       // Convert pixel offset into percentage relative to map canvas
       const mapCanvasWidth = 5625; // 300% canvas size
-      let leftPercent = 50 + ((Math.cos(angle) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
-      let topPercent = 50 + ((Math.sin(angle) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
-
-      // Special overrides for tutorial bot and specific fixed demo bots
-      if (peerId === 'sim-peer-tutorial-bot') { leftPercent = 50; topPercent = 48.5; }
-      else if (peerId === 'sim-peer-bot-5mi') { leftPercent = 50; topPercent = 42; }
-      else if (peerId === 'sim-peer-restaurant-20mi') { leftPercent = 68; topPercent = 32; }
+      let leftPercent = 50 + ((Math.cos(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
+      let topPercent = 50 + ((Math.sin(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
 
       if (!nodeElem) {
         nodeElem = document.createElement('div');
