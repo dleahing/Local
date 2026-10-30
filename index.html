@@ -18,17 +18,19 @@
   <style>
     @keyframes wave-expand {
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
-      100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
+      100% { transform: translate(-50%, -50%) scale(5.7); opacity: 0; }
     }
+    /* Expanded outward 50% more (scale 60 -> scale 90) */
     @keyframes water-ripple-expand {
       0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.6; border-width: 1.5px; }
-      40% { opacity: 0.3; }
-      100% { transform: translate(-50%, -50%) scale(60); opacity: 0; border-width: 0.5px; }
+      40% { opacity: 0.35; }
+      100% { transform: translate(-50%, -50%) scale(90); opacity: 0; border-width: 0.5px; }
     }
+    /* Extended sonar pulse 50% more (scale 1.4 -> scale 2.1) */
     @keyframes peer-sonar-pulse {
-      0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
-      70% { transform: scale(1.4); opacity: 0; box-shadow: 0 0 0 25px rgba(168, 85, 247, 0); }
-      100% { transform: scale(1); opacity: 0; }
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
+      70% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; box-shadow: 0 0 0 35px rgba(168, 85, 247, 0); }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
     }
     @keyframes bubble-subtle {
       0%, 100% { transform: scale(1); border-radius: 50%; }
@@ -67,7 +69,7 @@
     .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf4ff 0%, #f5d0fe 50%, #e879f9 100%); --accent: #c084fc; }
     .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #fef2f2 0%, #fecaca 50%, #f87171 100%); --accent: #ef4444; }
 
-    /* Glassmorphism System */
+    /* Polished Glassmorphism System */
     .glass-panel {
       background: rgba(255, 255, 255, 0.55);
       backdrop-filter: blur(20px) saturate(180%);
@@ -90,7 +92,7 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* Dynamic Bubble Styling */
+    /* Dynamic Bubble Generator */
     .bubble-node {
       position: relative;
       outline: none;
@@ -110,7 +112,7 @@
       pointer-events: none;
     }
 
-    /* Beveled Drop-Down Glass Drawer */
+    /* Beveled Top Drop-Down Glass Drawer */
     .glass-drawer-top {
       background: rgba(255, 255, 255, 0.35);
       backdrop-filter: blur(32px);
@@ -133,12 +135,12 @@
       <div class="w-[340px] h-[340px] rounded-full border border-sky-400/20 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow" style="animation-delay: 2s;"></div>
     </div>
 
-    <!-- Water Ripple & Nodes Container -->
+    <!-- Water Ripple Container -->
     <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
     <div id="nodesContainer" class="absolute inset-0 z-20"></div>
   </div>
 
-  <!-- Top Header Bar -->
+  <!-- Top Glass Header Bar -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
     <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 pointer-events-auto shadow-xl">
       <div class="relative flex items-center justify-center">
@@ -158,7 +160,7 @@
       </div>
     </div>
 
-    <!-- Active Chats Selection Tray -->
+    <!-- Top Active Chats Quick-Selection Tray -->
     <div id="activeChatsBar" class="hidden glass-panel px-3 py-1.5 rounded-2xl pointer-events-auto flex items-center gap-2 overflow-x-auto shadow-lg max-w-[45vw]"></div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
@@ -175,7 +177,7 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-40 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Bottom Control Dock -->
+  <!-- Bottom Floating Control Dock -->
   <div class="fixed bottom-24 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
     <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
@@ -200,38 +202,38 @@
     </div>
   </div>
 
-  <!-- Peer Connection & Status Modal -->
+  <!-- Local Network Broadcast & Status Modal -->
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">P2P Mesh & Public Cloud</h3>
+        <h3 class="text-lg font-black text-slate-900">Local Network Broadcast</h3>
         <button onclick="toggleP2PModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Signaling Status</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Network Sync Status</label>
           <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-900 text-xs font-bold">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-            <span id="serverStatusText">Auto-Scanning Public Cloud...</span>
+            <span id="serverStatusText">Broadcasting to Local Devices</span>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Your Device Peer ID</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Your Local Peer ID</label>
           <div class="flex items-center gap-2">
-            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Connecting...">
+            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Syncing...">
             <button onclick="copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
-          <p class="text-[10px] text-slate-500 mt-1">Automatically discovered upon opening the app.</p>
+          <p class="text-[10px] text-slate-500 mt-1">Open this page on another phone or tab on the same network to test real-time presence.</p>
         </div>
 
         <div>
           <button onclick="spawnTestBot()" class="w-full py-3 rounded-2xl bg-purple-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all flex items-center justify-center gap-2">
             <i data-lucide="bot" class="w-4 h-4"></i>
-            <span>Spawn Test Bot (Bot_Buddy)</span>
+            <span>Spawn Extra Test Bot (Bot_Buddy)</span>
           </button>
         </div>
       </div>
@@ -413,17 +415,19 @@
   </div>
 
   <script>
-    const MESH_PREFIX = 'local-proximity-mesh-global-v11-';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v1';
+    const STORAGE_BEACON_KEY = 'local_network_beacons_v1';
 
-    let myPeerId = null;
+    let myPeerId = 'local-peer-' + Math.random().toString(36).substring(2, 9);
     let activeConnections = {};
     let processedMsgIds = new Set();
     let nearbyPeers = {};
     
+    let broadcastChannel = null;
+
     let activeTopicState = { text: null, createdAt: null };
     let currentActiveChatRoomId = null;
     let chatRoomsSessions = {}; 
@@ -458,7 +462,8 @@
       lucide.createIcons();
       initGPSLocation();
       initUserNode();
-      initRobustMesh();
+      initLocalBroadcastEngine();
+      spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
     });
 
@@ -553,8 +558,10 @@
       return Math.round(R * c);
     }
 
-    function createBubbleRipple() {
-      const circle = document.getElementById('userAvatarCircle');
+    function createBubbleRipple(sourceNodeId = 'userAvatarCircle') {
+      const circle = document.getElementById(sourceNodeId);
+      if (!circle) return;
+
       const rect = circle.getBoundingClientRect();
       const rippleContainer = document.getElementById('tapRippleContainer');
       const ripple = document.createElement('div');
@@ -562,9 +569,11 @@
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
-      ripple.className = 'absolute w-14 h-14 rounded-full border border-sky-400/50 bg-sky-300/15 pointer-events-none animate-water-ripple';
+      // Ensure exact 1:1 circle shape centered precisely on the node
+      ripple.className = 'absolute w-14 h-14 rounded-full border border-sky-400/60 bg-sky-300/20 pointer-events-none animate-water-ripple';
       ripple.style.left = `${centerX}px`;
       ripple.style.top = `${centerY}px`;
+      ripple.style.borderRadius = '50%';
 
       rippleContainer.appendChild(ripple);
       setTimeout(() => ripple.remove(), 10710);
@@ -584,10 +593,10 @@
             <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-800 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md">60m</span>
           </div>
 
-          <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none"></div>
-          <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-all pointer-events-none"></div>
+          <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
+          <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-all pointer-events-none" style="border-radius: 50%;"></div>
 
-          <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle">
+          <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="border-radius: 50%;">
             <div class="bubble-glare"></div>
           </div>
           <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md">${userState.alias} (You)</span>
@@ -598,12 +607,12 @@
       applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
 
       const circle = document.getElementById('userAvatarCircle');
-      circle.addEventListener('mousedown', () => { createBubbleRipple(); handlePressStart(); });
+      circle.addEventListener('mousedown', () => { createBubbleRipple('userAvatarCircle'); handlePressStart(); });
       circle.addEventListener('mouseup', handlePressEnd);
       circle.addEventListener('mouseleave', handlePressCancel);
 
       circle.addEventListener('touchstart', (e) => {
-        createBubbleRipple();
+        createBubbleRipple('userAvatarCircle');
         handlePressStart();
       });
       circle.addEventListener('touchend', handlePressEnd);
@@ -657,28 +666,94 @@
       ring.classList.add('opacity-0');
     }
 
-    function initRobustMesh() {
-      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
-      myPeerId = MESH_PREFIX + uniqueSuffix;
-      
-      const peerIdElem = document.getElementById('myPeerIdDisplay');
-      if (peerIdElem) peerIdElem.value = myPeerId;
+    /* Dual-Layer Local Network & Cross-Device Engine */
+    function initLocalBroadcastEngine() {
+      document.getElementById('myPeerIdDisplay').value = myPeerId;
 
-      const serverStatusElem = document.getElementById('serverStatusText');
-      if (serverStatusElem) serverStatusElem.innerText = "Active (Safe Broadcast Engine)";
+      if ('BroadcastChannel' in window) {
+        broadcastChannel = new BroadcastChannel('local_proximity_network_channel');
+        broadcastChannel.onmessage = (event) => {
+          handleIncomingNetworkPayload(event.data);
+        };
+      }
 
-      updateMeshUI();
+      window.addEventListener('storage', (event) => {
+        if (event.key === STORAGE_BEACON_KEY && event.newValue) {
+          try {
+            const payload = JSON.parse(event.newValue);
+            handleIncomingNetworkPayload(payload);
+          } catch(e) {}
+        }
+      });
 
-      // Automatically spawn local test presence on boot
-      setTimeout(() => {
-        spawnTestBotSilent();
-      }, 800);
-
-      startPeerDiscoveryLoop();
+      setInterval(() => {
+        announcePresence();
+      }, 2500);
     }
 
-    function spawnTestBotSilent() {
-      const botId = MESH_PREFIX + 'bot-buddy-1';
+    function handleIncomingNetworkPayload(data) {
+      if (!data || data.peerId === myPeerId) return;
+
+      if (data.id && processedMsgIds.has(data.id)) return;
+      if (data.id) processedMsgIds.add(data.id);
+
+      activeConnections[data.peerId] = Date.now();
+      updateMeshUI();
+
+      const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
+      if (userState.radius > 0 && distance > userState.radius) return;
+
+      let distanceFormatted = distance >= 1000 
+        ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
+        : Math.max(distance, 10) + 'm';
+
+      if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
+        updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor);
+      }
+
+      if (data.type === 'NEW_QUESTION') {
+        if (Date.now() - data.createdAt < ONE_HOUR_MS) {
+          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId, data.bubbleColor);
+        }
+      } else if (data.type === 'CHAT_MSG') {
+        const targetRoomId = data.roomId;
+        if (!targetRoomId) return;
+
+        if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
+        chatRoomsSessions[targetRoomId].push({ sender: data.sender, text: data.text, isMe: false });
+        savePersistentData();
+
+        registerActiveChat(targetRoomId, data.roomName || data.sender);
+
+        if (currentActiveChatRoomId === targetRoomId) {
+          appendMessage(data.sender, data.text, false);
+        } else {
+          showToast(`New message in "${data.roomName || data.sender}"!`, 'message-square');
+        }
+      }
+    }
+
+    function spawnDefaultSimulatedUsers() {
+      const sampleUsers = [
+        { name: 'Bot_Buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'yellow' },
+        { name: 'Maya (Artist)', offsetLat: -0.003, offsetLng: 0.001, question: 'Hosting an open art studio session downtown!', color: 'emerald' },
+        { name: 'Alex_Dev', offsetLat: 0.001, offsetLng: -0.003, question: 'Where is the best local coffee shop for working?', color: 'pink' },
+        { name: 'Sora_Waves', offsetLat: -0.002, offsetLng: -0.002, question: 'Checking maritime safety radar for afternoon boating!', color: 'violet' }
+      ];
+
+      sampleUsers.forEach((u, i) => {
+        const peerId = 'sim-peer-' + u.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+        const lat = userState.lat + u.offsetLat;
+        const lng = userState.lng + u.offsetLng;
+        const dist = calculateHaversineDistance(userState.lat, userState.lng, lat, lng);
+        const distFormatted = (dist / METERS_PER_MILE).toFixed(1) + 'mi';
+
+        updatePeerNodeOnMap(u.name, dist, distFormatted, lat, lng, u.question, Date.now() - (i * 300000), peerId, u.color);
+      });
+    }
+
+    function spawnTestBot() {
+      const botId = 'sim-peer-bot-buddy-' + Math.floor(Math.random() * 1000);
       const botName = 'Bot_Buddy';
       const botLat = userState.lat + 0.002;
       const botLng = userState.lng + 0.002;
@@ -686,25 +761,23 @@
       const botCreatedAt = Date.now();
 
       updatePeerNodeOnMap(botName, 250, '250m', botLat, botLng, botQuestion, botCreatedAt, botId, 'yellow');
-    }
-
-    function spawnTestBot() {
-      spawnTestBotSilent();
       showToast('Test Bot (Bot_Buddy) spawned on map!', 'bot');
       toggleP2PModal();
     }
 
-    function startPeerDiscoveryLoop() {
-      setInterval(() => {
-        announcePresence();
-      }, 3000);
+    function copyMyPeerId() {
+      const input = document.getElementById('myPeerIdDisplay');
+      input.select();
+      input.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(input.value);
+      showToast('Peer ID copied to clipboard!', 'copy');
     }
 
     function announcePresence() {
       if (userState.ghostMode) return;
 
       const coords = getBroadcastCoordinates();
-      broadcastData({
+      const payload = {
         id: 'ping-' + Math.random().toString(36).substring(2, 9),
         type: 'PEER_PRESENCE',
         sender: userState.alias,
@@ -714,24 +787,124 @@
         lng: coords.lng,
         question: activeTopicState.text,
         createdAt: activeTopicState.createdAt
-      });
+      };
+
+      broadcastData(payload);
     }
 
-    function broadcastData(payload, excludePeerId = null) {
+    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor = 'violet') {
+      const container = document.getElementById('nodesContainer');
+      let peerKey = 'node-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
+      let nodeElem = document.getElementById(peerKey);
+
+      let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
+      let screenRadius = Math.min(Math.max(distance * 0.005, 85), 160);
+      let leftPx = `calc(50% + ${Math.cos(angle) * screenRadius}px)`;
+      let topPx = `calc(50% + ${Math.sin(angle) * screenRadius}px)`;
+
+      let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
+      let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
+
+      if (!nodeElem) {
+        nodeElem = document.createElement('div');
+        nodeElem.id = peerKey;
+        nodeElem.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500';
+        container.appendChild(nodeElem);
+      }
+
+      nodeElem.style.left = leftPx;
+      nodeElem.style.top = topPx;
+      
+      const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
+
+      // Perfectly centered 1:1 circle sonar ring positioned exactly at node center (50%, 50%)
+      nodeElem.innerHTML = `
+        <div class="relative flex flex-col items-center group">
+          <div class="absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none" style="border-radius: 50%;"></div>
+
+          ${hasValidQuestion ? `
+            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${roomId}', '${alias}', '${question}', '${alias}')">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
+              <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
+            </div>
+          ` : ''}
+          <div onclick="createBubbleRipple('${peerKey}-circle'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle" style="background: ${customBg}; border-radius: 50%;">
+            <div class="bubble-glare"></div>
+          </div>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distanceFormatted})</span>
+        </div>
+      `;
+      lucide.createIcons();
+
+      nearbyPeers[peerKey] = { elem: nodeElem, createdAt: createdAt };
+    }
+
+    function broadcastData(payload) {
       if (userState.ghostMode) return;
 
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat;
       payload.lng = payload.lng || coords.lng;
 
-      // Handle message delivery locally across active chat sessions
-      if (payload.type === 'NEW_QUESTION') {
-        const distance = calculateHaversineDistance(userState.lat, userState.lng, payload.lat, payload.lng);
-        let distanceFormatted = distance >= 1000 
-          ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
-          : distance + 'm';
+      if (broadcastChannel) {
+        try { broadcastChannel.postMessage(payload); } catch(e) {}
+      }
 
-        updatePeerNodeOnMap(payload.sender, distance, distanceFormatted, payload.lat, payload.lng, payload.text, payload.createdAt, payload.peerId, payload.bubbleColor);
+      try {
+        localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload));
+      } catch(e) {}
+    }
+
+    function checkChatExpiryLoop() {
+      setInterval(() => {
+        if (activeTopicState.createdAt) {
+          const elapsed = Date.now() - activeTopicState.createdAt;
+          const remainingMs = ONE_HOUR_MS - elapsed;
+
+          if (remainingMs <= 0) {
+            activeTopicState.text = null;
+            activeTopicState.createdAt = null;
+            document.getElementById('userTopBubble').classList.add('hidden');
+            document.getElementById('mainTopicContainer').classList.add('hidden');
+            showToast('Proximity chat expired (1 hour reached)', 'clock');
+          } else {
+            const minutesLeft = Math.floor(remainingMs / 60000);
+            const secondsLeft = Math.floor((remainingMs % 60000) / 1000);
+            
+            document.getElementById('topicExpiryBadge').innerText = `Visible for ${minutesLeft}m ${secondsLeft < 10 ? '0' : ''}${secondsLeft}s`;
+            document.getElementById('userTopBubbleBadge').innerText = `${minutesLeft}m`;
+          }
+        }
+      }, 1000);
+    }
+
+    function selectAccountType(type, skipSave = false) {
+      userState.type = type;
+      const personalBtn = document.getElementById('personalTypeBtn');
+      const businessBtn = document.getElementById('businessTypeBtn');
+      const addressField = document.getElementById('businessAddressField');
+
+      if (type === 'personal') {
+        personalBtn.className = 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all';
+        businessBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
+        addressField.classList.add('hidden');
+        document.getElementById('accountTypeDisplay').innerText = "Personal (GPS)";
+        initGPSLocation();
+      } else {
+        businessBtn.className = 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all';
+        personalBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
+        addressField.classList.remove('hidden');
+        document.getElementById('accountTypeDisplay').innerText = "Business (Fixed)";
+      }
+      if (!skipSave) savePersistentData();
+    }
+
+    function setAppTheme(themeClass, skipSave = false) {
+      userState.theme = themeClass;
+      document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative`;
+      if (!skipSave) {
+        savePersistentData();
+        showToast(`App theme preset updated!`, 'palette');
       }
     }
 
@@ -839,7 +1012,7 @@
 
       const activeRoomName = document.getElementById('chatTargetName').innerText;
 
-      if (activeRoomName === 'Bot_Buddy' || currentActiveChatRoomId.includes('bot-buddy')) {
+      if (activeRoomName.includes('Bot_Buddy') || currentActiveChatRoomId.includes('bot-buddy')) {
         setTimeout(() => {
           const botReply = `Got your message ("${text}")! That's super interesting. Let's keep exploring the map.`;
           if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
@@ -903,7 +1076,7 @@
         item.className = `relative cursor-pointer transition-transform hover:scale-110 flex items-center justify-center ${isSelected ? 'ring-2 ring-sky-500 rounded-full' : ''}`;
         item.title = `Chat: ${room.name}`;
         item.innerHTML = `
-          <div class="w-8 h-8 rounded-full text-white font-bold text-[10px] flex items-center justify-center shadow-md bubble-node" style="background: ${bubbleStyle};">
+          <div class="w-8 h-8 rounded-full text-white font-bold text-[10px] flex items-center justify-center shadow-md bubble-node" style="background: ${bubbleStyle}; border-radius: 50%;">
             <div class="bubble-glare"></div>
             <span>${room.name.charAt(0).toUpperCase()}</span>
           </div>
@@ -927,6 +1100,7 @@
       
       avatarElem.className = `w-9 h-9 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node`;
       avatarElem.style.background = bubbleStyle;
+      avatarElem.style.borderRadius = '50%';
       avatarElem.innerHTML = `<div class="bubble-glare"></div><span>${roomName.charAt(0).toUpperCase()}</span>`;
 
       if (topic || (isSelf && activeTopicState.text)) {
