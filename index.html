@@ -20,6 +20,9 @@
   <!-- 1. STYLES & BACKGROUND EFFECTS SECTION      -->
   <!-- ========================================== -->
   <style>
+    :root {
+      --zoom-scale: 1;
+    }
     @keyframes wave-expand {
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(5.7); opacity: 0; }
@@ -61,6 +64,12 @@
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+    /* Inverse scale wrapper so nodes/bubbles stay constant size when map zooms out */
+    .scale-compensator {
+      transform: scale(var(--zoom-scale, 1));
+      transition: transform 0.2s ease-out;
+    }
 
     /* Background Theme Presets */
     .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
@@ -136,7 +145,7 @@
     </div>
 
     <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
-    <div id="nodesContainer" class="absolute inset-0 z-20"></div>
+    <div id="nodesContainer" class="absolute inset-0 z-25"></div>
   </div>
 
   <!-- Top Glass Header Bar -->
@@ -197,7 +206,7 @@
     </div>
     <div class="flex items-center gap-3">
       <input type="range" id="radiusSlider" min="100" max="80467" value="80467" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
-      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-900 min-w-[55px] text-right">50.0 mi</span>
+      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-900 min-w-[55px] text-right">5.0 mi</span>
     </div>
   </div>
 
@@ -438,13 +447,13 @@
     let chatRoomsSessions = {}; 
     let activeChatRoomsList = new Set(); 
 
-    // User Profile State (Personal / Business & Bubble Customization)
+    // User Profile State (Personal / Business & Bubble Customization) - Default Radius 5 Miles (8046.7 meters)
     let userState = {
       alias: 'Traveler',
       type: 'personal',
       category: 'store',
       address: '',
-      radius: 15000,
+      radius: 8046.7,
       lat: 27.2730,
       lng: -80.3582,
       theme: 'theme-sky',
@@ -474,7 +483,7 @@
       requestScreenWakeLock();
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
-      updateRadius(userState.radius || 15000, false);
+      updateRadius(userState.radius || 8046.7, false);
       window.addEventListener('resize', recalculateNodePositions);
       initRadiusDragHandlers();
     });
@@ -501,7 +510,7 @@
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
           document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
-          document.getElementById('radiusSlider').value = userState.radius || 15000;
+          document.getElementById('radiusSlider').value = userState.radius || 8046.7;
           selectAccountType(userState.type || 'personal', true);
           setAppTheme(userState.theme || 'theme-sky', true);
           applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
@@ -535,7 +544,7 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    // Dynamic Discovery Radius, Ring Dragging & Zoom Out Scaling
+    // Dynamic Discovery Radius, Ring Dragging & Zoom Out Scaling with Fixed Bubble Size
     function updateRadius(val, updateSliderInput = true) {
       const meters = Math.max(100, Math.min(80467, Number(val)));
       userState.radius = meters;
@@ -558,13 +567,15 @@
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
-        // Smoothly zoom out map canvas when radius exceeds viewing area
+        // Smoothly zoom out map canvas when radius exceeds viewing area and apply inverse CSS scale to nodes
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         if (pixelDiameter > viewportMin * 0.70) {
           const zoomScale = Math.max(0.2, (viewportMin * 0.70) / pixelDiameter);
           mapCanvas.style.transform = `scale(${zoomScale.toFixed(2)})`;
+          document.documentElement.style.setProperty('--zoom-scale', (1 / zoomScale).toFixed(2));
         } else {
           mapCanvas.style.transform = 'scale(1)';
+          document.documentElement.style.setProperty('--zoom-scale', '1');
         }
       }
 
@@ -591,7 +602,6 @@
         const centerY = window.innerHeight / 2;
         const distPx = Math.hypot(clientX - centerX, clientY - centerY);
 
-        // Convert drag pixel distance back to meters
         const minPx = 60, maxPx = 1600;
         const clampedPx = Math.max(minPx, Math.min(maxPx, distPx));
         const ratio = (clampedPx - minPx) / (maxPx - minPx);
@@ -723,19 +733,22 @@
             <div class="absolute top-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-sky-600/90 text-white text-[10px] font-black tracking-wider uppercase shadow-md pointer-events-none">Drag Ring to Adjust Radius</div>
           </div>
 
-          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40 max-w-[220px] text-center" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
-            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
-            <span id="userTopBubbleText" class="truncate">...</span>
-            <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
-          </div>
+          <!-- Scale Compensator locks chat bubble & icon size when map zooms out -->
+          <div class="scale-compensator flex flex-col items-center relative z-10">
+            <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40 max-w-[220px] text-center" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
+              <span id="userTopBubbleText" class="truncate">...</span>
+              <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
+            </div>
 
-          <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
+            <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
-          <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-10" style="border-radius: 50%;">
-            <div class="bubble-glare"></div>
-            <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
+            <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-10" style="border-radius: 50%;">
+              <div class="bubble-glare"></div>
+              <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
+            </div>
+            <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-10">${getEffectiveMyName()}${userState.type === 'business' ? ' (Store)' : ' (You)'}</span>
           </div>
-          <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-10">${getEffectiveMyName()}${userState.type === 'business' ? ' (Store)' : ' (You)'}</span>
         </div>
       `;
       container.appendChild(userDiv);
@@ -1013,7 +1026,7 @@
       let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
 
       nodeElem.innerHTML = `
-        <div class="relative flex flex-col items-center group">
+        <div class="relative flex flex-col items-center group scale-compensator">
           <div class="absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none" style="border-radius: 50%;"></div>
           ${hasValidQuestion ? `
             <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-40 cursor-pointer max-w-[220px] text-center" onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question}', '${peerId}')">
