@@ -22,7 +22,7 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
-    /* Ultra-Slow Water Ripple (10.71s duration) with thinner, translucent lines for seamless background blending */
+    /* Ultra-Slow Water Ripple with thinner, translucent lines for seamless background blending */
     @keyframes water-ripple-expand {
       0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.6; border-width: 1.5px; }
       40% { opacity: 0.3; }
@@ -57,7 +57,7 @@
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
-    /* Dynamic Themes with Pink Background & Blue Ripple/Inverted Color Scheme */
+    /* Theme Presets (Harmonized Pink Backgrounds with Inverted Accent Schemes) */
     .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
     .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --accent: #0284c7; }
     .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf4ff 0%, #f5d0fe 50%, #e879f9 100%); --accent: #c084fc; }
@@ -489,7 +489,6 @@
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
-      // Soft blue translucent ripple with decreased line thickness (0.5px to 1.5px) for seamless background blending
       ripple.className = 'absolute w-14 h-14 rounded-full border border-sky-400/50 bg-sky-300/15 pointer-events-none animate-water-ripple';
       ripple.style.left = `${centerX}px`;
       ripple.style.top = `${centerY}px`;
@@ -1018,8 +1017,8 @@
         });
       }
 
-      document.getElementById('chatDrawer').classList.add('hidden');
-      document.getElementById('chatBackdrop').classList.add('hidden');
+      document.getElementById('chatDrawer').classList.remove('hidden');
+      document.getElementById('chatBackdrop').classList.remove('hidden');
     }
 
     function closeChatDrawer() { 
