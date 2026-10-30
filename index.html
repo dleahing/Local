@@ -474,9 +474,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 48280.2; // Exactly 30 Miles maximum
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v10';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v10';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v20';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v11';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v11';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v21';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -843,7 +843,6 @@
         e.stopPropagation();
         e.preventDefault();
 
-        // Play dragging sound periodically
         playAudioEffect('radar_drag');
         radarDragAudioTimer = setInterval(() => {
           if (isDraggingRadius) playAudioEffect('radar_drag');
@@ -922,7 +921,6 @@
 
           const labelElem = nodeElem.querySelector('.node-name-label');
           if (labelElem) {
-            // Only show labels for businesses or if within 10 miles and permitted
             const showLabel = peer.accountType === 'business' && peer.distance <= TEN_MILES_METERS;
             labelElem.style.display = showLabel ? 'block' : 'none';
           }
@@ -1004,13 +1002,6 @@
       mapCanvas.addEventListener('click', triggerRipple);
     }
 
-    function getEffectiveMyName() {
-      if (userState.type === 'business') {
-        return userState.alias;
-      }
-      return ''; // Hide name for personal users
-    }
-
     function updateMyDisplayLabel() {
       const label = document.getElementById('userAvatarLabel');
       if (label) {
@@ -1053,7 +1044,7 @@
             <div class="node-content-stack">
               <span id="userAvatarLabel" class="px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label" style="display: ${showMyLabel ? 'block' : 'none'};">${userState.alias}</span>
               
-              <div id="userTopBubble" class="hidden px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
+              <div id="userTopBubble" class="hidden px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); openChatDrawer('room-you', '${userState.type === 'business' ? userState.alias : 'Traveler'}', activeTopicState.text, 'you')">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
                 <span id="userTopBubbleText" class="truncate">...</span>
                 <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
@@ -1117,7 +1108,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v20');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v21');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -1201,10 +1192,7 @@
       if (data.id) processedMsgIds.add(data.id);
 
       const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
-      let displayName = data.sender;
-      if (data.accountType !== 'business') {
-        displayName = ''; // Hide non-business names completely
-      }
+      let displayName = data.accountType === 'business' ? data.sender : '';
 
       if (!globalActiveDirectory[data.peerId]) {
         globalActiveDirectory[data.peerId] = { enabled: true };
@@ -1243,12 +1231,13 @@
         if (!targetRoomId) return;
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
-        chatRoomsSessions[targetRoomId].push({ sender: data.accountType === 'business' ? data.sender : 'Traveler', text: data.text, time: timeStr, isMe: false });
+        const senderLabel = data.accountType === 'business' ? data.sender : 'Traveler';
+        chatRoomsSessions[targetRoomId].push({ sender: senderLabel, text: data.text, time: timeStr, isMe: false });
         savePersistentData();
-        registerActiveChat(targetRoomId, data.accountType === 'business' ? data.sender : 'Traveler');
+        registerActiveChat(targetRoomId, senderLabel);
         playAudioEffect('bubble');
         triggerHapticFeedback([70, 50, 70]);
-        if (currentActiveChatRoomId === targetRoomId) appendMessage(data.accountType === 'business' ? data.sender : 'Traveler', data.text, timeStr, false);
+        if (currentActiveChatRoomId === targetRoomId) appendMessage(senderLabel, data.text, timeStr, false);
       }
     }
 
@@ -1400,6 +1389,7 @@
       const showNameLabel = accountType === 'business' && distance <= TEN_MILES_METERS;
 
       const showSonarRipple = matchesFilter && accountType !== 'business';
+      const chatRoomName = accountType === 'business' ? rawSender : 'Traveler';
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto">
@@ -1410,14 +1400,14 @@
             <span class="px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label" style="display: ${showNameLabel ? 'block' : 'none'};">${rawSender} (${distanceFormatted})${interestFilter && interestFilter !== 'none' ? ' • ' + interestFilter : ''}</span>
             
             ${hasValidQuestion ? `
-              <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${accountType === 'business' ? rawSender : 'Traveler'}', '${question}', '${peerId}')">
+              <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${chatRoomName}', '${question}', '${peerId}')">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0"></i>
                 <span class="truncate">${question}</span>
               </div>
             ` : ''}
           </div>
 
-          <div onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${accountType === 'business' ? rawSender : 'Traveler'}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer" style="background: ${customBg}; border-radius: 50%;">
+          <div onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer" style="background: ${customBg}; border-radius: 50%;">
             <div class="bubble-glare"></div>
             <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
           </div>
@@ -1542,7 +1532,13 @@
     function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input ? input.value.trim() : '';
-      if (!text || !currentActiveChatRoomId) return;
+      
+      // Auto-fallback default room if none is explicitly bound
+      if (!currentActiveChatRoomId) {
+        currentActiveChatRoomId = 'room-you';
+      }
+      
+      if (!text) return;
 
       playAudioEffect('bubble');
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1557,6 +1553,7 @@
 
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
+      
       broadcastData({ 
         id: msgId, 
         type: 'CHAT_MSG', 
