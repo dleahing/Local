@@ -22,10 +22,11 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
-    /* Extended full-screen tap ripple keyframe */
-    @keyframes tap-ripple-expand {
-      0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.85; border-width: 3px; }
-      100% { transform: translate(-50%, -50%) scale(60); opacity: 0; border-width: 1px; }
+    /* Slow, Realistic Water Ripple Animation */
+    @keyframes water-ripple-expand {
+      0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.9; border-width: 4px; }
+      40% { opacity: 0.6; }
+      100% { transform: translate(-50%, -50%) scale(55); opacity: 0; border-width: 1px; }
     }
     @keyframes bubble-subtle {
       0%, 100% { transform: scale(1); border-radius: 50%; }
@@ -44,14 +45,13 @@
       0%, 100% { transform: translateY(0px); }
       50% { transform: translateY(-5px); }
     }
-    /* 50% Reduced Glow Animation */
     @keyframes pulse-glow {
       0%, 100% { opacity: 0.25; transform: scale(1); }
       50% { opacity: 0.42; transform: scale(1.08); }
     }
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
-    .animate-tap-ripple { animation: tap-ripple-expand 1.8s ease-out forwards; }
+    .animate-water-ripple { animation: water-ripple-expand 2.8s cubic-bezier(0.15, 0.65, 0.25, 1) forwards; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
     .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
@@ -142,7 +142,7 @@
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-500 origin-center">
       <div class="w-[340px] h-[340px] rounded-full border border-sky-400/30 absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow"></div>
     </div>
-    <!-- Container for Full-Screen Centered Tap Ripples -->
+    <!-- Water Ripple Container -->
     <div id="tapRippleContainer" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
     <div id="nodesContainer" class="absolute inset-0 z-20"></div>
   </div>
@@ -194,7 +194,7 @@
     </button>
   </div>
 
-  <!-- Range Filter Modal (Max 50 Miles / 80,467m) -->
+  <!-- Range Filter Modal -->
   <div id="rangeModal" class="hidden fixed bottom-20 right-4 z-40 glass-card p-4.5 rounded-3xl w-72 border border-white/50 shadow-2xl">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
@@ -204,7 +204,6 @@
       <button onclick="toggleRangeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div class="flex items-center gap-3">
-      <!-- Max slider value set to 80,467 meters = 50 miles -->
       <input type="range" id="radiusSlider" min="10" max="80467" value="8046" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
       <span id="radiusValueDisplay" class="text-xs font-bold text-sky-800 min-w-[55px] text-right">5.0 mi</span>
     </div>
@@ -337,7 +336,7 @@
       alias: 'Aqua Voyager',
       type: 'personal',
       address: '',
-      radius: 8046, // ~5 miles default
+      radius: 8046,
       lat: 27.2730,
       lng: -80.3582,
       theme: 'theme-sky',
@@ -390,8 +389,8 @@
       return Math.round(R * c);
     }
 
-    // Full-Screen Center-Anchored Tap Ripple
-    function createBubbleRipple(e) {
+    // Slow, Center-Originating Realistic Water Ripple Effect
+    function createBubbleRipple() {
       const circle = document.getElementById('userAvatarCircle');
       const rect = circle.getBoundingClientRect();
       const rippleContainer = document.getElementById('tapRippleContainer');
@@ -400,12 +399,12 @@
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
-      ripple.className = 'absolute w-12 h-12 rounded-full border-2 border-sky-300/80 bg-sky-200/30 pointer-events-none animate-tap-ripple';
+      ripple.className = 'absolute w-14 h-14 rounded-full border-2 border-sky-300/80 bg-sky-200/25 pointer-events-none animate-water-ripple';
       ripple.style.left = `${centerX}px`;
       ripple.style.top = `${centerY}px`;
 
       rippleContainer.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 1800);
+      setTimeout(() => ripple.remove(), 2800);
     }
 
     function initUserNode() {
@@ -436,12 +435,12 @@
       container.appendChild(userDiv);
 
       const circle = document.getElementById('userAvatarCircle');
-      circle.addEventListener('mousedown', (e) => { createBubbleRipple(e); handlePressStart(); });
+      circle.addEventListener('mousedown', () => { createBubbleRipple(); handlePressStart(); });
       circle.addEventListener('mouseup', handlePressEnd);
       circle.addEventListener('mouseleave', handlePressCancel);
 
       circle.addEventListener('touchstart', (e) => {
-        createBubbleRipple(e);
+        createBubbleRipple();
         handlePressStart();
       });
       circle.addEventListener('touchend', handlePressEnd);
@@ -579,10 +578,7 @@
 
         if (data.type === 'NEW_QUESTION') {
           if (Date.now() - data.createdAt < ONE_HOUR_MS) {
-            activeTopicState.text = data.text;
-            activeTopicState.createdAt = data.createdAt;
-            document.getElementById('mainTopicText').innerText = data.text;
-            document.getElementById('mainTopicContainer').classList.remove('hidden');
+            updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt);
             showToast(`Question from ${data.sender || 'Peer'} (${distanceFormatted} away)!`, 'pin');
           }
         } else if (data.type === 'CHAT_MSG') {
@@ -681,7 +677,6 @@
           }
         }
 
-        // Clean expired map bubbles for nearby peers
         Object.keys(nearbyPeers).forEach(key => {
           let peerObj = nearbyPeers[key];
           if (peerObj && peerObj.createdAt && (Date.now() - peerObj.createdAt >= ONE_HOUR_MS)) {
@@ -747,7 +742,6 @@
         : 'absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400';
     }
 
-    // Dynamic Meters to Miles Converter for Slider UI
     function updateRadius(valMeters) {
       const meters = Number(valMeters);
       userState.radius = meters;
@@ -832,7 +826,7 @@
 
     function closeChatDrawer() { document.getElementById('chatDrawer').classList.add('hidden'); }
     function openQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
-    function closeQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
+    function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
     function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
     function toggleRangeModal() { document.getElementById('rangeModal').classList.toggle('hidden'); }
