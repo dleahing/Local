@@ -258,6 +258,21 @@
           <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
+        <!-- Location Privacy Controls -->
+        <div class="pt-2 border-t border-slate-200/60">
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Location Privacy & Visibility</label>
+          <div class="space-y-2">
+            <label class="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
+              <span>Ghost Mode (Invisible on map)</span>
+              <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
+              <span>Fuzz Location (~500m jitter)</span>
+              <input type="checkbox" id="privacyFuzzLocation" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+            </label>
+          </div>
+        </div>
+
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
           <div class="grid grid-cols-4 gap-2">
@@ -343,6 +358,8 @@
     const MESH_PREFIX = 'local-proximity-mesh-v2-';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v1';
 
     let peer = null;
     let myPeerId = null;
@@ -362,19 +379,59 @@
       radius: 8046,
       lat: 27.2730,
       lng: -80.3582,
-      theme: 'theme-sky'
+      theme: 'theme-sky',
+      ghostMode: false,
+      fuzzLocation: true
     };
 
     let touchTimer = null;
     let isLongPress = false;
 
     window.addEventListener('DOMContentLoaded', () => {
+      loadPersistentData();
       lucide.createIcons();
       initGPSLocation();
       initUserNode();
       initRobustMesh();
       checkChatExpiryLoop();
     });
+
+    function loadPersistentData() {
+      try {
+        const savedProfile = localStorage.getItem(STORAGE_KEY_PROFILE);
+        if (savedProfile) {
+          const parsed = JSON.parse(savedProfile);
+          userState = { ...userState, ...parsed };
+          document.getElementById('avatarNameInput').value = userState.alias;
+          document.getElementById('businessAddressInput').value = userState.address || '';
+          document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
+          document.getElementById('privacyFuzzLocation').checked = userState.fuzzLocation !== false;
+          selectAccountType(userState.type || 'personal', true);
+          setAppTheme(userState.theme || 'theme-sky', true);
+        }
+
+        const savedChats = localStorage.getItem(STORAGE_KEY_CHATS);
+        if (savedChats) {
+          chatRoomsSessions = JSON.parse(savedChats);
+          Object.keys(chatRoomsSessions).forEach(roomId => {
+            if (roomId !== 'room-you') {
+              registerActiveChat(roomId, roomId.replace('room-peer-', ''));
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("Failed to load persistent storage:", e);
+      }
+    }
+
+    function savePersistentData() {
+      try {
+        localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
+        localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
+      } catch (e) {
+        console.warn("Failed to save persistent storage:", e);
+      }
+    }
 
     function showToast(message, icon = 'info') {
       const toastContainer = document.getElementById('toastContainer');
@@ -384,6 +441,19 @@
       toastContainer.appendChild(toast);
       lucide.createIcons();
       setTimeout(() => { toast.remove(); }, 3500);
+    }
+
+    function getBroadcastCoordinates() {
+      if (!userState.lat || !userState.lng) return { lat: 27.2730, lng: -80.3582 };
+      if (!userState.fuzzLocation) return { lat: userState.lat, lng: userState.lng };
+
+      // Apply privacy jitter (~500m coordinate obfuscation)
+      const jitterLat = (Math.random() - 0.5) * 0.005;
+      const jitterLng = (Math.random() - 0.5) * 0.005;
+      return {
+        lat: userState.lat + jitterLat,
+        lng: userState.lng + jitterLng
+      };
     }
 
     function initGPSLocation() {
@@ -522,7 +592,6 @@
     }
 
     function startPeerDiscoveryLoop() {
-      // Connect to known or standard seed nodes for discovery exchange
       const seedIds = [
         MESH_PREFIX + 'seed1',
         MESH_PREFIX + 'seed2',
@@ -536,7 +605,6 @@
         }
       });
 
-      // Periodically announce presence and request peer lists
       setInterval(() => {
         announcePresence();
       }, 10000);
@@ -551,13 +619,16 @@
     }
 
     function announcePresence() {
+      if (userState.ghostMode) return; // Respect ghost mode privacy
+
+      const coords = getBroadcastCoordinates();
       broadcastData({
         id: 'ping-' + Math.random().toString(36).substring(2, 9),
         type: 'PEER_PRESENCE',
         sender: userState.alias,
         peerId: myPeerId,
-        lat: userState.lat,
-        lng: userState.lng,
+        lat: coords.lat,
+        lng: coords.lng,
         question: activeTopicState.text,
         createdAt: activeTopicState.createdAt
       });
@@ -572,6 +643,7 @@
         conn.send({ type: 'REQUEST_STATE', senderId: myPeerId });
 
         if (activeTopicState.text && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
+          const coords = getBroadcastCoordinates();
           conn.send({ 
             id: 'msg-' + Math.random().toString(36).substring(2, 9),
             type: 'NEW_QUESTION', 
@@ -579,8 +651,8 @@
             createdAt: activeTopicState.createdAt,
             sender: userState.alias,
             peerId: myPeerId,
-            lat: userState.lat, 
-            lng: userState.lng 
+            lat: coords.lat, 
+            lng: coords.lng 
           });
         }
       });
@@ -590,6 +662,7 @@
 
         if (data.type === 'REQUEST_STATE') {
           if (activeTopicState.text) {
+            const coords = getBroadcastCoordinates();
             conn.send({
               id: 'sync-' + Math.random().toString(36).substring(2, 9),
               type: 'NEW_QUESTION',
@@ -597,8 +670,8 @@
               createdAt: activeTopicState.createdAt,
               sender: userState.alias,
               peerId: myPeerId,
-              lat: userState.lat,
-              lng: userState.lng
+              lat: coords.lat,
+              lng: coords.lng
             });
           }
           return;
@@ -607,7 +680,6 @@
         if (data.id && processedMsgIds.has(data.id)) return;
         if (data.id) processedMsgIds.add(data.id);
 
-        // Gossip protocol: forward to other peers except sender
         broadcastData(data, conn.peer);
 
         const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
@@ -619,7 +691,6 @@
 
         if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
           updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId);
-          // Try to discover new peers if shared in payload
           if (data.peerId && data.peerId !== myPeerId && !activeConnections[data.peerId]) {
             tryConnectPeer(data.peerId);
           }
@@ -631,12 +702,12 @@
             showToast(`Question from ${data.sender || 'Peer'} (${distanceFormatted} away)!`, 'pin');
           }
         } else if (data.type === 'CHAT_MSG') {
-          // Strictly route message ONLY if it matches the current active open chat room
           const targetRoomId = data.roomId;
           if (!targetRoomId) return;
 
           if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
           chatRoomsSessions[targetRoomId].push({ sender: data.sender, text: data.text, isMe: false });
+          savePersistentData();
 
           registerActiveChat(targetRoomId, data.roomName || data.sender);
 
@@ -697,8 +768,11 @@
     }
 
     function broadcastData(payload, excludePeerId = null) {
-      payload.lat = payload.lat || userState.lat;
-      payload.lng = payload.lng || userState.lng;
+      if (userState.ghostMode) return;
+
+      const coords = getBroadcastCoordinates();
+      payload.lat = payload.lat || coords.lat;
+      payload.lng = payload.lng || coords.lng;
 
       Object.keys(activeConnections).forEach((peerId) => {
         if (peerId !== excludePeerId) {
@@ -731,7 +805,7 @@
       }, 1000);
     }
 
-    function selectAccountType(type) {
+    function selectAccountType(type, skipSave = false) {
       userState.type = type;
       const personalBtn = document.getElementById('personalTypeBtn');
       const businessBtn = document.getElementById('businessTypeBtn');
@@ -749,22 +823,31 @@
         addressField.classList.remove('hidden');
         document.getElementById('accountTypeDisplay').innerText = "Business (Fixed)";
       }
+      if (!skipSave) savePersistentData();
     }
 
-    function setAppTheme(themeClass) {
+    function setAppTheme(themeClass, skipSave = false) {
       userState.theme = themeClass;
       document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative`;
-      showToast(`Theme updated!`, 'palette');
+      if (!skipSave) {
+        savePersistentData();
+        showToast(`Theme updated!`, 'palette');
+      }
     }
 
     function saveProfile() {
       const alias = document.getElementById('avatarNameInput').value.trim();
       const address = document.getElementById('businessAddressInput').value.trim();
+      const ghostMode = document.getElementById('privacyGhostMode').checked;
+      const fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
 
       if (alias) {
         userState.alias = alias;
         document.getElementById('userAvatarLabel').innerText = `${alias} (You)`;
       }
+
+      userState.ghostMode = ghostMode;
+      userState.fuzzLocation = fuzzLocation;
 
       if (userState.type === 'business') {
         userState.address = address;
@@ -773,6 +856,7 @@
         showToast('Personal GPS profile saved!', 'navigation');
       }
 
+      savePersistentData();
       announcePresence();
       closeProfileModal();
     }
@@ -812,12 +896,15 @@
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
 
+      const coords = getBroadcastCoordinates();
       broadcastData({ 
         id: msgId,
         type: 'NEW_QUESTION', 
         text: text, 
         sender: userState.alias,
         peerId: myPeerId,
+        lat: coords.lat,
+        lng: coords.lng,
         createdAt: activeTopicState.createdAt 
       });
 
@@ -836,6 +923,7 @@
 
       if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
       chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'You', text: text, isMe: true });
+      savePersistentData();
 
       input.value = '';
 
@@ -844,7 +932,6 @@
 
       const activeRoomName = document.getElementById('chatTargetName').innerText;
 
-      // Broadcast chat message tagged with roomId so only recipients in that specific room process it
       broadcastData({ 
         id: msgId,
         type: 'CHAT_MSG', 
