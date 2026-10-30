@@ -150,7 +150,7 @@
       <div>
         <h1 class="font-black text-slate-900 text-sm leading-tight tracking-tight">LocaL</h1>
         <div class="flex items-center gap-2">
-          <p id="accountTypeDisplay" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Personal (GPS)</p>
+          <p id="accountTypeDisplay" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Public Mesh</p>
           <span class="text-[9px] text-slate-400">•</span>
           <div id="activeUserBadge" class="flex items-center gap-1 text-[10px] text-emerald-800 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -206,7 +206,7 @@
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">P2P Mesh & Manual Connect</h3>
+        <h3 class="text-lg font-black text-slate-900">Public P2P Mesh</h3>
         <button onclick="toggleP2PModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
@@ -214,22 +214,12 @@
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Your Device Peer ID</label>
           <div class="flex items-center gap-2">
-            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Generating...">
+            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Connecting...">
             <button onclick="copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
-          <p class="text-[10px] text-slate-500 mt-1">Share this ID with another device to link directly.</p>
-        </div>
-
-        <div class="pt-2 border-t border-slate-200/60">
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Connect to Peer ID</label>
-          <div class="flex items-center gap-2">
-            <input type="text" id="manualPeerInput" placeholder="Paste peer ID here..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
-            <button onclick="connectManualPeer()" class="px-4 py-2.5 rounded-2xl bg-purple-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all whitespace-nowrap">
-              Connect
-            </button>
-          </div>
+          <p class="text-[10px] text-slate-500 mt-1">Connected to public global mesh network.</p>
         </div>
       </div>
     </div>
@@ -351,7 +341,7 @@
         </div>
         <div>
           <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Proximity Session</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Topic-Isolated Chat Room</p>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Public Channel</p>
         </div>
       </div>
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -371,7 +361,7 @@
     <!-- Chat Input Container -->
     <div class="pt-2.5 pb-1 flex-shrink-0">
       <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/70 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
-        <textarea id="chatInput" rows="1" placeholder="Ask or message nearby..." class="w-full bg-transparent text-slate-900 text-xs font-medium focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
+        <textarea id="chatInput" rows="1" placeholder="Broadcast to public mesh..." class="w-full bg-transparent text-slate-900 text-xs font-medium focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/40">
           <div class="flex items-center gap-1">
@@ -397,20 +387,21 @@
   <div id="questionModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">Ask the LocaLs</h3>
+        <h3 class="text-lg font-black text-slate-900">Broadcast Public Bubble</h3>
         <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
-        <textarea id="questionInput" rows="3" placeholder="Post a topic question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
+        <textarea id="questionInput" rows="3" placeholder="Post a public question or topic (visible to all)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
         <button onclick="postQuestion()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
-          Post Map Bubble
+          Broadcast Publicly
         </button>
       </div>
     </div>
   </div>
 
   <script>
-    const MESH_PREFIX = 'local-proximity-mesh-global-v6-';
+    // Public Global Mesh Prefix - any user loading the app anywhere joins this open discovery pool
+    const MESH_PREFIX = 'local-public-mesh-v1-';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
@@ -456,7 +447,7 @@
       lucide.createIcons();
       initGPSLocation();
       initUserNode();
-      initRobustMesh();
+      initPublicMesh();
       checkChatExpiryLoop();
     });
 
@@ -494,7 +485,7 @@
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
       } catch (e) {
-        console.warn("Failed to save persistent storage:", e);
+        console.warn("Failed to load persistent storage:", e);
       }
     }
 
@@ -614,6 +605,7 @@
       applyBubbleColorToElement('userAvatarCircle', colorName);
       showToast(`Profile bubble color updated to ${colorName}!`, 'palette');
       savePersistentData();
+      announcePresence();
     }
 
     function handlePressStart() {
@@ -639,533 +631,3 @@
         const circle = document.getElementById('userAvatarCircle');
         circle.classList.remove('animate-jiggle');
         void circle.offsetWidth;
-        circle.classList.add('animate-jiggle');
-      }
-    }
-
-    function handlePressCancel() {
-      clearTimeout(touchTimer);
-      const ring = document.getElementById('holdRing');
-      ring.classList.add('opacity-0');
-    }
-
-    function initRobustMesh() {
-      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
-      myPeerId = MESH_PREFIX + uniqueSuffix;
-      
-      peer = new Peer(myPeerId, {
-        host: '0.peerjs.com',
-        port: 443,
-        path: '/',
-        secure: true,
-        debug: 1
-      });
-
-      peer.on('open', (id) => {
-        myPeerId = id;
-        document.getElementById('myPeerIdDisplay').value = id;
-        updateMeshUI();
-        startPeerDiscoveryLoop();
-      });
-
-      peer.on('connection', (conn) => {
-        bindConnectionEvents(conn);
-      });
-
-      peer.on('error', (err) => {
-        console.warn("PeerJS connection warning:", err);
-      });
-    }
-
-    function startPeerDiscoveryLoop() {
-      setInterval(() => {
-        if (!peer || peer.destroyed) return;
-        
-        peer.listAllPeers((peers) => {
-          if (!peers || !Array.isArray(peers)) return;
-          peers.forEach(peerId => {
-            if (peerId.startsWith(MESH_PREFIX) && peerId !== myPeerId && !activeConnections[peerId]) {
-              tryConnectPeer(peerId);
-            }
-          });
-        });
-        
-        announcePresence();
-      }, 2500);
-    }
-
-    function tryConnectPeer(peerId) {
-      if (activeConnections[peerId] || peerId === myPeerId) return;
-      try {
-        const conn = peer.connect(peerId, { reliable: true });
-        if (conn) bindConnectionEvents(conn);
-      } catch (e) {}
-    }
-
-    function connectManualPeer() {
-      const targetId = document.getElementById('manualPeerInput').value.trim();
-      if (!targetId) {
-        showToast('Please enter a valid Peer ID', 'alert-circle');
-        return;
-      }
-      if (targetId === myPeerId) {
-        showToast('Cannot connect to your own Peer ID', 'alert-circle');
-        return;
-      }
-      
-      tryConnectPeer(targetId);
-      showToast(`Connecting to ${targetId}...`, 'wifi');
-      document.getElementById('manualPeerInput').value = '';
-      toggleP2PModal();
-    }
-
-    function copyMyPeerId() {
-      const input = document.getElementById('myPeerIdDisplay');
-      input.select();
-      input.setSelectionRange(0, 99999);
-      navigator.clipboard.writeText(input.value);
-      showToast('Peer ID copied to clipboard!', 'copy');
-    }
-
-    function announcePresence() {
-      if (userState.ghostMode) return;
-
-      const coords = getBroadcastCoordinates();
-      broadcastData({
-        id: 'ping-' + Math.random().toString(36).substring(2, 9),
-        type: 'PEER_PRESENCE',
-        sender: userState.alias,
-        bubbleColor: userState.bubbleColor,
-        peerId: myPeerId,
-        lat: coords.lat,
-        lng: coords.lng,
-        question: activeTopicState.text,
-        createdAt: activeTopicState.createdAt
-      });
-    }
-
-    function bindConnectionEvents(conn) {
-      conn.on('open', () => {
-        activeConnections[conn.peer] = conn;
-        updateMeshUI();
-        announcePresence();
-        showToast(`Connected to peer: ${conn.peer.replace(MESH_PREFIX, '')}`, 'wifi');
-
-        conn.send({ type: 'REQUEST_STATE', senderId: myPeerId });
-
-        if (activeTopicState.text && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
-          const coords = getBroadcastCoordinates();
-          conn.send({ 
-            id: 'msg-' + Math.random().toString(36).substring(2, 9),
-            type: 'NEW_QUESTION', 
-            text: activeTopicState.text, 
-            createdAt: activeTopicState.createdAt,
-            sender: userState.alias,
-            bubbleColor: userState.bubbleColor,
-            peerId: myPeerId,
-            lat: coords.lat, 
-            lng: coords.lng 
-          });
-        }
-      });
-
-      conn.on('data', (data) => {
-        if (!data) return;
-
-        if (data.type === 'REQUEST_STATE') {
-          if (activeTopicState.text) {
-            const coords = getBroadcastCoordinates();
-            conn.send({
-              id: 'sync-' + Math.random().toString(36).substring(2, 9),
-              type: 'NEW_QUESTION',
-              text: activeTopicState.text,
-              createdAt: activeTopicState.createdAt,
-              sender: userState.alias,
-              bubbleColor: userState.bubbleColor,
-              peerId: myPeerId,
-              lat: coords.lat,
-              lng: coords.lng
-            });
-          }
-          return;
-        }
-
-        if (data.id && processedMsgIds.has(data.id)) return;
-        if (data.id) processedMsgIds.add(data.id);
-
-        broadcastData(data, conn.peer);
-
-        const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
-        if (userState.radius > 0 && distance > userState.radius) return;
-
-        let distanceFormatted = distance >= 1000 
-          ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
-          : distance + 'm';
-
-        if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
-          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor);
-          if (data.peerId && data.peerId !== myPeerId && !activeConnections[data.peerId]) {
-            tryConnectPeer(data.peerId);
-          }
-        }
-
-        if (data.type === 'NEW_QUESTION') {
-          if (Date.now() - data.createdAt < ONE_HOUR_MS) {
-            updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId, data.bubbleColor);
-            showToast(`Question from ${data.sender || 'Peer'} (${distanceFormatted} away)!`, 'pin');
-          }
-        } else if (data.type === 'CHAT_MSG') {
-          const targetRoomId = data.roomId;
-          if (!targetRoomId) return;
-
-          if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
-          chatRoomsSessions[targetRoomId].push({ sender: data.sender, text: data.text, isMe: false });
-          savePersistentData();
-
-          registerActiveChat(targetRoomId, data.roomName || data.sender);
-
-          if (currentActiveChatRoomId === targetRoomId) {
-            appendMessage(data.sender, data.text, false);
-          } else {
-            showToast(`New message in "${data.roomName || data.sender}"!`, 'message-square');
-          }
-        }
-      });
-
-      conn.on('close', () => {
-        delete activeConnections[conn.peer];
-        updateMeshUI();
-      });
-    }
-
-    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor = 'violet') {
-      const container = document.getElementById('nodesContainer');
-      let peerKey = 'node-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
-      let nodeElem = document.getElementById(peerKey);
-
-      let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
-      let screenRadius = Math.min(Math.max(distance * 0.005, 80), 160);
-      let leftPx = `calc(50% + ${Math.cos(angle) * screenRadius}px)`;
-      let topPx = `calc(50% + ${Math.sin(angle) * screenRadius}px)`;
-
-      let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
-      let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
-
-      if (!nodeElem) {
-        nodeElem = document.createElement('div');
-        nodeElem.id = peerKey;
-        nodeElem.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500';
-        container.appendChild(nodeElem);
-      }
-
-      nodeElem.style.left = leftPx;
-      nodeElem.style.top = topPx;
-      
-      const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
-
-      nodeElem.innerHTML = `
-        <div class="relative flex flex-col items-center group">
-          <div class="absolute -inset-2 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none"></div>
-
-          ${hasValidQuestion ? `
-            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${roomId}', '${alias}', '${question}', '${alias}')">
-              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
-              <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
-            </div>
-          ` : ''}
-          <div onclick="openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle" style="background: ${customBg};">
-            <div class="bubble-glare"></div>
-          </div>
-          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distanceFormatted})</span>
-        </div>
-      `;
-      lucide.createIcons();
-
-      nearbyPeers[peerKey] = { elem: nodeElem, createdAt: createdAt };
-    }
-
-    function broadcastData(payload, excludePeerId = null) {
-      if (userState.ghostMode) return;
-
-      const coords = getBroadcastCoordinates();
-      payload.lat = payload.lat || coords.lat;
-      payload.lng = payload.lng || coords.lng;
-
-      Object.keys(activeConnections).forEach((peerId) => {
-        if (peerId !== excludePeerId) {
-          const conn = activeConnections[peerId];
-          if (conn && conn.open) conn.send(payload);
-        }
-      });
-    }
-
-    function checkChatExpiryLoop() {
-      setInterval(() => {
-        if (activeTopicState.createdAt) {
-          const elapsed = Date.now() - activeTopicState.createdAt;
-          const remainingMs = ONE_HOUR_MS - elapsed;
-
-          if (remainingMs <= 0) {
-            activeTopicState.text = null;
-            activeTopicState.createdAt = null;
-            document.getElementById('userTopBubble').classList.add('hidden');
-            document.getElementById('mainTopicContainer').classList.add('hidden');
-            showToast('Proximity chat expired (1 hour reached)', 'clock');
-          } else {
-            const minutesLeft = Math.floor(remainingMs / 60000);
-            const secondsLeft = Math.floor((remainingMs % 60000) / 1000);
-            
-            document.getElementById('topicExpiryBadge').innerText = `Visible for ${minutesLeft}m ${secondsLeft < 10 ? '0' : ''}${secondsLeft}s`;
-            document.getElementById('userTopBubbleBadge').innerText = `${minutesLeft}m`;
-          }
-        }
-      }, 1000);
-    }
-
-    function selectAccountType(type, skipSave = false) {
-      userState.type = type;
-      const personalBtn = document.getElementById('personalTypeBtn');
-      const businessBtn = document.getElementById('businessTypeBtn');
-      const addressField = document.getElementById('businessAddressField');
-
-      if (type === 'personal') {
-        personalBtn.className = 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all';
-        businessBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
-        addressField.classList.add('hidden');
-        document.getElementById('accountTypeDisplay').innerText = "Personal (GPS)";
-        initGPSLocation();
-      } else {
-        businessBtn.className = 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all';
-        personalBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
-        addressField.classList.remove('hidden');
-        document.getElementById('accountTypeDisplay').innerText = "Business (Fixed)";
-      }
-      if (!skipSave) savePersistentData();
-    }
-
-    function setAppTheme(themeClass, skipSave = false) {
-      userState.theme = themeClass;
-      document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative`;
-      if (!skipSave) {
-        savePersistentData();
-        showToast(`App theme preset updated!`, 'palette');
-      }
-    }
-
-    function saveProfile() {
-      const alias = document.getElementById('avatarNameInput').value.trim();
-      const address = document.getElementById('businessAddressInput').value.trim();
-      const ghostMode = document.getElementById('privacyGhostMode').checked;
-      const fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
-
-      if (alias) {
-        userState.alias = alias;
-        document.getElementById('userAvatarLabel').innerText = `${alias} (You)`;
-      }
-
-      userState.ghostMode = ghostMode;
-      userState.fuzzLocation = fuzzLocation;
-
-      if (userState.type === 'business') {
-        userState.address = address;
-        showToast('Business profile saved for store address!', 'store');
-      } else {
-        showToast('Personal GPS profile saved!', 'navigation');
-      }
-
-      savePersistentData();
-      announcePresence();
-      closeProfileModal();
-    }
-
-    function updateMeshUI() {
-      const activeCount = Object.keys(activeConnections).length + 1;
-      document.getElementById('activeUserCount').innerText = `${activeCount} Active`;
-      const dot = document.getElementById('p2pStatusDot');
-      dot.className = activeCount > 1 
-        ? 'absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping' 
-        : 'absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400';
-    }
-
-    function updateRadius(valMeters) {
-      const meters = Number(valMeters);
-      userState.radius = meters;
-      
-      let formattedText = meters >= 1000 
-        ? (meters / METERS_PER_MILE).toFixed(1) + ' mi' 
-        : meters + 'm';
-        
-      document.getElementById('radiusValueDisplay').innerText = formattedText;
-    }
-
-    function postQuestion() {
-      const text = document.getElementById('questionInput').value.trim();
-      if (!text) return;
-
-      activeTopicState.text = text;
-      activeTopicState.createdAt = Date.now();
-
-      document.getElementById('userTopBubbleText').innerText = text.length > 25 ? text.substring(0, 22) + '...' : text;
-      document.getElementById('userTopBubble').classList.remove('hidden');
-      document.getElementById('mainTopicText').innerText = text;
-      document.getElementById('mainTopicContainer').classList.remove('hidden');
-
-      const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
-      processedMsgIds.add(msgId);
-
-      const coords = getBroadcastCoordinates();
-      broadcastData({ 
-        id: msgId,
-        type: 'NEW_QUESTION', 
-        text: text, 
-        sender: userState.alias,
-        bubbleColor: userState.bubbleColor,
-        peerId: myPeerId,
-        lat: coords.lat,
-        lng: coords.lng,
-        createdAt: activeTopicState.createdAt 
-      });
-
-      closeQuestionModal();
-      document.getElementById('questionInput').value = '';
-      showToast('Question broadcasted across proximity network!', 'pin');
-      openChatDrawer('room-you', userState.alias, text, 'you');
-    }
-
-    function autoResizeTextArea(el) {
-      el.style.height = 'auto';
-      el.style.height = (el.scrollHeight) + 'px';
-    }
-
-    function sendChatMessage() {
-      const input = document.getElementById('chatInput');
-      const text = input.value.trim();
-      if (!text || !currentActiveChatRoomId) return;
-
-      appendMessage('You', text, true);
-
-      if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
-      chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'You', text: text, isMe: true });
-      savePersistentData();
-
-      input.value = '';
-      input.style.height = '24px';
-
-      const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
-      processedMsgIds.add(msgId);
-
-      const activeRoomName = document.getElementById('chatTargetName').innerText;
-
-      broadcastData({ 
-        id: msgId,
-        type: 'CHAT_MSG', 
-        sender: userState.alias,
-        roomId: currentActiveChatRoomId,
-        roomName: activeRoomName,
-        text: text 
-      });
-    }
-
-    function send() {
-      sendChatMessage();
-    }
-
-    function appendMessage(sender, text, isMe) {
-      const msgBox = document.getElementById('chatMessages');
-      const div = document.createElement('div');
-      div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
-      div.innerHTML = `
-        <span class="text-[10px] text-slate-800 font-bold px-1 drop-shadow-sm">${sender}</span>
-        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-medium ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/50 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/40'}">
-          ${text}
-        </div>
-      `;
-      msgBox.appendChild(div);
-      msgBox.scrollTop = msgBox.scrollHeight;
-    }
-
-    function registerActiveChat(roomId, roomName) {
-      activeChatRoomsList.add(JSON.stringify({ id: roomId, name: roomName }));
-      renderActiveChatsBar();
-    }
-
-    function renderActiveChatsBar() {
-      const bar = document.getElementById('activeChatsBar');
-      if (activeChatRoomsList.size === 0) {
-        bar.classList.add('hidden');
-        return;
-      }
-
-      bar.classList.remove('hidden');
-      bar.innerHTML = '';
-
-      activeChatRoomsList.forEach(roomJson => {
-        const room = JSON.parse(roomJson);
-        const isSelected = currentActiveChatRoomId === room.id;
-        const isSelf = room.id === 'room-you';
-        const bubbleStyle = isSelf ? (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue) : BUBBLE_COLOR_MAP.violet;
-
-        const item = document.createElement('div');
-        item.className = `relative cursor-pointer transition-transform hover:scale-110 flex items-center justify-center ${isSelected ? 'ring-2 ring-sky-500 rounded-full' : ''}`;
-        item.title = `Chat: ${room.name}`;
-        item.innerHTML = `
-          <div class="w-8 h-8 rounded-full text-white font-bold text-[10px] flex items-center justify-center shadow-md bubble-node" style="background: ${bubbleStyle};">
-            <div class="bubble-glare"></div>
-            <span>${room.name.charAt(0).toUpperCase()}</span>
-          </div>
-        `;
-        item.onclick = () => {
-          openChatDrawer(room.id, room.name, room.id === 'room-you' ? activeTopicState.text : null, room.name);
-        };
-        bar.appendChild(item);
-      });
-    }
-
-    function openChatDrawer(roomId, roomName, topic, peerId) {
-      currentActiveChatRoomId = roomId;
-      registerActiveChat(roomId, roomName);
-
-      document.getElementById('chatTargetName').innerText = roomName;
-      
-      const isSelf = roomId === 'room-you';
-      const avatarElem = document.getElementById('chatTargetAvatar');
-      const bubbleStyle = isSelf ? (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue) : BUBBLE_COLOR_MAP.violet;
-      
-      avatarElem.className = `w-9 h-9 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node`;
-      avatarElem.style.background = bubbleStyle;
-      avatarElem.innerHTML = `<div class="bubble-glare"></div><span>${roomName.charAt(0).toUpperCase()}</span>`;
-
-      if (topic || (isSelf && activeTopicState.text)) {
-        document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
-        document.getElementById('mainTopicContainer').classList.remove('hidden');
-      } else {
-        document.getElementById('mainTopicContainer').classList.add('hidden');
-      }
-
-      const msgBox = document.getElementById('chatMessages');
-      msgBox.innerHTML = ``;
-      if (chatRoomsSessions[currentActiveChatRoomId]) {
-        chatRoomsSessions[currentActiveChatRoomId].forEach(msg => {
-          appendMessage(msg.sender, msg.text, msg.isMe);
-        });
-      }
-
-      document.getElementById('chatDrawer').classList.remove('hidden');
-      document.getElementById('chatBackdrop').classList.remove('hidden');
-    }
-
-    function closeChatDrawer() { 
-      document.getElementById('chatDrawer').classList.add('hidden'); 
-      document.getElementById('chatBackdrop').classList.add('hidden');
-      currentActiveChatRoomId = null;
-    }
-
-    function openQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
-    function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
-    function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
-    function toggleRangeModal() { document.getElementById('rangeModal').classList.toggle('hidden'); }
-    function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
-  </script>
-</body>
-</html>
