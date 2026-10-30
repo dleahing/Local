@@ -1403,18 +1403,24 @@
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
-      const maxDisplayRadiusMeters = MAX_RADIUS_METERS;
-      const distanceFraction = Math.min(1.0, distance / maxDisplayRadiusMeters);
+      // Precisely map distances to pixel radii relative to the active radar boundary ring size (200px to 1812.5px diameter)
+      const currentRingPx = document.getElementById('radarBoundaryRing') ? (document.getElementById('radarBoundaryRing').offsetWidth / 2) : 100;
+      const currentRadiusMeters = userState.radius;
       
-      let angle = (rawSender.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
-      let radiusOffsetPercent = distanceFraction * 40; 
-      
-      let left = 50 + (Math.cos(angle) * radiusOffsetPercent);
-      let top = 50 + (Math.sin(angle) * radiusOffsetPercent);
+      let distanceRatio = currentRadiusMeters > 0 ? (distance / currentRadiusMeters) : 0.5;
+      let pixelDistanceFromCenter = distanceRatio * currentRingPx;
 
-      if (peerId === 'sim-peer-tutorial-bot') { left = 50; top = 42; }
-      else if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 28; }
-      else if (peerId === 'sim-peer-restaurant-20mi') { left = 75; top = 18; }
+      let angle = (rawSender.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
+
+      // Convert pixel offset into percentage relative to map canvas
+      const mapCanvasWidth = 5625; // 300% canvas size
+      let leftPercent = 50 + ((Math.cos(angle) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
+      let topPercent = 50 + ((Math.sin(angle) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
+
+      // Special overrides for tutorial bot and specific fixed demo bots
+      if (peerId === 'sim-peer-tutorial-bot') { leftPercent = 50; topPercent = 48.5; }
+      else if (peerId === 'sim-peer-bot-5mi') { leftPercent = 50; topPercent = 42; }
+      else if (peerId === 'sim-peer-restaurant-20mi') { leftPercent = 68; topPercent = 32; }
 
       if (!nodeElem) {
         nodeElem = document.createElement('div');
@@ -1423,8 +1429,8 @@
         container.appendChild(nodeElem);
       }
 
-      nodeElem.style.left = `${left}%`;
-      nodeElem.style.top = `${top}%`;
+      nodeElem.style.left = `${leftPercent}%`;
+      nodeElem.style.top = `${topPercent}%`;
 
       const peerRecord = globalActiveDirectory[peerId] || {};
       const isEnabled = peerRecord.enabled !== false;
