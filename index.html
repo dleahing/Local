@@ -371,7 +371,7 @@
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
           <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
           <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
-            <span>Show My Name on Map</span>
+            <span>Show My Business Name on Map</span>
             <input type="checkbox" id="privacyMakeNamePublic" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
           </label>
           <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
@@ -436,7 +436,7 @@
 
     <div class="pt-2.5 pb-1 flex-shrink-0">
       <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/80 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
-        <textarea id="chatInput" rows="1" placeholder="Message connected peer..." class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
+        <textarea id="chatInput" rows="1" placeholder="Message connected peer..." class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 24px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/50">
           <div class="flex items-center gap-1">
@@ -474,9 +474,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 48280.2; // Exactly 30 Miles maximum
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v9';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v9';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v19';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v10';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v10';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v20';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -534,6 +534,7 @@
     let isDraggingRadius = false;
     let dragStartRadiusMeters = MIN_RADIUS_METERS;
     let dragStartDistancePx = 175;
+    let radarDragAudioTimer = null;
 
     // Web Audio Synthesized Sound Effect System
     let audioCtx = null;
@@ -595,18 +596,18 @@
             osc.start(noteTime);
             osc.stop(noteTime + 0.25);
           });
-        } else if (type === 'radar') {
+        } else if (type === 'radar_drag') {
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'triangle';
-          osc.frequency.setValueAtTime(1200, now);
-          osc.frequency.exponentialRampToValueAtTime(400, now + 0.12);
-          gain.gain.setValueAtTime(0.18, now);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.linearRampToValueAtTime(440, now + 0.08);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.005, now + 0.08);
           osc.connect(gain);
           gain.connect(audioCtx.destination);
           osc.start(now);
-          osc.stop(now + 0.12);
+          osc.stop(now + 0.08);
         }
       } catch(e) {}
     }
@@ -842,7 +843,11 @@
         e.stopPropagation();
         e.preventDefault();
 
-        playAudioEffect('radar');
+        // Play dragging sound periodically
+        playAudioEffect('radar_drag');
+        radarDragAudioTimer = setInterval(() => {
+          if (isDraggingRadius) playAudioEffect('radar_drag');
+        }, 180);
 
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -873,6 +878,10 @@
 
       const handleEnd = () => {
         isDraggingRadius = false;
+        if (radarDragAudioTimer) {
+          clearInterval(radarDragAudioTimer);
+          radarDragAudioTimer = null;
+        }
       };
 
       ring.addEventListener('mousedown', handleStart);
@@ -913,7 +922,9 @@
 
           const labelElem = nodeElem.querySelector('.node-name-label');
           if (labelElem) {
-            labelElem.style.display = peer.distance > TEN_MILES_METERS ? 'none' : 'block';
+            // Only show labels for businesses or if within 10 miles and permitted
+            const showLabel = peer.accountType === 'business' && peer.distance <= TEN_MILES_METERS;
+            labelElem.style.display = showLabel ? 'block' : 'none';
           }
         }
       });
@@ -994,16 +1005,21 @@
     }
 
     function getEffectiveMyName() {
-      if (!userState.makeNamePublic && userState.type === 'personal') {
-        return `Traveler #${myPeerId.substring(myPeerId.length - 4).toUpperCase()}`;
+      if (userState.type === 'business') {
+        return userState.alias;
       }
-      return userState.alias;
+      return ''; // Hide name for personal users
     }
 
     function updateMyDisplayLabel() {
       const label = document.getElementById('userAvatarLabel');
       if (label) {
-        label.innerText = `${getEffectiveMyName()}${userState.type === 'business' ? ' (Store)' : ' (You)'}`;
+        if (userState.type === 'business') {
+          label.innerText = userState.alias;
+          label.style.display = 'block';
+        } else {
+          label.style.display = 'none';
+        }
       }
     }
 
@@ -1022,6 +1038,7 @@
       userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 cursor-pointer node-item';
       
       const iconName = userState.type === 'business' ? (userState.category || 'store') : 'navigation';
+      const showMyLabel = userState.type === 'business' && userState.makeNamePublic !== false;
 
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
@@ -1034,7 +1051,7 @@
           <div class="scale-compensator flex flex-col items-center relative z-50 pointer-events-auto">
             <!-- Anti-Overlap Stack Container -->
             <div class="node-content-stack">
-              <span id="userAvatarLabel" class="px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label">${getEffectiveMyName()}${userState.type === 'business' ? ' (Store)' : ' (You)'}</span>
+              <span id="userAvatarLabel" class="px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label" style="display: ${showMyLabel ? 'block' : 'none'};">${userState.alias}</span>
               
               <div id="userTopBubble" class="hidden px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
@@ -1100,7 +1117,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v19');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v20');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -1185,8 +1202,8 @@
 
       const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
       let displayName = data.sender;
-      if (!data.makeNamePublic && data.accountType !== 'business') {
-        displayName = `Traveler #${data.peerId.substring(data.peerId.length - 4).toUpperCase()}`;
+      if (data.accountType !== 'business') {
+        displayName = ''; // Hide non-business names completely
       }
 
       if (!globalActiveDirectory[data.peerId]) {
@@ -1196,6 +1213,7 @@
       globalActiveDirectory[data.peerId] = {
         ...globalActiveDirectory[data.peerId],
         name: displayName,
+        rawSender: data.sender,
         peerId: data.peerId,
         lat: data.lat,
         lng: data.lng,
@@ -1216,7 +1234,7 @@
 
       if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
         updatePeerNodeOnMap(
-          displayName, distance, distanceFormatted, data.lat, data.lng, 
+          displayName, data.sender, distance, distanceFormatted, data.lat, data.lng, 
           data.text || data.question, data.createdAt, data.peerId, 
           data.bubbleColor, data.accountType, data.category, data.interestFilter, false
         );
@@ -1225,12 +1243,12 @@
         if (!targetRoomId) return;
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
-        chatRoomsSessions[targetRoomId].push({ sender: displayName, text: data.text, time: timeStr, isMe: false });
+        chatRoomsSessions[targetRoomId].push({ sender: data.accountType === 'business' ? data.sender : 'Traveler', text: data.text, time: timeStr, isMe: false });
         savePersistentData();
-        registerActiveChat(targetRoomId, displayName);
+        registerActiveChat(targetRoomId, data.accountType === 'business' ? data.sender : 'Traveler');
         playAudioEffect('bubble');
         triggerHapticFeedback([70, 50, 70]);
-        if (currentActiveChatRoomId === targetRoomId) appendMessage(displayName, data.text, timeStr, false);
+        if (currentActiveChatRoomId === targetRoomId) appendMessage(data.accountType === 'business' ? data.sender : 'Traveler', data.text, timeStr, false);
       }
     }
 
@@ -1254,9 +1272,12 @@
           globalActiveDirectory[u.peerId] = { enabled: true };
         }
 
+        let displayName = u.accountType === 'business' ? u.name : '';
+
         globalActiveDirectory[u.peerId] = {
           ...globalActiveDirectory[u.peerId],
-          name: u.name,
+          name: displayName,
+          rawSender: u.name,
           peerId: u.peerId,
           lat,
           lng,
@@ -1268,7 +1289,7 @@
           lastSeen: Date.now()
         };
 
-        updatePeerNodeOnMap(u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, u.interestFilter, true);
+        updatePeerNodeOnMap(displayName, u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, u.interestFilter, true);
       });
       renderGlobalUsersDirectory();
     }
@@ -1334,12 +1355,12 @@
       } catch(e) {}
     }
 
-    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, interestFilter, isBot) {
+    function updatePeerNodeOnMap(displayName, rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, interestFilter, isBot) {
       const container = document.getElementById('nodesContainer');
-      let peerKey = 'node-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
+      let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
-      let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
+      let angle = (rawSender.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
       let left = 50 + (Math.cos(angle) * 15), top = 50 + (Math.sin(angle) * 15);
       if (accountType === 'business') { left = 50 + ((peerId.charCodeAt(0) % 5) - 2) * 12; top = 50 + ((peerId.charCodeAt(1) % 5) - 2) * 10; }
       if (peerId === 'sim-peer-bot-5mi') { left = 50; top = 30; }
@@ -1375,8 +1396,8 @@
       const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
       const iconName = accountType === 'business' ? category : 'user';
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
-      let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
-      const showNameLabel = distance <= TEN_MILES_METERS;
+      let roomId = 'room-peer-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
+      const showNameLabel = accountType === 'business' && distance <= TEN_MILES_METERS;
 
       const showSonarRipple = matchesFilter && accountType !== 'business';
 
@@ -1386,17 +1407,17 @@
           
           <!-- Anti-Overlap Stack Container -->
           <div class="node-content-stack">
-            <span class="px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label" style="display: ${showNameLabel ? 'block' : 'none'};">${alias} (${distanceFormatted})${interestFilter && interestFilter !== 'none' ? ' • ' + interestFilter : ''}</span>
+            <span class="px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label" style="display: ${showNameLabel ? 'block' : 'none'};">${rawSender} (${distanceFormatted})${interestFilter && interestFilter !== 'none' ? ' • ' + interestFilter : ''}</span>
             
             ${hasValidQuestion ? `
-              <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question}', '${peerId}')">
+              <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${accountType === 'business' ? rawSender : 'Traveler'}', '${question}', '${peerId}')">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0"></i>
                 <span class="truncate">${question}</span>
               </div>
             ` : ''}
           </div>
 
-          <div onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer" style="background: ${customBg}; border-radius: 50%;">
+          <div onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${accountType === 'business' ? rawSender : 'Traveler'}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer" style="background: ${customBg}; border-radius: 50%;">
             <div class="bubble-glare"></div>
             <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
           </div>
@@ -1424,6 +1445,7 @@
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const iconName = peer.accountType === 'business' ? (peer.category || 'store') : 'user';
         const isEnabled = peer.enabled !== false;
+        const displayLabel = peer.accountType === 'business' ? peer.rawSender : 'Traveler';
 
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
@@ -1432,7 +1454,7 @@
                 <div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>
               </div>
               <div>
-                <h4 class="font-black text-slate-900 text-xs">${peer.name} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
+                <h4 class="font-black text-slate-900 text-xs">${displayLabel} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
                 <p class="text-[10px] text-sky-900 font-bold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
               </div>
             </div>
@@ -1441,7 +1463,7 @@
                 <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleIndividualBot('${peerId}', this.checked)" class="sr-only peer">
                 <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-600"></div>
               </label>
-              <button onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${peer.name}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-extrabold text-xs shadow-md">Connect</button>
+              <button onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-extrabold text-xs shadow-md">Connect</button>
             </div>
           </div>
         `;
@@ -1512,33 +1534,42 @@
       const coords = getBroadcastCoordinates();
       broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
       closeQuestionModal();
-      openChatDrawer('room-you', getEffectiveMyName(), text, 'you');
+      openChatDrawer('room-you', userState.type === 'business' ? userState.alias : 'Traveler', text, 'you');
     }
 
     function autoResizeTextArea(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; }
 
     function sendChatMessage() {
       const input = document.getElementById('chatInput');
-      const text = input.value.trim();
+      const text = input ? input.value.trim() : '';
       if (!text || !currentActiveChatRoomId) return;
 
       playAudioEffect('bubble');
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       appendMessage('You', text, timeStr, true);
+
       if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
       chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'You', text, time: timeStr, isMe: true });
       savePersistentData();
-      input.value = ''; input.style.height = '24px';
+
+      input.value = ''; 
+      input.style.height = '24px';
 
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
-      broadcastData({ id: msgId, type: 'CHAT_MSG', sender: userState.alias, roomId: currentActiveChatRoomId, text });
+      broadcastData({ 
+        id: msgId, 
+        type: 'CHAT_MSG', 
+        sender: userState.alias, 
+        roomId: currentActiveChatRoomId, 
+        text,
+        accountType: userState.type 
+      });
     }
-
-    function send() { sendChatMessage(); }
 
     function appendMessage(sender, text, time, isMe) {
       const msgBox = document.getElementById('chatMessages');
+      if (!msgBox) return;
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'}" data-text="${text.toLowerCase()}">
           <div class="flex items-center gap-1.5 px-1"><span class="text-[10px] text-slate-900 font-bold">${sender}</span><span class="text-[9px] text-slate-500">${time || ''}</span></div>
@@ -1599,7 +1630,6 @@
 
       document.getElementById('chatDrawer').classList.remove('hidden');
       document.getElementById('chatBackdrop').classList.remove('hidden');
-      currentActiveChatRoomId = null;
     }
 
     function closeChatDrawer() {
