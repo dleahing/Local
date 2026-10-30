@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LocaL - P2P Proximity Social Network</title>
+  <title>LocaL - Proximity Social Network</title>
   
   <!-- Mobile & PWA Configuration -->
   <meta name="theme-color" content="#fbcfe8">
@@ -11,36 +11,39 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LocaL">
 
-  <!-- Tailwind CSS, Lucide Icons & PeerJS (WebRTC) -->
+  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+  <!-- PeerJS WebRTC P2P Library -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
   <style>
     @keyframes wave-expand {
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
-      100% { transform: translate(-50%, -50%) scale(5.7); opacity: 0; }
+      100% { transform: translate(-50%, -50%) scale(3.8); opacity: 0; }
     }
     @keyframes water-ripple-expand {
       0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0.6; border-width: 1.5px; }
-      40% { opacity: 0.35; }
-      100% { transform: translate(-50%, -50%) scale(90); opacity: 0; border-width: 0.5px; }
+      40% { opacity: 0.3; }
+      100% { transform: translate(-50%, -50%) scale(60); opacity: 0; border-width: 0.5px; }
     }
     @keyframes peer-sonar-pulse {
-      0% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
-      70% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; box-shadow: 0 0 0 35px rgba(168, 85, 247, 0); }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+      0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
+      70% { transform: scale(1.4); opacity: 0; box-shadow: 0 0 0 25px rgba(168, 85, 247, 0); }
+      100% { transform: scale(1); opacity: 0; }
     }
     @keyframes bubble-subtle {
       0%, 100% { transform: scale(1); border-radius: 50%; }
       50% { transform: scale(1.02, 0.98); border-radius: 49% 51% 50% 50%; }
     }
-    @keyframes bubble-bounce-press {
+    @keyframes bubble-jiggle {
       0% { transform: scale(1); }
-      30% { transform: scale(1.25, 0.75) translateY(4px); }
-      50% { transform: scale(0.85, 1.15) translateY(-8px); }
-      75% { transform: scale(1.1, 0.9) translateY(-3px); }
-      100% { transform: scale(1) translateY(0); }
+      15% { transform: scale(1.25, 0.78) rotate(-4deg); }
+      30% { transform: scale(0.82, 1.2) rotate(4deg); }
+      45% { transform: scale(1.12, 0.88) rotate(-2deg); }
+      60% { transform: scale(0.92, 1.06) rotate(1deg); }
+      75% { transform: scale(1.04, 0.97); }
+      100% { transform: scale(1); }
     }
     @keyframes float-gentle {
       0%, 100% { transform: translateY(0px); }
@@ -56,7 +59,7 @@
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
-    .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
+    .animate-jiggle { animation: bubble-jiggle 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
     /* Theme Presets */
@@ -68,24 +71,24 @@
 
     /* Polished Glassmorphism System */
     .glass-panel {
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(24px) saturate(190%);
-      -webkit-backdrop-filter: blur(24px) saturate(190%);
-      border: 1px solid rgba(255, 255, 255, 0.75);
-      box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.08);
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06);
     }
     .glass-card {
-      background: rgba(255, 255, 255, 0.75);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.85);
-      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.08);
     }
     .liquid-glass-icon {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.45) 100%);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.35) 100%);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.7);
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
@@ -111,17 +114,17 @@
 
     /* Beveled Top Drop-Down Glass Drawer */
     .glass-drawer-top {
-      background: rgba(255, 255, 255, 0.45);
-      backdrop-filter: blur(36px);
-      -webkit-backdrop-filter: blur(36px);
-      border-bottom: 1.5px solid rgba(255, 255, 255, 0.7);
-      border-left: 1px solid rgba(255, 255, 255, 0.5);
-      border-right: 1px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border-bottom: 1.5px solid rgba(255, 255, 255, 0.6);
+      border-left: 1px solid rgba(255, 255, 255, 0.4);
+      border-right: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
   </style>
 </head>
-<body id="appBody" class="theme-sky bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
+<body id="appBody" class="theme-sky bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
   <!-- Map Canvas Container -->
   <div id="mapCanvas" class="absolute inset-0 overflow-hidden transition-transform duration-500 origin-center" style="background: var(--bg-gradient); transform: scale(1.1);">
@@ -137,7 +140,7 @@
     <div id="nodesContainer" class="absolute inset-0 z-20"></div>
   </div>
 
-  <!-- Top Glass Header Bar (Z-30) -->
+  <!-- Top Glass Header Bar -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
     <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 pointer-events-auto shadow-xl">
       <div class="relative flex items-center justify-center">
@@ -147,10 +150,10 @@
       <div>
         <h1 class="font-black text-slate-900 text-sm leading-tight tracking-tight">LocaL</h1>
         <div class="flex items-center gap-2">
-          <p id="accountTypeDisplay" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Personal (GPS)</p>
+          <p id="accountTypeDisplay" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Public Mesh</p>
           <span class="text-[9px] text-slate-400">•</span>
           <div id="activeUserBadge" class="flex items-center gap-1 text-[10px] text-emerald-800 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-            <span id="p2pNetDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span id="activeUserCount">1 Active</span>
           </div>
         </div>
@@ -161,25 +164,25 @@
     <div id="activeChatsBar" class="hidden glass-panel px-3 py-1.5 rounded-2xl pointer-events-auto flex items-center gap-2 overflow-x-auto shadow-lg max-w-[45vw]"></div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
-      <button onclick="openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
+      <button onclick="openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:scale-105 transition-all active:scale-95 shadow-lg">
         <i data-lucide="user-cog" class="w-5 h-5"></i>
       </button>
 
-      <button onclick="toggleP2PModal()" title="WebRTC P2P Mesh Connections" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
-        <i data-lucide="share-2" class="w-5 h-5"></i>
-        <span id="p2pStatusPingDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+      <button onclick="toggleP2PModal()" title="Mesh Status & Connect" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-800 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
+        <i data-lucide="wifi" class="w-5 h-5"></i>
+        <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400"></span>
       </button>
     </div>
   </header>
 
-  <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
+  <div id="toastContainer" class="absolute top-20 left-4 right-4 z-40 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Bottom Floating Control Dock (Z-30) -->
+  <!-- Bottom Floating Control Dock -->
   <div class="fixed bottom-24 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
-    <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
+    <button onclick="openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
       <i data-lucide="message-square-plus" class="w-5 h-5"></i>
     </button>
-    <button onclick="toggleRangeModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Radius Filter">
+    <button onclick="toggleRangeModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-800 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Radius Filter">
       <i data-lucide="radar" class="w-5 h-5"></i>
     </button>
   </div>
@@ -189,71 +192,34 @@
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <i data-lucide="sliders" class="w-4 h-4 text-sky-600"></i>
-        <span class="text-xs font-black text-slate-900 uppercase tracking-wider">Discovery Radius</span>
+        <span class="text-xs font-black text-slate-800 uppercase tracking-wider">Discovery Radius</span>
       </div>
-      <button onclick="toggleRangeModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <button onclick="toggleRangeModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div class="flex items-center gap-3">
       <input type="range" id="radiusSlider" min="10" max="80467" value="80467" oninput="updateRadius(this.value)" class="w-full accent-sky-600 cursor-pointer">
-      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-900 min-w-[55px] text-right">50.0 mi</span>
+      <span id="radiusValueDisplay" class="text-xs font-bold text-sky-800 min-w-[55px] text-right">50.0 mi</span>
     </div>
   </div>
 
-  <!-- WebRTC P2P Mesh & Active Directory Modal -->
+  <!-- Manual Peer Connection & Status Modal -->
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
-      <div class="flex justify-between items-center mb-4 flex-shrink-0">
-        <div>
-          <h3 class="text-lg font-black text-slate-900">WebRTC P2P Mesh</h3>
-          <p class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Direct browser-to-browser connections</p>
-        </div>
-        <button onclick="toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-black text-slate-900">Public P2P Mesh</h3>
+        <button onclick="toggleP2PModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
-      <div class="space-y-4 overflow-y-auto flex-1 pr-1">
+      <div class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">PeerJS Connection Status</label>
-          <div class="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-bold">
-            <div class="flex items-center gap-2">
-              <span id="peerServerDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              <span id="peerServerStatusText">Connected to PeerServer Mesh</span>
-            </div>
-            <button onclick="connectToPeerPrompt()" class="px-2.5 py-1 rounded-xl bg-sky-600 text-white text-[10px] font-extrabold shadow-sm active:scale-95">Connect ID</button>
-          </div>
-        </div>
-
-        <!-- Live Active Users Directory List -->
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">Discovered Peers (<span id="modalActiveCount">1</span>)</label>
-          </div>
-          <div id="globalUsersDirectory" class="space-y-2 max-h-48 overflow-y-auto pr-1">
-            <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">
-              Searching network mesh for peers...
-            </div>
-          </div>
-        </div>
-
-        <div class="p-3 rounded-2xl bg-white/40 border border-white/60 flex items-center justify-between">
-          <div>
-            <span class="block text-xs font-bold text-slate-900">Show Test Bots on Map</span>
-            <span class="block text-[10px] text-slate-600">Display simulated bots (Bot_Buddy, etc.)</span>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="toggleTestBots" checked onchange="toggleTestBotsVisibility(this.checked)" class="sr-only peer">
-            <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-600"></div>
-          </label>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Your PeerJS ID</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Your Device Peer ID</label>
           <div class="flex items-center gap-2">
-            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Initializing PeerJS...">
+            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Connecting...">
             <button onclick="copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
-          <p class="text-[10px] text-slate-600 mt-1">Share your Peer ID with another user to connect instantly via WebRTC.</p>
+          <p class="text-[10px] text-slate-500 mt-1">Connected to public global mesh network.</p>
         </div>
       </div>
     </div>
@@ -264,37 +230,37 @@
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-black text-slate-900">Customize Profile</h3>
-        <button onclick="closeProfileModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Account Mode</label>
           <div class="grid grid-cols-2 gap-2">
             <button onclick="selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all">
-              <i data-lucide="navigation" class="w-4 h-4 text-sky-800"></i>
-              <span class="text-[11px] font-bold text-sky-950">Personal (GPS)</span>
+              <i data-lucide="navigation" class="w-4 h-4 text-sky-700"></i>
+              <span class="text-[11px] font-bold text-sky-900">Personal (GPS)</span>
             </button>
             <button onclick="selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
-              <i data-lucide="store" class="w-4 h-4 text-slate-700"></i>
-              <span class="text-[11px] font-bold text-slate-800">Business (Fixed)</span>
+              <i data-lucide="store" class="w-4 h-4 text-slate-600"></i>
+              <span class="text-[11px] font-bold text-slate-700">Business (Fixed)</span>
             </button>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1">Display Alias / Store Name</label>
-          <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <label class="block text-xs font-bold text-slate-700 mb-1">Display Alias / Store Name</label>
+          <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
         <div id="businessAddressField" class="hidden">
-          <label class="block text-xs font-bold text-slate-800 mb-1">Store Street Address</label>
-          <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <label class="block text-xs font-bold text-slate-700 mb-1">Store Street Address</label>
+          <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
         <!-- Profile Bubble Color Picker -->
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">Profile Bubble Color</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Profile Bubble Color</label>
           <div class="grid grid-cols-5 gap-2">
             <button onclick="setBubbleColor('blue')" class="p-2.5 rounded-2xl bg-sky-500 border border-sky-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm" title="Blue Bubble">
               <span class="w-4 h-4 rounded-full bg-white/90"></span>
@@ -314,26 +280,24 @@
           </div>
         </div>
 
-        <!-- Location Privacy & Name Public Controls -->
-        <div class="pt-2 border-t border-slate-200/60 space-y-2">
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
-          <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
-            <span>Show My Name on Map</span>
-            <input type="checkbox" id="privacyMakeNamePublic" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
-          </label>
-          <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
-            <span>Ghost Mode (Invisible on map)</span>
-            <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
-          </label>
-          <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
-            <span>Fuzz Location (~500m jitter)</span>
-            <input type="checkbox" id="privacyFuzzLocation" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
-          </label>
+        <!-- Location Privacy Controls -->
+        <div class="pt-2 border-t border-slate-200/60">
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Location Privacy & Visibility</label>
+          <div class="space-y-2">
+            <label class="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
+              <span>Ghost Mode (Invisible on map)</span>
+              <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
+              <span>Fuzz Location (~500m jitter)</span>
+              <input type="checkbox" id="privacyFuzzLocation" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+            </label>
+          </div>
         </div>
 
         <!-- App Background Theme Presets -->
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
           <div class="grid grid-cols-5 gap-1.5">
             <button onclick="setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-pink-100 border border-pink-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
               <span class="w-3.5 h-3.5 rounded-full bg-pink-400"></span>
@@ -365,10 +329,10 @@
     </div>
   </div>
 
-  <!-- Outside Tap Backdrop Overlay for Chat Drawer (Z-35) -->
-  <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
+  <!-- Outside Tap Backdrop Overlay for Chat Drawer -->
+  <div id="chatBackdrop" onclick="closeChatDrawer()" class="hidden fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-xs transition-opacity"></div>
 
-  <!-- Top Beveled Drop-Down Chat Drawer (Z-40) -->
+  <!-- Top Beveled Drop-Down Chat Drawer -->
   <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[80vh]">
     <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
       <div class="flex items-center gap-3">
@@ -376,18 +340,18 @@
           <div class="bubble-glare"></div>
         </div>
         <div>
-          <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">WebRTC P2P Session</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Direct P2P Data Channel</p>
+          <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Proximity Session</h4>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Public Channel</p>
         </div>
       </div>
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
 
-    <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex items-start gap-2.5 flex-shrink-0">
+    <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/40 backdrop-blur-md border border-white/50 shadow-sm flex items-start gap-2.5 flex-shrink-0">
       <i data-lucide="pin" class="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5"></i>
       <div>
         <p id="mainTopicText" class="text-xs font-bold text-slate-900 leading-snug"></p>
-        <span id="topicExpiryBadge" class="text-[9px] font-bold text-sky-900 mt-0.5 block">Visible for 60m 00s</span>
+        <span id="topicExpiryBadge" class="text-[9px] font-bold text-sky-800 mt-0.5 block">Visible for 60m 00s</span>
       </div>
     </div>
 
@@ -396,15 +360,15 @@
 
     <!-- Chat Input Container -->
     <div class="pt-2.5 pb-1 flex-shrink-0">
-      <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/80 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
-        <textarea id="chatInput" rows="1" placeholder="Message connected peer..." class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
+      <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/70 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
+        <textarea id="chatInput" rows="1" placeholder="Broadcast to public mesh..." class="w-full bg-transparent text-slate-900 text-xs font-medium focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); send();}" style="min-height: 24px;"></textarea>
         
-        <div class="flex items-center justify-between pt-1 border-t border-slate-200/50">
+        <div class="flex items-center justify-between pt-1 border-t border-slate-200/40">
           <div class="flex items-center gap-1">
-            <button onclick="showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Attach file">
+            <button onclick="showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-500 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Attach file">
               <i data-lucide="plus" class="w-4 h-4"></i>
             </button>
-            <button onclick="showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Voice input">
+            <button onclick="showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-500 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors" title="Voice input">
               <i data-lucide="mic" class="w-4 h-4"></i>
             </button>
           </div>
@@ -423,35 +387,32 @@
   <div id="questionModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">Ask the LocaLs</h3>
-        <button onclick="closeQuestionModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <h3 class="text-lg font-black text-slate-900">Broadcast Public Bubble</h3>
+        <button onclick="closeQuestionModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
-        <textarea id="questionInput" rows="3" placeholder="Post a GPS map question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
+        <textarea id="questionInput" rows="3" placeholder="Post a public question or topic (visible to all)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
         <button onclick="postQuestion()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
-          Post Map Bubble
+          Broadcast Publicly
         </button>
       </div>
     </div>
   </div>
 
   <script>
+    // Public Global Mesh Prefix - any user loading the app anywhere joins this open discovery pool
+    const MESH_PREFIX = 'local-public-mesh-v1-';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v1';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v9';
 
     let peer = null;
-    let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
-    let activeDataConnections = {}; 
-    let globalActiveDirectory = {};
+    let myPeerId = null;
+    let activeConnections = {};
     let processedMsgIds = new Set();
     let nearbyPeers = {};
-    let showTestBots = true;
     
-    let broadcastChannel = null;
-
     let activeTopicState = { text: null, createdAt: null };
     let currentActiveChatRoomId = null;
     let chatRoomsSessions = {}; 
@@ -467,8 +428,7 @@
       theme: 'theme-sky',
       bubbleColor: 'blue',
       ghostMode: false,
-      fuzzLocation: false,
-      makeNamePublic: true
+      fuzzLocation: false
     };
 
     const BUBBLE_COLOR_MAP = {
@@ -487,10 +447,8 @@
       lucide.createIcons();
       initGPSLocation();
       initUserNode();
-      initPeerJSNetwork();
-      spawnDefaultSimulatedUsers();
+      initPublicMesh();
       checkChatExpiryLoop();
-      window.addEventListener('resize', recalculateNodePositions);
     });
 
     function loadPersistentData() {
@@ -503,11 +461,9 @@
           document.getElementById('businessAddressInput').value = userState.address || '';
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
-          document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
           selectAccountType(userState.type || 'personal', true);
           setAppTheme(userState.theme || 'theme-sky', true);
           applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
-          updateMyDisplayLabel();
         }
 
         const savedChats = localStorage.getItem(STORAGE_KEY_CHATS);
@@ -529,14 +485,14 @@
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
       } catch (e) {
-        console.warn("Failed to save persistent storage:", e);
+        console.warn("Failed to load persistent storage:", e);
       }
     }
 
     function showToast(message, icon = 'info') {
       const toastContainer = document.getElementById('toastContainer');
       const toast = document.createElement('div');
-      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-900 text-xs font-bold border border-white/60';
+      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-800 text-xs font-bold border border-white/50';
       toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-sky-600"></i> <span>${message}</span>`;
       toastContainer.appendChild(toast);
       lucide.createIcons();
@@ -557,15 +513,6 @@
 
     function initGPSLocation() {
       if (userState.type === 'personal' && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-          userState.lat = pos.coords.latitude;
-          userState.lng = pos.coords.longitude;
-          announcePresence();
-          showToast('GPS Location acquired!', 'navigation');
-        }, (err) => {
-          showToast('GPS unavailable. Using fallback coordinates.', 'alert-triangle');
-        }, { enableHighAccuracy: true, timeout: 10000 });
-
         navigator.geolocation.watchPosition((pos) => {
           userState.lat = pos.coords.latitude;
           userState.lng = pos.coords.longitude;
@@ -589,10 +536,8 @@
       return Math.round(R * c);
     }
 
-    function createBubbleRipple(sourceNodeId = 'userAvatarCircle') {
-      const circle = document.getElementById(sourceNodeId);
-      if (!circle) return;
-
+    function createBubbleRipple() {
+      const circle = document.getElementById('userAvatarCircle');
       const rect = circle.getBoundingClientRect();
       const rippleContainer = document.getElementById('tapRippleContainer');
       const ripple = document.createElement('div');
@@ -600,58 +545,35 @@
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
-      ripple.className = 'absolute w-14 h-14 rounded-full border border-sky-400/60 bg-sky-300/20 pointer-events-none animate-water-ripple';
+      ripple.className = 'absolute w-14 h-14 rounded-full border border-sky-400/50 bg-sky-300/15 pointer-events-none animate-water-ripple';
       ripple.style.left = `${centerX}px`;
       ripple.style.top = `${centerY}px`;
-      ripple.style.borderRadius = '50%';
 
       rippleContainer.appendChild(ripple);
       setTimeout(() => ripple.remove(), 10710);
-    }
-
-    function getEffectiveMyName() {
-      if (!userState.makeNamePublic) {
-        let hash = myPeerId.substring(myPeerId.length - 4).toUpperCase();
-        return `Traveler #${hash}`;
-      }
-      return userState.alias;
-    }
-
-    function updateMyDisplayLabel() {
-      const label = document.getElementById('userAvatarLabel');
-      if (label) {
-        label.innerText = `${getEffectiveMyName()} (You)`;
-      }
-    }
-
-    function triggerBubbleBounce(elementId) {
-      const circle = document.getElementById(elementId);
-      if (!circle) return;
-      circle.classList.remove('animate-bounce-press');
-      void circle.offsetWidth;
-      circle.classList.add('animate-bounce-press');
     }
 
     function initUserNode() {
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
       userDiv.id = 'userAvatarNode';
-      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer node-item';
+      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer';
       
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
-          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40 max-w-[220px] text-center" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
-            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
-            <span id="userTopBubbleText" class="truncate">...</span>
-            <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
+          <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600"></i>
+            <span id="userTopBubbleText">...</span>
+            <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-800 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md">60m</span>
           </div>
 
-          <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
+          <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none"></div>
+          <div id="holdRing" class="absolute -inset-2 rounded-full border-2 border-sky-400 opacity-0 transition-all pointer-events-none"></div>
 
-          <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="border-radius: 50%;">
+          <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle">
             <div class="bubble-glare"></div>
           </div>
-          <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${getEffectiveMyName()} (You)</span>
+          <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md">${userState.alias} (You)</span>
         </div>
       `;
       container.appendChild(userDiv);
@@ -659,17 +581,12 @@
       applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
 
       const circle = document.getElementById('userAvatarCircle');
-      circle.addEventListener('mousedown', () => { 
-        createBubbleRipple('userAvatarCircle'); 
-        triggerBubbleBounce('userAvatarCircle');
-        handlePressStart(); 
-      });
+      circle.addEventListener('mousedown', () => { createBubbleRipple(); handlePressStart(); });
       circle.addEventListener('mouseup', handlePressEnd);
       circle.addEventListener('mouseleave', handlePressCancel);
 
       circle.addEventListener('touchstart', (e) => {
-        createBubbleRipple('userAvatarCircle');
-        triggerBubbleBounce('userAvatarCircle');
+        createBubbleRipple();
         handlePressStart();
       });
       circle.addEventListener('touchend', handlePressEnd);
@@ -688,243 +605,95 @@
       applyBubbleColorToElement('userAvatarCircle', colorName);
       showToast(`Profile bubble color updated to ${colorName}!`, 'palette');
       savePersistentData();
+      announcePresence();
     }
 
     function handlePressStart() {
       isLongPress = false;
+      const ring = document.getElementById('holdRing');
+      ring.classList.remove('opacity-0', 'scale-90');
+      ring.classList.add('opacity-100', 'scale-110');
+
       touchTimer = setTimeout(() => {
         isLongPress = true;
+        ring.classList.add('opacity-0');
         openProfileModal();
       }, 500);
     }
 
     function handlePressEnd() {
       clearTimeout(touchTimer);
+      const ring = document.getElementById('holdRing');
+      ring.classList.add('opacity-0');
+      ring.classList.remove('scale-110');
+
+      if (!isLongPress) {
+        const circle = document.getElementById('userAvatarCircle');
+        circle.classList.remove('animate-jiggle');
+        void circle.offsetWidth;
+        circle.classList.add('animate-jiggle');
+      }
     }
 
     function handlePressCancel() {
       clearTimeout(touchTimer);
+      const ring = document.getElementById('holdRing');
+      ring.classList.add('opacity-0');
     }
 
-    /* PeerJS WebRTC & Mesh Network Integration */
-    function initPeerJSNetwork() {
-      try {
-        peer = new Peer();
-
-        peer.on('open', (id) => {
-          myPeerId = id;
-          document.getElementById('myPeerIdDisplay').value = myPeerId;
-          updatePeerServerStatus(true);
-          announcePresence();
-        });
-
-        peer.on('connection', (conn) => {
-          setupIncomingConnection(conn);
-        });
-
-        peer.on('error', (err) => {
-          console.warn("PeerJS connection error:", err);
-          updatePeerServerStatus(false);
-        });
-      } catch(e) {
-        console.warn("PeerJS initialization fallback:", e);
-        updatePeerServerStatus(false);
-      }
-
-      if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v9');
-        broadcastChannel.onmessage = (event) => {
-          handleIncomingNetworkPayload(event.data);
-        };
-      }
-
-      window.addEventListener('storage', (event) => {
-        if (event.key === STORAGE_BEACON_KEY && event.newValue) {
-          try {
-            const payload = JSON.parse(event.newValue);
-            handleIncomingNetworkPayload(payload);
-          } catch(e) {}
-        }
+    function initPublicMesh() {
+      // Generate a random ID starting with the public MESH_PREFIX so any browser instance instantly joins the open discovery pool
+      const uniqueSuffix = Math.random().toString(36).substring(2, 8);
+      myPeerId = MESH_PREFIX + uniqueSuffix;
+      
+      peer = new Peer(myPeerId, {
+        host: '0.peerjs.com',
+        port: 443,
+        path: '/',
+        secure: true,
+        debug: 1
       });
 
+      peer.on('open', (id) => {
+        myPeerId = id;
+        document.getElementById('myPeerIdDisplay').value = id;
+        updateMeshUI();
+        startPublicDiscoveryLoop();
+      });
+
+      peer.on('connection', (conn) => {
+        bindConnectionEvents(conn);
+      });
+
+      peer.on('error', (err) => {
+        console.warn("PeerJS connection warning:", err);
+      });
+    }
+
+    function startPublicDiscoveryLoop() {
+      // Continuously query the public PeerJS broker directory every 2 seconds to automatically connect to all active peers
       setInterval(() => {
+        if (!peer || peer.destroyed) return;
+        
+        peer.listAllPeers((peers) => {
+          if (!peers || !Array.isArray(peers)) return;
+          peers.forEach(peerId => {
+            if (peerId.startsWith(MESH_PREFIX) && peerId !== myPeerId && !activeConnections[peerId]) {
+              tryConnectPeer(peerId);
+            }
+          });
+        });
+        
         announcePresence();
-      }, 3000);
+      }, 2000);
     }
 
-    function updatePeerServerStatus(connected) {
-      const textElem = document.getElementById('peerServerStatusText');
-      const dot = document.getElementById('peerServerDot');
-      const netDot = document.getElementById('p2pNetDot');
-
-      if (connected) {
-        textElem.innerText = 'Connected to PeerServer WebRTC Mesh';
-        dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-ping';
-        netDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse';
-      } else {
-        textElem.innerText = 'Mesh Fallback (Local Network & Broadcast)';
-        dot.className = 'w-2 h-2 rounded-full bg-amber-500';
-        netDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
-      }
-    }
-
-    function connectToPeerPrompt() {
-      const targetId = prompt("Enter Target Peer ID to connect via WebRTC:");
-      if (!targetId || !targetId.trim()) return;
-      connectToPeer(targetId.trim());
-    }
-
-    function connectToPeer(targetPeerId) {
-      if (!peer || targetPeerId === myPeerId) return;
-      showToast(`Connecting to ${targetPeerId}...`, 'wifi');
-
+    function tryConnectPeer(peerId) {
+      if (activeConnections[peerId] || peerId === myPeerId) return;
       try {
-        const conn = peer.connect(targetPeerId);
-        setupIncomingConnection(conn);
-      } catch(e) {
-        showToast('Failed to establish WebRTC connection', 'alert-circle');
-      }
-    }
-
-    function setupIncomingConnection(conn) {
-      conn.on('open', () => {
-        activeDataConnections[conn.peer] = conn;
-        showToast(`Connected via WebRTC with ${conn.peer}!`, 'check-circle');
-        updateMeshUI();
-      });
-
-      conn.on('data', (data) => {
-        handleIncomingNetworkPayload(data);
-      });
-
-      conn.on('close', () => {
-        delete activeDataConnections[conn.peer];
-        updateMeshUI();
-      });
-    }
-
-    function handleIncomingNetworkPayload(data) {
-      if (!data || data.peerId === myPeerId) return;
-
-      if (data.id && processedMsgIds.has(data.id)) return;
-      if (data.id) processedMsgIds.add(data.id);
-
-      activeConnections[data.peerId] = Date.now();
-      
-      const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
-      
-      let displayName = data.sender;
-      let isPublic = data.makeNamePublic !== false;
-      if (!isPublic) {
-        let hash = (data.peerId || 'user').substring((data.peerId || 'user').length - 4).toUpperCase();
-        displayName = `Traveler #${hash}`;
-      }
-
-      globalActiveDirectory[data.peerId] = {
-        name: displayName,
-        peerId: data.peerId,
-        lat: data.lat,
-        lng: data.lng,
-        distance: distance,
-        bubbleColor: data.bubbleColor || 'violet',
-        lastSeen: Date.now()
-      };
-
-      updateMeshUI();
-      renderGlobalUsersDirectory();
-
-      if (userState.radius > 0 && distance > userState.radius) return;
-
-      let distanceFormatted = distance >= 1000 
-        ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
-        : Math.max(distance, 10) + 'm';
-
-      if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION' || data.type === 'BROADCAST_PING') {
-        updatePeerNodeOnMap(displayName, distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor, false);
-      }
-
-      if (data.type === 'NEW_QUESTION') {
-        if (Date.now() - data.createdAt < ONE_HOUR_MS) {
-          updatePeerNodeOnMap(displayName, distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId, data.bubbleColor, false);
-        }
-      } else if (data.type === 'CHAT_MSG') {
-        const targetRoomId = data.roomId;
-        if (!targetRoomId) return;
-
-        if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
-        chatRoomsSessions[targetRoomId].push({ sender: displayName, text: data.text, isMe: false });
-        savePersistentData();
-
-        registerActiveChat(targetRoomId, displayName);
-
-        if (currentActiveChatRoomId === targetRoomId) {
-          appendMessage(displayName, data.text, false);
-        } else {
-          showToast(`New P2P message from ${displayName}!`, 'message-square');
-        }
-      }
-    }
-
-    function spawnDefaultSimulatedUsers() {
-      const sampleUsers = [
-        { name: 'Bot_Buddy', peerId: 'sim-peer-bot-buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'yellow', isBot: true },
-        { name: 'Maya (Artist)', peerId: 'sim-peer-maya', offsetLat: -0.003, offsetLng: 0.001, question: 'Hosting an open art studio session downtown!', color: 'emerald', isBot: true },
-        { name: 'Alex_Dev', peerId: 'sim-peer-alex', offsetLat: 0.001, offsetLng: -0.003, question: 'Where is the best local coffee shop for working?', color: 'pink', isBot: true },
-        { name: 'Sora_Waves', peerId: 'sim-peer-sora', offsetLat: -0.002, offsetLng: -0.002, question: 'Checking maritime safety radar for afternoon boating!', color: 'violet', isBot: true }
-      ];
-
-      sampleUsers.forEach((u, i) => {
-        const lat = userState.lat + u.offsetLat;
-        const lng = userState.lng + u.offsetLng;
-        const dist = calculateHaversineDistance(userState.lat, userState.lng, lat, lng);
-        const distFormatted = (dist / METERS_PER_MILE).toFixed(1) + 'mi';
-
-        globalActiveDirectory[u.peerId] = {
-          name: u.name,
-          peerId: u.peerId,
-          lat: lat,
-          lng: lng,
-          distance: dist,
-          bubbleColor: u.color,
-          lastSeen: Date.now()
-        };
-
-        updatePeerNodeOnMap(u.name, dist, distFormatted, lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.isBot);
-      });
-      renderGlobalUsersDirectory();
-    }
-
-    function spawnTestBot() {
-      const botId = 'sim-peer-bot-buddy-' + Math.floor(Math.random() * 1000);
-      const botName = 'Bot_Buddy';
-      const botLat = userState.lat + 0.002;
-      const botLng = userState.lng + 0.002;
-      const botQuestion = 'Anyone want to collaborate on a new P2P app?';
-      const botCreatedAt = Date.now();
-
-      globalActiveDirectory[botId] = {
-        name: botName,
-        peerId: botId,
-        lat: botLat,
-        lng: botLng,
-        distance: 250,
-        bubbleColor: 'yellow',
-        lastSeen: Date.now()
-      };
-
-      updatePeerNodeOnMap(botName, 250, '250m', botLat, botLng, botQuestion, botCreatedAt, botId, 'yellow', true);
-      renderGlobalUsersDirectory();
-      showToast('Test Bot (Bot_Buddy) spawned on map!', 'bot');
-      toggleP2PModal();
-    }
-
-    function toggleTestBotsVisibility(show) {
-      showTestBots = show;
-      const botNodes = document.querySelectorAll('.bot-node-elem');
-      botNodes.forEach(node => {
-        node.style.display = show ? 'block' : 'none';
-      });
-      showToast(show ? 'Test bots displayed' : 'Test bots hidden', 'bot');
+        const conn = peer.connect(peerId, { reliable: true });
+        if (conn) bindConnectionEvents(conn);
+      } catch (e) {}
     }
 
     function copyMyPeerId() {
@@ -932,14 +701,14 @@
       input.select();
       input.setSelectionRange(0, 99999);
       navigator.clipboard.writeText(input.value);
-      showToast('Peer ID copied to clipboard!', 'copy');
+      showToast('Public Peer ID copied!', 'copy');
     }
 
     function announcePresence() {
       if (userState.ghostMode) return;
 
       const coords = getBroadcastCoordinates();
-      const payload = {
+      broadcastData({
         id: 'ping-' + Math.random().toString(36).substring(2, 9),
         type: 'PEER_PRESENCE',
         sender: userState.alias,
@@ -948,26 +717,114 @@
         lat: coords.lat,
         lng: coords.lng,
         question: activeTopicState.text,
-        createdAt: activeTopicState.createdAt,
-        makeNamePublic: userState.makeNamePublic
-      };
-
-      broadcastData(payload);
+        createdAt: activeTopicState.createdAt
+      });
     }
 
-    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor = 'violet', isBot = false) {
+    function bindConnectionEvents(conn) {
+      conn.on('open', () => {
+        activeConnections[conn.peer] = conn;
+        updateMeshUI();
+        announcePresence();
+
+        // Request state synchronization from newly met peer
+        conn.send({ type: 'REQUEST_STATE', senderId: myPeerId });
+
+        if (activeTopicState.text && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
+          const coords = getBroadcastCoordinates();
+          conn.send({ 
+            id: 'msg-' + Math.random().toString(36).substring(2, 9),
+            type: 'NEW_QUESTION', 
+            text: activeTopicState.text, 
+            createdAt: activeTopicState.createdAt,
+            sender: userState.alias,
+            bubbleColor: userState.bubbleColor,
+            peerId: myPeerId,
+            lat: coords.lat, 
+            lng: coords.lng 
+          });
+        }
+      });
+
+      conn.on('data', (data) => {
+        if (!data) return;
+
+        if (data.type === 'REQUEST_STATE') {
+          if (activeTopicState.text) {
+            const coords = getBroadcastCoordinates();
+            conn.send({
+              id: 'sync-' + Math.random().toString(36).substring(2, 9),
+              type: 'NEW_QUESTION',
+              text: activeTopicState.text,
+              createdAt: activeTopicState.createdAt,
+              sender: userState.alias,
+              bubbleColor: userState.bubbleColor,
+              peerId: myPeerId,
+              lat: coords.lat,
+              lng: coords.lng
+            });
+          }
+          return;
+        }
+
+        if (data.id && processedMsgIds.has(data.id)) return;
+        if (data.id) processedMsgIds.add(data.id);
+
+        // Relay to other connected peers in the mesh (flooding gossip protocol)
+        broadcastData(data, conn.peer);
+
+        const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
+        if (userState.radius > 0 && distance > userState.radius) return;
+
+        let distanceFormatted = distance >= 1000 
+          ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
+          : distance + 'm';
+
+        if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
+          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor);
+          if (data.peerId && data.peerId !== myPeerId && !activeConnections[data.peerId]) {
+            tryConnectPeer(data.peerId);
+          }
+        }
+
+        if (data.type === 'NEW_QUESTION') {
+          if (Date.now() - data.createdAt < ONE_HOUR_MS) {
+            updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId, data.bubbleColor);
+            showToast(`Public Bubble from ${data.sender || 'Peer'}: "${data.text.substring(0, 20)}..."`, 'pin');
+          }
+        } else if (data.type === 'CHAT_MSG') {
+          const targetRoomId = data.roomId;
+          if (!targetRoomId) return;
+
+          if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
+          chatRoomsSessions[targetRoomId].push({ sender: data.sender, text: data.text, isMe: false });
+          savePersistentData();
+
+          registerActiveChat(targetRoomId, data.roomName || data.sender);
+
+          if (currentActiveChatRoomId === targetRoomId) {
+            appendMessage(data.sender, data.text, false);
+          } else {
+            showToast(`New message in "${data.roomName || data.sender}"!`, 'message-square');
+          }
+        }
+      });
+
+      conn.on('close', () => {
+        delete activeConnections[conn.peer];
+        updateMeshUI();
+      });
+    }
+
+    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor = 'violet') {
       const container = document.getElementById('nodesContainer');
       let peerKey = 'node-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
       let angle = (alias.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360) * (Math.PI / 180);
-      let screenRadius = Math.min(Math.max(distance * 0.005, 90), 175);
-      let left = 50 + (Math.cos(angle) * (screenRadius / window.innerWidth) * 100);
-      let top = 50 + (Math.sin(angle) * (screenRadius / window.innerHeight) * 100);
-
-      const offset = checkBubbleCollisions(left, top);
-      left += offset.x;
-      top += offset.y;
+      let screenRadius = Math.min(Math.max(distance * 0.005, 80), 160);
+      let leftPx = `calc(50% + ${Math.cos(angle) * screenRadius}px)`;
+      let topPx = `calc(50% + ${Math.sin(angle) * screenRadius}px)`;
 
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
       let roomId = 'room-peer-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
@@ -975,123 +832,48 @@
       if (!nodeElem) {
         nodeElem = document.createElement('div');
         nodeElem.id = peerKey;
-        nodeElem.className = `absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item ${isBot ? 'bot-node-elem' : ''}`;
+        nodeElem.className = 'absolute z-10 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500';
         container.appendChild(nodeElem);
       }
 
-      nodeElem.style.left = `${left}%`;
-      nodeElem.style.top = `${top}%`;
-      if (isBot && !showTestBots) {
-        nodeElem.style.display = 'none';
-      }
+      nodeElem.style.left = leftPx;
+      nodeElem.style.top = topPx;
       
       const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
-          <div class="absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none" style="border-radius: 50%;"></div>
+          <div class="absolute -inset-2 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none"></div>
 
           ${hasValidQuestion ? `
-            <div class="mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-40 cursor-pointer max-w-[220px] text-center" onclick="connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question}', '${peerId}')">
-              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0"></i>
-              <span class="truncate">${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
+            <div class="mb-2 px-3 py-1 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-md border border-purple-200 flex items-center gap-1.5 animate-float" onclick="openChatDrawer('${roomId}', '${alias}', '${question}', '${alias}')">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600"></i>
+              <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
             </div>
           ` : ''}
-          <div onclick="createBubbleRipple('${peerKey}-circle'); triggerBubbleBounce('${peerKey}-circle'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${peerId}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="background: ${customBg}; border-radius: 50%;">
+          <div onclick="openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle" style="background: ${customBg};">
             <div class="bubble-glare"></div>
           </div>
-          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${alias} (${distanceFormatted})</span>
+          <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distanceFormatted})</span>
         </div>
       `;
       lucide.createIcons();
 
-      nearbyPeers[peerKey] = { elem: nodeElem, createdAt: createdAt, posX: left, posY: top };
+      nearbyPeers[peerKey] = { elem: nodeElem, createdAt: createdAt };
     }
 
-    const occupiedPositions = [];
-    function checkBubbleCollisions(x, y) {
-      let offsetX = 0;
-      let offsetY = 0;
-      for (let pos of occupiedPositions) {
-        let dx = Math.abs(pos.x - x);
-        let dy = Math.abs(pos.y - y);
-        if (dx < 6 && dy < 6) {
-          offsetY += (Math.random() > 0.5 ? 4 : -4);
-          offsetX += (Math.random() > 0.5 ? 3 : -3);
-        }
-      }
-      occupiedPositions.push({ x: x + offsetX, y: y + offsetY });
-      return { x: offsetX, y: offsetY };
-    }
-
-    function recalculateNodePositions() {
-      occupiedPositions.length = 0;
-    }
-
-    function broadcastData(payload) {
+    function broadcastData(payload, excludePeerId = null) {
       if (userState.ghostMode) return;
 
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat;
       payload.lng = payload.lng || coords.lng;
-      payload.sender = payload.sender || userState.alias;
-      payload.peerId = payload.peerId || myPeerId;
-      payload.bubbleColor = payload.bubbleColor || userState.bubbleColor;
-      payload.makeNamePublic = userState.makeNamePublic;
 
-      Object.keys(activeDataConnections).forEach(pId => {
-        try {
-          activeDataConnections[pId].send(payload);
-        } catch(e) {}
-      });
-
-      if (broadcastChannel) {
-        try { broadcastChannel.postMessage(payload); } catch(e) {}
-      }
-
-      try {
-        localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload));
-      } catch(e) {}
-    }
-
-    function renderGlobalUsersDirectory() {
-      const container = document.getElementById('globalUsersDirectory');
-      const activeCountElem = document.getElementById('modalActiveCount');
-      
-      const peerIds = Object.keys(globalActiveDirectory);
-      const totalActive = peerIds.length + 1;
-      activeCountElem.innerText = totalActive;
-
-      if (peerIds.length === 0) {
-        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">No other peers discovered yet. Share your Peer ID!</div>`;
-        return;
-      }
-
-      container.innerHTML = '';
-      peerIds.forEach(peerId => {
-        const peer = globalActiveDirectory[peerId];
-        const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
-        const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
-        const bubbleBg = BUBBLE_COLOR_MAP[peer.bubbleColor] || BUBBLE_COLOR_MAP.violet;
-
-        const card = document.createElement('div');
-        card.className = 'p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between';
-        card.innerHTML = `
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node" style="background: ${bubbleBg}; border-radius: 50%;">
-              <div class="bubble-glare"></div>
-              <span>${peer.name.charAt(0).toUpperCase()}</span>
-            </div>
-            <div>
-              <h4 class="font-black text-slate-900 text-xs">${peer.name}</h4>
-              <p class="text-[10px] text-sky-900 font-bold">Distance: ${distStr}</p>
-            </div>
-          </div>
-          <button onclick="toggleP2PModal(); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${peer.name}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-95 transition-all">
-            P2P Connect
-          </button>
-        `;
-        container.appendChild(card);
+      Object.keys(activeConnections).forEach((peerId) => {
+        if (peerId !== excludePeerId) {
+          const conn = activeConnections[peerId];
+          if (conn && conn.open) conn.send(payload);
+        }
       });
     }
 
@@ -1128,20 +910,20 @@
         personalBtn.className = 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all';
         businessBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
         addressField.classList.add('hidden');
-        document.getElementById('accountTypeDisplay').innerText = "Personal (GPS)";
+        document.getElementById('accountTypeDisplay').innerText = "Public Mesh";
         initGPSLocation();
       } else {
         businessBtn.className = 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all';
         personalBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
         addressField.classList.remove('hidden');
-        document.getElementById('accountTypeDisplay').innerText = "Business (Fixed)";
+        document.getElementById('accountTypeDisplay').innerText = "Public Business";
       }
       if (!skipSave) savePersistentData();
     }
 
     function setAppTheme(themeClass, skipSave = false) {
       userState.theme = themeClass;
-      document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative`;
+      document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative`;
       if (!skipSave) {
         savePersistentData();
         showToast(`App theme preset updated!`, 'palette');
@@ -1153,17 +935,14 @@
       const address = document.getElementById('businessAddressInput').value.trim();
       const ghostMode = document.getElementById('privacyGhostMode').checked;
       const fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
-      const makeNamePublic = document.getElementById('privacyMakeNamePublic').checked;
 
       if (alias) {
         userState.alias = alias;
+        document.getElementById('userAvatarLabel').innerText = `${alias} (You)`;
       }
 
       userState.ghostMode = ghostMode;
       userState.fuzzLocation = fuzzLocation;
-      userState.makeNamePublic = makeNamePublic;
-
-      updateMyDisplayLabel();
 
       if (userState.type === 'business') {
         userState.address = address;
@@ -1178,8 +957,12 @@
     }
 
     function updateMeshUI() {
-      const activeCount = Object.keys(activeDataConnections).length + 1;
-      document.getElementById('activeUserCount').innerText = `${activeCount} P2P Linked`;
+      const activeCount = Object.keys(activeConnections).length + 1;
+      document.getElementById('activeUserCount').innerText = `${activeCount} Active`;
+      const dot = document.getElementById('p2pStatusDot');
+      dot.className = activeCount > 1 
+        ? 'absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping' 
+        : 'absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400';
     }
 
     function updateRadius(valMeters) {
@@ -1218,14 +1001,13 @@
         peerId: myPeerId,
         lat: coords.lat,
         lng: coords.lng,
-        createdAt: activeTopicState.createdAt,
-        makeNamePublic: userState.makeNamePublic
+        createdAt: activeTopicState.createdAt 
       });
 
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
-      showToast('Question broadcasted via WebRTC mesh!', 'pin');
-      openChatDrawer('room-you', getEffectiveMyName(), text, 'you');
+      showToast('Public bubble posted across network!', 'pin');
+      openChatDrawer('room-you', userState.alias, text, 'you');
     }
 
     function autoResizeTextArea(el) {
@@ -1252,17 +1034,6 @@
 
       const activeRoomName = document.getElementById('chatTargetName').innerText;
 
-      if (activeRoomName.includes('Bot_Buddy') || currentActiveChatRoomId.includes('bot-buddy')) {
-        setTimeout(() => {
-          const botReply = `Got your message ("${text}")! That's super interesting. Let's keep exploring the map.`;
-          if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
-          chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'Bot_Buddy', text: botReply, isMe: false });
-          savePersistentData();
-          appendMessage('Bot_Buddy', botReply, false);
-          showToast('New message from Bot_Buddy!', 'bot');
-        }, 1200);
-      }
-
       broadcastData({ 
         id: msgId,
         type: 'CHAT_MSG', 
@@ -1282,8 +1053,8 @@
       const div = document.createElement('div');
       div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
       div.innerHTML = `
-        <span class="text-[10px] text-slate-900 font-bold px-1 drop-shadow-sm">${sender}</span>
-        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-semibold ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/60'}">
+        <span class="text-[10px] text-slate-800 font-bold px-1 drop-shadow-sm">${sender}</span>
+        <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-medium ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/50 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/40'}">
           ${text}
         </div>
       `;
@@ -1316,7 +1087,7 @@
         item.className = `relative cursor-pointer transition-transform hover:scale-110 flex items-center justify-center ${isSelected ? 'ring-2 ring-sky-500 rounded-full' : ''}`;
         item.title = `Chat: ${room.name}`;
         item.innerHTML = `
-          <div class="w-8 h-8 rounded-full text-white font-bold text-[10px] flex items-center justify-center shadow-md bubble-node" style="background: ${bubbleStyle}; border-radius: 50%;">
+          <div class="w-8 h-8 rounded-full text-white font-bold text-[10px] flex items-center justify-center shadow-md bubble-node" style="background: ${bubbleStyle};">
             <div class="bubble-glare"></div>
             <span>${room.name.charAt(0).toUpperCase()}</span>
           </div>
@@ -1340,7 +1111,6 @@
       
       avatarElem.className = `w-9 h-9 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node`;
       avatarElem.style.background = bubbleStyle;
-      avatarElem.style.borderRadius = '50%';
       avatarElem.innerHTML = `<div class="bubble-glare"></div><span>${roomName.charAt(0).toUpperCase()}</span>`;
 
       if (topic || (isSelf && activeTopicState.text)) {
