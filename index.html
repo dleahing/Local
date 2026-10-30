@@ -287,9 +287,22 @@
           <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
-        <div id="businessAddressField" class="hidden">
-          <label class="block text-xs font-bold text-slate-800 mb-1">Store Street Address</label>
-          <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+        <div id="businessFields" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">Business Category & Icon</label>
+            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+              <option value="store">General Retail Store</option>
+              <option value="coffee">Coffee & Bakery</option>
+              <option value="utensils">Restaurant & Dining</option>
+              <option value="pill">Pharmacy & Health</option>
+              <option value="home">Real Estate & Housing</option>
+              <option value="wrench">Dumpster & Services</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">Store Street Address (Fixed)</label>
+            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          </div>
         </div>
 
         <!-- Profile Bubble Color Picker -->
@@ -444,9 +457,9 @@
   <script>
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v1';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v10';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v2';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v2';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v11';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -467,6 +480,7 @@
     let userState = {
       alias: 'Traveler',
       type: 'personal',
+      category: 'store',
       address: '',
       radius: 80467,
       lat: 27.2730,
@@ -479,11 +493,11 @@
     };
 
     const BUBBLE_COLOR_MAP = {
-      blue: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(56, 189, 248, 0.5) 70%, rgba(2, 132, 199, 0.7) 100%)',
-      yellow: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(250, 204, 21, 0.6) 70%, rgba(202, 138, 4, 0.8) 100%)',
-      pink: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(244, 114, 182, 0.5) 70%, rgba(219, 39, 119, 0.7) 100%)',
-      emerald: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(52, 211, 153, 0.5) 70%, rgba(5, 150, 105, 0.7) 100%)',
-      violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(192, 132, 252, 0.5) 70%, rgba(126, 34, 206, 0.7) 100%)'
+      blue: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(56, 189, 248, 0.65) 50%, rgba(2, 132, 199, 0.9) 100%)',
+      yellow: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(250, 204, 21, 0.7) 50%, rgba(202, 138, 4, 0.95) 100%)',
+      pink: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(244, 114, 182, 0.65) 50%, rgba(219, 39, 119, 0.9) 100%)',
+      emerald: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(52, 211, 153, 0.65) 50%, rgba(5, 150, 105, 0.9) 100%)',
+      violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(192, 132, 252, 0.65) 50%, rgba(126, 34, 206, 0.9) 100%)'
     };
 
     let touchTimer = null;
@@ -523,6 +537,7 @@
           userState = { ...userState, ...parsed };
           document.getElementById('avatarNameInput').value = userState.alias;
           document.getElementById('businessAddressInput').value = userState.address || '';
+          document.getElementById('businessCategorySelect').value = userState.category || 'store';
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
           document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
@@ -562,6 +577,9 @@
     }
 
     function getBroadcastCoordinates() {
+      if (userState.type === 'business') {
+        return { lat: userState.lat, lng: userState.lng };
+      }
       if (!userState.lat || !userState.lng) return { lat: 27.2730, lng: -80.3582 };
       if (!userState.fuzzLocation) return { lat: userState.lat, lng: userState.lng };
 
@@ -629,7 +647,7 @@
     }
 
     function getEffectiveMyName() {
-      if (!userState.makeNamePublic) {
+      if (!userState.makeNamePublic && userState.type === 'personal') {
         let hash = myPeerId.substring(myPeerId.length - 4).toUpperCase();
         return `Traveler #${hash}`;
       }
@@ -639,7 +657,8 @@
     function updateMyDisplayLabel() {
       const label = document.getElementById('userAvatarLabel');
       if (label) {
-        label.innerText = `${getEffectiveMyName()} (You)`;
+        let suffix = userState.type === 'business' ? ' (Store)' : ' (You)';
+        label.innerText = `${getEffectiveMyName()}${suffix}`;
       }
     }
 
@@ -657,6 +676,9 @@
       userDiv.id = 'userAvatarNode';
       userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer node-item';
       
+      const iconName = userState.type === 'business' ? (userState.category || 'store') : 'navigation';
+      let suffix = userState.type === 'business' ? ' (Store)' : ' (You)';
+
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
           <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-40 max-w-[220px] text-center" onclick="openChatDrawer('room-you', '${userState.alias}', activeTopicState.text, 'you')">
@@ -669,8 +691,9 @@
 
           <div id="userAvatarCircle" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="border-radius: 50%;">
             <div class="bubble-glare"></div>
+            <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
           </div>
-          <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${getEffectiveMyName()} (You)</span>
+          <span id="userAvatarLabel" class="mt-1.5 px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${getEffectiveMyName()}${suffix}</span>
         </div>
       `;
       container.appendChild(userDiv);
@@ -693,6 +716,7 @@
       });
       circle.addEventListener('touchend', handlePressEnd);
       circle.addEventListener('touchcancel', handlePressCancel);
+      lucide.createIcons();
     }
 
     function applyBubbleColorToElement(elementId, colorName) {
@@ -749,7 +773,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v10');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v11');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -832,7 +856,7 @@
       
       let displayName = data.sender;
       let isPublic = data.makeNamePublic !== false;
-      if (!isPublic) {
+      if (!isPublic && data.accountType !== 'business') {
         let hash = (data.peerId || 'user').substring((data.peerId || 'user').length - 4).toUpperCase();
         displayName = `Traveler #${hash}`;
       }
@@ -844,25 +868,27 @@
         lng: data.lng,
         distance: distance,
         bubbleColor: data.bubbleColor || 'violet',
+        accountType: data.accountType || 'personal',
+        category: data.category || 'store',
         lastSeen: Date.now()
       };
 
       updateMeshUI();
       renderGlobalUsersDirectory();
 
-      if (userState.radius > 0 && distance > userState.radius) return;
+      if (userState.radius > 0 && distance > userState.radius && data.accountType !== 'business') return;
 
       let distanceFormatted = distance >= 1000 
         ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
         : Math.max(distance, 10) + 'm';
 
       if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION' || data.type === 'BROADCAST_PING') {
-        updatePeerNodeOnMap(displayName, distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor, false);
+        updatePeerNodeOnMap(displayName, distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor, data.accountType, data.category, false);
       }
 
       if (data.type === 'NEW_QUESTION') {
         if (Date.now() - data.createdAt < ONE_HOUR_MS) {
-          updatePeerNodeOnMap(displayName, distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId, data.bubbleColor, false);
+          updatePeerNodeOnMap(displayName, distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId, data.bubbleColor, data.accountType, data.category, false);
         }
       } else if (data.type === 'CHAT_MSG') {
         const targetRoomId = data.roomId;
@@ -886,10 +912,10 @@
 
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
-        { name: 'Bot_Buddy', peerId: 'sim-peer-bot-buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'yellow', isBot: true },
-        { name: 'Maya (Artist)', peerId: 'sim-peer-maya', offsetLat: -0.003, offsetLng: 0.001, question: 'Hosting an open art studio session downtown!', color: 'emerald', isBot: true },
-        { name: 'Alex_Dev', peerId: 'sim-peer-alex', offsetLat: 0.001, offsetLng: -0.003, question: 'Where is the best local coffee shop for working?', color: 'pink', isBot: true },
-        { name: 'Sora_Waves', peerId: 'sim-peer-sora', offsetLat: -0.002, offsetLng: -0.002, question: 'Checking maritime safety radar for afternoon boating!', color: 'violet', isBot: true }
+        { name: 'Local Brews Café', peerId: 'sim-peer-business-1', offsetLat: 0.0018, offsetLng: 0.0015, question: 'Fresh artisan espresso & pastries open until 6 PM!', color: 'yellow', accountType: 'business', category: 'coffee', isBot: true },
+        { name: 'Bot_Buddy', peerId: 'sim-peer-bot-buddy', offsetLat: 0.002, offsetLng: 0.002, question: 'Anyone want to collaborate on a new P2P app?', color: 'violet', accountType: 'personal', category: 'store', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', offsetLat: -0.0025, offsetLng: 0.0022, question: 'Licensed compounding pharmacy & medical supplies open!', color: 'emerald', accountType: 'business', category: 'pill', isBot: true },
+        { name: 'Alex_Dev', peerId: 'sim-peer-alex', offsetLat: 0.001, offsetLng: -0.003, question: 'Where is the best local coffee shop for working?', color: 'pink', accountType: 'personal', category: 'store', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -905,36 +931,14 @@
           lng: lng,
           distance: dist,
           bubbleColor: u.color,
+          accountType: u.accountType,
+          category: u.category,
           lastSeen: Date.now()
         };
 
-        updatePeerNodeOnMap(u.name, dist, distFormatted, lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.isBot);
+        updatePeerNodeOnMap(u.name, dist, distFormatted, lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, u.isBot);
       });
       renderGlobalUsersDirectory();
-    }
-
-    function spawnTestBot() {
-      const botId = 'sim-peer-bot-buddy-' + Math.floor(Math.random() * 1000);
-      const botName = 'Bot_Buddy';
-      const botLat = userState.lat + 0.002;
-      const botLng = userState.lng + 0.002;
-      const botQuestion = 'Anyone want to collaborate on a new P2P app?';
-      const botCreatedAt = Date.now();
-
-      globalActiveDirectory[botId] = {
-        name: botName,
-        peerId: botId,
-        lat: botLat,
-        lng: botLng,
-        distance: 250,
-        bubbleColor: 'yellow',
-        lastSeen: Date.now()
-      };
-
-      updatePeerNodeOnMap(botName, 250, '250m', botLat, botLng, botQuestion, botCreatedAt, botId, 'yellow', true);
-      renderGlobalUsersDirectory();
-      showToast('Test Bot (Bot_Buddy) spawned on map!', 'bot');
-      toggleP2PModal();
     }
 
     function toggleTestBotsVisibility(show) {
@@ -943,7 +947,7 @@
       botNodes.forEach(node => {
         node.style.display = show ? 'block' : 'none';
       });
-      showToast(show ? 'Test bots displayed' : 'Test bots hidden', 'bot');
+      showToast(show ? 'Test bots and businesses displayed' : 'Test bots hidden', 'bot');
     }
 
     function copyMyPeerId() {
@@ -955,7 +959,7 @@
     }
 
     function announcePresence() {
-      if (userState.ghostMode) return;
+      if (userState.ghostMode && userState.type !== 'business') return;
 
       const coords = getBroadcastCoordinates();
       const payload = {
@@ -966,6 +970,8 @@
         peerId: myPeerId,
         lat: coords.lat,
         lng: coords.lng,
+        accountType: userState.type,
+        category: userState.category,
         question: activeTopicState.text,
         createdAt: activeTopicState.createdAt,
         makeNamePublic: userState.makeNamePublic
@@ -974,7 +980,7 @@
       broadcastData(payload);
     }
 
-    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor = 'violet', isBot = false) {
+    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor = 'violet', accountType = 'personal', category = 'store', isBot = false) {
       const container = document.getElementById('nodesContainer');
       let peerKey = 'node-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
@@ -983,6 +989,11 @@
       let screenRadius = Math.min(Math.max(distance * 0.005, 90), 175);
       let left = 50 + (Math.cos(angle) * (screenRadius / window.innerWidth) * 100);
       let top = 50 + (Math.sin(angle) * (screenRadius / window.innerHeight) * 100);
+
+      if (accountType === 'business') {
+        left = 50 + ((peerId.charCodeAt(0) % 5) - 2) * 12;
+        top = 50 + ((peerId.charCodeAt(1) % 5) - 2) * 10;
+      }
 
       const offset = checkBubbleCollisions(left, top);
       left += offset.x;
@@ -1005,6 +1016,7 @@
       }
       
       const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
+      const iconName = accountType === 'business' ? category : 'user';
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
@@ -1018,6 +1030,7 @@
           ` : ''}
           <div onclick="createBubbleRipple('${peerKey}-circle'); triggerBubbleBounce('${peerKey}-circle'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${peerId}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle" style="background: ${customBg}; border-radius: 50%;">
             <div class="bubble-glare"></div>
+            <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
           </div>
           <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap">${alias} (${distanceFormatted})</span>
         </div>
@@ -1048,7 +1061,7 @@
     }
 
     function broadcastData(payload) {
-      if (userState.ghostMode) return;
+      if (userState.ghostMode && userState.type !== 'business') return;
 
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat;
@@ -1056,6 +1069,8 @@
       payload.sender = payload.sender || userState.alias;
       payload.peerId = payload.peerId || myPeerId;
       payload.bubbleColor = payload.bubbleColor || userState.bubbleColor;
+      payload.accountType = userState.type;
+      payload.category = userState.category;
       payload.makeNamePublic = userState.makeNamePublic;
 
       Object.keys(activeDataConnections).forEach(pId => {
@@ -1092,6 +1107,7 @@
         const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const bubbleBg = BUBBLE_COLOR_MAP[peer.bubbleColor] || BUBBLE_COLOR_MAP.violet;
+        const iconName = peer.accountType === 'business' ? (peer.category || 'store') : 'user';
 
         const card = document.createElement('div');
         card.className = 'p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between';
@@ -1099,10 +1115,10 @@
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node" style="background: ${bubbleBg}; border-radius: 50%;">
               <div class="bubble-glare"></div>
-              <span>${peer.name.charAt(0).toUpperCase()}</span>
+              <i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>
             </div>
             <div>
-              <h4 class="font-black text-slate-900 text-xs">${peer.name}</h4>
+              <h4 class="font-black text-slate-900 text-xs">${peer.name} ${peer.accountType === 'business' ? '🏪' : ''}</h4>
               <p class="text-[10px] text-sky-900 font-bold">Distance: ${distStr}</p>
             </div>
           </div>
@@ -1112,6 +1128,7 @@
         `;
         container.appendChild(card);
       });
+      lucide.createIcons();
     }
 
     function checkChatExpiryLoop() {
@@ -1141,18 +1158,18 @@
       userState.type = type;
       const personalBtn = document.getElementById('personalTypeBtn');
       const businessBtn = document.getElementById('businessTypeBtn');
-      const addressField = document.getElementById('businessAddressField');
+      const businessFields = document.getElementById('businessFields');
 
       if (type === 'personal') {
         personalBtn.className = 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all';
         businessBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
-        addressField.classList.add('hidden');
+        businessFields.classList.add('hidden');
         document.getElementById('accountTypeDisplay').innerText = "Personal (GPS)";
         initGPSLocation();
       } else {
         businessBtn.className = 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all';
         personalBtn.className = 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
-        addressField.classList.remove('hidden');
+        businessFields.classList.remove('hidden');
         document.getElementById('accountTypeDisplay').innerText = "Business (Fixed)";
       }
       if (!skipSave) savePersistentData();
@@ -1170,6 +1187,7 @@
     function saveProfile() {
       const alias = document.getElementById('avatarNameInput').value.trim();
       const address = document.getElementById('businessAddressInput').value.trim();
+      const category = document.getElementById('businessCategorySelect').value;
       const ghostMode = document.getElementById('privacyGhostMode').checked;
       const fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
       const makeNamePublic = document.getElementById('privacyMakeNamePublic').checked;
@@ -1178,6 +1196,7 @@
         userState.alias = alias;
       }
 
+      userState.category = category;
       userState.ghostMode = ghostMode;
       userState.fuzzLocation = fuzzLocation;
       userState.makeNamePublic = makeNamePublic;
@@ -1186,7 +1205,7 @@
 
       if (userState.type === 'business') {
         userState.address = address;
-        showToast('Business profile saved for store address!', 'store');
+        showToast('Business profile and fixed location saved!', 'store');
       } else {
         showToast('Personal GPS profile saved!', 'navigation');
       }
@@ -1194,6 +1213,7 @@
       savePersistentData();
       announcePresence();
       closeProfileModal();
+      location.reload(); // Refresh canvas to render updated icon
     }
 
     function updateMeshUI() {
@@ -1237,6 +1257,8 @@
         peerId: myPeerId,
         lat: coords.lat,
         lng: coords.lng,
+        accountType: userState.type,
+        category: userState.category,
         createdAt: activeTopicState.createdAt,
         makeNamePublic: userState.makeNamePublic
       });
@@ -1351,6 +1373,7 @@
         const isSelected = currentActiveChatRoomId === room.id;
         const isSelf = room.id === 'room-you';
         const bubbleStyle = isSelf ? (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue) : BUBBLE_COLOR_MAP.violet;
+        const iconName = isSelf && userState.type === 'business' ? (userState.category || 'store') : 'user';
 
         const item = document.createElement('div');
         item.className = `relative cursor-pointer transition-transform hover:scale-110 flex items-center justify-center ${isSelected ? 'ring-2 ring-sky-500 rounded-full' : ''}`;
@@ -1358,7 +1381,7 @@
         item.innerHTML = `
           <div class="w-8 h-8 rounded-full text-white font-bold text-[10px] flex items-center justify-center shadow-md bubble-node" style="background: ${bubbleStyle}; border-radius: 50%;">
             <div class="bubble-glare"></div>
-            <span>${room.name.charAt(0).toUpperCase()}</span>
+            <i data-lucide="${iconName}" class="w-3.5 h-3.5 text-white z-10"></i>
           </div>
         `;
         item.onclick = () => {
@@ -1366,6 +1389,7 @@
         };
         bar.appendChild(item);
       });
+      lucide.createIcons();
     }
 
     function openChatDrawer(roomId, roomName, topic, peerId) {
@@ -1378,11 +1402,12 @@
       const isSelf = roomId === 'room-you';
       const avatarElem = document.getElementById('chatTargetAvatar');
       const bubbleStyle = isSelf ? (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue) : BUBBLE_COLOR_MAP.violet;
+      const iconName = isSelf && userState.type === 'business' ? (userState.category || 'store') : 'user';
       
       avatarElem.className = `w-9 h-9 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node`;
       avatarElem.style.background = bubbleStyle;
       avatarElem.style.borderRadius = '50%';
-      avatarElem.innerHTML = `<div class="bubble-glare"></div><span>${roomName.charAt(0).toUpperCase()}</span>`;
+      avatarElem.innerHTML = `<div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>`;
 
       if (topic || (isSelf && activeTopicState.text)) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
@@ -1401,6 +1426,7 @@
 
       document.getElementById('chatDrawer').classList.remove('hidden');
       document.getElementById('chatBackdrop').classList.remove('hidden');
+      lucide.createIcons();
     }
 
     function closeChatDrawer() { 
