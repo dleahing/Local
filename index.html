@@ -1618,8 +1618,16 @@
       processedMsgIds.add(msgId);
       const coords = getBroadcastCoordinates();
       broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
+      
+      // Close the question modal first
       closeQuestionModal();
+      
+      // Clear the textarea input for next time
+      document.getElementById('questionInput').value = '';
+
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+      
+      // Immediately open the chat drawer to the active chat room upon posting
       openChatDrawer('room-you', userState.type === 'business' ? userState.alias : 'Traveler', text, 'you');
     }
 
