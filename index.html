@@ -86,7 +86,7 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* Completely Borderless Profile Bubble */
+    /* Completely Borderless Profile Bubble & removed focus ring outline on click */
     .bubble-node {
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(56, 189, 248, 0.5) 70%, rgba(2, 132, 199, 0.7) 100%);
       backdrop-filter: blur(12px) saturate(190%);
@@ -97,6 +97,15 @@
         inset 0 -5px 10px rgba(2, 132, 199, 0.25),
         0 0 10px rgba(56, 189, 248, 0.4);
       position: relative;
+      outline: none;
+    }
+    .bubble-node:focus, .bubble-node:active {
+      outline: none;
+      box-shadow: 
+        0 6px 15px rgba(2, 132, 199, 0.2),
+        inset 0 3px 8px rgba(255, 255, 255, 0.95),
+        inset 0 -5px 10px rgba(2, 132, 199, 0.25),
+        0 0 10px rgba(56, 189, 248, 0.4);
     }
 
     /* Borderless Peer Profile Bubble */
@@ -110,6 +119,10 @@
         inset 0 -5px 10px rgba(126, 34, 206, 0.25),
         0 0 10px rgba(216, 180, 254, 0.4);
       position: relative;
+      outline: none;
+    }
+    .peer-bubble-node:focus, .peer-bubble-node:active {
+      outline: none;
     }
 
     .bubble-glare {
@@ -334,8 +347,8 @@
     
     let activeTopicState = { text: null, createdAt: null };
     let currentActiveChatPeer = null;
-    let peerChatSessions = {}; // Storage for independent per-peer chat histories
-    let activeChatPeersList = new Set(); // Track peers with active chats
+    let peerChatSessions = {}; 
+    let activeChatPeersList = new Set(); 
 
     let userState = {
       alias: 'Aqua Voyager',
@@ -394,7 +407,6 @@
       return Math.round(R * c);
     }
 
-    // Ultra-Slow Water Ripple Radiating from Center of Profile Bubble (4.76s duration)
     function createBubbleRipple() {
       const circle = document.getElementById('userAvatarCircle');
       const rect = circle.getBoundingClientRect();
@@ -418,7 +430,6 @@
       userDiv.id = 'userAvatarNode';
       userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 cursor-pointer';
       
-      // Stack Order: Floating Question Bubble -> Soap Bubble Avatar -> Name & Distance Label
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group">
           <div id="userTopBubble" class="hidden mb-2 px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-lg border border-white/50 flex items-center gap-1.5 animate-float cursor-pointer" onclick="openChatDrawer('${userState.alias}', activeTopicState.text, 'you')">
@@ -633,7 +644,6 @@
       nodeElem.style.left = leftPx;
       nodeElem.style.top = topPx;
 
-      // Stack Order: Floating Question Bubble -> Soap Bubble Avatar -> Name & Distance Label
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
           ${hasValidQuestion ? `
