@@ -65,6 +65,7 @@
     /* Theme Presets */
     .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
     .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --accent: #0284c7; }
+    .theme-yellow { --bg-gradient: radial-gradient(circle at 50% 50%, #fefce8 0%, #fef08a 50%, #eab308 100%); --accent: #ca8a04; }
     .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf4ff 0%, #f5d0fe 50%, #e879f9 100%); --accent: #c084fc; }
     .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #fef2f2 0%, #fecaca 50%, #f87171 100%); --accent: #ef4444; }
 
@@ -91,24 +92,13 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
 
-    /* Borderless Profile Bubbles */
+    /* Dynamic Bubble Generator */
     .bubble-node {
-      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(56, 189, 248, 0.5) 70%, rgba(2, 132, 199, 0.7) 100%);
-      backdrop-filter: blur(12px) saturate(190%);
-      -webkit-backdrop-filter: blur(12px) saturate(190%);
-      box-shadow: 0 6px 15px rgba(2, 132, 199, 0.2), inset 0 3px 8px rgba(255, 255, 255, 0.95), inset 0 -5px 10px rgba(2, 132, 199, 0.25), 0 0 10px rgba(56, 189, 248, 0.4);
       position: relative;
       outline: none;
       border: none;
-    }
-    .peer-bubble-node {
-      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 30%, rgba(168, 85, 247, 0.45) 70%, rgba(126, 34, 206, 0.65) 100%);
       backdrop-filter: blur(12px) saturate(190%);
       -webkit-backdrop-filter: blur(12px) saturate(190%);
-      box-shadow: 0 6px 15px rgba(126, 34, 206, 0.2), inset 0 3px 8px rgba(255, 255, 255, 0.95), inset 0 -5px 10px rgba(126, 34, 206, 0.25), 0 0 10px rgba(216, 180, 254, 0.4);
-      position: relative;
-      outline: none;
-      border: none;
     }
     .bubble-glare {
       position: absolute;
@@ -278,6 +268,28 @@
           <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
+        <!-- Profile Bubble Color Picker -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Profile Bubble Color</label>
+          <div class="grid grid-cols-5 gap-2">
+            <button onclick="setBubbleColor('blue')" class="p-2.5 rounded-2xl bg-sky-500 border border-sky-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm" title="Blue Bubble">
+              <span class="w-4 h-4 rounded-full bg-white/90"></span>
+            </button>
+            <button onclick="setBubbleColor('yellow')" class="p-2.5 rounded-2xl bg-amber-400 border border-amber-200 flex items-center justify-center hover:scale-105 transition-all shadow-sm" title="Yellow Bubble">
+              <span class="w-4 h-4 rounded-full bg-white/90"></span>
+            </button>
+            <button onclick="setBubbleColor('pink')" class="p-2.5 rounded-2xl bg-pink-500 border border-pink-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm" title="Pink Bubble">
+              <span class="w-4 h-4 rounded-full bg-white/90"></span>
+            </button>
+            <button onclick="setBubbleColor('emerald')" class="p-2.5 rounded-2xl bg-emerald-500 border border-emerald-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm" title="Emerald Bubble">
+              <span class="w-4 h-4 rounded-full bg-white/90"></span>
+            </button>
+            <button onclick="setBubbleColor('violet')" class="p-2.5 rounded-2xl bg-purple-600 border border-purple-400 flex items-center justify-center hover:scale-105 transition-all shadow-sm" title="Violet Bubble">
+              <span class="w-4 h-4 rounded-full bg-white/90"></span>
+            </button>
+          </div>
+        </div>
+
         <!-- Location Privacy Controls -->
         <div class="pt-2 border-t border-slate-200/60">
           <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Location Privacy & Visibility</label>
@@ -293,24 +305,29 @@
           </div>
         </div>
 
+        <!-- App Background Theme Presets -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">App Theme Preset (Inverted)</label>
-          <div class="grid grid-cols-4 gap-2">
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
+          <div class="grid grid-cols-5 gap-1.5">
             <button onclick="setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-pink-100 border border-pink-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
-              <span class="w-4 h-4 rounded-full bg-pink-400"></span>
-              <span class="text-[10px] font-bold text-pink-900">Pink/Blue</span>
+              <span class="w-3.5 h-3.5 rounded-full bg-pink-400"></span>
+              <span class="text-[9px] font-bold text-pink-900">Pink</span>
             </button>
             <button onclick="setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-sky-100 border border-sky-400 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
-              <span class="w-4 h-4 rounded-full bg-sky-500"></span>
-              <span class="text-[10px] font-bold text-sky-800">Blue/Pink</span>
+              <span class="w-3.5 h-3.5 rounded-full bg-sky-500"></span>
+              <span class="text-[9px] font-bold text-sky-800">Blue</span>
+            </button>
+            <button onclick="setAppTheme('theme-yellow')" class="p-2 rounded-2xl bg-amber-100 border border-amber-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
+              <span class="w-3.5 h-3.5 rounded-full bg-amber-400"></span>
+              <span class="text-[9px] font-bold text-amber-900">Yellow</span>
             </button>
             <button onclick="setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-fuchsia-100 border border-fuchsia-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
-              <span class="w-4 h-4 rounded-full bg-fuchsia-400"></span>
-              <span class="text-[10px] font-bold text-fuchsia-900">Fuchsia</span>
+              <span class="w-3.5 h-3.5 rounded-full bg-fuchsia-400"></span>
+              <span class="text-[9px] font-bold text-fuchsia-900">Fuchsia</span>
             </button>
             <button onclick="setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-red-100 border border-red-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm">
-              <span class="w-4 h-4 rounded-full bg-red-400"></span>
-              <span class="text-[10px] font-bold text-red-900">Sunset</span>
+              <span class="w-3.5 h-3.5 rounded-full bg-red-400"></span>
+              <span class="text-[9px] font-bold text-red-900">Sunset</span>
             </button>
           </div>
         </div>
@@ -329,7 +346,7 @@
   <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[80vh]">
     <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
       <div class="flex items-center gap-3">
-        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full peer-bubble-node text-white font-bold text-xs flex items-center justify-center shadow-md">
+        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md">
           <div class="bubble-glare"></div>
         </div>
         <div>
@@ -393,7 +410,7 @@
   </div>
 
   <script>
-    const MESH_PREFIX = 'local-proximity-mesh-global-v4-';
+    const MESH_PREFIX = 'local-proximity-mesh-global-v5-';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
@@ -418,8 +435,17 @@
       lat: 27.2730,
       lng: -80.3582,
       theme: 'theme-sky',
+      bubbleColor: 'blue',
       ghostMode: false,
       fuzzLocation: false
+    };
+
+    const BUBBLE_COLOR_MAP = {
+      blue: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(56, 189, 248, 0.5) 70%, rgba(2, 132, 199, 0.7) 100%)',
+      yellow: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(250, 204, 21, 0.6) 70%, rgba(202, 138, 4, 0.8) 100%)',
+      pink: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(244, 114, 182, 0.5) 70%, rgba(219, 39, 119, 0.7) 100%)',
+      emerald: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(52, 211, 153, 0.5) 70%, rgba(5, 150, 105, 0.7) 100%)',
+      violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(192, 132, 252, 0.5) 70%, rgba(126, 34, 206, 0.7) 100%)'
     };
 
     let touchTimer = null;
@@ -446,6 +472,7 @@
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
           selectAccountType(userState.type || 'personal', true);
           setAppTheme(userState.theme || 'theme-sky', true);
+          applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
         }
 
         const savedChats = localStorage.getItem(STORAGE_KEY_CHATS);
@@ -560,6 +587,8 @@
       `;
       container.appendChild(userDiv);
 
+      applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
+
       const circle = document.getElementById('userAvatarCircle');
       circle.addEventListener('mousedown', () => { createBubbleRipple(); handlePressStart(); });
       circle.addEventListener('mouseup', handlePressEnd);
@@ -571,6 +600,20 @@
       });
       circle.addEventListener('touchend', handlePressEnd);
       circle.addEventListener('touchcancel', handlePressCancel);
+    }
+
+    function applyBubbleColorToElement(elementId, colorName) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const bgStyle = BUBBLE_COLOR_MAP[colorName] || BUBBLE_COLOR_MAP.blue;
+      el.style.background = bgStyle;
+    }
+
+    function setBubbleColor(colorName) {
+      userState.bubbleColor = colorName;
+      applyBubbleColorToElement('userAvatarCircle', colorName);
+      showToast(`Profile bubble color updated to ${colorName}!`, 'palette');
+      savePersistentData();
     }
 
     function handlePressStart() {
@@ -692,6 +735,7 @@
         id: 'ping-' + Math.random().toString(36).substring(2, 9),
         type: 'PEER_PRESENCE',
         sender: userState.alias,
+        bubbleColor: userState.bubbleColor,
         peerId: myPeerId,
         lat: coords.lat,
         lng: coords.lng,
@@ -717,6 +761,7 @@
             text: activeTopicState.text, 
             createdAt: activeTopicState.createdAt,
             sender: userState.alias,
+            bubbleColor: userState.bubbleColor,
             peerId: myPeerId,
             lat: coords.lat, 
             lng: coords.lng 
@@ -736,6 +781,7 @@
               text: activeTopicState.text,
               createdAt: activeTopicState.createdAt,
               sender: userState.alias,
+              bubbleColor: userState.bubbleColor,
               peerId: myPeerId,
               lat: coords.lat,
               lng: coords.lng
@@ -757,7 +803,7 @@
           : distance + 'm';
 
         if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
-          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId);
+          updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text || data.question, data.createdAt, data.peerId, data.bubbleColor);
           if (data.peerId && data.peerId !== myPeerId && !activeConnections[data.peerId]) {
             tryConnectPeer(data.peerId);
           }
@@ -765,7 +811,7 @@
 
         if (data.type === 'NEW_QUESTION') {
           if (Date.now() - data.createdAt < ONE_HOUR_MS) {
-            updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId);
+            updatePeerNodeOnMap(data.sender || 'Peer', distance, distanceFormatted, data.lat, data.lng, data.text, data.createdAt, data.peerId, data.bubbleColor);
             showToast(`Question from ${data.sender || 'Peer'} (${distanceFormatted} away)!`, 'pin');
           }
         } else if (data.type === 'CHAT_MSG') {
@@ -792,7 +838,7 @@
       });
     }
 
-    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId) {
+    function updatePeerNodeOnMap(alias, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor = 'violet') {
       const container = document.getElementById('nodesContainer');
       let peerKey = 'node-' + (peerId || alias).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
@@ -814,6 +860,8 @@
 
       nodeElem.style.left = leftPx;
       nodeElem.style.top = topPx;
+      
+      const customBg = BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet;
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group">
@@ -825,7 +873,7 @@
               <span>${question.length > 22 ? question.substring(0, 20) + '...' : question}</span>
             </div>
           ` : ''}
-          <div onclick="openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" class="w-11 h-11 rounded-full peer-bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle">
+          <div onclick="openChatDrawer('${roomId}', '${alias}', '${question || ''}', '${alias}')" id="${peerKey}-circle" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-lg animate-bubble-subtle" style="background: ${customBg};">
             <div class="bubble-glare"></div>
           </div>
           <span class="mt-1 px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-800 shadow-sm">${alias} (${distanceFormatted})</span>
@@ -900,7 +948,7 @@
       document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-800 font-sans antialiased overflow-hidden h-screen w-screen relative`;
       if (!skipSave) {
         savePersistentData();
-        showToast(`Theme updated with Pink/Blue inverse!`, 'palette');
+        showToast(`App theme preset updated!`, 'palette');
       }
     }
 
@@ -971,6 +1019,7 @@
         type: 'NEW_QUESTION', 
         text: text, 
         sender: userState.alias,
+        bubbleColor: userState.bubbleColor,
         peerId: myPeerId,
         lat: coords.lat,
         lng: coords.lng,
@@ -1054,13 +1103,13 @@
         const room = JSON.parse(roomJson);
         const isSelected = currentActiveChatRoomId === room.id;
         const isSelf = room.id === 'room-you';
-        const bubbleClass = isSelf ? 'bubble-node' : 'peer-bubble-node';
+        const bubbleStyle = isSelf ? (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue) : BUBBLE_COLOR_MAP.violet;
 
         const item = document.createElement('div');
         item.className = `relative cursor-pointer transition-transform hover:scale-110 flex items-center justify-center ${isSelected ? 'ring-2 ring-sky-500 rounded-full' : ''}`;
         item.title = `Chat: ${room.name}`;
         item.innerHTML = `
-          <div class="w-8 h-8 rounded-full ${bubbleClass} text-white font-bold text-[10px] flex items-center justify-center shadow-md">
+          <div class="w-8 h-8 rounded-full text-white font-bold text-[10px] flex items-center justify-center shadow-md bubble-node" style="background: ${bubbleStyle};">
             <div class="bubble-glare"></div>
             <span>${room.name.charAt(0).toUpperCase()}</span>
           </div>
@@ -1080,7 +1129,10 @@
       
       const isSelf = roomId === 'room-you';
       const avatarElem = document.getElementById('chatTargetAvatar');
-      avatarElem.className = `w-9 h-9 rounded-full ${isSelf ? 'bubble-node' : 'peer-bubble-node'} text-white font-bold text-xs flex items-center justify-center shadow-md`;
+      const bubbleStyle = isSelf ? (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue) : BUBBLE_COLOR_MAP.violet;
+      
+      avatarElem.className = `w-9 h-9 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node`;
+      avatarElem.style.background = bubbleStyle;
       avatarElem.innerHTML = `<div class="bubble-glare"></div><span>${roomName.charAt(0).toUpperCase()}</span>`;
 
       if (topic || (isSelf && activeTopicState.text)) {
