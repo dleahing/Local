@@ -80,12 +80,13 @@
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 
-    /* Fluid Map Canvas Transform with Panning & Zoom */
+    /* Fluid Map Canvas Transform with Panning & Zoom (Hardware Accelerated for buttery smoothness) */
     #mapCanvas {
-      transform: translate(var(--pan-x), var(--pan-y)) scale(var(--zoom-scale));
+      transform: translate3d(var(--pan-x), var(--pan-y), 0) scale(var(--zoom-scale));
       transform-origin: center center;
-      transition: transform 0.15s ease-out;
+      will-change: transform;
       cursor: grab;
+      touch-action: none;
     }
     #mapCanvas:active {
       cursor: grabbing;
@@ -94,7 +95,7 @@
     /* Inverse scale wrapper so nodes/bubbles stay constant size when map zooms out */
     .scale-compensator {
       transform: scale(calc(1 / var(--zoom-scale)));
-      transition: transform 0.15s ease-out;
+      will-change: transform;
     }
 
     /* Background Theme Presets with Expanded Repeatable Grid */
@@ -478,9 +479,12 @@
 
     let panX = 0;
     let panY = 0;
+    let targetPanX = 0;
+    let targetPanY = 0;
     let isDraggingMap = false;
     let startDragX = 0;
     let startDragY = 0;
+    let animationFrameId = null;
 
     let activeTopicState = { text: null, createdAt: null };
     let currentActiveChatRoomId = null;
@@ -538,6 +542,7 @@
       initRadiusDragHandlers();
       initTapRippleHandler();
       initMapPanHandlers();
+      startSmoothPanLoop();
     });
 
     async function requestScreenWakeLock() {
@@ -598,7 +603,7 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    // Touch Drag Panning Support for Map Canvas (User icon stays locked in center)
+    // High-Performance Butter-Smooth Inertial Drag Panning Loop using lerp
     function initMapPanHandlers() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
@@ -609,18 +614,18 @@
         }
         if (isDraggingRadius) return;
         isDraggingMap = true;
-        startDragX = (e.touches ? e.touches[0].clientX : e.clientX) - panX;
-        startDragY = (e.touches ? e.touches[0].clientY : e.clientY) - panY;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        startDragX = clientX - targetPanX;
+        startDragY = clientY - targetPanY;
       };
 
       const handlePanMove = (e) => {
         if (!isDraggingMap) return;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        panX = clientX - startDragX;
-        panY = clientY - startDragY;
-        mapCanvas.style.setProperty('--pan-x', `${panX}px`);
-        mapCanvas.style.setProperty('--pan-y', `${panY}px`);
+        targetPanX = clientX - startDragX;
+        targetPanY = clientY - startDragY;
       };
 
       const handlePanEnd = () => {
@@ -634,6 +639,23 @@
       mapCanvas.addEventListener('touchstart', handlePanStart, { passive: true });
       window.addEventListener('touchmove', handlePanMove, { passive: true });
       window.addEventListener('touchend', handlePanEnd);
+    }
+
+    function startSmoothPanLoop() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+
+      const renderLoop = () => {
+        // Linear interpolation (lerp) for buttery smooth springless momentum gliding
+        panX += (targetPanX - panX) * 0.22;
+        panY += (targetPanY - panY) * 0.22;
+
+        mapCanvas.style.setProperty('--pan-x', `${panX}px`);
+        mapCanvas.style.setProperty('--pan-y', `${panY}px`);
+
+        animationFrameId = requestAnimationFrame(renderLoop);
+      };
+      animationFrameId = requestAnimationFrame(renderLoop);
     }
 
     // Dynamic Discovery Radius (5 to 50 miles), Fluid Zoom & Max Zoom-Out Mapping
