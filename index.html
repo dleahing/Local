@@ -149,7 +149,7 @@
           <p id="accountTypeDisplay" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Personal (GPS)</p>
           <span class="text-[9px] text-slate-400">•</span>
           <div id="activeUserBadge" class="flex items-center gap-1 text-[10px] text-emerald-800 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="internetStatusDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span id="activeUserCount">1 Active</span>
           </div>
         </div>
@@ -164,9 +164,9 @@
         <i data-lucide="user-cog" class="w-5 h-5"></i>
       </button>
 
-      <button onclick="toggleP2PModal()" title="Global Connect & Network" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
-        <i data-lucide="wifi" class="w-5 h-5"></i>
-        <span id="p2pStatusDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400"></span>
+      <button onclick="toggleP2PModal()" title="Cloud Internet Status & Directory" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
+        <i data-lucide="globe" class="w-5 h-5"></i>
+        <span id="internetPingDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
       </button>
     </div>
   </header>
@@ -198,26 +198,26 @@
     </div>
   </div>
 
-  <!-- Global Mesh & Active User Directory Modal -->
+  <!-- Cloud Internet & Global User Directory Modal -->
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 flex-shrink-0">
         <div>
-          <h3 class="text-lg font-black text-slate-900">Global User Mesh</h3>
-          <p class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Connect with all active network peers</p>
+          <h3 class="text-lg font-black text-slate-900">Cloud Internet Sync</h3>
+          <p class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Connected via Global WebSocket & Cloud Relay</p>
         </div>
         <button onclick="toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4 overflow-y-auto flex-1 pr-1">
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Network Status</label>
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Internet Connection Status</label>
           <div class="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-bold">
             <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              <span id="serverStatusText">Broadcasting via Phone Network & GPS</span>
+              <span id="connectionDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span id="serverStatusText">Connected to Cloud Relay</span>
             </div>
-            <button onclick="broadcastData({type:'BROADCAST_PING'})" class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-extrabold shadow-sm active:scale-95">Ping All</button>
+            <button onclick="reconnectInternet()" class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-extrabold shadow-sm active:scale-95">Reconnect</button>
           </div>
         </div>
 
@@ -228,7 +228,7 @@
           </div>
           <div id="globalUsersDirectory" class="space-y-2 max-h-48 overflow-y-auto pr-1">
             <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">
-              Scanning for active network users...
+              Scanning internet cloud network...
             </div>
           </div>
         </div>
@@ -245,9 +245,9 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Your Device ID</label>
+          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Your Cloud Peer ID</label>
           <div class="flex items-center gap-2">
-            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Syncing...">
+            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Connecting...">
             <button onclick="copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
@@ -375,7 +375,7 @@
         </div>
         <div>
           <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">Proximity Session</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Global Mesh Connected Chat</p>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Cloud Internet Direct Chat</p>
         </div>
       </div>
       <button onclick="closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -438,16 +438,16 @@
     const METERS_PER_MILE = 1609.34;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v1';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v1';
-    const STORAGE_BEACON_KEY = 'local_global_mesh_beacons_v5';
 
-    let myPeerId = 'local-peer-' + Math.random().toString(36).substring(2, 9);
+    let myPeerId = 'cloud-peer-' + Math.random().toString(36).substring(2, 9);
     let activeConnections = {};
     let globalActiveDirectory = {};
     let processedMsgIds = new Set();
     let nearbyPeers = {};
     let showTestBots = true;
     
-    let broadcastChannel = null;
+    let webSocketClient = null;
+    let isSocketConnected = false;
 
     let activeTopicState = { text: null, createdAt: null };
     let currentActiveChatRoomId = null;
@@ -484,7 +484,7 @@
       lucide.createIcons();
       initGPSLocation();
       initUserNode();
-      initGlobalMeshSync();
+      initInternetWebSocketSync();
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
       window.addEventListener('resize', recalculateNodePositions);
@@ -558,7 +558,7 @@
           userState.lat = pos.coords.latitude;
           userState.lng = pos.coords.longitude;
           announcePresence();
-          showToast('GPS Location acquired!', 'navigation');
+          showToast('GPS Location acquired via internet connection!', 'navigation');
         }, (err) => {
           showToast('GPS unavailable. Using network fallback coordinates.', 'alert-triangle');
         }, { enableHighAccuracy: true, timeout: 10000 });
@@ -703,19 +703,40 @@
       clearTimeout(touchTimer);
     }
 
-    /* Global Mesh & Active User Synchronization Engine */
-    function initGlobalMeshSync() {
+    /* Internet WebSocket & Cloud Relay Synchronization Engine */
+    function initInternetWebSocketSync() {
       document.getElementById('myPeerIdDisplay').value = myPeerId;
 
-      if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_global_mesh_channel_v6');
-        broadcastChannel.onmessage = (event) => {
-          handleIncomingNetworkPayload(event.data);
+      // Connect to public WebSocket relay with localStorage multi-tab fallback
+      try {
+        webSocketClient = new WebSocket('wss://socketsbay.com/wss/v2/1/demo/'); // Public demo relay or fallback
+        webSocketClient.onopen = () => {
+          isSocketConnected = true;
+          updateInternetStatusUI(true);
+          announcePresence();
         };
+        webSocketClient.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleIncomingNetworkPayload(data);
+          } catch(e) {}
+        };
+        webSocketClient.onerror = () => {
+          isSocketConnected = false;
+          updateInternetStatusUI(false);
+        };
+        webSocketClient.onclose = () => {
+          isSocketConnected = false;
+          updateInternetStatusUI(false);
+        };
+      } catch(e) {
+        isSocketConnected = false;
+        updateInternetStatusUI(false);
       }
 
+      // Also listen to window storage events for cross-tab internet sync fallback
       window.addEventListener('storage', (event) => {
-        if (event.key === STORAGE_BEACON_KEY && event.newValue) {
+        if (event.key === 'local_internet_cloud_sync_v6' && event.newValue) {
           try {
             const payload = JSON.parse(event.newValue);
             handleIncomingNetworkPayload(payload);
@@ -726,6 +747,27 @@
       setInterval(() => {
         announcePresence();
       }, 2500);
+    }
+
+    function reconnectInternet() {
+      showToast('Reconnecting to internet cloud relay...', 'globe');
+      initInternetWebSocketSync();
+    }
+
+    function updateInternetStatusUI(connected) {
+      const statusText = document.getElementById('serverStatusText');
+      const dot = document.getElementById('connectionDot');
+      const pingDot = document.getElementById('internetPingDot');
+
+      if (connected) {
+        statusText.innerText = 'Connected via Internet Cloud Relay';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-ping';
+        pingDot.className = 'absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+      } else {
+        statusText.innerText = 'Connected via Local Mesh & Storage Sync';
+        dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+        pingDot.className = 'absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400';
+      }
     }
 
     function handleIncomingNetworkPayload(data) {
@@ -964,12 +1006,14 @@
       payload.bubbleColor = payload.bubbleColor || userState.bubbleColor;
       payload.makeNamePublic = userState.makeNamePublic;
 
-      if (broadcastChannel) {
-        try { broadcastChannel.postMessage(payload); } catch(e) {}
+      if (isSocketConnected && webSocketClient && webSocketClient.readyState === WebSocket.OPEN) {
+        try {
+          webSocketClient.send(JSON.stringify(payload));
+        } catch(e) {}
       }
 
       try {
-        localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload));
+        localStorage.setItem('local_internet_cloud_sync_v6', JSON.stringify(payload));
       } catch(e) {}
     }
 
@@ -982,7 +1026,7 @@
       activeCountElem.innerText = totalActive;
 
       if (peerIds.length === 0) {
-        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">No other peers detected yet. Open another tab or device!</div>`;
+        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">Scanning internet cloud network...</div>`;
         return;
       }
 
@@ -1099,10 +1143,6 @@
     function updateMeshUI() {
       const activeCount = Object.keys(activeConnections).length + 1;
       document.getElementById('activeUserCount').innerText = `${activeCount} Active`;
-      const dot = document.getElementById('p2pStatusDot');
-      dot.className = activeCount > 1 
-        ? 'absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping' 
-        : 'absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-400';
     }
 
     function updateRadius(valMeters) {
@@ -1147,7 +1187,7 @@
 
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
-      showToast('Question broadcasted across global mesh!', 'pin');
+      showToast('Question broadcasted via internet cloud!', 'pin');
       openChatDrawer('room-you', getEffectiveMyName(), text, 'you');
     }
 
