@@ -535,6 +535,9 @@
       violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(192, 132, 252, 0.65) 50%, rgba(126, 34, 206, 0.9) 100%)'
     };
 
+    // Semi-transparent dark radial gradient constant for business nodes
+    const BUSINESS_TRANSLUCENT_BG = 'radial-gradient(circle at 35% 30%, rgba(30, 41, 59, 0.70) 0%, rgba(15, 23, 42, 0.75) 100%)';
+
     // Helper for business neon styling
     function getBusinessNeonStyle(accountType, category) {
       if (accountType !== 'business') {
@@ -548,21 +551,21 @@
       
       if (category === 'utensils') {
         return {
-          bg: '#0a0a0a',
+          bg: BUSINESS_TRANSLUCENT_BG,
           borderClass: 'border-2 border-orange-400',
           shadowStyle: 'box-shadow: 0 0 20px rgba(249, 115, 22, 0.8), inset 0 0 8px rgba(249, 115, 22, 0.3);',
           iconColor: 'text-orange-400'
         };
       } else if (category === 'pill') {
         return {
-          bg: '#0a0a0a',
+          bg: BUSINESS_TRANSLUCENT_BG,
           borderClass: 'border-2 border-sky-400',
           shadowStyle: 'box-shadow: 0 0 20px rgba(56, 189, 248, 0.8), inset 0 0 8px rgba(56, 189, 248, 0.3);',
           iconColor: 'text-sky-400'
         };
       } else {
         return {
-          bg: '#0a0a0a',
+          bg: BUSINESS_TRANSLUCENT_BG,
           borderClass: 'border-2 border-purple-400',
           shadowStyle: 'box-shadow: 0 0 20px rgba(192, 132, 252, 0.8), inset 0 0 8px rgba(192, 132, 252, 0.3);',
           iconColor: 'text-purple-400'
@@ -1045,7 +1048,7 @@
       showToast('Radar refreshed! Searching for chats in area.', 'radar');
     }
 
-    // Renders custom HTML inner content for the icon node (fully uniform icon color)
+    // Renders custom HTML inner content for the icon node
     function renderNodeIconContent(accountType, category) {
       const isBiz = accountType === 'business';
       if (!isBiz) {
@@ -1090,7 +1093,7 @@
 
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
-            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${neonStyle.borderClass}" style="background: ${userState.type === 'business' ? 'rgba(10, 10, 10, 0.85)' : BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue}; ${userState.type === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;" title="Tap to refresh radar & search chats">
+            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${neonStyle.borderClass}" style="background: ${userState.type === 'business' ? neonStyle.bg : (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue)}; ${userState.type === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;" title="Tap to refresh radar & search chats">
               ${renderNodeIconContent(userState.type, userState.category)}
             </div>
           </div>
@@ -1418,7 +1421,7 @@
       validBubbles.forEach(b => {
         const isBiz = b.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
-        const circleBg = isBiz ? 'rgba(10, 10, 10, 0.85)' : (b.peerId === 'you' ? BUBBLE_COLOR_MAP[userState.bubbleColor] : (BUBBLE_COLOR_MAP[globalActiveDirectory[b.peerId]?.bubbleColor] || BUBBLE_COLOR_MAP.violet));
+        const circleBg = isBiz ? neonStyle.bg : (b.peerId === 'you' ? BUBBLE_COLOR_MAP[userState.bubbleColor] : (BUBBLE_COLOR_MAP[globalActiveDirectory[b.peerId]?.bubbleColor] || BUBBLE_COLOR_MAP.violet));
 
         container.innerHTML += `
           <div onclick="playAudioEffect('chime'); connectToPeer('${b.peerId}'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="p-3.5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/80 shadow-md hover:bg-white/90 transition-all cursor-pointer flex items-center gap-3">
@@ -1587,7 +1590,7 @@
       
       const isBiz = accountType === 'business';
       const neonStyle = getBusinessNeonStyle(accountType, category);
-      const circleBg = isBiz ? 'rgba(10, 10, 10, 0.85)' : (BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet);
+      const circleBg = isBiz ? neonStyle.bg : (BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet);
       
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
       let roomId = 'room-peer-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
@@ -1645,7 +1648,7 @@
         const displayLabel = isBiz ? peer.rawSender : 'Traveler';
 
         const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
-        const circleBg = isBiz ? 'rgba(10, 10, 10, 0.85)' : BUBBLE_COLOR_MAP[peer.bubbleColor];
+        const circleBg = isBiz ? neonStyle.bg : BUBBLE_COLOR_MAP[peer.bubbleColor];
 
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
@@ -1823,7 +1826,7 @@
       const category = isSelf ? userState.category : globalActiveDirectory[peerId]?.category;
       
       const neonStyle = getBusinessNeonStyle(accountType, category);
-      const circleBg = isBiz ? 'rgba(10, 10, 10, 0.85)' : BUBBLE_COLOR_MAP[userState.bubbleColor];
+      const circleBg = isBiz ? neonStyle.bg : BUBBLE_COLOR_MAP[userState.bubbleColor];
 
       const avatarEl = document.getElementById('chatTargetAvatar');
       avatarEl.className = `w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : ''}`;
