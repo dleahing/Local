@@ -1045,7 +1045,7 @@
       showToast('Radar refreshed! Searching for chats in area.', 'radar');
     }
 
-    // Renders custom HTML inner content for the icon node (splitting only the pill graphic bottom half solid blue)
+    // Renders custom HTML inner content for the icon node (fully uniform icon color)
     function renderNodeIconContent(accountType, category) {
       const isBiz = accountType === 'business';
       if (!isBiz) {
@@ -1053,20 +1053,7 @@
       }
       
       const neonStyle = getBusinessNeonStyle(accountType, category);
-
-      if (category === 'pill') {
-        return `
-          <div class="relative w-5 h-5 flex items-center justify-center z-10">
-            <i data-lucide="pill" class="w-5 h-5 text-sky-400 drop-shadow-md absolute inset-0" stroke-width="2"></i>
-            <div class="absolute bottom-0 left-0 right-0 h-1/2 overflow-hidden pointer-events-none">
-              <i data-lucide="pill" class="w-5 h-5 text-sky-400 drop-shadow-md absolute bottom-0 left-0" style="clip-path: inset(50% 0 0 0);" stroke-width="2"></i>
-            </div>
-            <div class="absolute bottom-0 left-0 right-0 h-[52%] overflow-hidden bg-sky-400 rounded-b-full pointer-events-none" style="mix-blend-mode: overlay;"></div>
-          </div>
-        `;
-      } else {
-        return `<i data-lucide="${category}" class="w-5 h-5 ${neonStyle.iconColor} drop-shadow-md z-10" stroke-width="2"></i>`;
-      }
+      return `<i data-lucide="${category}" class="w-5 h-5 ${neonStyle.iconColor} drop-shadow-md z-10" stroke-width="2"></i>`;
     }
 
     function initUserNode() {
