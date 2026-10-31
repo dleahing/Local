@@ -102,7 +102,7 @@
       margin-bottom: 12px;
       pointer-events: none;
       width: max-content;
-      max-width: 240px;
+      max-width: 280px;
     }
     .node-content-stack > * {
       pointer-events: auto;
@@ -357,6 +357,10 @@
             </select>
           </div>
           <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">Store Operating Hours</label>
+            <input type="text" id="businessHoursInput" placeholder="e.g. Open • Closes 9 PM or 24/7" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          </div>
+          <div>
             <label class="block text-xs font-bold text-slate-800 mb-1">Store Street Address (Fixed)</label>
             <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
           </div>
@@ -510,6 +514,7 @@
       alias: 'Traveler',
       type: 'personal',
       category: 'store',
+      hours: 'Open • Closes 9 PM',
       address: '',
       interestFilter: 'none',
       radius: MIN_RADIUS_METERS,
@@ -671,6 +676,7 @@
           userState = { ...userState, ...parsed };
           document.getElementById('avatarNameInput').value = userState.alias;
           document.getElementById('businessAddressInput').value = userState.address || '';
+          document.getElementById('businessHoursInput').value = userState.hours || 'Open • Closes 9 PM';
           document.getElementById('businessCategorySelect').value = userState.category || 'store';
           document.getElementById('userInterestFilterSelect').value = userState.interestFilter || 'none';
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
@@ -930,7 +936,7 @@
           const labelElem = nodeElem.querySelector('.node-name-label');
           if (labelElem) {
             const showLabel = peer.accountType === 'business';
-            labelElem.style.display = showLabel ? 'block' : 'none';
+            labelElem.style.display = showLabel ? 'flex' : 'none';
           }
         }
       });
@@ -1015,8 +1021,8 @@
       const label = document.getElementById('userAvatarLabel');
       if (label) {
         if (userState.type === 'business') {
-          label.innerText = userState.alias;
-          label.style.display = 'block';
+          label.innerHTML = `<span>${userState.alias}</span> <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${userState.hours || 'Open • Closes 9 PM'}</span>`;
+          label.style.display = 'flex';
         } else {
           label.style.display = 'none';
         }
@@ -1061,7 +1067,10 @@
 
           <div class="scale-compensator flex flex-col items-center relative z-50 pointer-events-auto">
             <div class="node-content-stack">
-              <span id="userAvatarLabel" class="px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label" style="display: ${showMyLabel ? 'block' : 'none'};">${userState.alias}</span>
+              <div id="userAvatarLabel" class="px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label flex items-center gap-1.5" style="display: ${showMyLabel ? 'flex' : 'none'};">
+                <span>${userState.alias}</span>
+                <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${userState.hours || 'Open • Closes 9 PM'}</span>
+              </div>
               
               <div id="userTopBubble" class="hidden px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); openChatDrawer('room-you', '${userState.type === 'business' ? userState.alias : 'Traveler'}', activeTopicState.text, 'you')">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
@@ -1226,6 +1235,7 @@
           lng: userState.lng,
           accountType: userState.type,
           category: userState.category,
+          hours: userState.hours,
           interestFilter: userState.interestFilter,
           makeNamePublic: userState.makeNamePublic
         });
@@ -1263,6 +1273,7 @@
         bubbleColor: data.bubbleColor || 'violet',
         accountType: data.accountType || 'personal',
         category: data.category || 'store',
+        hours: data.hours || 'Open • Closes 9 PM',
         interestFilter: data.interestFilter || 'none',
         lastSeen: Date.now(),
         question: data.text || data.question,
@@ -1281,7 +1292,7 @@
         updatePeerNodeOnMap(
           displayName, data.sender, distance, distanceFormatted, data.lat, data.lng, 
           data.text || data.question, data.createdAt, data.peerId, 
-          data.bubbleColor, data.accountType, data.category, data.interestFilter, false
+          data.bubbleColor, data.accountType, data.category, data.hours, data.interestFilter, false
         );
       } else if (data.type === 'CHAT_MSG') {
         const targetRoomId = data.roomId;
@@ -1299,12 +1310,12 @@
 
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
-        { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', interestFilter: 'Life', isBot: true, isTutorial: true },
-        { name: 'Bot 10-Mile Pickleball Fan', peerId: 'sim-peer-bot-10mi', targetMiles: 10.0, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Fine Dining (Restaurant)', peerId: 'sim-peer-restaurant-20mi', targetMiles: 20.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!', color: 'pink', accountType: 'business', category: 'utensils', interestFilter: 'Food', isBot: true },
-        { name: '12-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 12.0, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', interestFilter: 'Hiking', isBot: true },
-        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding pharmacy open!', color: 'emerald', accountType: 'business', category: 'pill', interestFilter: 'Life', isBot: true }
+        { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
+        { name: 'Bot 10-Mile Pickleball Fan', peerId: 'sim-peer-bot-10mi', targetMiles: 10.0, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'Fine Dining (Restaurant)', peerId: 'sim-peer-restaurant-20mi', targetMiles: 20.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!', color: 'pink', accountType: 'business', category: 'utensils', hours: 'Open • Closes 10 PM', interestFilter: 'Food', isBot: true },
+        { name: '12-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 12.0, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Hiking', isBot: true },
+        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Cars', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding pharmacy open!', color: 'emerald', accountType: 'business', category: 'pill', hours: '24/7 Open', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -1335,13 +1346,14 @@
           bubbleColor: u.color,
           accountType: u.accountType,
           category: u.category,
+          hours: u.hours,
           interestFilter: u.interestFilter,
           lastSeen: Date.now(),
           question: u.question,
           createdAt: Date.now() - (i * 300000)
         };
 
-        updatePeerNodeOnMap(displayName, u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, u.interestFilter, true);
+        updatePeerNodeOnMap(displayName, u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, u.hours, u.interestFilter, true);
       });
       renderGlobalUsersDirectory();
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
@@ -1360,7 +1372,8 @@
           bubbleColor: userState.bubbleColor,
           peerId: 'you',
           roomId: 'room-you',
-          accountType: userState.type
+          accountType: userState.type,
+          hours: userState.hours
         });
       }
 
@@ -1377,7 +1390,8 @@
               bubbleColor: p.bubbleColor,
               peerId: p.peerId,
               roomId: 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-'),
-              accountType: p.accountType
+              accountType: p.accountType,
+              hours: p.hours
             });
           }
         }
@@ -1401,9 +1415,15 @@
               <div class="bubble-glare"></div>
               <i data-lucide="message-circle" class="w-4 h-4 text-white z-10"></i>
             </div>
-            <p class="text-xs font-bold text-slate-900 leading-snug line-clamp-2 flex-1">
-              ${b.question}
-            </p>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="text-[11px] font-black text-slate-900 truncate">${b.name}</span>
+                ${b.accountType === 'business' && b.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30 whitespace-nowrap">${b.hours}</span>` : ''}
+              </div>
+              <p class="text-xs font-bold text-slate-800 leading-snug line-clamp-2">
+                ${b.question}
+              </p>
+            </div>
           </div>
         `;
       });
@@ -1466,6 +1486,7 @@
         lng: coords.lng,
         accountType: userState.type,
         category: userState.category,
+        hours: userState.hours,
         interestFilter: userState.interestFilter,
         question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) ? activeTopicState.text : null,
         createdAt: activeTopicState.createdAt,
@@ -1483,6 +1504,7 @@
       payload.bubbleColor = payload.bubbleColor || userState.bubbleColor; 
       payload.accountType = userState.type;
       payload.category = userState.category; 
+      payload.hours = userState.hours;
       payload.interestFilter = userState.interestFilter;
       payload.makeNamePublic = userState.makeNamePublic;
 
@@ -1504,7 +1526,7 @@
       } catch(e) {}
     }
 
-    function updatePeerNodeOnMap(displayName, rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, interestFilter, isBot) {
+    function updatePeerNodeOnMap(displayName, rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, hours, interestFilter, isBot) {
       const container = document.getElementById('nodesContainer');
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
@@ -1563,13 +1585,17 @@
       const showNameLabel = accountType === 'business';
       const showSonarRipple = matchesFilter && accountType !== 'business';
       const chatRoomName = accountType === 'business' ? rawSender : 'Traveler';
+      const hoursBadgeText = hours || 'Open • Closes 9 PM';
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none z-0" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           
           <div class="node-content-stack">
-            <span class="px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label" style="display: ${showNameLabel ? 'block' : 'none'};">${rawSender} (${distanceFormatted})${interestFilter && interestFilter !== 'none' ? ' • ' + interestFilter : ''}</span>
+            <div class="px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label flex items-center gap-1.5" style="display: ${showNameLabel ? 'flex' : 'none'};">
+              <span>${rawSender} (${distanceFormatted})</span>
+              <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${hoursBadgeText}</span>
+            </div>
             
             ${hasValidQuestion ? `
               <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${chatRoomName}', '${question}', '${peerId}')">
@@ -1619,7 +1645,10 @@
                 <div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>
               </div>
               <div>
-                <h4 class="font-black text-slate-900 text-xs">${peer.rawSender} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
+                <div class="flex items-center gap-1.5">
+                  <h4 class="font-black text-slate-900 text-xs">${peer.rawSender} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
+                  ${peer.accountType === 'business' && peer.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${peer.hours}</span>` : ''}
+                </div>
                 <p class="text-[10px] text-sky-900 font-bold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
               </div>
             </div>
@@ -1669,6 +1698,7 @@
     function saveProfile() {
       userState.alias = document.getElementById('avatarNameInput').value.trim() || 'Traveler';
       userState.category = document.getElementById('businessCategorySelect').value;
+      userState.hours = document.getElementById('businessHoursInput').value.trim() || 'Open • Closes 9 PM';
       userState.interestFilter = document.getElementById('userInterestFilterSelect').value;
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
       userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
@@ -1699,7 +1729,7 @@
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
       const coords = getBroadcastCoordinates();
-      broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
+      broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, hours: userState.hours, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
       
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
