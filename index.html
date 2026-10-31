@@ -535,36 +535,40 @@
       violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(192, 132, 252, 0.65) 50%, rgba(126, 34, 206, 0.9) 100%)'
     };
 
-    // Helper to get sleek neon styling specifically for business nodes matching user request & screenshot
+    // Helper for exact neon styling with pure black transparent inner background matching user reference screenshot
     function getBusinessNeonStyle(accountType, category) {
       if (accountType !== 'business') {
         return {
           bg: 'transparent',
           borderClass: 'border border-white/40',
-          shadowStyle: 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);'
+          shadowStyle: 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);',
+          iconColor: 'text-white'
         };
       }
       
       if (category === 'utensils') {
-        // Orange neon for restaurants (matching screenshot)
+        // Orange neon for restaurants (matching reference photo)
         return {
-          bg: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(251, 146, 60, 0.7) 60%, rgba(234, 88, 12, 0.9) 100%)',
-          borderClass: 'border-2 border-orange-400 ring-4 ring-orange-500/30',
-          shadowStyle: 'box-shadow: 0 0 20px rgba(249, 115, 22, 0.75), inset 0 0 8px rgba(255, 255, 255, 0.9);'
+          bg: '#0a0a0a',
+          borderClass: 'border-2 border-orange-400',
+          shadowStyle: 'box-shadow: 0 0 22px rgba(249, 115, 22, 0.85), inset 0 0 10px rgba(249, 115, 22, 0.35);',
+          iconColor: 'text-orange-400'
         };
       } else if (category === 'pill') {
-        // Blue neon for pharmacy & health (matching screenshot)
+        // Cyan / Blue neon for pharmacy & health (matching reference photo)
         return {
-          bg: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(56, 189, 248, 0.7) 60%, rgba(2, 132, 199, 0.9) 100%)',
-          borderClass: 'border-2 border-sky-400 ring-4 ring-sky-500/30',
-          shadowStyle: 'box-shadow: 0 0 20px rgba(56, 189, 248, 0.75), inset 0 0 8px rgba(255, 255, 255, 0.9);'
+          bg: '#0a0a0a',
+          borderClass: 'border-2 border-sky-400',
+          shadowStyle: 'box-shadow: 0 0 22px rgba(56, 189, 248, 0.85), inset 0 0 10px rgba(56, 189, 248, 0.35);',
+          iconColor: 'text-sky-400'
         };
       } else {
-        // Default vibrant neon for other businesses
+        // Purple / Fuchsia neon for general businesses
         return {
-          bg: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(192, 132, 252, 0.7) 60%, rgba(126, 34, 206, 0.9) 100%)',
-          borderClass: 'border-2 border-purple-400 ring-4 ring-purple-500/30',
-          shadowStyle: 'box-shadow: 0 0 20px rgba(168, 85, 247, 0.75), inset 0 0 8px rgba(255, 255, 255, 0.9);'
+          bg: '#0a0a0a',
+          borderClass: 'border-2 border-purple-400',
+          shadowStyle: 'box-shadow: 0 0 22px rgba(192, 132, 252, 0.85), inset 0 0 10px rgba(192, 132, 252, 0.35);',
+          iconColor: 'text-purple-400'
         };
       }
     }
@@ -1021,7 +1025,7 @@
       const label = document.getElementById('userAvatarLabel');
       if (label) {
         if (userState.type === 'business') {
-          label.innerHTML = `<span>${userState.alias}</span> <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${userState.hours || 'Open • Closes 9 PM'}</span>`;
+          label.innerHTML = `<span>${userState.alias}</span> <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-black border border-emerald-500/30">${userState.hours || 'Open • Closes 9 PM'}</span>`;
           label.style.display = 'flex';
         } else {
           label.style.display = 'none';
@@ -1081,9 +1085,9 @@
 
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
-            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform ${neonStyle.borderClass}" style="background: ${userState.type === 'business' ? neonStyle.bg : BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue}; ${userState.type === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;" title="Tap to refresh radar & search chats">
-              <div class="bubble-glare"></div>
-              <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
+            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform ${neonStyle.borderClass}" style="background: ${userState.type === 'business' ? neonStyle.bg : BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue}; ${userState.type === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;" title="Tap to refresh radar & search chats">
+              ${userState.type === 'personal' ? '<div class="bubble-glare"></div>' : ''}
+              <i data-lucide="${iconName}" class="w-5 h-5 ${userState.type === 'business' ? neonStyle.iconColor : 'text-white'} drop-shadow-md z-10"></i>
             </div>
           </div>
         </div>
@@ -1406,19 +1410,20 @@
 
       container.innerHTML = '';
       validBubbles.forEach(b => {
+        const isBiz = b.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(b.accountType, b.peerId === 'you' ? userState.category : globalActiveDirectory[b.peerId]?.category);
-        const circleBg = b.accountType === 'business' ? neonStyle.bg : (b.peerId === 'you' ? BUBBLE_COLOR_MAP[userState.bubbleColor] : (BUBBLE_COLOR_MAP[globalActiveDirectory[b.peerId]?.bubbleColor] || BUBBLE_COLOR_MAP.violet));
+        const circleBg = isBiz ? neonStyle.bg : (b.peerId === 'you' ? BUBBLE_COLOR_MAP[userState.bubbleColor] : (BUBBLE_COLOR_MAP[globalActiveDirectory[b.peerId]?.bubbleColor] || BUBBLE_COLOR_MAP.violet));
 
         container.innerHTML += `
           <div onclick="playAudioEffect('chime'); connectToPeer('${b.peerId}'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="p-3.5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/80 shadow-md hover:bg-white/90 transition-all cursor-pointer flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full flex-shrink-0 bubble-node flex items-center justify-center text-white shadow-sm ${b.accountType === 'business' ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${b.accountType === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
-              <div class="bubble-glare"></div>
-              <i data-lucide="message-circle" class="w-4 h-4 text-white z-10"></i>
+            <div class="w-8 h-8 rounded-full flex-shrink-0 bubble-node flex items-center justify-center text-white shadow-sm ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
+              ${!isBiz ? '<div class="bubble-glare"></div>' : ''}
+              <i data-lucide="message-circle" class="w-4 h-4 ${isBiz ? neonStyle.iconColor : 'text-white'} z-10"></i>
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5 mb-0.5">
                 <span class="text-[11px] font-black text-slate-900 truncate">${b.name}</span>
-                ${b.accountType === 'business' && b.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30 whitespace-nowrap">${b.hours}</span>` : ''}
+                ${isBiz && b.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30 whitespace-nowrap">${b.hours}</span>` : ''}
               </div>
               <p class="text-xs font-bold text-slate-800 leading-snug line-clamp-2">
                 ${b.question}
@@ -1575,16 +1580,17 @@
       nodeElem.style.opacity = isWithinRadius ? '1' : opacityVal.toString();
       nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
       
+      const isBiz = accountType === 'business';
       const neonStyle = getBusinessNeonStyle(accountType, category);
-      const circleBg = accountType === 'business' ? neonStyle.bg : (BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet);
-      const iconName = accountType === 'business' ? category : 'user';
+      const circleBg = isBiz ? neonStyle.bg : (BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet);
+      const iconName = isBiz ? category : 'user';
       
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
       let roomId = 'room-peer-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       
-      const showNameLabel = accountType === 'business';
-      const showSonarRipple = matchesFilter && accountType !== 'business';
-      const chatRoomName = accountType === 'business' ? rawSender : 'Traveler';
+      const showNameLabel = isBiz;
+      const showSonarRipple = matchesFilter && !isBiz;
+      const chatRoomName = isBiz ? rawSender : 'Traveler';
       const hoursBadgeText = hours || 'Open • Closes 9 PM';
 
       nodeElem.innerHTML = `
@@ -1605,9 +1611,9 @@
             ` : ''}
           </div>
 
-          <div onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node text-white font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer ${accountType === 'business' ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${accountType === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
-            <div class="bubble-glare"></div>
-            <i data-lucide="${iconName}" class="w-5 h-5 text-white drop-shadow-md z-10"></i>
+          <div onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
+            ${!isBiz ? '<div class="bubble-glare"></div>' : ''}
+            <i data-lucide="${iconName}" class="w-5 h-5 ${isBiz ? neonStyle.iconColor : 'text-white'} drop-shadow-md z-10"></i>
           </div>
         </div>
       `;
@@ -1631,23 +1637,25 @@
         const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius || peer.accountType === 'business') && matchesFilter;
         const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
-        const iconName = peer.accountType === 'business' ? (peer.category || 'store') : 'user';
+        const isBiz = peer.accountType === 'business';
+        const iconName = isBiz ? (peer.category || 'store') : 'user';
         const isEnabled = peer.enabled !== false;
-        const displayLabel = peer.accountType === 'business' ? peer.rawSender : 'Traveler';
+        const displayLabel = isBiz ? peer.rawSender : 'Traveler';
 
         const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
-        const circleBg = peer.accountType === 'business' ? neonStyle.bg : BUBBLE_COLOR_MAP[peer.bubbleColor];
+        const circleBg = isBiz ? neonStyle.bg : BUBBLE_COLOR_MAP[peer.bubbleColor];
 
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node ${peer.accountType === 'business' ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${peer.accountType === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
-                <div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>
+              <div class="w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center shadow-md bubble-node ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
+                ${!isBiz ? '<div class="bubble-glare"></div>' : ''}
+                <i data-lucide="${iconName}" class="w-4 h-4 ${isBiz ? neonStyle.iconColor : 'text-white'} z-10"></i>
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
                   <h4 class="font-black text-slate-900 text-xs">${peer.rawSender} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
-                  ${peer.accountType === 'business' && peer.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${peer.hours}</span>` : ''}
+                  ${isBiz && peer.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${peer.hours}</span>` : ''}
                 </div>
                 <p class="text-[10px] text-sky-900 font-bold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
               </div>
@@ -1809,16 +1817,18 @@
       document.getElementById('chatTargetName').innerText = roomName;
       
       const isSelf = roomId === 'room-you';
-      const iconName = isSelf && userState.type === 'business' ? userState.category : 'user';
+      const isBiz = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business');
+      const iconName = isBiz ? (isSelf ? userState.category : globalActiveDirectory[peerId]?.category) : 'user';
       const neonStyle = getBusinessNeonStyle(isSelf ? userState.type : globalActiveDirectory[peerId]?.accountType, isSelf ? userState.category : globalActiveDirectory[peerId]?.category);
-      const circleBg = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business') ? neonStyle.bg : BUBBLE_COLOR_MAP[userState.bubbleColor];
+      const circleBg = isBiz ? neonStyle.bg : BUBBLE_COLOR_MAP[userState.bubbleColor];
 
-      document.getElementById('chatTargetAvatar').className = `w-9 h-9 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md bubble-node ${(isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business') ? neonStyle.borderClass : ''}`;
-      document.getElementById('chatTargetAvatar').style.background = circleBg;
-      if ((isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business')) {
-        document.getElementById('chatTargetAvatar').style.cssText += neonStyle.shadowStyle;
+      const avatarEl = document.getElementById('chatTargetAvatar');
+      avatarEl.className = `w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shadow-md bubble-node ${isBiz ? neonStyle.borderClass : ''}`;
+      avatarEl.style.background = circleBg;
+      if (isBiz) {
+        avatarEl.style.cssText += neonStyle.shadowStyle;
       }
-      document.getElementById('chatTargetAvatar').innerHTML = `<div class="bubble-glare"></div><i data-lucide="${iconName}" class="w-4 h-4 text-white z-10"></i>`;
+      avatarEl.innerHTML = `${!isBiz ? '<div class="bubble-glare"></div>' : ''}<i data-lucide="${iconName}" class="w-4 h-4 ${isBiz ? neonStyle.iconColor : 'text-white'} z-10"></i>`;
 
       if ((topic || (isSelf && activeTopicState.text)) && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
