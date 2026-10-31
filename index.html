@@ -535,7 +535,7 @@
       violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(192, 132, 252, 0.65) 50%, rgba(126, 34, 206, 0.9) 100%)'
     };
 
-    // Helper for business neon styling
+    // Helper for business neon styling with matching fine stroke border (approx 2px or border-2)
     function getBusinessNeonStyle(accountType, category) {
       if (accountType !== 'business') {
         return {
@@ -550,21 +550,21 @@
         return {
           bg: '#0a0a0a',
           borderClass: 'border-2 border-orange-400',
-          shadowStyle: 'box-shadow: 0 0 22px rgba(249, 115, 22, 0.85), inset 0 0 10px rgba(249, 115, 22, 0.35);',
+          shadowStyle: 'box-shadow: 0 0 20px rgba(249, 115, 22, 0.8), inset 0 0 8px rgba(249, 115, 22, 0.3);',
           iconColor: 'text-orange-400'
         };
       } else if (category === 'pill') {
         return {
           bg: '#0a0a0a',
           borderClass: 'border-2 border-sky-400',
-          shadowStyle: 'box-shadow: 0 0 22px rgba(56, 189, 248, 0.85), inset 0 0 10px rgba(56, 189, 248, 0.35);',
+          shadowStyle: 'box-shadow: 0 0 20px rgba(56, 189, 248, 0.8), inset 0 0 8px rgba(56, 189, 248, 0.3);',
           iconColor: 'text-sky-400'
         };
       } else {
         return {
           bg: '#0a0a0a',
           borderClass: 'border-2 border-purple-400',
-          shadowStyle: 'box-shadow: 0 0 22px rgba(192, 132, 252, 0.85), inset 0 0 10px rgba(192, 132, 252, 0.35);',
+          shadowStyle: 'box-shadow: 0 0 20px rgba(192, 132, 252, 0.8), inset 0 0 8px rgba(192, 132, 252, 0.3);',
           iconColor: 'text-purple-400'
         };
       }
@@ -1045,11 +1045,11 @@
       showToast('Radar refreshed! Searching for chats in area.', 'radar');
     }
 
-    // Renders custom HTML inner content for the icon node (splitting pill bottom half solid blue if category === 'pill')
+    // Custom icon node rendering with stroke-2 matching Lucide icon stroke width
     function renderNodeIconContent(accountType, category) {
       const isBiz = accountType === 'business';
       if (!isBiz) {
-        return `<div class="bubble-glare"></div><i data-lucide="navigation" class="w-5 h-5 text-white drop-shadow-md z-10"></i>`;
+        return `<div class="bubble-glare"></div><i data-lucide="navigation" class="w-5 h-5 text-white drop-shadow-md z-10" stroke-width="2"></i>`;
       }
       
       const neonStyle = getBusinessNeonStyle(accountType, category);
@@ -1060,10 +1060,10 @@
             <div class="w-full h-1/2 bg-transparent"></div>
             <div class="w-full h-1/2 bg-sky-400"></div>
           </div>
-          <i data-lucide="pill" class="w-5 h-5 text-sky-400 drop-shadow-md z-10"></i>
+          <i data-lucide="pill" class="w-5 h-5 text-sky-400 drop-shadow-md z-10" stroke-width="2"></i>
         `;
       } else {
-        return `<i data-lucide="${category}" class="w-5 h-5 ${neonStyle.iconColor} drop-shadow-md z-10"></i>`;
+        return `<i data-lucide="${category}" class="w-5 h-5 ${neonStyle.iconColor} drop-shadow-md z-10" stroke-width="2"></i>`;
       }
     }
 
@@ -1093,7 +1093,7 @@
               </div>
               
               <div id="userTopBubble" class="hidden px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); openChatDrawer('room-you', '${userState.type === 'business' ? userState.alias : 'Traveler'}', activeTopicState.text, 'you')">
-                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0"></i>
+                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0" stroke-width="2"></i>
                 <span id="userTopBubbleText" class="truncate">...</span>
                 <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
               </div>
@@ -1620,7 +1620,7 @@
             
             ${hasValidQuestion ? `
               <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${chatRoomName}', '${question}', '${peerId}')">
-                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0"></i>
+                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
                 <span class="truncate">${question}</span>
               </div>
             ` : ''}
