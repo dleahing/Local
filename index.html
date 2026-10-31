@@ -535,8 +535,8 @@
       violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(192, 132, 252, 0.65) 50%, rgba(126, 34, 206, 0.9) 100%)'
     };
 
-    // Semi-transparent dark radial gradient constant for business nodes
-    const BUSINESS_TRANSLUCENT_BG = 'radial-gradient(circle at 35% 30%, rgba(30, 41, 59, 0.70) 0%, rgba(15, 23, 42, 0.75) 100%)';
+    // Dark radial gradient for business nodes with 50% less transparency (opacity increased from 0.70/0.75 to 0.85/0.88)
+    const BUSINESS_TRANSLUCENT_BG = 'radial-gradient(circle at 35% 30%, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.88) 100%)';
 
     // Helper for business neon styling with thicker borders and highly vibrant neon glows
     function getBusinessNeonStyle(accountType, category) {
@@ -1093,7 +1093,8 @@
 
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
-            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${neonStyle.borderClass}" style="background: ${userState.type === 'business' ? neonStyle.bg : (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue)}; ${userState.type === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;" title="Tap to refresh radar & search chats">
+            <!-- Added animate-float so user icon floats like the chat bubbles -->
+            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${neonStyle.borderClass}" style="background: ${userState.type === 'business' ? neonStyle.bg : (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue)}; ${userState.type === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;" title="Tap to refresh radar & search chats">
               ${renderNodeIconContent(userState.type, userState.category)}
             </div>
           </div>
@@ -1324,6 +1325,7 @@
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
         { name: 'Bot 10-Mile Pickleball Fan', peerId: 'sim-peer-bot-10mi', targetMiles: 10.0, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Pickleball', isBot: true },
         { name: 'Fine Dining (Restaurant)', peerId: 'sim-peer-restaurant-20mi', targetMiles: 20.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!', color: 'pink', accountType: 'business', category: 'utensils', hours: 'Open • Closes 10 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Bella Vista Trattoria (Restaurant)', peerId: 'sim-peer-restaurant-5mi', targetMiles: 5.0, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'orange', accountType: 'business', category: 'utensils', hours: 'Open • Closes 11 PM', interestFilter: 'Food', isBot: true },
         { name: '12-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 12.0, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Hiking', isBot: true },
         { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Cars', isBot: true },
         { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding pharmacy open!', color: 'emerald', accountType: 'business', category: 'pill', hours: '24/7 Open', interestFilter: 'Life', isBot: true }
