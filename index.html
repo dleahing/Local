@@ -538,7 +538,7 @@
     // Semi-transparent dark radial gradient constant for business nodes
     const BUSINESS_TRANSLUCENT_BG = 'radial-gradient(circle at 35% 30%, rgba(30, 41, 59, 0.70) 0%, rgba(15, 23, 42, 0.75) 100%)';
 
-    // Helper for business neon styling
+    // Helper for business neon styling with thicker borders and highly vibrant neon glows
     function getBusinessNeonStyle(accountType, category) {
       if (accountType !== 'business') {
         return {
@@ -552,23 +552,23 @@
       if (category === 'utensils') {
         return {
           bg: BUSINESS_TRANSLUCENT_BG,
-          borderClass: 'border-2 border-orange-400',
-          shadowStyle: 'box-shadow: 0 0 20px rgba(249, 115, 22, 0.8), inset 0 0 8px rgba(249, 115, 22, 0.3);',
-          iconColor: 'text-orange-400'
+          borderClass: 'border-4 border-orange-400',
+          shadowStyle: 'box-shadow: 0 0 28px rgba(251, 146, 60, 0.95), 0 0 10px rgba(249, 115, 22, 0.8), inset 0 0 12px rgba(251, 146, 60, 0.5);',
+          iconColor: 'text-orange-300 drop-shadow-[0_0_10px_rgba(251,146,60,0.8)]'
         };
       } else if (category === 'pill') {
         return {
           bg: BUSINESS_TRANSLUCENT_BG,
-          borderClass: 'border-2 border-sky-400',
-          shadowStyle: 'box-shadow: 0 0 20px rgba(56, 189, 248, 0.8), inset 0 0 8px rgba(56, 189, 248, 0.3);',
-          iconColor: 'text-sky-400'
+          borderClass: 'border-4 border-sky-400',
+          shadowStyle: 'box-shadow: 0 0 28px rgba(56, 189, 248, 0.95), 0 0 10px rgba(14, 165, 233, 0.8), inset 0 0 12px rgba(56, 189, 248, 0.5);',
+          iconColor: 'text-sky-300 drop-shadow-[0_0_10px_rgba(56,189,248,0.8)]'
         };
       } else {
         return {
           bg: BUSINESS_TRANSLUCENT_BG,
-          borderClass: 'border-2 border-purple-400',
-          shadowStyle: 'box-shadow: 0 0 20px rgba(192, 132, 252, 0.8), inset 0 0 8px rgba(192, 132, 252, 0.3);',
-          iconColor: 'text-purple-400'
+          borderClass: 'border-4 border-purple-400',
+          shadowStyle: 'box-shadow: 0 0 28px rgba(216, 180, 254, 0.95), 0 0 10px rgba(168, 85, 247, 0.8), inset 0 0 12px rgba(216, 180, 254, 0.5);',
+          iconColor: 'text-purple-300 drop-shadow-[0_0_10px_rgba(216,180,254,0.8)]'
         };
       }
     }
@@ -1056,7 +1056,7 @@
       }
       
       const neonStyle = getBusinessNeonStyle(accountType, category);
-      return `<i data-lucide="${category}" class="w-5 h-5 ${neonStyle.iconColor} drop-shadow-md z-10" stroke-width="2"></i>`;
+      return `<i data-lucide="${category}" class="w-5 h-5 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>`;
     }
 
     function initUserNode() {
@@ -1111,7 +1111,7 @@
 
     function applyBubbleColorToElement(elementId, colorName) {
       const el = document.getElementById(elementId);
-      if (!el || el.classList.contains('border-2')) return;
+      if (!el || el.classList.contains('border-4')) return;
       el.style.background = BUBBLE_COLOR_MAP[colorName] || BUBBLE_COLOR_MAP.blue;
     }
 
