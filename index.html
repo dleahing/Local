@@ -535,7 +535,7 @@
       violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(192, 132, 252, 0.65) 50%, rgba(126, 34, 206, 0.9) 100%)'
     };
 
-    // Helper for exact neon styling with pure black transparent inner background matching user reference screenshot
+    // Helper for business neon styling
     function getBusinessNeonStyle(accountType, category) {
       if (accountType !== 'business') {
         return {
@@ -547,7 +547,6 @@
       }
       
       if (category === 'utensils') {
-        // Orange neon for restaurants (matching reference photo)
         return {
           bg: '#0a0a0a',
           borderClass: 'border-2 border-orange-400',
@@ -555,7 +554,6 @@
           iconColor: 'text-orange-400'
         };
       } else if (category === 'pill') {
-        // Cyan / Blue neon for pharmacy & health (matching reference photo)
         return {
           bg: '#0a0a0a',
           borderClass: 'border-2 border-sky-400',
@@ -563,7 +561,6 @@
           iconColor: 'text-sky-400'
         };
       } else {
-        // Purple / Fuchsia neon for general businesses
         return {
           bg: '#0a0a0a',
           borderClass: 'border-2 border-purple-400',
@@ -1048,13 +1045,34 @@
       showToast('Radar refreshed! Searching for chats in area.', 'radar');
     }
 
+    // Renders custom HTML inner content for the icon node (splitting pill bottom half solid blue if category === 'pill')
+    function renderNodeIconContent(accountType, category) {
+      const isBiz = accountType === 'business';
+      if (!isBiz) {
+        return `<div class="bubble-glare"></div><i data-lucide="navigation" class="w-5 h-5 text-white drop-shadow-md z-10"></i>`;
+      }
+      
+      const neonStyle = getBusinessNeonStyle(accountType, category);
+
+      if (category === 'pill') {
+        return `
+          <div class="absolute inset-0 rounded-full overflow-hidden flex flex-col z-0">
+            <div class="w-full h-1/2 bg-transparent"></div>
+            <div class="w-full h-1/2 bg-sky-400"></div>
+          </div>
+          <i data-lucide="pill" class="w-5 h-5 text-sky-400 drop-shadow-md z-10"></i>
+        `;
+      } else {
+        return `<i data-lucide="${category}" class="w-5 h-5 ${neonStyle.iconColor} drop-shadow-md z-10"></i>`;
+      }
+    }
+
     function initUserNode() {
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
       userDiv.id = 'userAvatarNode';
       userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 cursor-pointer node-item';
       
-      const iconName = userState.type === 'business' ? (userState.category || 'store') : 'navigation';
       const showMyLabel = userState.type === 'business';
       const neonStyle = getBusinessNeonStyle(userState.type, userState.category);
 
@@ -1063,8 +1081,6 @@
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/15 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/25 shadow-lg pointer-events-auto" style="width: 200px; height: 200px;" title="Click & drag to scale boundary">
-            
-            <!-- Radius Distance text labels with scale-compensator for constant font size, no bubble wrapper -->
             <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-sky-200 text-[11px] font-black tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
             <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-sky-200 text-[11px] font-black tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
           </div>
@@ -1085,9 +1101,8 @@
 
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
-            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform ${neonStyle.borderClass}" style="background: ${userState.type === 'business' ? neonStyle.bg : BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue}; ${userState.type === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;" title="Tap to refresh radar & search chats">
-              ${userState.type === 'personal' ? '<div class="bubble-glare"></div>' : ''}
-              <i data-lucide="${iconName}" class="w-5 h-5 ${userState.type === 'business' ? neonStyle.iconColor : 'text-white'} drop-shadow-md z-10"></i>
+            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${neonStyle.borderClass}" style="background: ${userState.type === 'business' ? neonStyle.bg : BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue}; ${userState.type === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;" title="Tap to refresh radar & search chats">
+              ${renderNodeIconContent(userState.type, userState.category)}
             </div>
           </div>
         </div>
@@ -1104,7 +1119,7 @@
 
     function applyBubbleColorToElement(elementId, colorName) {
       const el = document.getElementById(elementId);
-      if (!el || el.classList.contains('border-2')) return; // skip if business neon
+      if (!el || el.classList.contains('border-2')) return;
       el.style.background = BUBBLE_COLOR_MAP[colorName] || BUBBLE_COLOR_MAP.blue;
     }
 
@@ -1377,6 +1392,7 @@
           peerId: 'you',
           roomId: 'room-you',
           accountType: userState.type,
+          category: userState.category,
           hours: userState.hours
         });
       }
@@ -1395,6 +1411,7 @@
               peerId: p.peerId,
               roomId: 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-'),
               accountType: p.accountType,
+              category: p.category,
               hours: p.hours
             });
           }
@@ -1411,14 +1428,13 @@
       container.innerHTML = '';
       validBubbles.forEach(b => {
         const isBiz = b.accountType === 'business';
-        const neonStyle = getBusinessNeonStyle(b.accountType, b.peerId === 'you' ? userState.category : globalActiveDirectory[b.peerId]?.category);
+        const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
         const circleBg = isBiz ? neonStyle.bg : (b.peerId === 'you' ? BUBBLE_COLOR_MAP[userState.bubbleColor] : (BUBBLE_COLOR_MAP[globalActiveDirectory[b.peerId]?.bubbleColor] || BUBBLE_COLOR_MAP.violet));
 
         container.innerHTML += `
           <div onclick="playAudioEffect('chime'); connectToPeer('${b.peerId}'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="p-3.5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/80 shadow-md hover:bg-white/90 transition-all cursor-pointer flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full flex-shrink-0 bubble-node flex items-center justify-center text-white shadow-sm ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
-              ${!isBiz ? '<div class="bubble-glare"></div>' : ''}
-              <i data-lucide="message-circle" class="w-4 h-4 ${isBiz ? neonStyle.iconColor : 'text-white'} z-10"></i>
+            <div class="w-8 h-8 rounded-full flex-shrink-0 bubble-node flex items-center justify-center text-white shadow-sm overflow-hidden ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
+              ${renderNodeIconContent(b.accountType, b.category)}
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5 mb-0.5">
@@ -1583,7 +1599,6 @@
       const isBiz = accountType === 'business';
       const neonStyle = getBusinessNeonStyle(accountType, category);
       const circleBg = isBiz ? neonStyle.bg : (BUBBLE_COLOR_MAP[bubbleColor] || BUBBLE_COLOR_MAP.violet);
-      const iconName = isBiz ? category : 'user';
       
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
       let roomId = 'room-peer-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
@@ -1611,9 +1626,8 @@
             ` : ''}
           </div>
 
-          <div onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
-            ${!isBiz ? '<div class="bubble-glare"></div>' : ''}
-            <i data-lucide="${iconName}" class="w-5 h-5 ${isBiz ? neonStyle.iconColor : 'text-white'} drop-shadow-md z-10"></i>
+          <div onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')" class="w-11 h-11 rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
+            ${renderNodeIconContent(accountType, category)}
           </div>
         </div>
       `;
@@ -1638,7 +1652,6 @@
         const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const isBiz = peer.accountType === 'business';
-        const iconName = isBiz ? (peer.category || 'store') : 'user';
         const isEnabled = peer.enabled !== false;
         const displayLabel = isBiz ? peer.rawSender : 'Traveler';
 
@@ -1648,9 +1661,8 @@
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center shadow-md bubble-node ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
-                ${!isBiz ? '<div class="bubble-glare"></div>' : ''}
-                <i data-lucide="${iconName}" class="w-4 h-4 ${isBiz ? neonStyle.iconColor : 'text-white'} z-10"></i>
+              <div class="w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
+                ${renderNodeIconContent(peer.accountType, peer.category)}
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
@@ -1818,17 +1830,19 @@
       
       const isSelf = roomId === 'room-you';
       const isBiz = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business');
-      const iconName = isBiz ? (isSelf ? userState.category : globalActiveDirectory[peerId]?.category) : 'user';
-      const neonStyle = getBusinessNeonStyle(isSelf ? userState.type : globalActiveDirectory[peerId]?.accountType, isSelf ? userState.category : globalActiveDirectory[peerId]?.category);
+      const accountType = isSelf ? userState.type : globalActiveDirectory[peerId]?.accountType;
+      const category = isSelf ? userState.category : globalActiveDirectory[peerId]?.category;
+      
+      const neonStyle = getBusinessNeonStyle(accountType, category);
       const circleBg = isBiz ? neonStyle.bg : BUBBLE_COLOR_MAP[userState.bubbleColor];
 
       const avatarEl = document.getElementById('chatTargetAvatar');
-      avatarEl.className = `w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shadow-md bubble-node ${isBiz ? neonStyle.borderClass : ''}`;
+      avatarEl.className = `w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : ''}`;
       avatarEl.style.background = circleBg;
       if (isBiz) {
         avatarEl.style.cssText += neonStyle.shadowStyle;
       }
-      avatarEl.innerHTML = `${!isBiz ? '<div class="bubble-glare"></div>' : ''}<i data-lucide="${iconName}" class="w-4 h-4 ${isBiz ? neonStyle.iconColor : 'text-white'} z-10"></i>`;
+      avatarEl.innerHTML = renderNodeIconContent(accountType, category);
 
       if ((topic || (isSelf && activeTopicState.text)) && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
