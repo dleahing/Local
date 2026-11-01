@@ -308,11 +308,11 @@
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
   <!-- Unified Bottom Action Dock Bubble -->
-  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4">
+  <div id="actionDockContainer" class="fixed z-40 pointer-events-auto w-full max-w-sm px-4 transition-all duration-300 ease-out" style="bottom: env(safe-area-inset-bottom, 1.5rem); left: 50%; transform: translateX(-50%); position: absolute;">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
         <i data-lucide="message-square-plus" class="w-4 h-4 text-sky-400 flex-shrink-0"></i>
-        <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onkeypress="if(event.key==='Enter'){quickPostFromDock();}" />
+        <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockKeyboard(true)" onblur="handleDockKeyboard(false)" onkeypress="if(event.key==='Enter'){quickPostFromDock();}" />
         <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-sky-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-sky-500 transition-all">
           <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
         </button>
@@ -2191,6 +2191,20 @@
       document.getElementById('chatDrawer').classList.add('hidden');
       document.getElementById('chatBackdrop').classList.add('hidden');
       currentActiveChatRoomId = null;
+    }
+
+    function handleDockKeyboard(isFocused) {
+      const dock = document.getElementById('actionDockContainer');
+      if (!dock) return;
+      if (isFocused) {
+        // Move only the action bar to the top portion of the screen when keyboard opens
+        dock.style.bottom = 'auto';
+        dock.style.top = '16px';
+      } else {
+        // Restore action bar to bottom when keyboard closes
+        dock.style.top = 'auto';
+        dock.style.bottom = '1.5rem';
+      }
     }
 
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
