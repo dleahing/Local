@@ -690,10 +690,10 @@
       } else if (category === 'pill') {
         return {
           bg: SOLID_FLAT_BUSINESS_BG,
-          borderClass: 'border-[3.5px] border-emerald-400',
-          shadowStyle: 'box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);',
-          iconColor: 'text-emerald-300',
-          glowText: 'text-emerald-400',
+          borderClass: 'border-[3.5px] border-blue-500',
+          shadowStyle: 'box-shadow: 0 0 25px rgba(59, 130, 246, 0.85);',
+          iconColor: 'text-blue-400',
+          glowText: 'text-blue-400',
           lucideIcon: 'pill'
         };
       } else {
@@ -1652,7 +1652,7 @@
         { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-4mi', targetMiles: 4.0, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
         { name: '12-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 12.0, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
         { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'blue', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -2152,7 +2152,7 @@
     }
 
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { document.getElementById('profileModal').classList.close ? document.getElementById('profileModal').classList.close() : document.getElementById('profileModal').classList.add('hidden'); }
+    function closeProfileModal() { document.getElementById('profileModal').classList.close ? document.getElementById('profileModal'].classList.close() : document.getElementById('profileModal').classList.add('hidden'); }
     function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
     function recalculateNodePositions() {}
   </script>
