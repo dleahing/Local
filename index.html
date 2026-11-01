@@ -31,7 +31,7 @@
       --pan-y: 0px;
       --radar-line-color: rgba(56, 189, 248, 0.75);
       --radar-sweep-color: rgba(56, 189, 248, 0.85);
-      --radar-bg-color: rgba(56, 189, 248, 0.15);
+      --radar-bg-color: rgba(56, 189, 248, 0.12);
     }
     
     body {
@@ -130,14 +130,19 @@
       pointer-events: auto;
     }
 
-    .theme-sky { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); --accent: #db2777; }
-    .theme-pink { --bg-gradient: radial-gradient(circle at 50% 50%, #e0f2fe 0%, #bae6fd 50%, #38bdf8 100%); --accent: #0284c7; }
-    .theme-yellow { --bg-gradient: radial-gradient(circle at 50% 50%, #fefce8 0%, #fef08a 50%, #eab308 100%); --accent: #ca8a04; }
-    .theme-emerald { --bg-gradient: radial-gradient(circle at 50% 50%, #fdf4ff 0%, #f5d0fe 50%, #e879f9 100%); --accent: #c084fc; }
-    .theme-violet { --bg-gradient: radial-gradient(circle at 50% 50%, #fef2f2 0%, #fecaca 50%, #f87171 100%); --accent: #ef4444; }
+    /* Map Background Options */
+    .bg-mode-aurora { background: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); }
+    .bg-mode-cyber { background: radial-gradient(circle at 50% 50%, #090d16 0%, #030712 60%, #000000 100%); }
+    .bg-mode-minimal { background: radial-gradient(circle at 50% 50%, #f8fafc 0%, #f1f5f9 60%, #e2e8f0 100%); }
+    .bg-mode-midnight { background: radial-gradient(circle at 50% 50%, #0f172a 0%, #090d16 60%, #020617 100%); }
 
     .map-grid-pattern {
-      background-image: radial-gradient(#000 1.2px, transparent 1.2px);
+      background-image: radial-gradient(rgba(0,0,0,0.15) 1.2px, transparent 1.2px);
+      background-size: 40px 40px;
+      background-repeat: repeat;
+    }
+    .map-grid-pattern-dark {
+      background-image: radial-gradient(rgba(255,255,255,0.12) 1.2px, transparent 1.2px);
       background-size: 40px 40px;
       background-repeat: repeat;
     }
@@ -201,11 +206,11 @@
     }
   </style>
 </head>
-<body id="appBody" class="theme-sky bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
+<body id="appBody" class="bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
   <!-- Map Canvas with Expanded 67.5-Mile Render Boundary & Fluid Zoom -->
-  <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center" style="background: var(--bg-gradient);">
-    <div class="absolute inset-0 opacity-12 map-grid-pattern"></div>
+  <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
+    <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern"></div>
     
     <!-- Explicit World Border Ring highlighting the 67.5-Mile Maximum Boundary -->
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none" style="width: 5625px; height: 5625px; border-width: 1px;">
@@ -360,6 +365,17 @@
           <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
+        <!-- Background Style Option -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Map Background Style</label>
+          <select id="bgModeSelect" onchange="updateBackgroundStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+            <option value="aurora">Gradient Aurora (Vibrant)</option>
+            <option value="cyber">Cyber Grid Dark (Tactical)</option>
+            <option value="minimal">Clean Minimalist Light (Paper)</option>
+            <option value="midnight">Midnight Radar (Deep Navy)</option>
+          </select>
+        </div>
+
         <!-- Radar Style Selector -->
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Radar Style / Type</label>
@@ -451,17 +467,6 @@
           </label>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
-          <div class="grid grid-cols-5 gap-1.5">
-            <button onclick="playAudioEffect('chime'); setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-pink-100 border border-pink-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-pink-400"></span><span class="text-[9px] font-semibold text-pink-900">Pink</span></button>
-            <button onclick="playAudioEffect('chime'); setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-sky-100 border border-sky-400 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-sky-500"></span><span class="text-[9px] font-semibold text-sky-800">Blue</span></button>
-            <button onclick="playAudioEffect('chime'); setAppTheme('theme-yellow')" class="p-2 rounded-2xl bg-amber-100 border border-amber-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-amber-400"></span><span class="text-[9px] font-semibold text-amber-900">Yellow</span></button>
-            <button onclick="playAudioEffect('chime'); setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-fuchsia-100 border border-fuchsia-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-fuchsia-400"></span><span class="text-[9px] font-semibold text-fuchsia-900">Fuchsia</span></button>
-            <button onclick="playAudioEffect('chime'); setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-red-100 border border-red-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-red-400"></span><span class="text-[9px] font-semibold text-red-900">Sunset</span></button>
-          </div>
-        </div>
-
         <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all">
           Save Profile & Settings
         </button>
@@ -538,9 +543,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 108630.4; // Maximum boundary 67.5 Miles
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v12';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v12';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v22';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v13';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v13';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v23';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -580,10 +585,10 @@
       radius: MIN_RADIUS_METERS,
       lat: 27.2730,
       lng: -80.3582,
-      theme: 'theme-sky',
       bubbleColor: 'blue',
       radarStyle: 'futuristic',
       radarColor: 'cyan',
+      bgMode: 'aurora',
       ghostMode: false,
       fuzzLocation: false,
       makeNamePublic: true
@@ -834,11 +839,12 @@
           document.getElementById('userInterestFilterSelect').value = userState.interestFilter || 'none';
           document.getElementById('radarStyleSelect').value = userState.radarStyle || 'futuristic';
           document.getElementById('radarColorSelect').value = userState.radarColor || 'cyan';
+          document.getElementById('bgModeSelect').value = userState.bgMode || 'aurora';
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
           document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
           selectAccountType(userState.type || 'personal', true);
-          setAppTheme(userState.theme || 'theme-sky', true);
+          applyBackgroundMode(userState.bgMode || 'aurora');
           applyRadarColorCSS(userState.radarColor || 'cyan');
           updateMyDisplayLabel();
           updateBusinessHoursFromTimes();
@@ -1230,6 +1236,28 @@
       return `<i data-lucide="${neonStyle.lucideIcon}" class="w-5 h-5 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>`;
     }
 
+    function applyBackgroundMode(mode) {
+      userState.bgMode = mode;
+      const mapCanvas = document.getElementById('mapCanvas');
+      const gridOverlay = document.getElementById('mapGridOverlay');
+      if (!mapCanvas) return;
+
+      mapCanvas.className = `absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-${mode}`;
+      if (gridOverlay) {
+        if (mode === 'cyber' || mode === 'midnight') {
+          gridOverlay.className = 'absolute inset-0 opacity-20 map-grid-pattern-dark';
+        } else {
+          gridOverlay.className = 'absolute inset-0 opacity-20 map-grid-pattern';
+        }
+      }
+    }
+
+    function updateBackgroundStyle(mode) {
+      applyBackgroundMode(mode);
+      savePersistentData();
+      showToast(`Map background style updated to ${mode}!`, 'palette');
+    }
+
     function applyRadarColorCSS(colorName) {
       userState.radarColor = colorName;
       const palette = RADAR_PALETTES[colorName] || RADAR_PALETTES.cyan;
@@ -1392,7 +1420,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v22');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v23');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -1912,12 +1940,6 @@
       if (!skipSave) savePersistentData();
     }
 
-    function setAppTheme(themeClass, skipSave = false) {
-      userState.theme = themeClass;
-      document.getElementById('appBody').className = `${themeClass} bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative`;
-      if (!skipSave) { savePersistentData(); showToast('App theme preset updated!', 'palette'); }
-    }
-
     function saveProfile() {
       userState.alias = document.getElementById('avatarNameInput').value.trim() || 'Traveler';
       userState.category = document.getElementById('businessCategorySelect').value;
@@ -1927,6 +1949,7 @@
       userState.interestFilter = document.getElementById('userInterestFilterSelect').value;
       userState.radarStyle = document.getElementById('radarStyleSelect').value;
       userState.radarColor = document.getElementById('radarColorSelect').value;
+      userState.bgMode = document.getElementById('bgModeSelect').value;
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
       userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
       userState.makeNamePublic = document.getElementById('privacyMakeNamePublic').checked;
