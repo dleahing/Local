@@ -111,23 +111,26 @@
       will-change: transform;
     }
 
-    /* Standardized Crisp Radar Label Typography */
+    /* Razor-Thin Zoom-Invariant Radar Lines */
+    .hairline-ring {
+      border-width: calc(1px / var(--zoom-scale)) !important;
+    }
+
+    /* Clean Unclipped Foreground Radar Labels (Action Bar Typography Style) */
     .radar-distance-label {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: -0.011em;
       text-transform: uppercase;
-      color: #ffffff;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      padding: 3px 8px;
-      border-radius: 9999px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      color: rgba(255, 255, 255, 0.9);
+      background: transparent;
+      padding: 0;
+      border: none;
+      box-shadow: none;
       white-space: nowrap;
       pointer-events: none;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
     }
 
     /* Anti-Overlap Floating Chat Bubble Stack container */
@@ -228,13 +231,13 @@
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern"></div>
     
     <!-- Explicit World Border Ring highlighting the 67.5-Mile Maximum Boundary -->
-    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none" style="width: 5625px; height: 5625px; border-width: 1px;">
+    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring" style="width: 5625px; height: 5625px;">
       <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">67.5-Mile World Boundary Edge</div>
     </div>
 
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
-      <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow shadow-[0_0_20px_rgba(56,189,248,0.7)]" style="border: 1px solid var(--radar-line-color);"></div>
-      <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow shadow-[0_0_15px_rgba(56,189,248,0.5)]" style="border: 1px solid var(--radar-line-color); animation-delay: 2s;"></div>
+      <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow shadow-[0_0_20px_rgba(56,189,248,0.7)] hairline-ring" style="border-style: solid; border-color: var(--radar-line-color);"></div>
+      <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow shadow-[0_0_15px_rgba(56,189,248,0.5)] hairline-ring" style="border-style: solid; border-color: var(--radar-line-color); animation-delay: 2s;"></div>
     </div>
 
     <div id="nodesContainer" class="absolute inset-0 z-50"></div>
@@ -559,9 +562,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 108630.4; // Maximum boundary 67.5 Miles
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v16';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v16';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v26';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v17';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v17';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v27';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -1201,10 +1204,9 @@
       const sizePx = targetRing.offsetWidth || 450;
       const ripple = document.createElement('div');
       
-      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-sky-400 bg-sky-400/35 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(56,189,248,0.7)]';
+      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-sky-400 bg-sky-400/35 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(56,189,248,0.7)] hairline-ring';
       ripple.style.width = `${sizePx}px`;
       ripple.style.height = `${sizePx}px`;
-      ripple.style.borderWidth = '1px';
 
       ringContainer.appendChild(ripple);
       setTimeout(() => ripple.remove(), 2200);
@@ -1334,44 +1336,44 @@
       const palette = RADAR_PALETTES[userState.radarColor || 'cyan'];
       if (styleType === 'cyberpunk') {
         return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto overflow-hidden" style="width: 200px; height: 200px; border: 1px solid ${palette.line}; background: ${palette.bg};" title="Click & drag to scale boundary">
-            <div class="absolute inset-0 border border-dashed rounded-full animate-spin" style="animation-duration: 25s; transform-origin: center center; border-color: ${palette.line}; border-width: 1px;"></div>
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
+            <div class="absolute inset-0 rounded-full animate-spin hairline-ring" style="animation-duration: 25s; transform-origin: center center; border-style: dashed; border-color: ${palette.line};"></div>
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-8 -translate-y-1/2">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-8 -translate-y-1/2">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else if (styleType === 'minimal') {
         return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto" style="width: 200px; height: 200px; border: 1px solid ${palette.line};" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-8 -translate-y-1/2">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-8 -translate-y-1/2">5.0 Mi</div>
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else if (styleType === 'sonar') {
         return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-950/30 cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto overflow-hidden" style="width: 200px; height: 200px; border: 1px solid ${palette.line};" title="Click & drag to scale boundary">
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-950/30 cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div class="absolute inset-3 rounded-full pointer-events-none" style="border: 1px solid ${palette.line}; opacity: 0.6;"></div>
-            <div class="absolute inset-8 rounded-full pointer-events-none" style="border: 1px solid ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-8 -translate-y-1/2">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-8 -translate-y-1/2">5.0 Mi</div>
+            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
+            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else {
         return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-2xl pointer-events-auto backdrop-blur-xs overflow-hidden" style="width: 200px; height: 200px; border: 1px solid ${palette.line}; background: ${palette.bg};" title="Click & drag to scale boundary">
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-2xl pointer-events-auto backdrop-blur-xs hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div class="absolute inset-3 rounded-full pointer-events-none" style="border: 1px solid ${palette.line}; opacity: 0.6;"></div>
-            <div class="absolute inset-8 rounded-full pointer-events-none" style="border: 1px solid ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-8 -translate-y-1/2">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-8 -translate-y-1/2">5.0 Mi</div>
+            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
+            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       }
@@ -1470,7 +1472,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v26');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v27');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
