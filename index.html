@@ -575,6 +575,8 @@
     const STORAGE_KEY_PROFILE = 'local_user_profile_v21';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v21';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v21';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v21';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -846,6 +848,7 @@
       requestScreenWakeLock();
       spawnDefaultSimulatedUsers();
       checkChatExpiryLoop();
+      restoreActiveChatRoom();
       
       const slider = document.getElementById('radarRangeSlider');
       if (slider) {
@@ -906,6 +909,11 @@
         if (savedChats) {
           chatRoomsSessions = JSON.parse(savedChats);
         }
+
+        const savedTopicState = localStorage.getItem(STORAGE_KEY_TOPIC_STATE);
+        if (savedTopicState) {
+          activeTopicState = JSON.parse(savedTopicState);
+        }
       } catch (e) {}
     }
 
@@ -913,6 +921,25 @@
       try {
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
+        localStorage.setItem(STORAGE_KEY_TOPIC_STATE, JSON.stringify(activeTopicState));
+        if (currentActiveChatRoomId) {
+          localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
+        } else {
+          localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
+        }
+      } catch (e) {}
+    }
+
+    function restoreActiveChatRoom() {
+      try {
+        const savedRoomId = localStorage.getItem(STORAGE_KEY_ACTIVE_ROOM);
+        if (savedRoomId && chatRoomsSessions[savedRoomId]) {
+          const peerIdMatch = savedRoomId.replace('room-peer-', '');
+          const peerData = globalActiveDirectory[peerIdMatch];
+          const roomName = savedRoomId === 'room-you' ? (userState.type === 'business' ? userState.alias : 'Traveler') : (peerData ? peerData.rawSender : 'Active Session');
+          const topic = savedRoomId === 'room-you' ? activeTopicState.text : (peerData ? peerData.question : null);
+          openChatDrawer(savedRoomId, roomName, topic, peerIdMatch, true);
+        }
       } catch (e) {}
     }
 
@@ -2068,6 +2095,7 @@
             activeTopicState.text = null; 
             activeTopicState.createdAt = null;
             renderUserTopBubbleContent();
+            savePersistentData();
           } else {
             const badge = document.getElementById('topicExpiryBadge');
             if (badge) badge.innerText = `Visible for ${Math.floor(remainingMs / 60000)}m`;
@@ -2131,6 +2159,7 @@
       input.value = '';
       showToast('Map bubble posted!', 'check-circle');
       playAudioEffect('bell');
+      savePersistentData();
 
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
     }
@@ -2210,8 +2239,9 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
-    function openChatDrawer(roomId, roomName, topic, peerId) {
+    function openChatDrawer(roomId, roomName, topic, peerId, isRestoring = false) {
       currentActiveChatRoomId = roomId;
+      savePersistentData();
       document.getElementById('chatTargetName').innerText = roomName;
       
       const isSelf = roomId === 'room-you';
@@ -2251,6 +2281,7 @@
       document.getElementById('chatDrawer').classList.add('hidden');
       document.getElementById('chatBackdrop').classList.add('hidden');
       currentActiveChatRoomId = null;
+      savePersistentData();
     }
 
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
