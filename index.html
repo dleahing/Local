@@ -116,20 +116,21 @@
       border-width: calc(1px / var(--zoom-scale)) !important;
     }
 
-    /* Zoom-Invariant Foreground Radar Labels (Action Dock Typography Match) */
+    /* Clean Unclipped Foreground Radar Labels (Exact Action Dock Font Matching) */
     .radar-distance-label {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: -0.011em;
-      color: rgba(255, 255, 255, 0.95);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: rgba(125, 211, 252, 0.95); /* Matches text-sky-300 */
       background: transparent;
       padding: 0;
       border: none;
       box-shadow: none;
       white-space: nowrap;
       pointer-events: none;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
     }
 
     /* Anti-Overlap Floating Chat Bubble Stack container */
@@ -175,16 +176,6 @@
       border: 1px solid rgba(255, 255, 255, 0.75);
       box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.08);
     }
-
-    /* Highly Transparent Streamlined Logo Dock */
-    .transparent-logo-dock {
-      background: rgba(255, 255, 255, 0.25);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-    }
-
     .glass-card {
       background: rgba(255, 255, 255, 0.75);
       backdrop-filter: blur(20px);
@@ -192,6 +183,16 @@
       border: 1px solid rgba(255, 255, 255, 0.85);
       box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
     }
+
+    /* Ultra-Transparent Translucent Glass Top Logo Bar */
+    .glass-header-transparent {
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+    }
+
     .liquid-glass-icon {
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.45) 100%);
       backdrop-filter: blur(18px);
@@ -268,16 +269,16 @@
     </div>
   </div>
 
-  <!-- Top Glass Header Bar -->
+  <!-- Top Translucent Glass Header Bar (Simplified: Only Logo & Active User Count) -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
-    <!-- Streamlined Highly Transparent Logo Dock -->
-    <div class="transparent-logo-dock px-3.5 py-2 rounded-2xl flex items-center gap-3 pointer-events-auto shadow-lg">
+    <div class="glass-header-transparent px-2.5 py-1.5 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md">
       <div class="relative flex items-center justify-center">
-        <div id="logoBadge" class="w-7 h-7 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-sm border border-white/40 shadow-sm">L</div>
+        <div id="logoBadge" class="w-7 h-7 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-base border border-white/50 shadow-sm">L</div>
         <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white"></div>
       </div>
-      <div id="activeUserBadge" class="flex items-center gap-1.5 text-xs font-semibold text-slate-900 bg-white/40 px-2.5 py-1 rounded-full border border-white/50 shadow-sm">
-        <span id="p2pNetDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      
+      <div id="activeUserBadge" class="flex items-center gap-1.5 text-[10px] text-emerald-950 font-semibold bg-emerald-500/25 px-2.5 py-1 rounded-xl border border-emerald-500/40 shadow-xs">
+        <span id="p2pNetDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
         <span id="activeUserCount">1 Active</span>
       </div>
     </div>
@@ -285,19 +286,19 @@
     <div class="flex items-center gap-2 pointer-events-auto">
       <!-- Layout Switcher Dropdown -->
       <div class="relative">
-        <select id="layoutModeSelect" onchange="playAudioEffect('click'); setLayoutMode(this.value)" class="glass-panel px-3 py-2.5 rounded-2xl text-slate-900 text-xs font-semibold focus:outline-none shadow-lg cursor-pointer">
+        <select id="layoutModeSelect" onchange="playAudioEffect('click'); setLayoutMode(this.value)" class="glass-panel px-3 py-2 rounded-2xl text-slate-900 text-xs font-semibold focus:outline-none shadow-lg cursor-pointer">
           <option value="map">Show All on Map</option>
           <option value="right">List to Right Side</option>
         </select>
       </div>
 
-      <button onclick="playAudioEffect('click'); openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
-        <i data-lucide="user-cog" class="w-5 h-5"></i>
+      <button onclick="playAudioEffect('click'); openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
+        <i data-lucide="user-cog" class="w-4 h-4"></i>
       </button>
 
-      <button onclick="playAudioEffect('click'); toggleP2PModal()" title="WebRTC P2P Mesh Connections" class="liquid-glass-icon p-2.5 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
-        <i data-lucide="share-2" class="w-5 h-5"></i>
-        <span id="p2pStatusPingDot" class="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+      <button onclick="playAudioEffect('click'); toggleP2PModal()" title="WebRTC P2P Mesh Connections" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
+        <i data-lucide="share-2" class="w-4 h-4"></i>
+        <span id="p2pStatusPingDot" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
       </button>
     </div>
   </header>
@@ -321,9 +322,9 @@
 
       <!-- Bottom row: Radar Label & Range Slider -->
       <div class="flex items-center gap-3">
-        <span class="text-xs font-semibold text-sky-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
+        <span class="text-[10px] font-bold text-sky-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
         <input type="range" id="radarRangeSlider" min="8046.7" max="108630.4" step="1000" value="8046.7" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-sky-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg">
-        <span id="sliderRangeLabel" class="text-xs font-semibold text-white uppercase whitespace-nowrap">5.0 Mi</span>
+        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">5.0 Mi</span>
       </div>
     </div>
   </div>
@@ -1344,15 +1345,15 @@
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else if (styleType === 'minimal') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else if (styleType === 'sonar') {
@@ -1363,8 +1364,8 @@
             </div>
             <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
             <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else {
@@ -1375,8 +1376,8 @@
             </div>
             <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
             <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       }
@@ -2152,7 +2153,7 @@
     }
 
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { document.getElementById('profileModal'].classList.close ? document.getElementById('profileModal').classList.close() : document.getElementById('profileModal').classList.add('hidden'); }
+    function closeProfileModal() { document.getElementById('profileModal').classList.close ? document.getElementById('profileModal').classList.close() : document.getElementById('profileModal').classList.add('hidden'); }
     function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
     function recalculateNodePositions() {}
   </script>
