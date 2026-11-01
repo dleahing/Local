@@ -29,9 +29,9 @@
       --zoom-scale: 1;
       --pan-x: 0px;
       --pan-y: 0px;
-      --radar-line-color: rgba(56, 189, 248, 0.75);
-      --radar-sweep-color: rgba(56, 189, 248, 0.85);
-      --radar-bg-color: rgba(56, 189, 248, 0.072); /* 40% more transparent than 0.12 */
+      --radar-line-color: rgba(56, 189, 248, 0.45);
+      --radar-sweep-color: rgba(56, 189, 248, 0.55);
+      --radar-bg-color: rgba(56, 189, 248, 0.07);
     }
     
     body {
@@ -70,6 +70,13 @@
       0%, 100% { transform: translateY(0px); }
       50% { transform: translateY(-5px); }
     }
+    @keyframes giggly-pop {
+      0% { transform: scale(0.3) rotate(0deg); opacity: 0; }
+      40% { transform: scale(1.35) rotate(-8deg); opacity: 1; }
+      70% { transform: scale(0.9) rotate(6deg); }
+      85% { transform: scale(1.1) rotate(-3deg); }
+      100% { transform: scale(1.15) rotate(0deg); opacity: 1; }
+    }
     @keyframes pulse-glow {
       0%, 100% { opacity: 0.6; transform: scale(1); }
       50% { opacity: 1; transform: scale(1.15); }
@@ -89,6 +96,7 @@
     .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
+    .animate-giggly { animation: giggly-pop 0.7s cubic-bezier(0.36, 0.07, 0.19, 1.25) forwards; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
     .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
@@ -116,24 +124,23 @@
       border-width: calc(1px / var(--zoom-scale, 1)) !important;
     }
 
-    /* Enhanced Radar Labels: Premium Typography with Glass Glow & Backdrop */
+    /* Improved Radar Font Styling: Crisp, High-Contrast with Deep Glow */
     .radar-distance-label {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 9px !important;
+      font-size: 11px !important;
       font-weight: 800;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: rgba(224, 242, 254, 0.98); /* Bright sky-100 */
-      background: rgba(15, 23, 42, 0.75); /* Dark translucent pill background for contrast */
+      color: rgba(224, 242, 254, 0.98);
+      background: rgba(15, 23, 42, 0.65);
       backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
       padding: 3px 8px;
       border-radius: 9999px;
       border: 1px solid rgba(56, 189, 248, 0.4);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
       white-space: nowrap;
       pointer-events: none;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
     }
 
     /* Anti-Overlap Floating Chat Bubble Stack container */
@@ -233,6 +240,12 @@
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
     }
+
+    /* Gold outline styling for user's personal chat bubble */
+    .user-gold-bubble {
+      border: 2px solid rgba(251, 191, 36, 0.9) !important;
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.45), 0 10px 30px -5px rgba(0, 0, 0, 0.15) !important;
+    }
   </style>
 </head>
 <body id="appBody" class="bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
@@ -247,8 +260,8 @@
     </div>
 
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
-      <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow shadow-[0_0_20px_rgba(56,189,248,0.7)] hairline-ring" style="border-style: solid; border-color: var(--radar-line-color);"></div>
-      <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow shadow-[0_0_15px_rgba(56,189,248,0.5)] hairline-ring" style="border-style: solid; border-color: var(--radar-line-color); animation-delay: 2s;"></div>
+      <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow shadow-[0_0_20px_rgba(56,189,248,0.4)] hairline-ring" style="border-style: solid; border-color: var(--radar-line-color);"></div>
+      <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow shadow-[0_0_15px_rgba(56,189,248,0.3)] hairline-ring" style="border-style: solid; border-color: var(--radar-line-color); animation-delay: 2s;"></div>
     </div>
 
     <div id="nodesContainer" class="absolute inset-0 z-50"></div>
@@ -270,17 +283,20 @@
     </div>
   </div>
 
-  <!-- Top Translucent Glass Header Bar (Unified Logo & Network Status Bubble) -->
+  <!-- Top Translucent Glass Header Bar (Unified Logo & Network Bubble) -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
-    <div onclick="playAudioEffect('click'); toggleP2PModal()" class="glass-header-transparent px-3 py-1.5 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-105 active:scale-95 transition-all" title="Click to manage P2P Mesh & Connections">
+    <div onclick="playAudioEffect('click'); toggleP2PModal()" class="glass-header-transparent px-3 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-105 transition-all">
       <div class="relative flex items-center justify-center">
-        <div id="logoBadge" class="w-7 h-7 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-base border border-white/50 shadow-sm">L</div>
-        <div id="headerPingDot" class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white animate-ping"></div>
+        <div id="logoBadge" class="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-base border border-white/50 shadow-sm">L</div>
+        <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white animate-ping"></div>
+        <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white"></div>
       </div>
       
-      <div class="flex items-center gap-1.5 text-[10px] text-emerald-950 font-semibold bg-emerald-500/25 px-2.5 py-1 rounded-xl border border-emerald-500/40 shadow-xs">
-        <span id="p2pNetDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span id="activeUserCount">1 Active</span>
+      <div class="flex flex-col">
+        <span class="text-xs font-bold text-slate-900 tracking-tight leading-none mb-0.5">LocaL</span>
+        <div id="activeUserBadge" class="flex items-center gap-1.5 text-[10px] text-emerald-950 font-semibold">
+          <span id="activeUserCount">1 Active Mesh Peer</span>
+        </div>
       </div>
     </div>
 
@@ -556,22 +572,11 @@
 
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
-    const TEN_MILES_METERS = 16093.4;
-    const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
-    const MAX_RADIUS_METERS = 108630.4; // Maximum boundary 67.5 Miles
+    const MIN_RADIUS_METERS = 8046.7;
+    const MAX_RADIUS_METERS = 108630.4;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v19';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v19';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v29';
-
-    const BUBBLE_COLOR_MAP = {
-      blue: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(56, 189, 248, 0.75) 50%, rgba(14, 165, 233, 0.92) 100%)',
-      emerald: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(52, 211, 153, 0.75) 50%, rgba(16, 185, 129, 0.92) 100%)',
-      pink: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(236, 72, 153, 0.75) 50%, rgba(219, 39, 119, 0.92) 100%)',
-      amber: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(251, 191, 36, 0.75) 50%, rgba(245, 158, 11, 0.92) 100%)',
-      violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(192, 132, 252, 0.75) 50%, rgba(168, 85, 247, 0.92) 100%)',
-      purple: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(192, 132, 252, 0.75) 50%, rgba(168, 85, 247, 0.92) 100%)',
-      yellow: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(251, 191, 36, 0.75) 50%, rgba(245, 158, 11, 0.92) 100%)'
-    };
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -621,11 +626,11 @@
     };
 
     const RADAR_PALETTES = {
-      cyan: { line: 'rgba(56, 189, 248, 0.75)', sweep: 'rgba(56, 189, 248, 0.85)', bg: 'rgba(56, 189, 248, 0.072)' },
-      emerald: { line: 'rgba(52, 211, 153, 0.75)', sweep: 'rgba(52, 211, 153, 0.85)', bg: 'rgba(52, 211, 153, 0.072)' },
-      pink: { line: 'rgba(236, 72, 153, 0.75)', sweep: 'rgba(236, 72, 153, 0.85)', bg: 'rgba(236, 72, 153, 0.072)' },
-      amber: { line: 'rgba(251, 191, 36, 0.75)', sweep: 'rgba(251, 191, 36, 0.85)', bg: 'rgba(251, 191, 36, 0.072)' },
-      purple: { line: 'rgba(192, 132, 252, 0.75)', sweep: 'rgba(192, 132, 252, 0.85)', bg: 'rgba(192, 132, 252, 0.072)' }
+      cyan: { line: 'rgba(56, 189, 248, 0.45)', sweep: 'rgba(56, 189, 248, 0.55)', bg: 'rgba(56, 189, 248, 0.07)' },
+      emerald: { line: 'rgba(52, 211, 153, 0.45)', sweep: 'rgba(52, 211, 153, 0.55)', bg: 'rgba(52, 211, 153, 0.07)' },
+      pink: { line: 'rgba(236, 72, 153, 0.45)', sweep: 'rgba(236, 72, 153, 0.55)', bg: 'rgba(236, 72, 153, 0.07)' },
+      amber: { line: 'rgba(251, 191, 36, 0.45)', sweep: 'rgba(251, 191, 36, 0.55)', bg: 'rgba(251, 191, 36, 0.07)' },
+      purple: { line: 'rgba(192, 132, 252, 0.45)', sweep: 'rgba(192, 132, 252, 0.55)', bg: 'rgba(192, 132, 252, 0.07)' }
     };
 
     const SOLID_FLAT_BUSINESS_BG = '#1e1b2e';
@@ -643,9 +648,7 @@
 
     function computeBusinessHoursStatus(openTime, closeTime) {
       if (!openTime || !closeTime) return 'Open 9:00 AM • Closes 9:00 PM';
-      const openFormatted = formatTime12h(openTime);
-      const closeFormatted = formatTime12h(closeTime);
-      return `Open ${openFormatted} • Closes ${closeFormatted}`;
+      return `Open ${formatTime12h(openTime)} • Closes ${formatTime12h(closeTime)}`;
     }
 
     function updateBusinessHoursFromTimes() {
@@ -715,9 +718,9 @@
       if (accountType !== 'business') {
         if (!question) return '';
         return `
-          <div class="px-3.5 py-2 rounded-2xl bg-[#1e1b2e] border-[2px] border-amber-400 text-xs font-semibold text-white shadow-[0_0_20px_rgba(251,191,36,0.5)] flex items-center gap-2 animate-float z-50 cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
-            <i data-lucide="message-circle" class="w-4 h-4 text-amber-400 flex-shrink-0" stroke-width="2.5"></i>
-            <span class="truncate text-white font-normal">${question}</span>
+          <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto user-gold-bubble" onclick="${onClickJs}">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" stroke-width="2.5"></i>
+            <span class="truncate">${question}</span>
           </div>
         `;
       }
@@ -779,6 +782,21 @@
           gain.connect(audioCtx.destination);
           osc.start(now);
           osc.stop(now + 0.04);
+        } else if (type === 'bell') {
+          // Crispy bell ring chime for chat replies
+          [880, 1320, 1760].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const noteTime = now + (idx * 0.03);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, noteTime);
+            gain.gain.setValueAtTime(0.22, noteTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.7);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(noteTime);
+            osc.stop(noteTime + 0.7);
+          });
         } else if (type === 'bubble') {
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
@@ -1157,7 +1175,7 @@
         if (nodeElem) {
           const isEnabled = peer.enabled !== false;
           const matchesFilter = matchesInterestFilter(peer.interestFilter);
-          const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius || peer.accountType === 'business') && matchesFilter;
+          const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter;
           
           nodeElem.style.display = isEnabled ? 'block' : 'none';
           nodeElem.style.opacity = isWithinRadius ? '1' : '0.15';
@@ -1265,15 +1283,15 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${userState.type === 'business' ? userState.alias : 'Traveler'}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you')`;
 
       if (userState.type === 'business') {
-        topBubble.className = "block";
+        topBubble.className = "block transform scale-[1.15] origin-bottom animate-giggly";
         topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours);
       } else {
-        topBubble.className = "px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto";
+        topBubble.className = "px-4 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-giggly cursor-pointer z-[10000] max-w-[250px] text-center pointer-events-auto transform scale-[1.15] origin-bottom user-gold-bubble";
         topBubble.setAttribute('onclick', onClickJs);
         topBubble.innerHTML = `
-          <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0" stroke-width="2"></i>
+          <i data-lucide="message-circle" class="w-4 h-4 text-amber-500 flex-shrink-0" stroke-width="2.5"></i>
           <span id="userTopBubbleText" class="truncate">${activeTopicState.text}</span>
-          <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-semibold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
+          <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-amber-950 font-bold bg-amber-400/30 px-1.5 py-0.5 rounded-md flex-shrink-0 border border-amber-400/40">60m</span>
         `;
       }
       topBubble.classList.remove('hidden');
@@ -1368,7 +1386,7 @@
         `;
       } else if (styleType === 'minimal') {
         return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/5 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
             <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
             <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
@@ -1379,8 +1397,8 @@
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
-            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
+            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.5;"></div>
+            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.3;"></div>
             <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
             <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
@@ -1391,8 +1409,8 @@
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
-            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
+            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.5;"></div>
+            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.3;"></div>
             <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
             <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
@@ -1404,7 +1422,7 @@
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
       userDiv.id = 'userAvatarNode';
-      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 cursor-pointer node-item';
+      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] cursor-pointer node-item';
       
       const isBiz = userState.type === 'business';
       const neonStyle = getBusinessNeonStyle(userState.type, userState.category);
@@ -1419,14 +1437,14 @@
 
           ${getRadarStyleHtml(userState.radarStyle || 'futuristic')}
 
-          <div class="scale-compensator flex flex-col items-center relative z-50 pointer-events-auto">
+          <div class="scale-compensator flex flex-col items-center relative z-[10000] pointer-events-auto">
             <div class="node-content-stack">
               <div id="userTopBubble" class="hidden"></div>
             </div>
 
-            <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/50 blur-lg animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
+            <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/40 blur-lg animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
-            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
+            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[10000] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
               ${renderNodeIconContent(userState.type, userState.category)}
             </div>
           </div>
@@ -1540,19 +1558,12 @@
     function updatePeerServerStatus(connected, customStatusText) {
       const textElem = document.getElementById('peerServerStatusText');
       const dot = document.getElementById('peerServerDot');
-      const headerPingDot = document.getElementById('headerPingDot');
-      const p2pNetDot = document.getElementById('p2pNetDot');
-
       if (connected) {
-        if (textElem) textElem.innerText = customStatusText || 'Connected to PeerServer WebRTC Mesh';
-        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-ping';
-        if (headerPingDot) headerPingDot.className = 'absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white animate-ping';
-        if (p2pNetDot) p2pNetDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse';
+        textElem.innerText = customStatusText || 'Connected to PeerServer WebRTC Mesh';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-ping';
       } else {
-        if (textElem) textElem.innerText = customStatusText || 'Mesh Fallback (Local Network & Broadcast)';
-        if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-500';
-        if (headerPingDot) headerPingDot.className = 'absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-400 rounded-full border-2 border-white';
-        if (p2pNetDot) p2pNetDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
+        textElem.innerText = customStatusText || 'Mesh Fallback (Local Network & Broadcast)';
+        dot.className = 'w-2 h-2 rounded-full bg-amber-500';
       }
     }
 
@@ -1662,8 +1673,11 @@
         const senderLabel = data.accountType === 'business' ? data.sender : 'Traveler';
         chatRoomsSessions[targetRoomId].push({ sender: senderLabel, text: data.text, time: timeStr, isMe: false });
         savePersistentData();
-        playAudioEffect('bubble');
-        triggerHapticFeedback([70, 50, 70]);
+        
+        // Play crisp bell ring chime on chat reply
+        playAudioEffect('bell');
+        triggerHapticFeedback([100, 50, 100]);
+        
         if (currentActiveChatRoomId === targetRoomId) appendMessage(senderLabel, data.text, timeStr, false);
       }
     }
@@ -1671,13 +1685,13 @@
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
-        { name: 'Bot 10-Mile Pickleball Fan', peerId: 'sim-peer-bot-10mi', targetMiles: 10.0, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-20mi', targetMiles: 20.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-5mi', targetMiles: 5.0, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-4mi', targetMiles: 4.0, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
-        { name: '12-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 12.0, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
-        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'Bot 10-Mile Pickleball Fan', peerId: 'sim-peer-bot-10mi', targetMiles: 3.5, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-20mi', targetMiles: 3.8, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-5mi', targetMiles: 2.1, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-4mi', targetMiles: 1.9, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
+        { name: '12-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 4.2, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
+        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 2.8, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 4.5, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -1731,7 +1745,7 @@
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
       if (userState.type === 'business' || hasSelfTopic) {
         validBubbles.push({
-          name: userState.type === 'business' ? userState.alias : 'You',
+          name: userState.type === 'business' ? userState.alias : (userState.alias || 'You'),
           question: hasSelfTopic ? activeTopicState.text : '',
           bubbleColor: userState.bubbleColor,
           peerId: 'you',
@@ -1747,7 +1761,7 @@
         const hasValidQuestion = p.question && p.createdAt && (Date.now() - p.createdAt < ONE_HOUR_MS);
         if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
           const matches = matchesInterestFilter(p.interestFilter);
-          const inRadius = userState.radius === 0 || p.distance <= userState.radius || p.accountType === 'business';
+          const inRadius = userState.radius === 0 || p.distance <= userState.radius;
           if (matches && inRadius) {
             validBubbles.push({
               name: p.rawSender,
@@ -1773,23 +1787,38 @@
       container.innerHTML = '';
       validBubbles.forEach(b => {
         const isBiz = b.accountType === 'business';
+        const isSelfUser = b.peerId === 'you';
         const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
-        const circleBg = isBiz ? neonStyle.bg : (b.peerId === 'you' ? REFERENCE_PERSONAL_ICON_BG : (BUBBLE_COLOR_MAP[globalActiveDirectory[b.peerId]?.bubbleColor] || BUBBLE_COLOR_MAP.violet));
 
-        container.innerHTML += `
-          <div onclick="playAudioEffect('chime'); connectToPeer('${b.peerId}'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="p-3.5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/80 shadow-md hover:bg-white/90 transition-all cursor-pointer flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full flex-shrink-0 bubble-node flex items-center justify-center text-white shadow-sm overflow-hidden ${isBiz ? neonStyle.borderClass : REFERENCE_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : REFERENCE_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
-              ${renderNodeIconContent(b.accountType, b.category)}
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-1.5 mb-0.5">
-                <span class="text-[11px] font-bold ${isBiz ? neonStyle.glowText : 'text-slate-900'} truncate">${b.name}</span>
+        if (isBiz) {
+          container.innerHTML += `
+            <div onclick="playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="dark-biz-bubble p-3 rounded-2xl shadow-lg cursor-pointer hover:scale-[1.02] active:scale-95 transition-all flex flex-col gap-1.5">
+              <div class="flex items-start gap-2.5">
+                <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
+                <div class="min-w-0 flex-1">
+                  <span class="text-xs font-bold ${neonStyle.glowText} block truncate mb-0.5">${b.name}</span>
+                  ${b.question ? `<p class="text-[11px] font-light text-white/95 leading-snug line-clamp-2">${b.question}</p>` : ''}
+                </div>
               </div>
-              ${b.question ? `<p class="text-xs font-light text-slate-800 leading-snug line-clamp-2">${b.question}</p>` : ''}
-              ${isBiz && b.hours ? `<div class="mt-1 flex items-center justify-between"><span class="text-[9px] text-slate-500">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${b.hours}</span></div>` : ''}
+              ${b.hours ? `
+                <div class="pt-1 mt-0.5 border-t border-white/10 flex items-center justify-between">
+                  <span class="text-[10px] text-slate-400 font-medium">Open</span>
+                  <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${b.hours}</span>
+                </div>
+              ` : ''}
             </div>
-          </div>
-        `;
+          `;
+        } else {
+          container.innerHTML += `
+            <div onclick="playAudioEffect('chime'); ${isSelfUser ? '' : "connectToPeer('" + b.peerId + "');"} openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="px-3.5 py-2.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all ${isSelfUser ? 'user-gold-bubble' : ''}">
+              <i data-lucide="message-circle" class="w-4 h-4 ${isSelfUser ? 'text-amber-500' : 'text-purple-600'} flex-shrink-0" stroke-width="2.5"></i>
+              <div class="min-w-0 flex-1">
+                <span class="text-[11px] font-bold text-slate-900 block truncate">${b.name}</span>
+                ${b.question ? `<p class="text-[11px] font-light text-slate-800 leading-snug truncate">${b.question}</p>` : ''}
+              </div>
+            </div>
+          `;
+        }
       });
       lucide.createIcons();
     }
@@ -1902,7 +1931,7 @@
       const peerRecord = globalActiveDirectory[peerId] || {};
       const isEnabled = peerRecord.enabled !== false;
       const matchesFilter = matchesInterestFilter(interestFilter);
-      const isWithinRadius = (userState.radius === 0 || distance <= userState.radius || accountType === 'business') && matchesFilter;
+      const isWithinRadius = (userState.radius === 0 || distance <= userState.radius) && matchesFilter;
       
       let opacityVal = 1;
       if (!matchesFilter) {
@@ -1958,7 +1987,7 @@
       peerIds.forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
         const matchesFilter = matchesInterestFilter(peer.interestFilter);
-        const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius || peer.accountType === 'business') && matchesFilter;
+        const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter;
         const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const isBiz = peer.accountType === 'business';
@@ -2042,7 +2071,7 @@
     }
 
     function updateMeshUI() {
-      document.getElementById('activeUserCount').innerText = `${Object.keys(activeDataConnections).length + 1} Active`;
+      document.getElementById('activeUserCount').innerText = `${Object.keys(activeDataConnections).length + 1} Active Mesh Peer`;
     }
 
     function quickPostFromDock() {
@@ -2052,6 +2081,10 @@
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
       
+      // Play bell ring sound on creating chat / broadcast
+      playAudioEffect('bell');
+      triggerHapticFeedback([100, 50, 100]);
+
       renderUserTopBubbleContent();
       document.getElementById('mainTopicText').innerText = text;
       document.getElementById('mainTopicContainer').classList.remove('hidden');
@@ -2062,8 +2095,7 @@
       broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime, hours: userState.hours, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
       
       input.value = '';
-      showToast('Map bubble posted!', 'check-circle');
-      playAudioEffect('chime');
+      showToast('Map bubble posted with giggly pop!', 'check-circle');
 
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
       
