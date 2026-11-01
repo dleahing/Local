@@ -527,7 +527,7 @@
     <!-- Chat Header Bar -->
     <div class="flex items-center justify-between pb-3.5 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-3">
-        <div id="chatTargetAvatar" class="w-10 h-10 rounded-full text-white font-medium text-xs flex items-center justify-center shadow-md">
+        <div id="chatTargetAvatar" class="w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden">
           <div class="bubble-glare"></div>
         </div>
         <div>
@@ -535,7 +535,14 @@
           <p id="chatTargetStatus" class="text-[10px] text-sky-800 font-semibold uppercase tracking-wider">Direct P2P Data Channel</p>
         </div>
       </div>
-      <button onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 hover:text-slate-900 transition-all shadow-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
+      
+      <div class="flex items-center gap-2">
+        <!-- Owner Delete Chat Room Button -->
+        <button id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Room
+        </button>
+        <button onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 hover:text-slate-900 transition-all shadow-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
     </div>
 
     <!-- 24-Hour Expiration Timer Bar -->
@@ -585,8 +592,8 @@
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
-    const MIN_RADIUS_METERS = 1609.34; // 1 Mile minimum
-    const MAX_RADIUS_METERS = 48280.3; // 30 Miles maximum
+    const MIN_RADIUS_METERS = 1609.34;
+    const MAX_RADIUS_METERS = 48280.3;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v21';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v21';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
@@ -1737,20 +1744,30 @@
       } else if (data.type === 'CHAT_MSG') {
         const targetRoomId = data.roomId;
         if (!targetRoomId) return;
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const timeStr = data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
-        const senderLabel = data.accountType === 'business' ? data.sender : 'Traveler';
+        const senderLabel = data.accountType === 'business' ? data.sender : (data.sender || 'Traveler');
         chatRoomsSessions[targetRoomId].push({ sender: senderLabel, text: data.text, time: timeStr, isMe: false });
         
         roomLastActivity[targetRoomId] = Date.now();
         savePersistentData();
         
-        // Play bell ring ONLY when an incoming reply arrives
         playAudioEffect('bell');
         triggerHapticFeedback([100, 50, 100, 50, 100]);
         showToast(`New reply from ${senderLabel}!`, 'bell');
 
         if (currentActiveChatRoomId === targetRoomId) appendMessage(senderLabel, data.text, timeStr, false);
+      } else if (data.type === 'DELETE_ROOM') {
+        const targetRoomId = data.roomId;
+        if (targetRoomId) {
+          delete chatRoomsSessions[targetRoomId];
+          delete roomLastActivity[targetRoomId];
+          savePersistentData();
+          if (currentActiveChatRoomId === targetRoomId) {
+            closeChatDrawer();
+            showToast('The owner deleted this chat room.', 'trash-2');
+          }
+        }
       }
     }
 
@@ -2194,6 +2211,12 @@
       const input = document.getElementById('quickPostInput');
       const text = input ? input.value.trim() : '';
       if (!text) return;
+      
+      // Auto-delete/reset existing chat sessions when a new chat/post is created
+      chatRoomsSessions = {};
+      roomLastActivity = {};
+      closeChatDrawer();
+
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
       
@@ -2206,7 +2229,7 @@
       broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime, hours: userState.hours, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
       
       input.value = '';
-      showToast('Map bubble posted!', 'check-circle');
+      showToast('New chat posted! Previous chats cleared.', 'check-circle');
       playAudioEffect('bell');
       savePersistentData();
 
@@ -2241,7 +2264,6 @@
       
       if (!text) return;
 
-      // DO NOT play bell for outgoing messages (user's own message)
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       appendMessage('You', text, timeStr, true);
 
@@ -2275,6 +2297,7 @@
         sender: userState.alias, 
         roomId: currentActiveChatRoomId, 
         text,
+        time: timeStr,
         accountType: userState.type 
       });
     }
@@ -2283,7 +2306,6 @@
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
       
-      // Incoming replies/bot messages are strictly on the LEFT; user messages are on the RIGHT.
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full">
           <div class="flex items-center gap-1.5 px-1.5 mb-0.5">
@@ -2310,6 +2332,16 @@
       const accountType = isSelf ? userState.type : globalActiveDirectory[peerId]?.accountType;
       const category = isSelf ? userState.category : globalActiveDirectory[peerId]?.category;
       
+      const isOwner = isSelf || (peerId === 'you');
+      const deleteBtn = document.getElementById('ownerDeleteRoomBtn');
+      if (deleteBtn) {
+        if (isOwner) {
+          deleteBtn.classList.remove('hidden');
+        } else {
+          deleteBtn.classList.add('hidden');
+        }
+      }
+
       const neonStyle = getBusinessNeonStyle(accountType, category);
       const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
 
@@ -2336,6 +2368,32 @@
 
       document.getElementById('chatDrawer').classList.remove('hidden');
       document.getElementById('chatBackdrop').classList.remove('hidden');
+    }
+
+    function ownerDeleteEntireChatRoom() {
+      if (!currentActiveChatRoomId) return;
+      if (confirm("Are you sure you want to delete this entire chat room for all participants?")) {
+        delete chatRoomsSessions[currentActiveChatRoomId];
+        delete roomLastActivity[currentActiveChatRoomId];
+        
+        if (currentActiveChatRoomId === 'room-you') {
+          activeTopicState.text = null;
+          activeTopicState.createdAt = null;
+          renderUserTopBubbleContent();
+        }
+
+        savePersistentData();
+        
+        broadcastData({
+          id: 'del-' + Math.random().toString(36).substring(2, 9),
+          type: 'DELETE_ROOM',
+          roomId: currentActiveChatRoomId
+        });
+
+        closeChatDrawer();
+        showToast('Chat room deleted successfully.', 'trash-2');
+        playAudioEffect('chime');
+      }
     }
 
     function closeChatDrawer() {
