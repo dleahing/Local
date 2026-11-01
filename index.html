@@ -1960,7 +1960,7 @@
           `;
         } else {
           container.innerHTML += `
-            <div onclick="playAudioEffect('chime'); connectToPeer('${b.peerId}'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="p-3.5 rounded-2xl bg-white/80 backdrop-blur-md border border-white/90 shadow-lg hover:bg-white transition-all cursor-pointer flex flex-col gap-2">
+            <div onclick="playAudioEffect('chime'); connectToPeer('${b.peerId}'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-white/90 shadow-lg hover:bg-white transition-all cursor-pointer flex flex-col gap-2">
               <div class="flex items-start gap-3">
                 <div class="w-9 h-9 rounded-full flex-shrink-0 bubble-node flex items-center justify-center shadow-md overflow-hidden ${UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
                   <div class="bubble-glare"></div>
@@ -2212,7 +2212,6 @@
       const text = input ? input.value.trim() : '';
       if (!text) return;
       
-      // Auto-delete/reset existing chat sessions when a new chat/post is created
       chatRoomsSessions = {};
       roomLastActivity = {};
       closeChatDrawer();
@@ -2366,6 +2365,10 @@
         chatRoomsSessions[roomId].forEach(msg => { appendMessage(msg.sender, msg.text, msg.time, msg.isMe); });
       }
 
+      // Hide the main bottom action bar when group chat is open
+      const actionDock = document.getElementById('actionDockContainer');
+      if (actionDock) actionDock.classList.add('hidden');
+
       document.getElementById('chatDrawer').classList.remove('hidden');
       document.getElementById('chatBackdrop').classList.remove('hidden');
     }
@@ -2399,6 +2402,11 @@
     function closeChatDrawer() {
       document.getElementById('chatDrawer').classList.add('hidden');
       document.getElementById('chatBackdrop').classList.add('hidden');
+      
+      // Restore the main bottom action bar when chat drawer closes
+      const actionDock = document.getElementById('actionDockContainer');
+      if (actionDock) actionDock.classList.remove('hidden');
+
       currentActiveChatRoomId = null;
       savePersistentData();
     }
