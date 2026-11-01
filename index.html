@@ -111,6 +111,25 @@
       will-change: transform;
     }
 
+    /* Standardized Crisp Radar Label Typography */
+    .radar-distance-label {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #ffffff;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 3px 8px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
     /* Anti-Overlap Floating Chat Bubble Stack container */
     .node-content-stack {
       position: absolute;
@@ -172,8 +191,6 @@
       position: relative;
       outline: none;
       border: none;
-      backdrop-filter: blur(12px) saturate(190%);
-      -webkit-backdrop-filter: blur(12px) saturate(190%);
     }
     .bubble-glare {
       position: absolute;
@@ -196,13 +213,18 @@
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
-    /* Reference Design Dark Business Pill Chat Card Styling */
+    /* Reference Design Dark Business Pill Chat Card & Bottom Control Dock Styling */
     .dark-biz-bubble {
-      background: rgba(30, 27, 46, 0.94);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #1e1b2e;
+      border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    }
+
+    .bottom-chat-slider-dock {
+      background: #1e1b2e;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+      touch-action: none;
     }
   </style>
 </head>
@@ -226,7 +248,7 @@
   </div>
 
   <!-- Right-Side Chat Bubbles Sidebar -->
-  <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-24 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
+  <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-28 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
         <i data-lucide="message-square" class="w-4 h-4 text-sky-600"></i>
@@ -283,11 +305,18 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Bottom Floating Control Dock -->
-  <div class="fixed bottom-24 right-4 z-30 flex flex-col gap-2.5 pointer-events-auto">
-    <button onclick="playAudioEffect('click'); openQuestionModal()" class="liquid-glass-icon p-3.5 rounded-2xl text-slate-900 hover:scale-105 active:scale-95 flex items-center justify-center shadow-xl" title="Ask Question">
-      <i data-lucide="message-square-plus" class="w-5 h-5"></i>
-    </button>
+  <!-- Redesigned Bottom-Center Chat Bubble Dock & Interactive Radar Slider -->
+  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto">
+    <div id="radarSlideDock" class="bottom-chat-slider-dock px-5 py-3 rounded-full flex items-center gap-3 cursor-grab active:cursor-grabbing hover:scale-105 active:scale-95 transition-transform" title="Tap to ask a question • Slide left/right to adjust Radar Range">
+      <i data-lucide="message-square-plus" class="w-5 h-5 text-sky-400 flex-shrink-0"></i>
+      <div class="flex flex-col items-center">
+        <span class="text-xs font-bold text-white tracking-wide whitespace-nowrap">Ask LocaLs</span>
+        <span id="dockRadiusLabel" class="text-[9px] font-semibold text-sky-300 uppercase tracking-wider whitespace-nowrap">Radar: 5.0 Mi</span>
+      </div>
+      <div class="flex items-center gap-1 text-slate-400 pl-1 border-l border-white/20">
+        <i data-lucide="sliders" class="w-4 h-4 text-slate-300"></i>
+      </div>
+    </div>
   </div>
 
   <!-- WebRTC P2P Mesh & Directory Modal -->
@@ -543,9 +572,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 108630.4; // Maximum boundary 67.5 Miles
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v13';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v13';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v23';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v14';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v14';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v24';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -610,7 +639,8 @@
       violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(192, 132, 252, 0.65) 50%, rgba(126, 34, 206, 0.9) 100%)'
     };
 
-    const BUSINESS_TRANSLUCENT_BG = 'radial-gradient(circle at 35% 30%, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)';
+    /* Solid High-Contrast Flat Background for Business Badges */
+    const SOLID_FLAT_BUSINESS_BG = '#1e1b2e';
 
     function formatTime12h(timeStr) {
       if (!timeStr) return '';
@@ -656,38 +686,38 @@
       
       if (category === 'utensils') {
         return {
-          bg: BUSINESS_TRANSLUCENT_BG,
+          bg: SOLID_FLAT_BUSINESS_BG,
           borderClass: 'border-[3.5px] border-amber-400',
-          shadowStyle: 'box-shadow: 0 0 35px rgba(251, 191, 36, 1), 0 0 16px rgba(245, 158, 11, 0.9), inset 0 0 12px rgba(251, 191, 36, 0.7);',
-          iconColor: 'text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,1)]',
-          glowText: 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]',
+          shadowStyle: 'box-shadow: 0 0 25px rgba(251, 191, 36, 0.8);',
+          iconColor: 'text-amber-400',
+          glowText: 'text-amber-400',
           lucideIcon: 'utensils'
         };
       } else if (category === 'glass-water') {
         return {
-          bg: BUSINESS_TRANSLUCENT_BG,
+          bg: SOLID_FLAT_BUSINESS_BG,
           borderClass: 'border-[3.5px] border-pink-500',
-          shadowStyle: 'box-shadow: 0 0 35px rgba(236, 72, 153, 1), 0 0 16px rgba(219, 39, 119, 0.9), inset 0 0 12px rgba(236, 72, 153, 0.7);',
-          iconColor: 'text-pink-400 drop-shadow-[0_0_12px_rgba(236,72,153,1)]',
-          glowText: 'text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]',
+          shadowStyle: 'box-shadow: 0 0 25px rgba(236, 72, 153, 0.8);',
+          iconColor: 'text-pink-400',
+          glowText: 'text-pink-400',
           lucideIcon: 'glass-water'
         };
       } else if (category === 'pill') {
         return {
-          bg: BUSINESS_TRANSLUCENT_BG,
+          bg: SOLID_FLAT_BUSINESS_BG,
           borderClass: 'border-[3.5px] border-emerald-400',
-          shadowStyle: 'box-shadow: 0 0 35px rgba(52, 211, 153, 1), 0 0 16px rgba(16, 185, 129, 0.9), inset 0 0 12px rgba(52, 211, 153, 0.7);',
-          iconColor: 'text-emerald-300 drop-shadow-[0_0_12px_rgba(52,211,153,1)]',
-          glowText: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]',
+          shadowStyle: 'box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);',
+          iconColor: 'text-emerald-300',
+          glowText: 'text-emerald-400',
           lucideIcon: 'pill'
         };
       } else {
         return {
-          bg: BUSINESS_TRANSLUCENT_BG,
+          bg: SOLID_FLAT_BUSINESS_BG,
           borderClass: 'border-[3.5px] border-purple-400',
-          shadowStyle: 'box-shadow: 0 0 35px rgba(216, 180, 254, 1), 0 0 16px rgba(216, 180, 254, 0.9), inset 0 0 12px rgba(216, 180, 254, 0.7);',
-          iconColor: 'text-purple-300 drop-shadow-[0_0_12px_rgba(216,180,254,1)]',
-          glowText: 'text-purple-300 drop-shadow-[0_0_8px_rgba(216,180,254,0.8)]',
+          shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);',
+          iconColor: 'text-purple-300',
+          glowText: 'text-purple-300',
           lucideIcon: category || 'store'
         };
       }
@@ -811,6 +841,7 @@
       initTapRippleHandler();
       initMapPanHandlers();
       initPinchZoomHandlers();
+      initBottomDockSlider();
       startSmoothAnimationLoop();
     });
 
@@ -899,7 +930,7 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #radarSlideDock')) {
           return;
         }
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
@@ -999,14 +1030,18 @@
       const ring = document.getElementById('radarBoundaryRing');
       const leftBadge = document.getElementById('radarRingDistanceLabelLeft');
       const rightBadge = document.getElementById('radarRingDistanceLabelRight');
+      const dockLabel = document.getElementById('dockRadiusLabel');
       
+      const miles = (meters / METERS_PER_MILE).toFixed(1);
+      const labelText = `${miles} Mi`;
+
+      if (dockLabel) dockLabel.innerText = `Radar: ${labelText}`;
+
       if (ring) {
         const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1612.5);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
-        const miles = (meters / METERS_PER_MILE).toFixed(1);
-        const labelText = `${miles} Mi`;
         if (leftBadge) leftBadge.innerText = labelText;
         if (rightBadge) rightBadge.innerText = labelText;
 
@@ -1017,6 +1052,49 @@
 
       refreshAllNodeVisibilities();
       savePersistentData();
+    }
+
+    /* Interactive Slide Control for Bottom Chat Dock */
+    function initBottomDockSlider() {
+      const dock = document.getElementById('radarSlideDock');
+      if (!dock) return;
+
+      let startX = 0;
+      let startRadius = MIN_RADIUS_METERS;
+      let hasDragged = false;
+
+      const handleDockStart = (e) => {
+        hasDragged = false;
+        startX = e.touches ? e.touches[0].clientX : e.clientX;
+        startRadius = userState.radius;
+      };
+
+      const handleDockMove = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const deltaX = clientX - startX;
+        
+        if (Math.abs(deltaX) > 5) {
+          hasDragged = true;
+          const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 350;
+          const newRadius = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, startRadius + (deltaX * metersPerPx)));
+          updateRadius(newRadius);
+        }
+      };
+
+      const handleDockEnd = () => {
+        if (!hasDragged) {
+          playAudioEffect('click');
+          openQuestionModal();
+        }
+      };
+
+      dock.addEventListener('mousedown', handleDockStart);
+      window.addEventListener('mousemove', handleDockMove);
+      window.addEventListener('mouseup', handleDockEnd);
+
+      dock.addEventListener('touchstart', handleDockStart, { passive: true });
+      window.addEventListener('touchmove', handleDockMove, { passive: true });
+      window.addEventListener('touchend', handleDockEnd);
     }
 
     function initRadiusDragHandlers() {
@@ -1165,7 +1243,7 @@
       if (!mapCanvas) return;
 
       const triggerRipple = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #radarSlideDock')) {
           return;
         }
         createBubbleRipple();
@@ -1289,15 +1367,15 @@
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-[11px] font-mono font-bold uppercase pointer-events-none whitespace-nowrap drop-shadow-md" style="color: ${palette.line};">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-[11px] font-mono font-bold uppercase pointer-events-none whitespace-nowrap drop-shadow-md" style="color: ${palette.line};">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-8 -translate-y-1/2">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-8 -translate-y-1/2">5.0 Mi</div>
           </div>
         `;
       } else if (styleType === 'minimal') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto" style="width: 200px; height: 200px; border: 1px solid ${palette.line};" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-[10px] font-bold uppercase pointer-events-none whitespace-nowrap" style="color: ${palette.line};">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-[10px] font-bold uppercase pointer-events-none whitespace-nowrap" style="color: ${palette.line};">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-8 -translate-y-1/2">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-8 -translate-y-1/2">5.0 Mi</div>
           </div>
         `;
       } else if (styleType === 'sonar') {
@@ -1308,8 +1386,8 @@
             </div>
             <div class="absolute inset-3 rounded-full pointer-events-none" style="border: 1px solid ${palette.line}; opacity: 0.6;"></div>
             <div class="absolute inset-8 rounded-full pointer-events-none" style="border: 1px solid ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-[11px] font-mono font-bold uppercase pointer-events-none whitespace-nowrap drop-shadow-md" style="color: ${palette.line};">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-[11px] font-mono font-bold uppercase pointer-events-none whitespace-nowrap drop-shadow-md" style="color: ${palette.line};">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-8 -translate-y-1/2">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-8 -translate-y-1/2">5.0 Mi</div>
           </div>
         `;
       } else {
@@ -1320,8 +1398,8 @@
             </div>
             <div class="absolute inset-3 rounded-full pointer-events-none" style="border: 1px solid ${palette.line}; opacity: 0.6;"></div>
             <div class="absolute inset-8 rounded-full pointer-events-none" style="border: 1px solid ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-[11px] font-bold tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md" style="color: ${palette.line};">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-[11px] font-bold tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md" style="color: ${palette.line};">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-8 -translate-y-1/2">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-8 -translate-y-1/2">5.0 Mi</div>
           </div>
         `;
       }
@@ -1420,7 +1498,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v23');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v24');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
