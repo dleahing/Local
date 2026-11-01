@@ -42,10 +42,6 @@
       overflow: hidden !important;
     }
 
-    @keyframes wave-expand {
-      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.6; }
-      100% { transform: translate(-50%, -50%) scale(5.7); opacity: 0; }
-    }
     @keyframes radar-sweep {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -72,8 +68,8 @@
     }
 
     @keyframes radius-ring-pulse {
-      0% { transform: translate(-50%, -50%) scale(0.01); opacity: 0.6; }
-      80% { opacity: 0.42; }
+      0% { transform: translate(-50%, -50%) scale(0.01); opacity: 0.36; }
+      80% { opacity: 0.25; }
       100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
     }
 
@@ -239,8 +235,8 @@
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern"></div>
     
-    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring" style="width: 5625px; height: 5625px;">
-      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
+    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring" style="width: 12000px; height: 12000px;">
+      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">35-Mile World Boundary Edge</div>
     </div>
 
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
@@ -304,7 +300,7 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Unified Bottom Action Dock Bubble (Propagation completely halted) -->
+  <!-- Unified Bottom Action Dock Bubble -->
   <div id="actionDockContainer" 
        class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu"
        onmousedown="event.stopPropagation()"
@@ -314,7 +310,7 @@
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
         <i data-lucide="message-square-plus" class="w-4 h-4 text-sky-400 flex-shrink-0"></i>
-        <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
+        <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
         <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-sky-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-sky-500 transition-all">
           <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
         </button>
@@ -324,7 +320,7 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[10px] font-bold text-sky-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="1609.34" max="48280.3" step="500" value="1609.34" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-sky-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg">
+        <input type="range" id="radarRangeSlider" min="1609.34" max="56327.0" step="1000" value="1609.34" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-sky-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg">
         <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">1.0 Mi</span>
       </div>
     </div>
@@ -512,7 +508,7 @@
     </div>
   </div>
 
-  <!-- Chat Drawer Overlay & Container (Propagation completely halted) -->
+  <!-- Chat Drawer Overlay & Container -->
   <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
   <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[85vh]"
        onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
@@ -561,10 +557,10 @@
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const MIN_RADIUS_METERS = 1609.34;
-    const MAX_RADIUS_METERS = 48280.3;
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v21';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v21';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
+    const MAX_RADIUS_METERS = 56327.0; // 35 miles max slider range
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v22';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v22';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v32';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -840,6 +836,7 @@
       const slider = document.getElementById('radarRangeSlider');
       if (slider) {
         slider.min = MIN_RADIUS_METERS;
+        slider.max = MAX_RADIUS_METERS;
         slider.value = MIN_RADIUS_METERS;
       }
 
@@ -931,7 +928,7 @@
 
     function getPanBounds() {
       const worldRing = document.getElementById('worldMaxBoundaryRing');
-      const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 2812.5;
+      const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 6000;
       return Math.max(200, (radiusPx * currentZoomScale) - 150);
     }
 
@@ -1007,7 +1004,7 @@
           );
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
-            targetZoomScale = Math.max(0.20, Math.min(4.0, initialPinchScale * factor));
+            targetZoomScale = Math.max(0.10, Math.min(4.0, initialPinchScale * factor));
           }
         }
       }, { passive: true });
@@ -1029,7 +1026,7 @@
         }
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-        targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
+        targetZoomScale = Math.max(0.10, Math.min(4.0, targetZoomScale * zoomFactor));
       }, { passive: false });
     }
 
@@ -1104,16 +1101,13 @@
       if (sliderLabel) sliderLabel.innerText = labelText;
 
       if (ring) {
-        const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1612.5);
+        // Synchronized radar pixel diameter scaling: 1612.5px span across 35 miles max range
+        const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 5400);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
         if (leftBadge) leftBadge.innerText = labelText;
         if (rightBadge) rightBadge.innerText = labelText;
-
-        const viewportMin = Math.min(window.innerWidth, window.innerHeight);
-        const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
-        targetZoomScale = Math.max(0.20, Math.min(2.5, targetScaleFactor));
       }
 
       refreshAllNodeVisibilities();
@@ -1153,7 +1147,7 @@
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / currentZoomScale;
 
         const deltaPx = currentDistPx - dragStartDistancePx;
-        const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 1612.5;
+        const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 5400;
         
         const newMeters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
 
@@ -1248,8 +1242,8 @@
       const sizePx = targetRing.offsetWidth || 450;
       const ripple = document.createElement('div');
       
-      // 40% more transparent (opacity/bg opacity reduced)
-      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-sky-400 bg-sky-400/21 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(56,189,248,0.42)] hairline-ring';
+      // 40% more transparent (opacity set to 0.36 max)
+      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-sky-400 bg-sky-400/15 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(56,189,248,0.25)] hairline-ring';
       ripple.style.width = `${sizePx}px`;
       ripple.style.height = `${sizePx}px`;
 
@@ -1676,13 +1670,13 @@
       const sampleUsers = [
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
         { name: 'Bot 0.5-Mile Pickleball Fan', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        // Fine dining moved to exactly 30 miles away
+        // Fine Dining bot restored & positioned at exactly 30 miles away
         { name: 'Fine Dining', peerId: 'sim-peer-restaurant-30mi', targetMiles: 30.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-04mi', targetMiles: 3.4, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-06mi', targetMiles: 0.6, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
         { name: '0.7-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 0.7, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
         { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 0.5, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
-        // Pharmacy moved to exactly 15 miles away
+        // Pharmacy bot restored & positioned at exactly 15 miles away
         { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-pharmacy-15mi', targetMiles: 15.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
@@ -1937,6 +1931,7 @@
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
+      // Synchronized radar scaling mapping
       const currentRingPx = document.getElementById('radarBoundaryRing') ? (document.getElementById('radarBoundaryRing').offsetWidth / 2) : 100;
       const currentRadiusMeters = userState.radius;
       
@@ -1950,7 +1945,7 @@
       }
       let angleRad = (Math.abs(hash) % 360) * (Math.PI / 180);
 
-      const mapCanvasWidth = 5625;
+      const mapCanvasWidth = 12000;
       let leftPercent = 50 + ((Math.cos(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
       let topPercent = 50 + ((Math.sin(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
 
@@ -2086,22 +2081,6 @@
 
     function autoResizeTextArea(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; }
 
-    function handleDockFocus(e) {
-      if (e) e.stopPropagation();
-      window.scrollTo(0, 0);
-      document.body.scrollTop = 0;
-    }
-
-    function handleDockBlur(e) {
-      if (e) e.stopPropagation();
-      window.scrollTo(0, 0);
-      document.body.scrollTop = 0;
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-      }, 50);
-    }
-
     function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input ? input.value.trim() : '';
@@ -2215,7 +2194,7 @@
     }
 
     function closeProfileModal() { 
-      document.getElementById('mapCanvas').classList.remove('content-locked');
+      document.getElementById('mapCanvas').classList.add('content-locked');
       document.body.classList.add('overflow-hidden');
       const modal = document.getElementById('profileModal');
       if (modal) modal.classList.add('hidden'); 
