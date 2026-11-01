@@ -59,20 +59,9 @@
       0%, 100% { transform: scale(1); border-radius: 50%; }
       50% { transform: scale(1.02, 0.98); border-radius: 49% 51% 50% 50%; }
     }
-    @keyframes bubble-bounce-press {
-      0% { transform: scale(1); }
-      30% { transform: scale(1.25, 0.75) translateY(4px); }
-      50% { transform: scale(0.85, 1.15) translateY(-8px); }
-      75% { transform: scale(1.1, 0.9) translateY(-3px); }
-      100% { transform: scale(1) translateY(0); }
-    }
     @keyframes float-gentle {
       0%, 100% { transform: translateY(0px); }
       50% { transform: translateY(-5px); }
-    }
-    @keyframes pulse-glow {
-      0%, 100% { opacity: 0.6; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.15); }
     }
     @keyframes giggle-pop {
       0% { transform: scale(0.7) rotate(0deg); opacity: 0; }
@@ -95,13 +84,10 @@
       animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
     }
 
-    .animate-wave-slow { animation: wave-expand 5s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
     .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
-    .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
-    .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
 
     #mapCanvas {
       transform: translate3d(var(--pan-x), var(--pan-y), 0) scale(var(--zoom-scale, 1));
@@ -258,8 +244,8 @@
     </div>
 
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
-      <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow shadow-[0_0_20px_rgba(56,189,248,0.4)] hairline-ring" style="border-style: solid; border-color: var(--radar-line-color);"></div>
-      <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 animate-wave-slow shadow-[0_0_15px_rgba(56,189,248,0.3)] hairline-ring" style="border-style: solid; border-color: var(--radar-line-color); animation-delay: 2s;"></div>
+      <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_20px_rgba(56,189,248,0.4)] hairline-ring" style="border-style: solid; border-color: var(--radar-line-color);"></div>
+      <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_15px_rgba(56,189,248,0.3)] hairline-ring" style="border-style: solid; border-color: var(--radar-line-color);"></div>
     </div>
 
     <div id="nodesContainer" class="absolute inset-0 z-50"></div>
@@ -288,7 +274,7 @@
     <div class="glass-header-transparent px-3 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-102 transition-all" onclick="playAudioEffect('click'); toggleP2PModal()" title="View Network Mesh">
       <div class="relative flex items-center justify-center">
         <div id="logoBadge" class="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-base border border-white/50 shadow-sm">L</div>
-        <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white animate-pulse"></div>
+        <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white"></div>
       </div>
       
       <div class="flex flex-col">
@@ -311,14 +297,14 @@
 
       <button onclick="playAudioEffect('click'); toggleP2PModal()" title="WebRTC P2P Mesh Connections" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
         <i data-lucide="share-2" class="w-4 h-4"></i>
-        <span id="p2pStatusPingDot" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span id="p2pStatusPingDot" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400"></span>
       </button>
     </div>
   </header>
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Unified Bottom Action Dock Bubble (Fixed propagation on all events) -->
+  <!-- Unified Bottom Action Dock Bubble -->
   <div id="actionDockContainer" 
        class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu"
        onmousedown="event.stopPropagation()"
@@ -361,7 +347,7 @@
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">PeerJS Connection Status</label>
           <div class="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-semibold">
             <div class="flex items-center gap-2">
-              <span id="peerServerDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span id="peerServerDot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
               <span id="peerServerStatusText">Connected to PeerServer Mesh</span>
             </div>
             <button onclick="playAudioEffect('click'); connectToPeerPrompt()" class="px-2.5 py-1 rounded-xl bg-sky-600 text-white text-[10px] font-semibold shadow-sm active:scale-95">Connect ID</button>
@@ -954,7 +940,6 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        // Explicitly ignore any clicks/touches originating in any UI elements, headers, modals, or the action dock
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #actionDockContainer')) {
           return;
         }
@@ -1208,12 +1193,6 @@
           nodeElem.style.display = isEnabled ? 'block' : 'none';
           nodeElem.style.opacity = isWithinRadius ? '1' : '0.15';
           nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
-
-          const sonarRing = nodeElem.querySelector('.peer-sonar-ring');
-          if (sonarRing) {
-            const shouldRipple = matchesFilter && peer.accountType !== 'business';
-            sonarRing.style.display = shouldRipple ? 'block' : 'none';
-          }
         }
       });
       renderGlobalUsersDirectory();
@@ -1260,8 +1239,6 @@
     }
 
     function createBubbleRipple() {
-      if (userState.type === 'business') return;
-
       playAudioEffect('bubble');
       triggerHapticFeedback(50);
       const ringContainer = document.getElementById('radiusRippleContainer');
@@ -1321,17 +1298,8 @@
       lucide.createIcons();
     }
 
-    function triggerBubbleBounce(elementId) {
-      const circle = document.getElementById(elementId);
-      if (!circle) return;
-      circle.classList.remove('animate-bounce-press');
-      void circle.offsetWidth;
-      circle.classList.add('animate-bounce-press');
-    }
-
     function refreshRadarAndSearch() {
       createBubbleRipple();
-      triggerBubbleBounce('userAvatarCircle');
       announcePresence();
       showToast('Radar refreshed! Searching for chats in area.', 'radar');
     }
@@ -1465,8 +1433,6 @@
               <div id="userTopBubble" class="hidden z-[999999]"></div>
             </div>
 
-            <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/40 blur-lg animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
-
             <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[58px] h-[58px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
               ${renderNodeIconContent(userState.type, userState.category)}
             </div>
@@ -1583,7 +1549,7 @@
       const dot = document.getElementById('peerServerDot');
       if (connected) {
         textElem.innerText = customStatusText || 'Connected to PeerServer WebRTC Mesh';
-        dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-ping';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
       } else {
         textElem.innerText = customStatusText || 'Mesh Fallback (Local Network & Broadcast)';
         dot.className = 'w-2 h-2 rounded-full bg-amber-500';
@@ -1709,12 +1675,12 @@
       const sampleUsers = [
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
         { name: 'Bot 0.5-Mile Pickleball Fan', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 10.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 8.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-04mi', targetMiles: 3.4, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-06mi', targetMiles: 0.6, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
         { name: '0.7-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 0.7, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
         { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 0.5, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 10.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -2247,7 +2213,7 @@
 
     function closeProfileModal() { 
       document.getElementById('mapCanvas').classList.remove('content-locked');
-      document.body.classList.remove('overflow-hidden');
+      document.body.classList.add('overflow-hidden');
       const modal = document.getElementById('profileModal');
       if (modal) modal.classList.add('hidden'); 
     }
@@ -2262,7 +2228,7 @@
         modal.classList.remove('hidden');
       } else {
         document.getElementById('mapCanvas').classList.remove('content-locked');
-        document.body.classList.remove('overflow-hidden');
+        document.body.classList.add('overflow-hidden');
         modal.classList.add('hidden');
       }
     }
