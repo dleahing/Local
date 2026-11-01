@@ -233,13 +233,13 @@
       pointer-events: none;
     }
     .glass-drawer-top {
-      background: rgba(255, 255, 255, 0.45);
-      backdrop-filter: blur(36px);
-      -webkit-backdrop-filter: blur(36px);
-      border-bottom: 1.5px solid rgba(255, 255, 255, 0.7);
-      border-left: 1px solid rgba(255, 255, 255, 0.5);
-      border-right: 1px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(40px) saturate(190%);
+      -webkit-backdrop-filter: blur(40px) saturate(190%);
+      border-bottom: 1.5px solid rgba(255, 255, 255, 0.9);
+      border-left: 1px solid rgba(255, 255, 255, 0.7);
+      border-right: 1px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 1);
     }
 
     .dark-biz-bubble {
@@ -521,45 +521,50 @@
   </div>
 
   <!-- Chat Drawer Overlay & Container -->
-  <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
-  <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[85vh]">
-    <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
+  <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
+  <div id="chatDrawer" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-5 rounded-3xl flex flex-col transition-all max-h-[88vh] border border-white/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)]">
+    
+    <!-- Chat Header Bar -->
+    <div class="flex items-center justify-between pb-3.5 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-3">
-        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full text-white font-medium text-xs flex items-center justify-center shadow-md">
+        <div id="chatTargetAvatar" class="w-10 h-10 rounded-full text-white font-medium text-xs flex items-center justify-center shadow-md">
           <div class="bubble-glare"></div>
         </div>
         <div>
           <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm tracking-tight drop-shadow-sm">WebRTC P2P Session</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-semibold uppercase tracking-wider">Direct P2P Data Channel</p>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-800 font-semibold uppercase tracking-wider">Direct P2P Data Channel</p>
         </div>
       </div>
-      <button onclick="playAudioEffect('click'); closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <button onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 hover:text-slate-900 transition-all shadow-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
 
     <!-- 24-Hour Expiration Timer Bar -->
-    <div id="chatExpiryTimerBar" class="my-2 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-950 text-[10px] font-semibold flex items-center justify-between flex-shrink-0">
-      <div class="flex items-center gap-1.5">
-        <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-700"></i>
+    <div id="chatExpiryTimerBar" class="my-2 px-3.5 py-2 rounded-2xl bg-white/60 backdrop-blur-md border border-amber-400/40 text-amber-950 text-xs font-semibold flex items-center justify-between flex-shrink-0 shadow-sm">
+      <div class="flex items-center gap-2">
+        <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
         <span>Auto-deletes if inactive:</span>
       </div>
-      <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900">24h 00m</span>
+      <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900 px-2 py-0.5 rounded-lg bg-amber-400/20 border border-amber-400/40">24h 00m</span>
     </div>
 
-    <div id="mainTopicContainer" class="hidden my-2 p-3 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex items-start gap-2.5 flex-shrink-0">
-      <i data-lucide="pin" class="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5"></i>
+    <!-- Main Topic / Pinned Question Banner -->
+    <div id="mainTopicContainer" class="hidden my-2 p-3 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-md flex items-start gap-2.5 flex-shrink-0">
+      <i data-lucide="pin" class="w-4 h-4 text-sky-600 flex-shrink-0 mt-0.5"></i>
       <div>
         <p id="mainTopicText" class="text-xs font-normal text-slate-900 leading-snug"></p>
-        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-sky-900 mt-0.5 block">Visible for 60m 00s</span>
+        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-sky-700 mt-0.5 block">Visible for 60m 00s</span>
       </div>
     </div>
 
-    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3 max-h-52"></div>
+    <!-- Messages Container -->
+    <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-3.5 max-h-[42vh] pr-1"></div>
 
-    <div class="pt-2.5 pb-1 flex-shrink-0">
-      <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/80 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
-        <textarea id="chatInput" rows="1" placeholder="Message connected peer..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 24px; height: 24px;"></textarea>
+    <!-- Chat Input Bar -->
+    <div class="pt-3 pb-1 flex-shrink-0">
+      <div class="glass-card rounded-[28px] p-2 pl-4 border border-white/90 shadow-xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400 transition-all bg-white/80">
+        <textarea id="chatInput" rows="1" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
         
-        <div class="flex items-center justify-between pt-1 border-t border-slate-200/50">
+        <div class="flex items-center justify-between pt-1 border-t border-slate-200/60">
           <div class="flex items-center gap-1">
             <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="plus" class="w-4 h-4"></i></button>
             <button onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="mic" class="w-4 h-4"></i></button>
@@ -615,7 +620,6 @@
     let chatRoomsSessions = {}; 
     let roomLastActivity = {};
     let currentLayoutMode = 'map';
-    let chatExpiryInterval = null;
 
     let userState = {
       alias: 'Traveler',
@@ -1741,6 +1745,7 @@
         roomLastActivity[targetRoomId] = Date.now();
         savePersistentData();
         
+        // Play bell ring ONLY when an incoming reply arrives
         playAudioEffect('bell');
         triggerHapticFeedback([100, 50, 100, 50, 100]);
         showToast(`New reply from ${senderLabel}!`, 'bell');
@@ -2236,7 +2241,7 @@
       
       if (!text) return;
 
-      playAudioEffect('bell');
+      // DO NOT play bell for outgoing messages (user's own message)
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       appendMessage('You', text, timeStr, true);
 
@@ -2247,7 +2252,7 @@
       savePersistentData();
 
       input.value = ''; 
-      input.style.height = '24px';
+      input.style.height = '26px';
 
       if (currentActiveChatRoomId === 'room-peer-sim-peer-tutorial-bot') {
         setTimeout(() => {
@@ -2278,11 +2283,14 @@
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
       
-      // Replies/Received messages are shown on the left; user messages are on the right.
+      // Incoming replies/bot messages are strictly on the LEFT; user messages are on the RIGHT.
       msgBox.innerHTML += `
-        <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'}">
-          <div class="flex items-center gap-1.5 px-1"><span class="text-[10px] text-slate-900 font-semibold">${sender}</span><span class="text-[9px] text-slate-500">${time || ''}</span></div>
-          <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-light ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/60'}">${text.replace(/\n/g, '<br>')}</div>
+        <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full">
+          <div class="flex items-center gap-1.5 px-1.5 mb-0.5">
+            <span class="text-[10px] text-slate-700 font-bold">${sender}</span>
+            <span class="text-[9px] text-slate-500 font-medium">${time || ''}</span>
+          </div>
+          <div class="px-4 py-2.5 rounded-2xl text-xs max-w-[85%] font-light leading-relaxed shadow-md ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-sky-500/20' : 'glass-card bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none border border-white/90 shadow-sm'}">${text.replace(/\n/g, '<br>')}</div>
         </div>
       `;
       msgBox.scrollTop = msgBox.scrollHeight;
@@ -2306,7 +2314,7 @@
       const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
 
       const avatarEl = document.getElementById('chatTargetAvatar');
-      avatarEl.className = `w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
+      avatarEl.className = `w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
       avatarEl.style.background = circleBg;
       if (isBiz) {
         avatarEl.style.cssText += neonStyle.shadowStyle;
