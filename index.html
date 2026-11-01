@@ -126,6 +126,12 @@
       z-index: 60 !important;
     }
 
+    /* Force user's personal chat bubble node to always remain in top foreground */
+    #userAvatarNode {
+      z-index: 999999 !important;
+      pointer-events: auto !important;
+    }
+
     .hairline-ring {
       border-width: calc(1px / var(--zoom-scale, 1)) !important;
     }
@@ -1293,10 +1299,10 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${userState.type === 'business' ? userState.alias : 'Traveler'}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you')`;
 
       if (userState.type === 'business') {
-        topBubble.className = "block";
+        topBubble.className = "block relative z-[999999]";
         topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours);
       } else {
-        topBubble.className = "z-[10000]";
+        topBubble.className = "relative z-[999999]";
         topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, userState.alias, onClickJs, isGiggle);
       }
       topBubble.classList.remove('hidden');
@@ -1427,7 +1433,7 @@
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
       userDiv.id = 'userAvatarNode';
-      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] cursor-pointer node-item';
+      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[999999] cursor-pointer node-item';
       
       const isBiz = userState.type === 'business';
       const neonStyle = getBusinessNeonStyle(userState.type, userState.category);
@@ -1442,14 +1448,14 @@
 
           ${getRadarStyleHtml(userState.radarStyle || 'futuristic')}
 
-          <div class="scale-compensator flex flex-col items-center relative z-[10000] pointer-events-auto">
-            <div class="node-content-stack">
-              <div id="userTopBubble" class="hidden"></div>
+          <div class="scale-compensator flex flex-col items-center relative z-[999999] pointer-events-auto">
+            <div class="node-content-stack z-[999999]">
+              <div id="userTopBubble" class="hidden z-[999999]"></div>
             </div>
 
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/40 blur-lg animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
-            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[58px] h-[58px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[10000] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
+            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[58px] h-[58px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
               ${renderNodeIconContent(userState.type, userState.category)}
             </div>
           </div>
