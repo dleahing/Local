@@ -600,10 +600,10 @@
       }
     }
 
-    // Helper to render Business Bubble Card exactly matching reference design image
-    function renderBusinessBubbleCardHtml(accountType, category, question, onClickJs) {
-      if (!question) return '';
+    // Helper to render Business Bubble Card with ALWAYS shown business name in neon, and typing below in smaller white font
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs) {
       if (accountType !== 'business') {
+        if (!question) return '';
         return `
           <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="${onClickJs}">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
@@ -618,9 +618,14 @@
         <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex items-start gap-2.5 animate-float z-50 cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
           <div class="min-w-0 flex-1">
-            <p class="text-xs font-black tracking-tight ${neonStyle.glowText} leading-tight truncate">
-              ${question}
-            </p>
+            <h5 class="text-xs font-black tracking-tight ${neonStyle.glowText} leading-tight truncate">
+              ${businessName || 'Business'}
+            </h5>
+            ${question ? `
+              <p class="text-[11px] font-normal text-white/90 leading-snug mt-0.5 break-words line-clamp-3">
+                ${question}
+              </p>
+            ` : ''}
           </div>
         </div>
       `;
@@ -1091,7 +1096,9 @@
       const topBubble = document.getElementById('userTopBubble');
       if (!topBubble) return;
 
-      if (!activeTopicState.text || !activeTopicState.createdAt || (Date.now() - activeTopicState.createdAt >= ONE_HOUR_MS)) {
+      const hasValidActiveTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
+      
+      if (!hasValidActiveTopic && userState.type !== 'business') {
         topBubble.classList.add('hidden');
         return;
       }
@@ -1099,17 +1106,8 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${userState.type === 'business' ? userState.alias : 'Traveler'}', activeTopicState.text, 'you')`;
 
       if (userState.type === 'business') {
-        const neonStyle = getBusinessNeonStyle(userState.type, userState.category);
-        topBubble.className = "dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex items-start gap-2.5 animate-float z-50 cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95";
-        topBubble.setAttribute('onclick', onClickJs);
-        topBubble.innerHTML = `
-          <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
-          <div class="min-w-0 flex-1">
-            <p class="text-xs font-black tracking-tight ${neonStyle.glowText} leading-tight truncate">
-              ${activeTopicState.text}
-            </p>
-          </div>
-        `;
+        topBubble.className = "block";
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, hasValidActiveTopic ? activeTopicState.text : '', userState.alias, onClickJs);
       } else {
         topBubble.className = "px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto";
         topBubble.setAttribute('onclick', onClickJs);
@@ -1412,9 +1410,9 @@
       const sampleUsers = [
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
         { name: 'Bot 10-Mile Pickleball Fan', peerId: 'sim-peer-bot-10mi', targetMiles: 10.0, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Fine Dining (Restaurant)', peerId: 'sim-peer-restaurant-20mi', targetMiles: 20.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', hours: 'Open • Closes 10 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Bella Vista Trattoria (Restaurant)', peerId: 'sim-peer-restaurant-5mi', targetMiles: 5.0, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', hours: 'Open • Closes 11 PM', interestFilter: 'Food', isBot: true },
-        { name: 'The Velvet Lounge (Bar & Lounge)', peerId: 'sim-peer-lounge-4mi', targetMiles: 4.0, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', hours: 'Open • Closes 2 AM', interestFilter: 'Food', isBot: true },
+        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-20mi', targetMiles: 20.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', hours: 'Open • Closes 10 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-5mi', targetMiles: 5.0, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', hours: 'Open • Closes 11 PM', interestFilter: 'Food', isBot: true },
+        { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-4mi', targetMiles: 4.0, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', hours: 'Open • Closes 2 AM', interestFilter: 'Food', isBot: true },
         { name: '12-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 12.0, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Hiking', isBot: true },
         { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Cars', isBot: true },
         { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', hours: '24/7 Open', interestFilter: 'Life', isBot: true }
@@ -1467,10 +1465,11 @@
       
       let validBubbles = [];
       
-      if (activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
+      const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
+      if (userState.type === 'business' || hasSelfTopic) {
         validBubbles.push({
           name: userState.type === 'business' ? userState.alias : 'You',
-          question: activeTopicState.text,
+          question: hasSelfTopic ? activeTopicState.text : '',
           bubbleColor: userState.bubbleColor,
           peerId: 'you',
           roomId: 'room-you',
@@ -1483,13 +1482,13 @@
       peerIds.forEach(pId => {
         const p = globalActiveDirectory[pId];
         const hasValidQuestion = p.question && p.createdAt && (Date.now() - p.createdAt < ONE_HOUR_MS);
-        if (p.enabled !== false && hasValidQuestion) {
+        if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
           const matches = matchesInterestFilter(p.interestFilter);
           const inRadius = userState.radius === 0 || p.distance <= userState.radius || p.accountType === 'business';
           if (matches && inRadius) {
             validBubbles.push({
               name: p.accountType === 'business' ? p.rawSender : 'Traveler',
-              question: p.question,
+              question: hasValidQuestion ? p.question : '',
               bubbleColor: p.bubbleColor,
               peerId: p.peerId,
               roomId: 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-'),
@@ -1521,12 +1520,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5 mb-0.5">
-                <span class="text-[11px] font-black text-slate-900 truncate">${b.name}</span>
+                <span class="text-[11px] font-black ${isBiz ? neonStyle.glowText : 'text-slate-900'} truncate">${b.name}</span>
                 ${isBiz && b.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30 whitespace-nowrap">${b.hours}</span>` : ''}
               </div>
-              <p class="text-xs font-bold text-slate-800 leading-snug line-clamp-2">
-                ${b.question}
-              </p>
+              ${b.question ? `<p class="text-xs font-semibold ${isBiz ? 'text-slate-800 font-normal' : 'text-slate-800 font-bold'} leading-snug line-clamp-2">${b.question}</p>` : ''}
             </div>
           </div>
         `;
@@ -1703,7 +1700,7 @@
               <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${hoursBadgeText}</span>
             </div>
             
-            ${hasValidQuestion ? renderBusinessBubbleCardHtml(accountType, category, question, onClickJs) : ''}
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs) : ''}
           </div>
 
           <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
@@ -1951,7 +1948,7 @@
     function openQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
     function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
+    function closeProfileModal() { document.getElementById('profileModal').classList.close ? document.getElementById('profileModal').close() : document.getElementById('profileModal').classList.add('hidden'); }
     function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
     function recalculateNodePositions() {}
   </script>
