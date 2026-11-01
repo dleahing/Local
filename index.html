@@ -400,7 +400,7 @@
           <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
           <div class="grid grid-cols-2 gap-2">
             <button onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all">
-              <i data-lucide="navigation" class="w-4 h-4 text-sky-800"></i>
+              <i data-lucide="user" class="w-4 h-4 text-sky-800"></i>
               <span class="text-[11px] font-semibold text-sky-950">Personal (GPS)</span>
             </button>
             <button onclick="playAudioEffect('click'); selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
@@ -671,7 +671,7 @@
           shadowStyle: 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);',
           iconColor: 'text-white',
           glowText: 'text-yellow-400',
-          lucideIcon: 'store'
+          lucideIcon: 'user'
         };
       }
       
@@ -850,6 +850,7 @@
       const slider = document.getElementById('radarRangeSlider');
       if (slider) {
         slider.min = MIN_RADIUS_METERS;
+        slider.max = MAX_RADIUS_METERS;
         slider.value = MIN_RADIUS_METERS;
       }
 
@@ -1091,6 +1092,9 @@
       animationFrameId = requestAnimationFrame(renderLoop);
     }
 
+    // Accurate Pixel-to-Mile Scale Factor Mapping
+    const MAP_PIXels_PER_MILE = 187.5; // Exactly 187.5px per mile on the map canvas coordinate space
+
     function updateRadius(val) {
       const meters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val)));
       userState.radius = meters;
@@ -1108,7 +1112,8 @@
       if (sliderLabel) sliderLabel.innerText = labelText;
 
       if (ring) {
-        const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1612.5);
+        const milesVal = meters / METERS_PER_MILE;
+        const pixelDiameter = Math.round(milesVal * MAP_PIXels_PER_MILE * 2);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
@@ -1157,7 +1162,7 @@
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / currentZoomScale;
 
         const deltaPx = currentDistPx - dragStartDistancePx;
-        const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 1612.5;
+        const metersPerPx = METERS_PER_MILE / MAP_PIXels_PER_MILE;
         
         const newMeters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
 
@@ -1257,10 +1262,10 @@
       const targetRing = document.getElementById('radarBoundaryRing');
       if (!ringContainer || !targetRing) return;
 
-      const sizePx = targetRing.offsetWidth || 450;
+      const sizePx = targetRing.offsetWidth || 375;
       const ripple = document.createElement('div');
       
-      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-sky-400 bg-sky-400/35 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(56,189,248,0.7)] hairline-ring';
+      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-sky-400/80 bg-sky-400/28 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(56,189,248,0.56)] hairline-ring';
       ripple.style.width = `${sizePx}px`;
       ripple.style.height = `${sizePx}px`;
 
@@ -1325,7 +1330,6 @@
       showToast('Radar refreshed! Searching for chats in area.', 'radar');
     }
 
-    /* Upgraded High-End Liquid Glass Persona Styling */
     const UPGRADED_PERSONAL_ICON_BG = 'radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 1) 0%, rgba(125, 211, 252, 0.9) 38%, rgba(14, 165, 233, 0.95) 75%, rgba(3, 105, 161, 1) 100%)';
     const UPGRADED_PERSONAL_ICON_BORDER = 'border-[2px] border-white/90';
     const UPGRADED_PERSONAL_ICON_SHADOW = 'box-shadow: 0 12px 35px rgba(14, 165, 233, 0.55), inset 0 3px 6px rgba(255, 255, 255, 0.9), inset 0 -3px 6px rgba(0, 0, 0, 0.25);';
@@ -1333,7 +1337,7 @@
     function renderNodeIconContent(accountType, category) {
       const isBiz = accountType === 'business';
       if (!isBiz) {
-        return `<div class="bubble-glare"></div><i data-lucide="navigation" class="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5" style="transform: rotate(45deg);"></i>`;
+        return `<div class="bubble-glare"></div><i data-lucide="user" class="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
       }
       
       const neonStyle = getBusinessNeonStyle(accountType, category);
@@ -1386,46 +1390,49 @@
 
     function getRadarStyleHtml(styleType) {
       const palette = RADAR_PALETTES[userState.radarColor || 'cyan'];
+      const initialMiles = (userState.radius / METERS_PER_MILE).toFixed(1);
+      const initialPx = Math.round((userState.radius / METERS_PER_MILE) * MAP_PIXels_PER_MILE * 2);
+
       if (styleType === 'cyberpunk') {
         return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
             <div class="absolute inset-0 rounded-full animate-spin hairline-ring" style="animation-duration: 25s; transform-origin: center center; border-style: dashed; border-color: ${palette.line};"></div>
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">1.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">1.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
           </div>
         `;
       } else if (styleType === 'minimal') {
         return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">1.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">1.0 Mi</div>
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
           </div>
         `;
       } else if (styleType === 'sonar') {
         return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-950/30 cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-950/30 cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
             <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
             <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">1.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">1.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
           </div>
         `;
       } else {
         return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-2xl pointer-events-auto backdrop-blur-xs hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-2xl pointer-events-auto backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
             <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
             <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">1.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">1.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
           </div>
         `;
       }
@@ -1699,12 +1706,12 @@
       const sampleUsers = [
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
         { name: 'Bot 0.5-Mile Pickleball Fan', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 10.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-06mi', targetMiles: 0.6, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
         { name: '0.7-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 0.7, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
         { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 0.5, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -1958,11 +1965,8 @@
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
-      const currentRingPx = document.getElementById('radarBoundaryRing') ? (document.getElementById('radarBoundaryRing').offsetWidth / 2) : 100;
-      const currentRadiusMeters = userState.radius;
-      
-      let distanceRatio = currentRadiusMeters > 0 ? (distance / currentRadiusMeters) : 0.5;
-      let pixelDistanceFromCenter = distanceRatio * currentRingPx;
+      const milesFromCenter = distance / METERS_PER_MILE;
+      let pixelDistanceFromCenter = milesFromCenter * MAP_PIXels_PER_MILE;
 
       let hash = 0;
       for (let i = 0; i < peerId.length; i++) {
