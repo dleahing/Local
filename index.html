@@ -213,18 +213,11 @@
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
-    /* Reference Design Dark Business Pill Chat Card & Bottom Control Dock Styling */
+    /* Dark Business Bubble & Bottom Action Dock Styling */
     .dark-biz-bubble {
       background: #1e1b2e;
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
-    }
-
-    .bottom-chat-slider-dock {
-      background: #1e1b2e;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.25);
-      touch-action: none;
     }
   </style>
 </head>
@@ -248,7 +241,7 @@
   </div>
 
   <!-- Right-Side Chat Bubbles Sidebar -->
-  <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-28 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
+  <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-32 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
         <i data-lucide="message-square" class="w-4 h-4 text-sky-600"></i>
@@ -305,17 +298,22 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Redesigned Bottom-Center Chat Bubble Dock & Interactive Radar Slider -->
-  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto">
-    <div id="radarSlideDock" class="bottom-chat-slider-dock px-5 py-3 rounded-full flex items-center gap-3 cursor-grab active:cursor-grabbing hover:scale-105 active:scale-95 transition-transform" title="Tap to ask a question • Slide left/right to adjust Radar Range">
-      <i data-lucide="message-square-plus" class="w-5 h-5 text-sky-400 flex-shrink-0"></i>
-      <div class="flex flex-col items-center">
-        <span class="text-xs font-bold text-white tracking-wide whitespace-nowrap">Ask LocaLs</span>
-        <span id="dockRadiusLabel" class="text-[9px] font-semibold text-sky-300 uppercase tracking-wider whitespace-nowrap">Radar: 5.0 Mi</span>
-      </div>
-      <div class="flex items-center gap-1 text-slate-400 pl-1 border-l border-white/20">
-        <i data-lucide="sliders" class="w-4 h-4 text-slate-300"></i>
-      </div>
+  <!-- Bottom-Center Action Dock with Input Box & Radar Range Slider -->
+  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 flex flex-col gap-2">
+    <!-- Quick-Type Status Bar -->
+    <div class="dark-biz-bubble px-4 py-2.5 rounded-2xl flex items-center gap-2.5 shadow-2xl">
+      <i data-lucide="message-square-plus" class="w-4 h-4 text-sky-400 flex-shrink-0"></i>
+      <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onkeypress="if(event.key==='Enter'){quickPostFromDock();}" />
+      <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-sky-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-sky-500 transition-all">
+        <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+    
+    <!-- Radar Range Slider Bar -->
+    <div class="dark-biz-bubble px-4 py-2 rounded-xl flex items-center gap-3 shadow-xl">
+      <i data-lucide="radar" class="w-3.5 h-3.5 text-sky-400 flex-shrink-0"></i>
+      <input type="range" id="radarRangeSlider" min="8046.7" max="108630.4" step="1000" value="8046.7" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-sky-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg">
+      <span id="sliderRangeLabel" class="text-[10px] font-bold text-sky-300 uppercase whitespace-nowrap">5.0 Mi</span>
     </div>
   </div>
 
@@ -544,22 +542,6 @@
     </div>
   </div>
 
-  <!-- Question Modal -->
-  <div id="questionModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Ask the LocaLs</h3>
-        <button onclick="playAudioEffect('click'); closeQuestionModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <div class="space-y-4">
-        <textarea id="questionInput" rows="3" placeholder="Post a GPS map question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
-        <button onclick="playAudioEffect('chime'); postQuestion()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all">
-          Post Map Bubble
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- ========================================== -->
   <!-- 3. JAVASCRIPT LOGIC SECTION               -->
   <!-- ========================================== -->
@@ -572,9 +554,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 108630.4; // Maximum boundary 67.5 Miles
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v14';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v14';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v24';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v15';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v15';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v25';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -631,15 +613,6 @@
       purple: { line: 'rgba(192, 132, 252, 0.75)', sweep: 'rgba(192, 132, 252, 0.85)', bg: 'rgba(192, 132, 252, 0.12)' }
     };
 
-    const BUBBLE_COLOR_MAP = {
-      blue: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(56, 189, 248, 0.65) 50%, rgba(2, 132, 199, 0.9) 100%)',
-      yellow: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(250, 204, 21, 0.7) 50%, rgba(202, 138, 4, 0.95) 100%)',
-      pink: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(244, 114, 182, 0.65) 50%, rgba(219, 39, 119, 0.9) 100%)',
-      emerald: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(52, 211, 153, 0.65) 50%, rgba(5, 150, 105, 0.9) 100%)',
-      violet: 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(192, 132, 252, 0.65) 50%, rgba(126, 34, 206, 0.9) 100%)'
-    };
-
-    /* Solid High-Contrast Flat Background for Business Badges */
     const SOLID_FLAT_BUSINESS_BG = '#1e1b2e';
 
     function formatTime12h(timeStr) {
@@ -841,7 +814,7 @@
       initTapRippleHandler();
       initMapPanHandlers();
       initPinchZoomHandlers();
-      initBottomDockSlider();
+      initDoubleTapHandler();
       startSmoothAnimationLoop();
     });
 
@@ -930,7 +903,7 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #radarSlideDock')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider')) {
           return;
         }
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
@@ -1003,6 +976,37 @@
       });
     }
 
+    let lastTapTime = 0;
+    function initDoubleTapHandler() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+
+      mapCanvas.addEventListener('touchend', (e) => {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTapTime;
+        if (tapLength < 300 && tapLength > 0) {
+          recenterAndResetZoom();
+          e.preventDefault();
+        }
+        lastTapTime = currentTime;
+      });
+
+      mapCanvas.addEventListener('dblclick', (e) => {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar')) {
+          return;
+        }
+        recenterAndResetZoom();
+      });
+    }
+
+    function recenterAndResetZoom() {
+      targetPanX = 0;
+      targetPanY = 0;
+      targetZoomScale = 1.0;
+      playAudioEffect('chime');
+      showToast('Map recentered & zoom reset', 'navigation');
+    }
+
     function startSmoothAnimationLoop() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
@@ -1030,12 +1034,14 @@
       const ring = document.getElementById('radarBoundaryRing');
       const leftBadge = document.getElementById('radarRingDistanceLabelLeft');
       const rightBadge = document.getElementById('radarRingDistanceLabelRight');
-      const dockLabel = document.getElementById('dockRadiusLabel');
+      const slider = document.getElementById('radarRangeSlider');
+      const sliderLabel = document.getElementById('sliderRangeLabel');
       
       const miles = (meters / METERS_PER_MILE).toFixed(1);
       const labelText = `${miles} Mi`;
 
-      if (dockLabel) dockLabel.innerText = `Radar: ${labelText}`;
+      if (slider) slider.value = meters;
+      if (sliderLabel) sliderLabel.innerText = labelText;
 
       if (ring) {
         const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1612.5);
@@ -1054,47 +1060,8 @@
       savePersistentData();
     }
 
-    /* Interactive Slide Control for Bottom Chat Dock */
-    function initBottomDockSlider() {
-      const dock = document.getElementById('radarSlideDock');
-      if (!dock) return;
-
-      let startX = 0;
-      let startRadius = MIN_RADIUS_METERS;
-      let hasDragged = false;
-
-      const handleDockStart = (e) => {
-        hasDragged = false;
-        startX = e.touches ? e.touches[0].clientX : e.clientX;
-        startRadius = userState.radius;
-      };
-
-      const handleDockMove = (e) => {
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const deltaX = clientX - startX;
-        
-        if (Math.abs(deltaX) > 5) {
-          hasDragged = true;
-          const metersPerPx = (MAX_RADIUS_METERS - MIN_RADIUS_METERS) / 350;
-          const newRadius = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, startRadius + (deltaX * metersPerPx)));
-          updateRadius(newRadius);
-        }
-      };
-
-      const handleDockEnd = () => {
-        if (!hasDragged) {
-          playAudioEffect('click');
-          openQuestionModal();
-        }
-      };
-
-      dock.addEventListener('mousedown', handleDockStart);
-      window.addEventListener('mousemove', handleDockMove);
-      window.addEventListener('mouseup', handleDockEnd);
-
-      dock.addEventListener('touchstart', handleDockStart, { passive: true });
-      window.addEventListener('touchmove', handleDockMove, { passive: true });
-      window.addEventListener('touchend', handleDockEnd);
+    function updateRadiusFromSlider(val) {
+      updateRadius(val);
     }
 
     function initRadiusDragHandlers() {
@@ -1243,7 +1210,7 @@
       if (!mapCanvas) return;
 
       const triggerRipple = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #radarSlideDock')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider')) {
           return;
         }
         createBubbleRipple();
@@ -1498,7 +1465,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v24');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v25');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -2044,8 +2011,9 @@
       document.getElementById('activeUserCount').innerText = `${Object.keys(activeDataConnections).length + 1} P2P Linked`;
     }
 
-    function postQuestion() {
-      const text = document.getElementById('questionInput').value.trim();
+    function quickPostFromDock() {
+      const input = document.getElementById('quickPostInput');
+      const text = input ? input.value.trim() : '';
       if (!text) return;
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
@@ -2059,8 +2027,9 @@
       const coords = getBroadcastCoordinates();
       broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime, hours: userState.hours, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
       
-      closeQuestionModal();
-      document.getElementById('questionInput').value = '';
+      input.value = '';
+      showToast('Map bubble posted!', 'check-circle');
+      playAudioEffect('chime');
 
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
       
@@ -2092,13 +2061,11 @@
 
       if (currentActiveChatRoomId === 'room-peer-sim-peer-tutorial-bot') {
         setTimeout(() => {
-          let botReply = "Welcome to LocaL! Here is how everything works:\n1. Pressing your own icon will refresh the radar that searches for new chats in the area shown within the radar.\n2. Pressing and dragging your finger within the radar will adjust its size (and automatically zoom the map in/out accordingly!).\n3. There is a drop-down menu in the top right that can change how chat bubbles are shown (Map view vs. Right-side list).";
+          let botReply = "Welcome to LocaL! Here is how everything works:\n1. Pressing your own icon will refresh the radar that searches for new chats in the area shown within the radar.\n2. Dragging the radar range slider below lets you adjust your search range instantly!\n3. Double-tap the background anytime to recenter your map and reset zoom.";
           if (text.toLowerCase().includes('refresh') || text.toLowerCase().includes('icon')) {
             botReply = "Simply tap your own profile icon anytime to refresh your radar and search for new chats in your surrounding area!";
           } else if (text.toLowerCase().includes('size') || text.toLowerCase().includes('drag') || text.toLowerCase().includes('radius') || text.toLowerCase().includes('zoom')) {
-            botReply = "Press and drag your finger on the outer glowing boundary ring within the radar to scale its size and automatically zoom the map in and out!";
-          } else if (text.toLowerCase().includes('menu') || text.toLowerCase().includes('drop') || text.toLowerCase().includes('layout')) {
-            botReply = "Use the layout dropdown menu in the top right header to switch how chat bubbles are displayed!";
+            botReply = "Use the range slider right below the chat bar at the bottom to adjust your radar radius instantly!";
           }
           const botTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           appendMessage('LocaL Guide', botReply, botTimeStr, false);
@@ -2175,8 +2142,6 @@
       currentActiveChatRoomId = null;
     }
 
-    function openQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
-    function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
     function closeProfileModal() { document.getElementById('profileModal').classList.close ? document.getElementById('profileModal').classList.close() : document.getElementById('profileModal').classList.add('hidden'); }
     function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
