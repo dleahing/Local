@@ -5,25 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LocaL - P2P Proximity Social Network</title>
   
-  <!-- Mobile & PWA Configuration -->
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LocaL">
 
-  <!-- Inter Premium Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS, Lucide Icons & PeerJS (WebRTC) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
 
-  <!-- ========================================== -->
-  <!-- 1. STYLES & BACKGROUND EFFECTS SECTION      -->
-  <!-- ========================================== -->
   <style>
     :root {
       --zoom-scale: 1;
@@ -42,7 +36,6 @@
       text-rendering: optimizeLegibility;
     }
 
-    /* Background lock when modals or chat drawer are open */
     .content-locked {
       pointer-events: none !important;
       user-select: none !important;
@@ -273,7 +266,8 @@
   </div>
 
   <!-- Right-Side Chat Bubbles Sidebar -->
-  <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-32 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
+  <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-32 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto"
+       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
         <i data-lucide="message-square" class="w-4 h-4 text-sky-600"></i>
@@ -289,7 +283,8 @@
   </div>
 
   <!-- Top Translucent Glass Header Bar -->
-  <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
+  <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none"
+          onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
     <div class="glass-header-transparent px-3 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-102 transition-all" onclick="playAudioEffect('click'); toggleP2PModal()" title="View Network Mesh">
       <div class="relative flex items-center justify-center">
         <div id="logoBadge" class="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-base border border-white/50 shadow-sm">L</div>
@@ -323,12 +318,13 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Unified Bottom Action Dock Bubble -->
+  <!-- Unified Bottom Action Dock Bubble (Fixed propagation on all events) -->
   <div id="actionDockContainer" 
        class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu"
        onmousedown="event.stopPropagation()"
        ontouchstart="event.stopPropagation()"
-       onclick="event.stopPropagation()">
+       onclick="event.stopPropagation()"
+       onpointerdown="event.stopPropagation()">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
         <i data-lucide="message-square-plus" class="w-4 h-4 text-sky-400 flex-shrink-0"></i>
@@ -349,7 +345,8 @@
   </div>
 
   <!-- WebRTC P2P Mesh & Directory Modal -->
-  <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
+  <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4"
+       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
     <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 flex-shrink-0">
         <div>
@@ -396,7 +393,8 @@
   </div>
 
   <!-- Profile Customization Modal -->
-  <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
+  <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4"
+       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-900 tracking-tight">Customize Profile</h3>
@@ -530,7 +528,8 @@
 
   <!-- Chat Drawer Overlay & Container -->
   <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
-  <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[85vh]">
+  <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[85vh]"
+       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
     <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
       <div class="flex items-center gap-3">
         <div id="chatTargetAvatar" class="w-9 h-9 rounded-full text-white font-medium text-xs flex items-center justify-center shadow-md">
@@ -569,17 +568,14 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- 3. JAVASCRIPT LOGIC SECTION               -->
-  <!-- ========================================== -->
   <script>
     const MESH_ROOM_KEY = 'local-proximity-public';
     let isHostDevice = false;
 
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
-    const MIN_RADIUS_METERS = 1609.34; // 1 Mile minimum
-    const MAX_RADIUS_METERS = 48280.3; // 30 Miles maximum
+    const MIN_RADIUS_METERS = 1609.34;
+    const MAX_RADIUS_METERS = 48280.3;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v21';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v21';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
@@ -958,6 +954,7 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
+        // Explicitly ignore any clicks/touches originating in any UI elements, headers, modals, or the action dock
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #actionDockContainer')) {
           return;
         }
@@ -1003,6 +1000,9 @@
       if (!mapCanvas) return;
 
       mapCanvas.addEventListener('touchstart', (e) => {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #actionDockContainer')) {
+          return;
+        }
         if (e.touches.length === 2) {
           isDraggingMap = false;
           initialPinchDistance = Math.hypot(
@@ -1054,6 +1054,9 @@
       if (!mapCanvas) return;
 
       mapCanvas.addEventListener('touchend', (e) => {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #actionDockContainer')) {
+          return;
+        }
         const currentTime = new Date().getTime();
         const tapLength = currentTime - lastTapTime;
         if (tapLength < 300 && tapLength > 0) {
@@ -2220,7 +2223,6 @@
         chatRoomsSessions[roomId].forEach(msg => { appendMessage(msg.sender, msg.text, msg.time, msg.isMe); });
       }
 
-      // Lock background map interactions
       document.getElementById('mapCanvas').classList.add('content-locked');
       document.body.classList.add('overflow-hidden');
 
@@ -2229,7 +2231,6 @@
     }
 
     function closeChatDrawer() {
-      // Unlock background map interactions
       document.getElementById('mapCanvas').classList.remove('content-locked');
       document.body.classList.remove('overflow-hidden');
 
