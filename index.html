@@ -320,7 +320,7 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Unified Bottom Action Dock Bubble (Moved up slightly from bottom) -->
+  <!-- Unified Bottom Action Dock Bubble -->
   <div id="actionDockContainer" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
@@ -521,7 +521,7 @@
     </div>
   </div>
 
-  <!-- Chat Drawer Overlay & Container (Moved up slightly from bottom) -->
+  <!-- Chat Drawer Overlay & Container -->
   <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
   <div id="chatDrawer" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-5 rounded-3xl flex flex-col transition-all max-h-[82vh] border border-white/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)]">
     
@@ -538,7 +538,6 @@
       </div>
       
       <div class="flex items-center gap-2">
-        <!-- Owner Delete Chat Room Button -->
         <button id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Room
         </button>
@@ -617,6 +616,7 @@
     
     let currentZoomScale = 1.0;
     let targetZoomScale = 1.0;
+    let lastRenderedZoomScale = 1.0;
 
     let isDraggingMap = false;
     let startDragX = 0;
@@ -752,8 +752,10 @@
     }
 
     function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours) {
+      const isMinimized = currentZoomScale < 0.55;
+
       if (accountType !== 'business') {
-        if (!question) return '';
+        if (!question || isMinimized) return '';
         return `
           <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-[200] cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="${onClickJs}">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
@@ -763,6 +765,18 @@
       }
 
       const neonStyle = getBusinessNeonStyle(accountType, category);
+
+      if (isMinimized) {
+        return `
+          <div class="dark-biz-bubble px-3 py-1.5 rounded-xl shadow-xl flex items-center gap-2 z-[200] cursor-pointer pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+            <i data-lucide="${neonStyle.lucideIcon}" class="w-3.5 h-3.5 ${neonStyle.iconColor} flex-shrink-0" stroke-width="2.5"></i>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-[11px] font-bold ${neonStyle.glowText} truncate">${businessName || 'Business'}</span>
+              ${hours ? `<span class="text-[9px] text-emerald-300 font-medium whitespace-nowrap bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30">${hours}</span>` : ''}
+            </div>
+          </div>
+        `;
+      }
 
       return `
         <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-1.5 animate-float z-[200] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
@@ -1145,9 +1159,27 @@
         mapCanvas.style.setProperty('--pan-y', `${panY}px`);
         mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
 
+        // Re-render nodes if crossing the minimization zoom threshold (0.55)
+        if (Math.abs(currentZoomScale - lastRenderedZoomScale) > 0.12) {
+          lastRenderedZoomScale = currentZoomScale;
+          redrawAllNodes();
+        }
+
         animationFrameId = requestAnimationFrame(renderLoop);
       };
       animationFrameId = requestAnimationFrame(renderLoop);
+    }
+
+    function redrawAllNodes() {
+      renderUserTopBubbleContent(false);
+      Object.keys(globalActiveDirectory).forEach(peerId => {
+        const peer = globalActiveDirectory[peerId];
+        updatePeerNodeOnMap(
+          peer.rawSender, peer.distance, '', peer.lat, peer.lng, 
+          peer.question, peer.createdAt, peer.peerId, 
+          peer.bubbleColor, peer.accountType, peer.category, peer.hours, peer.interestFilter, true
+        );
+      });
     }
 
     const MAP_PIXels_PER_MILE = 187.5;
@@ -2146,7 +2178,6 @@
           }
         }
 
-        // 24-hour inactivity room expiration checker
         if (currentActiveChatRoomId) {
           const lastActivity = roomLastActivity[currentActiveChatRoomId] || Date.now();
           const elapsed = Date.now() - lastActivity;
