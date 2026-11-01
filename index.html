@@ -536,7 +536,16 @@
       <button onclick="playAudioEffect('click'); closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
 
-    <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex items-start gap-2.5 flex-shrink-0">
+    <!-- 24-Hour Expiration Timer Bar -->
+    <div id="chatExpiryTimerBar" class="my-2 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-950 text-[10px] font-semibold flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-1.5">
+        <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-700"></i>
+        <span>Auto-deletes if inactive:</span>
+      </div>
+      <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900">24h 00m</span>
+    </div>
+
+    <div id="mainTopicContainer" class="hidden my-2 p-3 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex items-start gap-2.5 flex-shrink-0">
       <i data-lucide="pin" class="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5"></i>
       <div>
         <p id="mainTopicText" class="text-xs font-normal text-slate-900 leading-snug"></p>
@@ -544,7 +553,7 @@
       </div>
     </div>
 
-    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3 max-h-56"></div>
+    <div id="chatMessages" class="flex-1 overflow-y-auto py-2 space-y-3 max-h-52"></div>
 
     <div class="pt-2.5 pb-1 flex-shrink-0">
       <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/80 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
@@ -569,6 +578,7 @@
     let isHostDevice = false;
 
     const ONE_HOUR_MS = 60 * 60 * 1000;
+    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const MIN_RADIUS_METERS = 1609.34; // 1 Mile minimum
     const MAX_RADIUS_METERS = 48280.3; // 30 Miles maximum
@@ -577,6 +587,7 @@
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
     const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v21';
     const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v21';
+    const STORAGE_KEY_ROOM_TIMESTAMPS = 'local_room_last_activity_v21';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -602,7 +613,9 @@
     let activeTopicState = { text: null, createdAt: null };
     let currentActiveChatRoomId = null;
     let chatRoomsSessions = {}; 
+    let roomLastActivity = {};
     let currentLayoutMode = 'map';
+    let chatExpiryInterval = null;
 
     let userState = {
       alias: 'Traveler',
@@ -910,6 +923,11 @@
           chatRoomsSessions = JSON.parse(savedChats);
         }
 
+        const savedTimestamps = localStorage.getItem(STORAGE_KEY_ROOM_TIMESTAMPS);
+        if (savedTimestamps) {
+          roomLastActivity = JSON.parse(savedTimestamps);
+        }
+
         const savedTopicState = localStorage.getItem(STORAGE_KEY_TOPIC_STATE);
         if (savedTopicState) {
           activeTopicState = JSON.parse(savedTopicState);
@@ -921,6 +939,7 @@
       try {
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
+        localStorage.setItem(STORAGE_KEY_ROOM_TIMESTAMPS, JSON.stringify(roomLastActivity));
         localStorage.setItem(STORAGE_KEY_TOPIC_STATE, JSON.stringify(activeTopicState));
         if (currentActiveChatRoomId) {
           localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
@@ -1718,6 +1737,8 @@
         if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
         const senderLabel = data.accountType === 'business' ? data.sender : 'Traveler';
         chatRoomsSessions[targetRoomId].push({ sender: senderLabel, text: data.text, time: timeStr, isMe: false });
+        
+        roomLastActivity[targetRoomId] = Date.now();
         savePersistentData();
         
         playAudioEffect('bell');
@@ -2101,6 +2122,29 @@
             if (badge) badge.innerText = `Visible for ${Math.floor(remainingMs / 60000)}m`;
           }
         }
+
+        // 24-hour inactivity room expiration checker
+        if (currentActiveChatRoomId) {
+          const lastActivity = roomLastActivity[currentActiveChatRoomId] || Date.now();
+          const elapsed = Date.now() - lastActivity;
+          const remaining24h = TWENTY_FOUR_HOURS_MS - elapsed;
+          const countdownElem = document.getElementById('chatExpiryCountdown');
+
+          if (countdownElem) {
+            if (remaining24h <= 0) {
+              countdownElem.innerText = "Expired (Deleting room...)";
+              delete chatRoomsSessions[currentActiveChatRoomId];
+              delete roomLastActivity[currentActiveChatRoomId];
+              savePersistentData();
+              closeChatDrawer();
+              showToast('Chat expired due to 24h inactivity', 'clock');
+            } else {
+              const hours = Math.floor(remaining24h / (1000 * 60 * 60));
+              const mins = Math.floor((remaining24h % (1000 * 60 * 60)) / (1000 * 60));
+              countdownElem.innerText = `${hours}h ${mins < 10 ? '0' : ''}${mins}m`;
+            }
+          }
+        }
       }, 1000);
     }
 
@@ -2198,6 +2242,8 @@
 
       if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
       chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'You', text, time: timeStr, isMe: true });
+      
+      roomLastActivity[currentActiveChatRoomId] = Date.now();
       savePersistentData();
 
       input.value = ''; 
@@ -2209,6 +2255,7 @@
           const botTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           appendMessage('LocaL Guide', botReply, botTimeStr, false);
           chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'LocaL Guide', text: botReply, time: botTimeStr, isMe: false });
+          roomLastActivity[currentActiveChatRoomId] = Date.now();
           savePersistentData();
           playAudioEffect('bell');
         }, 800);
@@ -2230,6 +2277,8 @@
     function appendMessage(sender, text, time, isMe) {
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
+      
+      // Replies/Received messages are shown on the left; user messages are on the right.
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'}">
           <div class="flex items-center gap-1.5 px-1"><span class="text-[10px] text-slate-900 font-semibold">${sender}</span><span class="text-[9px] text-slate-500">${time || ''}</span></div>
@@ -2241,7 +2290,11 @@
 
     function openChatDrawer(roomId, roomName, topic, peerId, isRestoring = false) {
       currentActiveChatRoomId = roomId;
+      if (!roomLastActivity[roomId]) {
+        roomLastActivity[roomId] = Date.now();
+      }
       savePersistentData();
+      
       document.getElementById('chatTargetName').innerText = roomName;
       
       const isSelf = roomId === 'room-you';
