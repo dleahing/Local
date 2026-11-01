@@ -1754,7 +1754,7 @@
         
         playAudioEffect('bell');
         triggerHapticFeedback([100, 50, 100, 50, 100]);
-        showToast(`New reply from ${senderLabel}!`, 'bell');
+        showToast(`New reply in chat bubble from ${senderLabel}!`, 'bell');
 
         if (currentActiveChatRoomId === targetRoomId) appendMessage(senderLabel, data.text, timeStr, false);
       } else if (data.type === 'DELETE_ROOM') {
