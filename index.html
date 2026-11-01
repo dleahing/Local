@@ -116,10 +116,10 @@
       border-width: calc(1px / var(--zoom-scale)) !important;
     }
 
-    /* Clean Unclipped Foreground Radar Labels (Exact Action Dock Font Matching) */
+    /* Clean Unclipped Radar Labels: Exactly 30% Smaller than Action Bar Font (12px * 0.7 = 8.4px), Fixed Size Across Zoom */
     .radar-distance-label {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 10px;
+      font-size: 8.4px !important;
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
@@ -566,9 +566,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 108630.4; // Maximum boundary 67.5 Miles
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v18';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v18';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v28';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v19';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v19';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v29';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -1032,7 +1032,6 @@
         mapCanvas.style.setProperty('--pan-x', `${panX}px`);
         mapCanvas.style.setProperty('--pan-y', `${panY}px`);
         mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
-        document.documentElement.style.setProperty('--zoom-scale', (1 / currentZoomScale).toFixed(4));
 
         animationFrameId = requestAnimationFrame(renderLoop);
       };
@@ -1345,15 +1344,15 @@
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else if (styleType === 'minimal') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else if (styleType === 'sonar') {
@@ -1364,8 +1363,8 @@
             </div>
             <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
             <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else {
@@ -1376,8 +1375,8 @@
             </div>
             <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
             <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       }
@@ -1476,7 +1475,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v28');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v29');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
