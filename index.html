@@ -11,6 +11,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LocaL">
 
+  <!-- Inter Premium Google Font (Ultra Sharp & Thin Typography) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
   <!-- Tailwind CSS, Lucide Icons & PeerJS (WebRTC) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -25,6 +30,15 @@
       --pan-x: 0px;
       --pan-y: 0px;
     }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      letter-spacing: -0.011em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
     @keyframes wave-expand {
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(5.7); opacity: 0; }
@@ -187,7 +201,7 @@
     
     <!-- Explicit World Border Ring highlighting the 67.5-Mile Maximum Boundary -->
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-dashed border-sky-600/30 pointer-events-none" style="width: 5625px; height: 5625px;">
-      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest border border-white/20 shadow-xl">67.5-Mile World Boundary Edge</div>
+      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">67.5-Mile World Boundary Edge</div>
     </div>
 
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center">
@@ -203,12 +217,12 @@
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
         <i data-lucide="message-square" class="w-4 h-4 text-sky-600"></i>
-        <h3 class="font-black text-slate-900 text-xs uppercase tracking-wider">Active Chat Bubbles (<span id="rightSidebarCount">0</span>)</h3>
+        <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Active Chat Bubbles (<span id="rightSidebarCount">0</span>)</h3>
       </div>
       <button onclick="playAudioEffect('click'); setLayoutMode('map')" class="text-slate-500 hover:text-slate-800 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div id="rightSidebarBubblesContainer" class="flex-1 overflow-y-auto space-y-2.5 pr-1">
-      <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">
+      <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">
         No active chat bubbles in range.
       </div>
     </div>
@@ -218,15 +232,15 @@
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
     <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 pointer-events-auto shadow-xl">
       <div class="relative flex items-center justify-center">
-        <div id="logoBadge" class="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white font-black text-lg border border-white/40">L</div>
+        <div id="logoBadge" class="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-lg border border-white/40">L</div>
         <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white"></div>
       </div>
       <div>
-        <h1 class="font-black text-slate-900 text-sm leading-tight tracking-tight">LocaL</h1>
+        <h1 class="font-bold text-slate-900 text-sm leading-tight tracking-tight">LocaL</h1>
         <div class="flex items-center gap-2">
-          <p id="accountTypeDisplay" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Personal (GPS)</p>
+          <p id="accountTypeDisplay" class="text-[10px] text-sky-900 font-medium uppercase tracking-wider">Personal (GPS)</p>
           <span class="text-[9px] text-slate-400">•</span>
-          <div id="activeUserBadge" class="flex items-center gap-1 text-[10px] text-emerald-800 font-bold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+          <div id="activeUserBadge" class="flex items-center gap-1 text-[10px] text-emerald-800 font-semibold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
             <span id="p2pNetDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span id="activeUserCount">1 Active</span>
           </div>
@@ -237,7 +251,7 @@
     <div class="flex items-center gap-2 pointer-events-auto">
       <!-- Layout Switcher Dropdown -->
       <div class="relative">
-        <select id="layoutModeSelect" onchange="playAudioEffect('click'); setLayoutMode(this.value)" class="glass-panel px-3 py-2.5 rounded-2xl text-slate-900 text-xs font-bold focus:outline-none shadow-lg cursor-pointer">
+        <select id="layoutModeSelect" onchange="playAudioEffect('click'); setLayoutMode(this.value)" class="glass-panel px-3 py-2.5 rounded-2xl text-slate-900 text-xs font-semibold focus:outline-none shadow-lg cursor-pointer">
           <option value="map">Show All on Map</option>
           <option value="right">List to Right Side</option>
         </select>
@@ -268,40 +282,40 @@
     <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 flex-shrink-0">
         <div>
-          <h3 class="text-lg font-black text-slate-900">WebRTC P2P Mesh & Bots</h3>
-          <p class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Manage connections and individual bot toggles</p>
+          <h3 class="text-lg font-bold text-slate-900 tracking-tight">WebRTC P2P Mesh & Bots</h3>
+          <p class="text-[10px] text-sky-900 font-semibold uppercase tracking-wider">Manage connections and individual bot toggles</p>
         </div>
         <button onclick="playAudioEffect('click'); toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4 overflow-y-auto flex-1 pr-1">
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">PeerJS Connection Status</label>
-          <div class="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-bold">
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">PeerJS Connection Status</label>
+          <div class="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-semibold">
             <div class="flex items-center gap-2">
               <span id="peerServerDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
               <span id="peerServerStatusText">Connected to PeerServer Mesh</span>
             </div>
-            <button onclick="playAudioEffect('click'); connectToPeerPrompt()" class="px-2.5 py-1 rounded-xl bg-sky-600 text-white text-[10px] font-extrabold shadow-sm active:scale-95">Connect ID</button>
+            <button onclick="playAudioEffect('click'); connectToPeerPrompt()" class="px-2.5 py-1 rounded-xl bg-sky-600 text-white text-[10px] font-semibold shadow-sm active:scale-95">Connect ID</button>
           </div>
         </div>
 
         <div>
           <div class="flex items-center justify-between mb-2">
-            <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider">Discovered Peers & Bots (<span id="modalActiveCount">1</span>)</label>
+            <label class="block text-xs font-semibold text-slate-800 uppercase tracking-wider">Discovered Peers & Bots (<span id="modalActiveCount">1</span>)</label>
           </div>
           <div id="globalUsersDirectory" class="space-y-2 max-h-48 overflow-y-auto pr-1">
-            <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">
+            <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">
               Searching network mesh for peers...
             </div>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Your PeerJS ID</label>
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Your PeerJS ID</label>
           <div class="flex items-center gap-2">
-            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-bold focus:outline-none shadow-inner" value="Initializing PeerJS...">
-            <button onclick="playAudioEffect('click'); copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-extrabold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
+            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-medium focus:outline-none shadow-inner" value="Initializing PeerJS...">
+            <button onclick="playAudioEffect('click'); copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-sky-600 text-white font-semibold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
@@ -314,34 +328,34 @@
   <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">Customize Profile</h3>
+        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Customize Profile</h3>
         <button onclick="playAudioEffect('click'); closeProfileModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
+          <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
           <div class="grid grid-cols-2 gap-2">
             <button onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all">
               <i data-lucide="navigation" class="w-4 h-4 text-sky-800"></i>
-              <span class="text-[11px] font-bold text-sky-950">Personal (GPS)</span>
+              <span class="text-[11px] font-semibold text-sky-950">Personal (GPS)</span>
             </button>
             <button onclick="playAudioEffect('click'); selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
               <i data-lucide="store" class="w-4 h-4 text-slate-700"></i>
-              <span class="text-[11px] font-bold text-slate-800">Business (Fixed)</span>
+              <span class="text-[11px] font-semibold text-slate-800">Business (Fixed)</span>
             </button>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1">Display Alias / Store Name</label>
-          <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <label class="block text-xs font-semibold text-slate-800 mb-1">Display Alias / Store Name</label>
+          <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
         <!-- Interest Filter Option -->
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter (Chat Matching)</label>
-          <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter (Chat Matching)</label>
+          <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
             <option value="none">No Filter At All</option>
             <option value="Life">Life</option>
             <option value="Cars">Cars</option>
@@ -355,8 +369,8 @@
 
         <div id="businessFields" class="hidden space-y-3">
           <div>
-            <label class="block text-xs font-bold text-slate-800 mb-1">Business Category & Flat Icon</label>
-            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+            <label class="block text-xs font-semibold text-slate-800 mb-1">Business Category & Flat Icon</label>
+            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
               <option value="store">General Retail Store</option>
               <option value="coffee">Coffee & Bakery</option>
               <option value="utensils">Restaurant & Dining</option>
@@ -367,17 +381,17 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-800 mb-1">Store Operating Hours</label>
-            <input type="text" id="businessHoursInput" placeholder="e.g. Open • Closes 9 PM or 24/7" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+            <label class="block text-xs font-semibold text-slate-800 mb-1">Store Operating Hours</label>
+            <input type="text" id="businessHoursInput" placeholder="e.g. Open • Closes 9 PM or 24/7" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-800 mb-1">Store Street Address (Fixed)</label>
-            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+            <label class="block text-xs font-semibold text-slate-800 mb-1">Store Street Address (Fixed)</label>
+            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">Profile Bubble Color</label>
+          <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Profile Bubble Color</label>
           <div class="grid grid-cols-5 gap-2">
             <button onclick="playAudioEffect('bubble'); setBubbleColor('blue')" class="p-2.5 rounded-2xl bg-sky-500 border border-sky-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
             <button onclick="playAudioEffect('bubble'); setBubbleColor('yellow')" class="p-2.5 rounded-2xl bg-amber-400 border border-amber-200 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
@@ -388,33 +402,33 @@
         </div>
 
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
-          <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
-          <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
+          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
             <span>Show My Business Name on Map</span>
             <input type="checkbox" id="privacyMakeNamePublic" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
           </label>
-          <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
+          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
             <span>Ghost Mode (Invisible on map)</span>
             <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
           </label>
-          <label class="flex items-center justify-between text-xs font-medium text-slate-800 cursor-pointer">
+          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
             <span>Fuzz Location (~500m jitter)</span>
             <input type="checkbox" id="privacyFuzzLocation" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
           </label>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-800 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
+          <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">App Theme Preset</label>
           <div class="grid grid-cols-5 gap-1.5">
-            <button onclick="playAudioEffect('chime'); setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-pink-100 border border-pink-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-pink-400"></span><span class="text-[9px] font-bold text-pink-900">Pink</span></button>
-            <button onclick="playAudioEffect('chime'); setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-sky-100 border border-sky-400 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-sky-500"></span><span class="text-[9px] font-bold text-sky-800">Blue</span></button>
-            <button onclick="playAudioEffect('chime'); setAppTheme('theme-yellow')" class="p-2 rounded-2xl bg-amber-100 border border-amber-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-amber-400"></span><span class="text-[9px] font-bold text-amber-900">Yellow</span></button>
-            <button onclick="playAudioEffect('chime'); setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-fuchsia-100 border border-fuchsia-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-fuchsia-400"></span><span class="text-[9px] font-bold text-fuchsia-900">Fuchsia</span></button>
-            <button onclick="playAudioEffect('chime'); setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-red-100 border border-red-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-red-400"></span><span class="text-[9px] font-bold text-red-900">Sunset</span></button>
+            <button onclick="playAudioEffect('chime'); setAppTheme('theme-sky')" class="p-2 rounded-2xl bg-pink-100 border border-pink-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-pink-400"></span><span class="text-[9px] font-semibold text-pink-900">Pink</span></button>
+            <button onclick="playAudioEffect('chime'); setAppTheme('theme-pink')" class="p-2 rounded-2xl bg-sky-100 border border-sky-400 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-sky-500"></span><span class="text-[9px] font-semibold text-sky-800">Blue</span></button>
+            <button onclick="playAudioEffect('chime'); setAppTheme('theme-yellow')" class="p-2 rounded-2xl bg-amber-100 border border-amber-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-amber-400"></span><span class="text-[9px] font-semibold text-amber-900">Yellow</span></button>
+            <button onclick="playAudioEffect('chime'); setAppTheme('theme-emerald')" class="p-2 rounded-2xl bg-fuchsia-100 border border-fuchsia-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-fuchsia-400"></span><span class="text-[9px] font-semibold text-fuchsia-900">Fuchsia</span></button>
+            <button onclick="playAudioEffect('chime'); setAppTheme('theme-violet')" class="p-2 rounded-2xl bg-red-100 border border-red-300 flex flex-col items-center gap-1 hover:scale-105 transition-all shadow-sm"><span class="w-3.5 h-3.5 rounded-full bg-red-400"></span><span class="text-[9px] font-semibold text-red-900">Sunset</span></button>
           </div>
         </div>
 
-        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
+        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all">
           Save Profile & Settings
         </button>
       </div>
@@ -426,12 +440,12 @@
   <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[85vh]">
     <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
       <div class="flex items-center gap-3">
-        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-md">
+        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full text-white font-medium text-xs flex items-center justify-center shadow-md">
           <div class="bubble-glare"></div>
         </div>
         <div>
-          <h4 id="chatTargetName" class="font-black text-slate-900 text-sm drop-shadow-sm">WebRTC P2P Session</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-bold uppercase tracking-wider">Direct P2P Data Channel</p>
+          <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm tracking-tight drop-shadow-sm">WebRTC P2P Session</h4>
+          <p id="chatTargetStatus" class="text-[10px] text-sky-900 font-semibold uppercase tracking-wider">Direct P2P Data Channel</p>
         </div>
       </div>
       <button onclick="playAudioEffect('click'); closeChatDrawer()" class="text-slate-700 hover:text-slate-900 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -440,8 +454,8 @@
     <div id="mainTopicContainer" class="hidden my-2.5 p-3 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex items-start gap-2.5 flex-shrink-0">
       <i data-lucide="pin" class="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5"></i>
       <div>
-        <p id="mainTopicText" class="text-xs font-bold text-slate-900 leading-snug"></p>
-        <span id="topicExpiryBadge" class="text-[9px] font-bold text-sky-900 mt-0.5 block">Visible for 60m 00s</span>
+        <p id="mainTopicText" class="text-xs font-normal text-slate-900 leading-snug"></p>
+        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-sky-900 mt-0.5 block">Visible for 60m 00s</span>
       </div>
     </div>
 
@@ -449,14 +463,14 @@
 
     <div class="pt-2.5 pb-1 flex-shrink-0">
       <div class="glass-card rounded-[28px] p-2 pl-3.5 border border-white/80 shadow-lg flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400/80 transition-all">
-        <textarea id="chatInput" rows="1" placeholder="Message connected peer..." class="w-full bg-transparent text-slate-900 text-xs font-semibold focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 24px;"></textarea>
+        <textarea id="chatInput" rows="1" placeholder="Message connected peer..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 24px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/50">
           <div class="flex items-center gap-1">
             <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="plus" class="w-4 h-4"></i></button>
             <button onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="mic" class="w-4 h-4"></i></button>
           </div>
-          <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center shadow-md active:scale-95 hover:bg-sky-500 transition-all"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+          <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-sky-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-sky-500 transition-all"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
         </div>
       </div>
     </div>
@@ -466,12 +480,12 @@
   <div id="questionModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-900">Ask the LocaLs</h3>
+        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Ask the LocaLs</h3>
         <button onclick="playAudioEffect('click'); closeQuestionModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
-        <textarea id="questionInput" rows="3" placeholder="Post a GPS map question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
-        <button onclick="playAudioEffect('chime'); postQuestion()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all">
+        <textarea id="questionInput" rows="3" placeholder="Post a GPS map question (expires in 1 hour)..." class="w-full p-4 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none shadow-inner"></textarea>
+        <button onclick="playAudioEffect('chime'); postQuestion()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all">
           Post Map Bubble
         </button>
       </div>
@@ -605,7 +619,7 @@
       if (accountType !== 'business') {
         if (!question) return '';
         return `
-          <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="${onClickJs}">
+          <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-50 cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="${onClickJs}">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
             <span class="truncate">${question}</span>
           </div>
@@ -618,11 +632,11 @@
         <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex items-start gap-2.5 animate-float z-50 cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
           <div class="min-w-0 flex-1">
-            <h5 class="text-xs font-black tracking-tight ${neonStyle.glowText} leading-tight truncate">
+            <h5 class="text-xs font-bold tracking-tight ${neonStyle.glowText} leading-tight truncate">
               ${businessName || 'Business'}
             </h5>
             ${question ? `
-              <p class="text-[11px] font-normal text-white/90 leading-snug mt-0.5 break-words line-clamp-3">
+              <p class="text-[11px] font-light text-white/95 leading-snug mt-0.5 break-words line-clamp-3">
                 ${question}
               </p>
             ` : ''}
@@ -767,7 +781,7 @@
     function showToast(message, icon = 'info') {
       const toastContainer = document.getElementById('toastContainer');
       const toast = document.createElement('div');
-      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-900 text-xs font-bold border border-white/60';
+      toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-900 text-xs font-semibold border border-white/60';
       toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-sky-600"></i> <span>${message}</span>`;
       toastContainer.appendChild(toast);
       lucide.createIcons();
@@ -1083,7 +1097,7 @@
       const label = document.getElementById('userAvatarLabel');
       if (label) {
         if (userState.type === 'business') {
-          label.innerHTML = `<span>${userState.alias}</span> <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-black border border-emerald-500/30">${userState.hours || 'Open • Closes 9 PM'}</span>`;
+          label.innerHTML = `<span>${userState.alias}</span> <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30">${userState.hours || 'Open • Closes 9 PM'}</span>`;
           label.style.display = 'flex';
         } else {
           label.style.display = 'none';
@@ -1109,12 +1123,12 @@
         topBubble.className = "block";
         topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, hasValidActiveTopic ? activeTopicState.text : '', userState.alias, onClickJs);
       } else {
-        topBubble.className = "px-3.5 py-1.5 rounded-2xl glass-card text-xs font-bold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto";
+        topBubble.className = "px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float cursor-pointer z-50 max-w-[220px] text-center pointer-events-auto";
         topBubble.setAttribute('onclick', onClickJs);
         topBubble.innerHTML = `
           <i data-lucide="message-circle" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0" stroke-width="2"></i>
           <span id="userTopBubbleText" class="truncate">${activeTopicState.text}</span>
-          <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-extrabold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
+          <span id="userTopBubbleBadge" class="ml-1 text-[9px] text-sky-900 font-semibold bg-sky-500/20 px-1.5 py-0.5 rounded-md flex-shrink-0">60m</span>
         `;
       }
       topBubble.classList.remove('hidden');
@@ -1161,15 +1175,15 @@
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/15 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/25 shadow-lg pointer-events-auto" style="width: 200px; height: 200px;" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-sky-200 text-[11px] font-black tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-sky-200 text-[11px] font-black tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-sky-200 text-[11px] font-semibold tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-sky-200 text-[11px] font-semibold tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
           </div>
 
           <div class="scale-compensator flex flex-col items-center relative z-50 pointer-events-auto">
             <div class="node-content-stack">
-              <div id="userAvatarLabel" class="px-3 py-0.5 rounded-full glass-panel text-[11px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label flex items-center gap-1.5" style="display: ${showMyLabel ? 'flex' : 'none'};">
+              <div id="userAvatarLabel" class="px-3 py-0.5 rounded-full glass-panel text-[11px] font-semibold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label flex items-center gap-1.5" style="display: ${showMyLabel ? 'flex' : 'none'};">
                 <span>${userState.alias}</span>
-                <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${userState.hours || 'Open • Closes 9 PM'}</span>
+                <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${userState.hours || 'Open • Closes 9 PM'}</span>
               </div>
               
               <div id="userTopBubble" class="hidden"></div>
@@ -1178,7 +1192,7 @@
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-sky-400/25 blur-md animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
             <!-- Added animate-float so user icon floats like the chat bubbles -->
-            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${neonStyle.borderClass}" style="background: ${userState.type === 'business' ? neonStyle.bg : (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue)}; ${userState.type === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;" title="Tap to refresh radar & search chats">
+            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[51px] h-[51px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-50 pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${neonStyle.borderClass}" style="background: ${userState.type === 'business' ? neonStyle.bg : (BUBBLE_COLOR_MAP[userState.bubbleColor] || BUBBLE_COLOR_MAP.blue)}; ${userState.type === 'business' ? neonStyle.shadowStyle : ''}; border-radius: 50%;" title="Tap to refresh radar & search chats">
               ${renderNodeIconContent(userState.type, userState.category)}
             </div>
           </div>
@@ -1503,7 +1517,7 @@
       document.getElementById('rightSidebarCount').innerText = validBubbles.length;
 
       if (validBubbles.length === 0) {
-        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">No active chat bubbles in range.</div>`;
+        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No active chat bubbles in range.</div>`;
         return;
       }
 
@@ -1520,10 +1534,10 @@
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5 mb-0.5">
-                <span class="text-[11px] font-black ${isBiz ? neonStyle.glowText : 'text-slate-900'} truncate">${b.name}</span>
-                ${isBiz && b.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30 whitespace-nowrap">${b.hours}</span>` : ''}
+                <span class="text-[11px] font-bold ${isBiz ? neonStyle.glowText : 'text-slate-900'} truncate">${b.name}</span>
+                ${isBiz && b.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${b.hours}</span>` : ''}
               </div>
-              ${b.question ? `<p class="text-xs font-semibold ${isBiz ? 'text-slate-800 font-normal' : 'text-slate-800 font-bold'} leading-snug line-clamp-2">${b.question}</p>` : ''}
+              ${b.question ? `<p class="text-xs font-light text-slate-800 leading-snug line-clamp-2">${b.question}</p>` : ''}
             </div>
           </div>
         `;
@@ -1695,15 +1709,15 @@
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border border-purple-400 animate-peer-sonar pointer-events-none z-0" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           
           <div class="node-content-stack">
-            <div class="px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-extrabold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label flex items-center gap-1.5" style="display: ${showNameLabel ? 'flex' : 'none'};">
+            <div class="px-2.5 py-0.5 rounded-full glass-panel text-[10px] font-semibold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label flex items-center gap-1.5" style="display: ${showNameLabel ? 'flex' : 'none'};">
               <span>${rawSender} (${distanceFormatted})</span>
-              <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${hoursBadgeText}</span>
+              <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${hoursBadgeText}</span>
             </div>
             
             ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs) : ''}
           </div>
 
-          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-black flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
+          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
             ${renderNodeIconContent(accountType, category)}
           </div>
         </div>
@@ -1717,7 +1731,7 @@
       document.getElementById('modalActiveCount').innerText = peerIds.length + 1;
 
       if (peerIds.length === 0) {
-        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-medium">No other peers discovered yet.</div>`;
+        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No other peers discovered yet.</div>`;
         return;
       }
 
@@ -1738,15 +1752,15 @@
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
+              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : ''}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : ''}; border-radius: 50%;">
                 ${renderNodeIconContent(peer.accountType, peer.category)}
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
-                  <h4 class="font-black text-slate-900 text-xs">${peer.rawSender} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
-                  ${isBiz && peer.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-black border border-emerald-500/30">${peer.hours}</span>` : ''}
+                  <h4 class="font-bold text-slate-900 text-xs">${peer.rawSender} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
+                  ${isBiz && peer.hours ? `<span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${peer.hours}</span>` : ''}
                 </div>
-                <p class="text-[10px] text-sky-900 font-bold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
+                <p class="text-[10px] text-sky-900 font-semibold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
               </div>
             </div>
             <div class="flex items-center gap-2">
@@ -1754,7 +1768,7 @@
                 <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleIndividualBot('${peerId}', this.checked)" class="sr-only peer">
                 <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-600"></div>
               </label>
-              <button onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-extrabold text-xs shadow-md">Connect</button>
+              <button onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
           </div>
         `;
@@ -1895,8 +1909,8 @@
       if (!msgBox) return;
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'}">
-          <div class="flex items-center gap-1.5 px-1"><span class="text-[10px] text-slate-900 font-bold">${sender}</span><span class="text-[9px] text-slate-500">${time || ''}</span></div>
-          <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-semibold ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/60'}">${text.replace(/\n/g, '<br>')}</div>
+          <div class="flex items-center gap-1.5 px-1"><span class="text-[10px] text-slate-900 font-semibold">${sender}</span><span class="text-[9px] text-slate-500">${time || ''}</span></div>
+          <div class="px-3.5 py-2 rounded-2xl text-xs max-w-[85%] font-light ${isMe ? 'bg-sky-600 text-white rounded-br-none shadow-md' : 'bg-white/70 backdrop-blur-md text-slate-900 rounded-bl-none shadow-sm border border-white/60'}">${text.replace(/\n/g, '<br>')}</div>
         </div>
       `;
       msgBox.scrollTop = msgBox.scrollHeight;
@@ -1915,7 +1929,7 @@
       const circleBg = isBiz ? neonStyle.bg : BUBBLE_COLOR_MAP[userState.bubbleColor];
 
       const avatarEl = document.getElementById('chatTargetAvatar');
-      avatarEl.className = `w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : ''}`;
+      avatarEl.className = `w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : ''}`;
       avatarEl.style.background = circleBg;
       if (isBiz) {
         avatarEl.style.cssText += neonStyle.shadowStyle;
