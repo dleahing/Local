@@ -6,7 +6,7 @@
   <title>LocaL - P2P Proximity Social Network</title>
   
   <!-- Mobile & PWA Configuration -->
-  <meta name="theme-color" content="#fbcfe8">
+  <meta name="theme-color" contenct="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LocaL">
@@ -124,23 +124,21 @@
       border-width: calc(1px / var(--zoom-scale, 1)) !important;
     }
 
-    /* Improved Radar Font Styling: Crisp, High-Contrast with Deep Glow */
+    /* Radar distance labels: exactly 30% smaller than chat bubble font (12px * 0.7 = 8.4px), borderless and unbubbled */
     .radar-distance-label {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 11px !important;
-      font-weight: 800;
-      letter-spacing: 0.1em;
+      font-size: 8.4px !important;
+      font-weight: 700;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: rgba(224, 242, 254, 0.98);
-      background: rgba(15, 23, 42, 0.65);
-      backdrop-filter: blur(8px);
-      padding: 3px 8px;
-      border-radius: 9999px;
-      border: 1px solid rgba(56, 189, 248, 0.4);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      color: rgba(125, 211, 252, 0.95);
+      background: transparent;
+      padding: 0;
+      border: none;
+      box-shadow: none;
       white-space: nowrap;
       pointer-events: none;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
     }
 
     /* Anti-Overlap Floating Chat Bubble Stack container */
@@ -1380,15 +1378,15 @@
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else if (styleType === 'minimal') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/5 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: 200px; height: 200px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else if (styleType === 'sonar') {
@@ -1399,8 +1397,8 @@
             </div>
             <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.5;"></div>
             <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.3;"></div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       } else {
@@ -1411,8 +1409,8 @@
             </div>
             <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.5;"></div>
             <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.3;"></div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-50">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">5.0 Mi</div>
           </div>
         `;
       }
@@ -2081,7 +2079,7 @@
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
       
-      // Play bell ring sound on creating chat / broadcast
+      // Play bell ring sound and trigger giggle on every new chat/broadcast creation
       playAudioEffect('bell');
       triggerHapticFeedback([100, 50, 100]);
 
