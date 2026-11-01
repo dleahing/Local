@@ -1691,12 +1691,12 @@
       const sampleUsers = [
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
         { name: 'Bot 0.5-Mile Pickleball Fan', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 0.8, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 10.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-06mi', targetMiles: 0.6, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
         { name: '0.7-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 0.7, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
         { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 0.5, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 0.9, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -1737,12 +1737,70 @@
 
         updatePeerNodeOnMap(u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true);
       });
-      renderGlobalUsersDirectory();
-      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+      if (typeof renderGlobalUsersDirectory === 'function') {
+        renderGlobalUsersDirectory();
+      }
+      if (currentLayoutMode === 'right' && typeof renderRightSidebarBubbles === 'function') {
+        renderRightSidebarBubbles();
+      }
+    }
+
+    function renderGlobalUsersDirectory() {
+      const container = document.getElementById('globalUsersDirectory');
+      if (!container) return;
+      const peerIds = Object.keys(globalActiveDirectory);
+      const activeCountElem = document.getElementById('modalActiveCount');
+      if (activeCountElem) activeCountElem.innerText = peerIds.length + 1;
+
+      if (peerIds.length === 0) {
+        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No other peers discovered yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      peerIds.forEach(peerId => {
+        const peer = globalActiveDirectory[peerId];
+        const matchesFilter = matchesInterestFilter(peer.interestFilter);
+        const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter;
+        const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
+        const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
+        const isBiz = peer.accountType === 'business';
+        const isEnabled = peer.enabled !== false;
+        const displayLabel = peer.rawSender;
+
+        const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
+        const circleBg = isBiz ? neonStyle.bg : REFERENCE_PERSONAL_ICON_BG;
+
+        container.innerHTML += `
+          <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : REFERENCE_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : REFERENCE_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+                ${renderNodeIconContent(peer.accountType, peer.category)}
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <h4 class="font-bold text-slate-900 text-xs">${peer.rawSender} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
+                </div>
+                <p class="text-[10px] text-sky-900 font-semibold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
+                ${isBiz && peer.hours ? `<div class="mt-0.5 flex items-center justify-between"><span class="text-[9px] text-slate-400">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${peer.hours}</span></div>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="relative inline-flex items-center cursor-pointer" title="Turn off individual bot">
+                <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleIndividualBot('${peerId}', this.checked)" class="sr-only peer">
+                <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-600"></div>
+              </label>
+              <button onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-semibold text-xs shadow-md">Connect</button>
+            </div>
+          </div>
+        `;
+      });
+      lucide.createIcons();
     }
 
     function renderRightSidebarBubbles() {
       const container = document.getElementById('rightSidebarBubblesContainer');
+      if (!container) return;
       const peerIds = Object.keys(globalActiveDirectory);
       
       let validBubbles = [];
@@ -1782,7 +1840,8 @@
         }
       });
 
-      document.getElementById('rightSidebarCount').innerText = validBubbles.length;
+      const countElem = document.getElementById('rightSidebarCount');
+      if (countElem) countElem.innerText = validBubbles.length;
 
       if (validBubbles.length === 0) {
         container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No active chat bubbles in range.</div>`;
@@ -1794,18 +1853,15 @@
         const isBiz = b.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
         const circleBg = isBiz ? neonStyle.bg : REFERENCE_PERSONAL_ICON_BG;
-        const borderStyle = b.peerId === 'you' ? REFERENCE_PERSONAL_ICON_BORDER : (isBiz ? neonStyle.borderClass : 'border border-white/40');
-        const shadowStyle = b.peerId === 'you' ? REFERENCE_PERSONAL_ICON_SHADOW : (isBiz ? neonStyle.shadowStyle : 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);');
 
         container.innerHTML += `
           <div onclick="playAudioEffect('chime'); connectToPeer('${b.peerId}'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="p-3.5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/80 shadow-md hover:bg-white/90 transition-all cursor-pointer flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full flex-shrink-0 bubble-node flex items-center justify-center text-white shadow-md overflow-hidden ${borderStyle}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;">
+            <div class="w-8 h-8 rounded-full flex-shrink-0 bubble-node flex items-center justify-center text-white shadow-sm overflow-hidden ${isBiz ? neonStyle.borderClass : REFERENCE_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : REFERENCE_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
               ${renderNodeIconContent(b.accountType, b.category)}
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-1.5 mb-0.5">
-                <span class="text-xs font-bold ${isBiz ? neonStyle.glowText : (b.peerId === 'you' ? 'text-amber-600 font-extrabold' : 'text-slate-900')} truncate">${b.name}</span>
-                ${b.peerId === 'you' ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-700 font-bold border border-amber-400/40">You</span>' : ''}
+                <span class="text-[11px] font-bold ${isBiz ? neonStyle.glowText : 'text-slate-900'} truncate">${b.name}</span>
               </div>
               ${b.question ? `<p class="text-xs font-light text-slate-800 leading-snug line-clamp-2">${b.question}</p>` : ''}
               ${isBiz && b.hours ? `<div class="mt-1 flex items-center justify-between"><span class="text-[9px] text-slate-500">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${b.hours}</span></div>` : ''}
@@ -1914,7 +1970,7 @@
       if (!nodeElem) {
         nodeElem = document.createElement('div');
         nodeElem.id = peerKey;
-        nodeElem.className = `absolute z-[70] cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item ${isBot ? 'bot-node-elem' : ''}`;
+        nodeElem.className = `absolute z-50 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item ${isBot ? 'bot-node-elem' : ''}`;
         container.appendChild(nodeElem);
       }
 
@@ -1951,69 +2007,18 @@
       const onClickJs = `playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')`;
 
       nodeElem.innerHTML = `
-        <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[80]">
+        <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'}; border-width: 1px;"></div>
           
-          <div class="node-content-stack pointer-events-auto z-[90]">
+          <div class="node-content-stack">
             ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs, hours) : ''}
           </div>
 
-          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[80] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : REFERENCE_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : REFERENCE_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : REFERENCE_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : REFERENCE_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
             ${renderNodeIconContent(accountType, category)}
           </div>
         </div>
       `;
-      lucide.createIcons();
-    }
-
-    function renderGlobalUsersDirectory() {
-      const container = document.getElementById('globalUsersDirectory');
-      const peerIds = Object.keys(globalActiveDirectory);
-      document.getElementById('modalActiveCount').innerText = peerIds.length + 1;
-
-      if (peerIds.length === 0) {
-        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No other peers discovered yet.</div>`;
-        return;
-      }
-
-      container.innerHTML = '';
-      peerIds.forEach(peerId => {
-        const peer = globalActiveDirectory[peerId];
-        const matchesFilter = matchesInterestFilter(peer.interestFilter);
-        const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter;
-        const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
-        const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
-        const isBiz = peer.accountType === 'business';
-        const isEnabled = peer.enabled !== false;
-        const displayLabel = peer.rawSender;
-
-        const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
-        const circleBg = isBiz ? neonStyle.bg : REFERENCE_PERSONAL_ICON_BG;
-
-        container.innerHTML += `
-          <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : REFERENCE_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : REFERENCE_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
-                ${renderNodeIconContent(peer.accountType, peer.category)}
-              </div>
-              <div>
-                <div class="flex items-center gap-1.5">
-                  <h4 class="font-bold text-slate-900 text-xs">${peer.rawSender} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
-                </div>
-                <p class="text-[10px] text-sky-900 font-semibold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
-                ${isBiz && peer.hours ? `<div class="mt-0.5 flex items-center justify-between"><span class="text-[9px] text-slate-400">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${peer.hours}</span></div>` : ''}
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <label class="relative inline-flex items-center cursor-pointer" title="Turn off individual bot">
-                <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleIndividualBot('${peerId}', this.checked)" class="sr-only peer">
-                <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-600"></div>
-              </label>
-              <button onclick="playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-semibold text-xs shadow-md">Connect</button>
-            </div>
-          </div>
-        `;
-      });
       lucide.createIcons();
     }
 
@@ -2024,7 +2029,7 @@
           if (remainingMs <= 0) {
             activeTopicState.text = null; 
             activeTopicState.createdAt = null;
-            renderUserTopBubbleContent(false);
+            renderUserTopBubbleContent();
           } else {
             const badge = document.getElementById('topicExpiryBadge');
             if (badge) badge.innerText = `Visible for ${Math.floor(remainingMs / 60000)}m`;
@@ -2064,21 +2069,9 @@
     }
 
     function updateMeshUI() {
-      const activeCount = Object.keys(activeDataConnections).length + 1;
-      document.getElementById('activeUserCount').innerText = `${activeCount} Active ${activeCount === 1 ? 'Peer' : 'Peers'}`;
-    }
-
-    function handleDockFocus() {
-      const dock = document.getElementById('actionDockContainer');
-      if (dock) {
-        dock.style.transform = 'translateX(-50%) translateY(-10px)';
-      }
-    }
-
-    function handleDockBlur() {
-      const dock = document.getElementById('actionDockContainer');
-      if (dock) {
-        dock.style.transform = 'translateX(-50%) translateY(0px)';
+      const countElem = document.getElementById('activeUserCount');
+      if (countElem) {
+        countElem.innerText = `${Object.keys(activeDataConnections).length + 1} Active Peer`;
       }
     }
 
@@ -2090,11 +2083,7 @@
       activeTopicState.createdAt = Date.now();
       
       renderUserTopBubbleContent(true);
-      playAudioEffect('bell');
-      triggerHapticFeedback([120, 80, 120]);
-
       document.getElementById('mainTopicText').innerText = text;
-      document.getElementById('mainTopicContainer').classList.remove('hidden');
 
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
@@ -2102,20 +2091,26 @@
       broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime, hours: userState.hours, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
       
       input.value = '';
-      input.blur();
-      handleDockBlur();
-      showToast('Map chat broadcast posted with bell ring!', 'check-circle');
+      showToast('Map bubble posted!', 'check-circle');
+      playAudioEffect('bell');
 
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
     }
 
-    function autoResizeTextArea(el) { 
-      el.style.height = '24px'; 
-      if (el.value.trim() === '') {
-        el.style.height = '24px';
-        return;
+    function autoResizeTextArea(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; }
+
+    function handleDockFocus() {
+      const container = document.getElementById('actionDockContainer');
+      if (container) {
+        container.style.transform = 'translate(-50%, -120px)';
       }
-      el.style.height = Math.max(24, el.scrollHeight) + 'px'; 
+    }
+
+    function handleDockBlur() {
+      const container = document.getElementById('actionDockContainer');
+      if (container) {
+        container.style.transform = 'translateX(-50%)';
+      }
     }
 
     function sendChatMessage() {
@@ -2128,7 +2123,7 @@
       
       if (!text) return;
 
-      playAudioEffect('bubble');
+      playAudioEffect('bell');
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       appendMessage('You', text, timeStr, true);
 
@@ -2138,20 +2133,15 @@
 
       input.value = ''; 
       input.style.height = '24px';
-      input.blur();
 
       if (currentActiveChatRoomId === 'room-peer-sim-peer-tutorial-bot') {
         setTimeout(() => {
-          let botReply = "Welcome to LocaL! Here is how everything works:\n1. Pressing your own icon will refresh the radar that searches for new chats in the area shown within the radar.\n2. Dragging the radar slider below lets you adjust your search range instantly!\n3. Double-tap the background anytime to recenter your map and reset zoom.";
-          if (text.toLowerCase().includes('refresh') || text.toLowerCase().includes('icon')) {
-            botReply = "Simply tap your own profile icon anytime to refresh your radar and search for new chats in your surrounding area!";
-          } else if (text.toLowerCase().includes('size') || text.toLowerCase().includes('drag') || text.toLowerCase().includes('radius') || text.toLowerCase().includes('zoom')) {
-            botReply = "Use the range slider right below the chat bar at the bottom to adjust your radar radius instantly!";
-          }
+          let botReply = "Welcome to LocaL! Tap your bubble anytime to edit your post or review details.";
           const botTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           appendMessage('LocaL Guide', botReply, botTimeStr, false);
           chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'LocaL Guide', text: botReply, time: botTimeStr, isMe: false });
           savePersistentData();
+          playAudioEffect('bell');
         }, 800);
       }
 
