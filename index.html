@@ -43,7 +43,7 @@
     }
 
     @keyframes wave-expand {
-      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
+      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.6; }
       100% { transform: translate(-50%, -50%) scale(5.7); opacity: 0; }
     }
     @keyframes radar-sweep {
@@ -72,8 +72,8 @@
     }
 
     @keyframes radius-ring-pulse {
-      0% { transform: translate(-50%, -50%) scale(0.01); opacity: 1; }
-      80% { opacity: 0.7; }
+      0% { transform: translate(-50%, -50%) scale(0.01); opacity: 0.6; }
+      80% { opacity: 0.42; }
       100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
     }
 
@@ -1007,7 +1007,6 @@
           );
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
-            // FIXED: Clamped minimum zoom floor to 0.20 to prevent app crashes when zooming out too far
             targetZoomScale = Math.max(0.20, Math.min(4.0, initialPinchScale * factor));
           }
         }
@@ -1030,7 +1029,6 @@
         }
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-        // FIXED: Clamped minimum zoom floor to 0.20 to prevent app crashes when zooming out too far
         targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
       }, { passive: false });
     }
@@ -1115,7 +1113,6 @@
 
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
-        // FIXED: Clamped minimum zoom floor to 0.20 here as well
         targetZoomScale = Math.max(0.20, Math.min(2.5, targetScaleFactor));
       }
 
@@ -1251,7 +1248,8 @@
       const sizePx = targetRing.offsetWidth || 450;
       const ripple = document.createElement('div');
       
-      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-sky-400 bg-sky-400/35 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(56,189,248,0.7)] hairline-ring';
+      // 40% more transparent (opacity/bg opacity reduced)
+      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-sky-400 bg-sky-400/21 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(56,189,248,0.42)] hairline-ring';
       ripple.style.width = `${sizePx}px`;
       ripple.style.height = `${sizePx}px`;
 
@@ -1678,12 +1676,14 @@
       const sampleUsers = [
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
         { name: 'Bot 0.5-Mile Pickleball Fan', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 8.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        // Fine dining moved to exactly 30 miles away
+        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-30mi', targetMiles: 30.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-04mi', targetMiles: 3.4, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-06mi', targetMiles: 0.6, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
         { name: '0.7-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 0.7, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
         { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 0.5, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 10.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        // Pharmacy moved to exactly 15 miles away
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-pharmacy-15mi', targetMiles: 15.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -2216,7 +2216,7 @@
 
     function closeProfileModal() { 
       document.getElementById('mapCanvas').classList.remove('content-locked');
-      document.body.classList.remove('overflow-hidden');
+      document.body.classList.add('overflow-hidden');
       const modal = document.getElementById('profileModal');
       if (modal) modal.classList.add('hidden'); 
     }
