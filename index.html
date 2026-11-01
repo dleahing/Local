@@ -316,7 +316,7 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Unified Bottom Action Dock Bubble (Fixed with event propagation prevention) -->
+  <!-- Unified Bottom Action Dock Bubble (Fixed to stop event propagation) -->
   <div id="actionDockContainer" 
        class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu"
        onmousedown="event.stopPropagation()"
@@ -1032,7 +1032,7 @@
       if (!mapCanvas) return;
 
       mapCanvas.addEventListener('wheel', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #actionDockContainer')) {
           return;
         }
         e.preventDefault();
@@ -1057,7 +1057,7 @@
       });
 
       mapCanvas.addEventListener('dblclick', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #actionDockContainer')) {
           return;
         }
         recenterAndResetZoom();
@@ -1274,7 +1274,7 @@
       if (!mapCanvas) return;
 
       const triggerRipple = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #actionDockContainer')) {
           return;
         }
         createBubbleRipple();
