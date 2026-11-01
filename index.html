@@ -43,6 +43,10 @@
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
       100% { transform: translate(-50%, -50%) scale(5.7); opacity: 0; }
     }
+    @keyframes radar-sweep {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
     @keyframes peer-sonar-pulse {
       0% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
       70% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; box-shadow: 0 0 0 35px rgba(168, 85, 247, 0); }
@@ -79,6 +83,7 @@
     }
 
     .animate-wave-slow { animation: wave-expand 6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite; }
+    .animate-radar-sweep { animation: radar-sweep 4s linear infinite; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
@@ -352,6 +357,17 @@
           <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
         </div>
 
+        <!-- Radar Style Selector -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Radar Style / Type</label>
+          <select id="radarStyleSelect" onchange="updateRadarStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+            <option value="futuristic">Futuristic Neon Rings</option>
+            <option value="cyberpunk">Cyberpunk Grid & Sweep</option>
+            <option value="minimal">Clean Minimalist Pulse</option>
+            <option value="sonar">Classic Military Sonar</option>
+          </select>
+        </div>
+
         <!-- Interest Filter Option -->
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter (Chat Matching)</label>
@@ -401,17 +417,6 @@
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Store Street Address (Fixed)</label>
             <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Profile Bubble Color</label>
-          <div class="grid grid-cols-5 gap-2">
-            <button onclick="playAudioEffect('bubble'); setBubbleColor('blue')" class="p-2.5 rounded-2xl bg-sky-500 border border-sky-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
-            <button onclick="playAudioEffect('bubble'); setBubbleColor('yellow')" class="p-2.5 rounded-2xl bg-amber-400 border border-amber-200 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
-            <button onclick="playAudioEffect('bubble'); setBubbleColor('pink')" class="p-2.5 rounded-2xl bg-pink-500 border border-pink-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
-            <button onclick="playAudioEffect('bubble'); setBubbleColor('emerald')" class="p-2.5 rounded-2xl bg-emerald-500 border border-emerald-300 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
-            <button onclick="playAudioEffect('bubble'); setBubbleColor('violet')" class="p-2.5 rounded-2xl bg-purple-600 border border-purple-400 flex items-center justify-center hover:scale-105 transition-all shadow-sm"><span class="w-4 h-4 rounded-full bg-white/90"></span></button>
           </div>
         </div>
 
@@ -562,6 +567,7 @@
       lng: -80.3582,
       theme: 'theme-sky',
       bubbleColor: 'blue',
+      radarStyle: 'futuristic',
       ghostMode: false,
       fuzzLocation: false,
       makeNamePublic: true
@@ -629,7 +635,6 @@
       if (preview) preview.innerText = statusText;
     }
 
-    // Helper for business neon styling matching reference illustration exactly
     function getBusinessNeonStyle(accountType, category) {
       if (accountType !== 'business') {
         return {
@@ -681,7 +686,6 @@
       }
     }
 
-    // Helper to render Business Bubble Card without the business name inside the bubble
     function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs) {
       if (accountType !== 'business') {
         if (!question) return '';
@@ -820,6 +824,7 @@
           document.getElementById('businessHoursInput').value = userState.hours || 'Open • Closes 9:00 PM';
           document.getElementById('businessCategorySelect').value = userState.category || 'store';
           document.getElementById('userInterestFilterSelect').value = userState.interestFilter || 'none';
+          document.getElementById('radarStyleSelect').value = userState.radarStyle || 'futuristic';
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
           document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
           document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
@@ -1215,12 +1220,10 @@
       showToast('Radar refreshed! Searching for chats in area.', 'radar');
     }
 
-    // Exact matching personal icon style from reference image: translucent teal/blue glass orb with white paper plane icon
     const REFERENCE_PERSONAL_ICON_BG = 'radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.98) 0%, rgba(56, 189, 248, 0.75) 50%, rgba(14, 165, 233, 0.92) 100%)';
     const REFERENCE_PERSONAL_ICON_BORDER = 'border border-sky-300/80';
     const REFERENCE_PERSONAL_ICON_SHADOW = 'box-shadow: 0 8px 25px rgba(14, 165, 233, 0.35);';
 
-    // Renders custom HTML inner content for the icon node matching reference image exactly
     function renderNodeIconContent(accountType, category) {
       const isBiz = accountType === 'business';
       if (!isBiz) {
@@ -1229,6 +1232,46 @@
       
       const neonStyle = getBusinessNeonStyle(accountType, category);
       return `<i data-lucide="${neonStyle.lucideIcon}" class="w-5 h-5 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>`;
+    }
+
+    function getRadarStyleHtml(styleType) {
+      if (styleType === 'cyberpunk') {
+        return `
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-pink-500/50 bg-pink-500/10 cursor-pointer transition-all duration-75 z-0 shadow-[0_0_30px_rgba(236,72,153,0.3)] pointer-events-auto overflow-hidden" style="width: 200px; height: 200px;" title="Click & drag to scale boundary">
+            <div class="absolute inset-0 border border-dashed border-pink-400/40 rounded-full animate-spin" style="animation-duration: 25s;"></div>
+            <div class="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(236,72,153,0)_0deg,rgba(236,72,153,0)_300deg,rgba(236,72,153,0.35)_360deg)] animate-radar-sweep pointer-events-none"></div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-pink-300 text-[11px] font-mono font-bold uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-pink-300 text-[11px] font-mono font-bold uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
+          </div>
+        `;
+      } else if (styleType === 'minimal') {
+        return `
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-300/40 bg-white/5 cursor-pointer transition-all duration-75 z-0 shadow-sm pointer-events-auto" style="width: 200px; height: 200px;" title="Click & drag to scale boundary">
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-slate-700 text-[10px] font-semibold uppercase pointer-events-none whitespace-nowrap">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-slate-700 text-[10px] font-semibold uppercase pointer-events-none whitespace-nowrap">5.0 Mi</div>
+          </div>
+        `;
+      } else if (styleType === 'sonar') {
+        return `
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-emerald-500/70 bg-emerald-950/20 cursor-pointer transition-all duration-75 z-0 shadow-[0_0_25px_rgba(16,185,129,0.4)] pointer-events-auto overflow-hidden" style="width: 200px; height: 200px;" title="Click & drag to scale boundary">
+            <div class="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(16,185,129,0)_0deg,rgba(16,185,129,0)_310deg,rgba(16,185,129,0.5)_360deg)] animate-radar-sweep pointer-events-none"></div>
+            <div class="absolute inset-2 rounded-full border border-emerald-500/30 pointer-events-none"></div>
+            <div class="absolute inset-8 rounded-full border border-emerald-500/20 pointer-events-none"></div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-emerald-300 text-[11px] font-mono font-bold uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-emerald-300 text-[11px] font-mono font-bold uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
+          </div>
+        `;
+      } else {
+        // Default futuristic neon multi-ring style
+        return `
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/80 bg-gradient-to-tr from-sky-400/10 via-cyan-400/15 to-purple-500/10 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 shadow-[0_0_40px_rgba(56,189,248,0.35)] pointer-events-auto backdrop-blur-xs" style="width: 200px; height: 200px;" title="Click & drag to scale boundary">
+            <div class="absolute inset-3 rounded-full border border-sky-400/30 pointer-events-none"></div>
+            <div class="absolute inset-8 rounded-full border border-cyan-400/20 pointer-events-none"></div>
+            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-sky-200 text-[11px] font-semibold tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
+            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-sky-200 text-[11px] font-semibold tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
+          </div>
+        `;
+      }
     }
 
     function initUserNode() {
@@ -1249,10 +1292,7 @@
         <div class="relative flex flex-col items-center group">
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-400/70 bg-sky-400/15 cursor-pointer transition-all duration-75 z-0 hover:border-sky-300 hover:bg-sky-400/25 shadow-lg pointer-events-auto" style="width: 200px; height: 200px;" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="scale-compensator absolute top-1/2 -left-6 -translate-y-1/2 text-sky-200 text-[11px] font-semibold tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
-            <div id="radarRingDistanceLabelRight" class="scale-compensator absolute top-1/2 -right-6 -translate-y-1/2 text-sky-200 text-[11px] font-semibold tracking-wider uppercase pointer-events-none whitespace-nowrap drop-shadow-md">5.0 Mi</div>
-          </div>
+          ${getRadarStyleHtml(userState.radarStyle || 'futuristic')}
 
           <div class="scale-compensator flex flex-col items-center relative z-50 pointer-events-auto">
             <div class="node-content-stack">
@@ -1280,6 +1320,19 @@
       const circle = document.getElementById('userAvatarCircle');
       circle.addEventListener('mousedown', () => { handlePressStart(); });
       circle.addEventListener('mouseup', () => clearTimeout(touchTimer));
+    }
+
+    function updateRadarStyle(styleName) {
+      userState.radarStyle = styleName;
+      savePersistentData();
+      
+      const existingRing = document.getElementById('radarBoundaryRing');
+      if (existingRing) {
+        existingRing.outerHTML = getRadarStyleHtml(styleName);
+        initRadiusDragHandlers();
+        updateRadius(userState.radius);
+      }
+      showToast(`Radar style updated to ${styleName}!`, 'radar');
     }
 
     function setBubbleColor(colorName) {
@@ -1865,6 +1918,7 @@
       userState.closeTime = document.getElementById('businessCloseTimeInput').value;
       userState.hours = computeBusinessHoursStatus(userState.openTime, userState.closeTime);
       userState.interestFilter = document.getElementById('userInterestFilterSelect').value;
+      userState.radarStyle = document.getElementById('radarStyleSelect').value;
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
       userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
       userState.makeNamePublic = document.getElementById('privacyMakeNamePublic').checked;
@@ -2015,7 +2069,7 @@
     function openQuestionModal() { document.getElementById('questionModal').classList.remove('hidden'); }
     function closeQuestionModal() { document.getElementById('questionModal').classList.add('hidden'); }
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { document.getElementById('profileModal').classList.close ? document.getElementById('profileModal').close() : document.getElementById('profileModal').classList.add('hidden'); }
+    function closeProfileModal() { document.getElementById('profileModal').classList.close ? document.getElementById('profileModal').classList.close() : document.getElementById('profileModal').classList.add('hidden'); }
     function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
     function recalculateNodePositions() {}
   </script>
