@@ -382,7 +382,21 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Store Operating Hours</label>
-            <input type="text" id="businessHoursInput" placeholder="e.g. Open • Closes 9 PM or 24/7" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <span class="text-[10px] text-slate-500 font-medium">Opening Time</span>
+                <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 font-medium">Closing Time</span>
+                <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+              </div>
+            </div>
+            <div class="mt-1.5 flex items-center justify-between">
+              <span class="text-[10px] text-slate-500 font-medium">Status display text:</span>
+              <span id="businessHoursPreview" class="text-[10px] font-semibold text-sky-800">Open • Closes 9:00 PM</span>
+            </div>
+            <input type="hidden" id="businessHoursInput" value="Open • Closes 9:00 PM">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Store Street Address (Fixed)</label>
@@ -538,7 +552,9 @@
       alias: 'Traveler',
       type: 'personal',
       category: 'store',
-      hours: 'Open • Closes 9 PM',
+      openTime: '09:00',
+      closeTime: '21:00',
+      hours: 'Open • Closes 9:00 PM',
       address: '',
       interestFilter: 'none',
       radius: MIN_RADIUS_METERS,
@@ -561,6 +577,58 @@
 
     // Dark radial gradient for business nodes
     const BUSINESS_TRANSLUCENT_BG = 'radial-gradient(circle at 35% 30%, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)';
+
+    function formatTime12h(timeStr) {
+      if (!timeStr) return '';
+      const [hStr, mStr] = timeStr.split(':');
+      let hours = parseInt(hStr, 10);
+      if (isNaN(hours)) return timeStr;
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return `${hours}:${mStr} ${ampm}`;
+    }
+
+    function computeBusinessHoursStatus(openTime, closeTime) {
+      if (!openTime || !closeTime) return 'Open • Closes 9:00 PM';
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      
+      const [oH, oM] = openTime.split(':').map(Number);
+      const [cH, cM] = closeTime.split(':').map(Number);
+      
+      const openMinutes = oH * 60 + oM;
+      const closeMinutes = cH * 60 + cM;
+
+      let isOpen = false;
+      if (closeMinutes > openMinutes) {
+        isOpen = currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+      } else {
+        // Overnight hours (e.g. 10 PM to 2 AM)
+        isOpen = currentMinutes >= openMinutes || currentMinutes < closeMinutes;
+      }
+
+      const openFormatted = formatTime12h(openTime);
+      const closeFormatted = formatTime12h(closeTime);
+
+      if (isOpen) {
+        return `Open • Closes ${closeFormatted}`;
+      } else {
+        return `Closed • Opens ${openFormatted}`;
+      }
+    }
+
+    function updateBusinessHoursFromTimes() {
+      const openTime = document.getElementById('businessOpenTimeInput').value;
+      const closeTime = document.getElementById('businessCloseTimeInput').value;
+      userState.openTime = openTime;
+      userState.closeTime = closeTime;
+      const statusText = computeBusinessHoursStatus(openTime, closeTime);
+      userState.hours = statusText;
+      document.getElementById('businessHoursInput').value = statusText;
+      const preview = document.getElementById('businessHoursPreview');
+      if (preview) preview.innerText = statusText;
+    }
 
     // Helper for business neon styling matching reference illustration exactly
     function getBusinessNeonStyle(accountType, category) {
@@ -606,7 +674,7 @@
         return {
           bg: BUSINESS_TRANSLUCENT_BG,
           borderClass: 'border-[3.5px] border-purple-400',
-          shadowStyle: 'box-shadow: 0 0 35px rgba(216, 180, 254, 1), 0 0 16px rgba(168, 85, 247, 0.9), inset 0 0 12px rgba(216, 180, 254, 0.7);',
+          shadowStyle: 'box-shadow: 0 0 35px rgba(216, 180, 254, 1), 0 0 16px rgba(216, 180, 254, 0.9), inset 0 0 12px rgba(216, 180, 254, 0.7);',
           iconColor: 'text-purple-300 drop-shadow-[0_0_12px_rgba(216,180,254,1)]',
           glowText: 'text-purple-300 drop-shadow-[0_0_8px_rgba(216,180,254,0.8)]',
           lucideIcon: category || 'store'
@@ -614,7 +682,7 @@
       }
     }
 
-    // Helper to render Business Bubble Card with ALWAYS shown business name in neon, and typing below in smaller white font
+    // Helper to render Business Bubble Card without the business name inside the bubble
     function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs) {
       if (accountType !== 'business') {
         if (!question) return '';
@@ -627,19 +695,15 @@
       }
 
       const neonStyle = getBusinessNeonStyle(accountType, category);
-      
+      if (!question) return '';
+
       return `
         <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex items-start gap-2.5 animate-float z-50 cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
           <div class="min-w-0 flex-1">
-            <h5 class="text-xs font-bold tracking-tight ${neonStyle.glowText} leading-tight truncate">
-              ${businessName || 'Business'}
-            </h5>
-            ${question ? `
-              <p class="text-[11px] font-light text-white/95 leading-snug mt-0.5 break-words line-clamp-3">
-                ${question}
-              </p>
-            ` : ''}
+            <p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">
+              ${question}
+            </p>
           </div>
         </div>
       `;
@@ -752,7 +816,9 @@
           userState = { ...userState, ...parsed };
           document.getElementById('avatarNameInput').value = userState.alias;
           document.getElementById('businessAddressInput').value = userState.address || '';
-          document.getElementById('businessHoursInput').value = userState.hours || 'Open • Closes 9 PM';
+          document.getElementById('businessOpenTimeInput').value = userState.openTime || '09:00';
+          document.getElementById('businessCloseTimeInput').value = userState.closeTime || '21:00';
+          document.getElementById('businessHoursInput').value = userState.hours || 'Open • Closes 9:00 PM';
           document.getElementById('businessCategorySelect').value = userState.category || 'store';
           document.getElementById('userInterestFilterSelect').value = userState.interestFilter || 'none';
           document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
@@ -762,6 +828,7 @@
           setAppTheme(userState.theme || 'theme-sky', true);
           applyBubbleColorToElement('userAvatarCircle', userState.bubbleColor || 'blue');
           updateMyDisplayLabel();
+          updateBusinessHoursFromTimes();
         }
 
         const savedChats = localStorage.getItem(STORAGE_KEY_CHATS);
@@ -1097,7 +1164,7 @@
       const label = document.getElementById('userAvatarLabel');
       if (label) {
         if (userState.type === 'business') {
-          label.innerHTML = `<span>${userState.alias}</span> <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30">${userState.hours || 'Open • Closes 9 PM'}</span>`;
+          label.innerHTML = `<span>${userState.alias}</span> <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30">${userState.hours || 'Open • Closes 9:00 PM'}</span>`;
           label.style.display = 'flex';
         } else {
           label.style.display = 'none';
@@ -1183,7 +1250,7 @@
             <div class="node-content-stack">
               <div id="userAvatarLabel" class="px-3 py-0.5 rounded-full glass-panel text-[11px] font-semibold text-slate-900 shadow-md whitespace-nowrap z-50 node-name-label flex items-center gap-1.5" style="display: ${showMyLabel ? 'flex' : 'none'};">
                 <span>${userState.alias}</span>
-                <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${userState.hours || 'Open • Closes 9 PM'}</span>
+                <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${userState.hours || 'Open • Closes 9:00 PM'}</span>
               </div>
               
               <div id="userTopBubble" class="hidden"></div>
@@ -1347,6 +1414,8 @@
           lng: userState.lng,
           accountType: userState.type,
           category: userState.category,
+          openTime: userState.openTime,
+          closeTime: userState.closeTime,
           hours: userState.hours,
           interestFilter: userState.interestFilter,
           makeNamePublic: userState.makeNamePublic
@@ -1374,6 +1443,10 @@
         globalActiveDirectory[data.peerId] = { enabled: true };
       }
 
+      const calculatedHours = (data.accountType === 'business' && data.openTime && data.closeTime) 
+        ? computeBusinessHoursStatus(data.openTime, data.closeTime) 
+        : (data.hours || 'Open • Closes 9:00 PM');
+
       globalActiveDirectory[data.peerId] = {
         ...globalActiveDirectory[data.peerId],
         name: displayName,
@@ -1385,7 +1458,9 @@
         bubbleColor: data.bubbleColor || 'violet',
         accountType: data.accountType || 'personal',
         category: data.category || 'store',
-        hours: data.hours || 'Open • Closes 9 PM',
+        openTime: data.openTime || '09:00',
+        closeTime: data.closeTime || '21:00',
+        hours: calculatedHours,
         interestFilter: data.interestFilter || 'none',
         lastSeen: Date.now(),
         question: data.text || data.question,
@@ -1404,7 +1479,7 @@
         updatePeerNodeOnMap(
           displayName, data.sender, distance, distanceFormatted, data.lat, data.lng, 
           data.text || data.question, data.createdAt, data.peerId, 
-          data.bubbleColor, data.accountType, data.category, data.hours, data.interestFilter, false
+          data.bubbleColor, data.accountType, data.category, calculatedHours, data.interestFilter, false
         );
       } else if (data.type === 'CHAT_MSG') {
         const targetRoomId = data.roomId;
@@ -1422,14 +1497,14 @@
 
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
-        { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
-        { name: 'Bot 10-Mile Pickleball Fan', peerId: 'sim-peer-bot-10mi', targetMiles: 10.0, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-20mi', targetMiles: 20.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', hours: 'Open • Closes 10 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-5mi', targetMiles: 5.0, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', hours: 'Open • Closes 11 PM', interestFilter: 'Food', isBot: true },
-        { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-4mi', targetMiles: 4.0, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', hours: 'Open • Closes 2 AM', interestFilter: 'Food', isBot: true },
-        { name: '12-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 12.0, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Hiking', isBot: true },
-        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', hours: '', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', hours: '24/7 Open', interestFilter: 'Life', isBot: true }
+        { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
+        { name: 'Bot 10-Mile Pickleball Fan', peerId: 'sim-peer-bot-10mi', targetMiles: 10.0, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-20mi', targetMiles: 20.0, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-5mi', targetMiles: 5.0, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-4mi', targetMiles: 4.0, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
+        { name: '12-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 12.0, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
+        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 4.8, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 20.0, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -1448,6 +1523,7 @@
         }
 
         let displayName = u.accountType === 'business' ? u.name : '';
+        const computedHours = u.accountType === 'business' ? computeBusinessHoursStatus(u.openTime, u.closeTime) : u.hours;
 
         globalActiveDirectory[u.peerId] = {
           ...globalActiveDirectory[u.peerId],
@@ -1460,14 +1536,16 @@
           bubbleColor: u.color,
           accountType: u.accountType,
           category: u.category,
-          hours: u.hours,
+          openTime: u.openTime,
+          closeTime: u.closeTime,
+          hours: computedHours,
           interestFilter: u.interestFilter,
           lastSeen: Date.now(),
           question: u.question,
           createdAt: Date.now() - (i * 300000)
         };
 
-        updatePeerNodeOnMap(displayName, u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, u.hours, u.interestFilter, true);
+        updatePeerNodeOnMap(displayName, u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true);
       });
       renderGlobalUsersDirectory();
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
@@ -1545,33 +1623,6 @@
       lucide.createIcons();
     }
 
-    function updateRadius(val) {
-      const meters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val)));
-      userState.radius = meters;
-
-      const ring = document.getElementById('radarBoundaryRing');
-      const leftBadge = document.getElementById('radarRingDistanceLabelLeft');
-      const rightBadge = document.getElementById('radarRingDistanceLabelRight');
-      
-      if (ring) {
-        const pixelDiameter = Math.round(200 + ((meters - MIN_RADIUS_METERS) / (MAX_RADIUS_METERS - MIN_RADIUS_METERS)) * 1612.5);
-        ring.style.width = `${pixelDiameter}px`;
-        ring.style.height = `${pixelDiameter}px`;
-
-        const miles = (meters / METERS_PER_MILE).toFixed(1);
-        const labelText = `${miles} Mi`;
-        if (leftBadge) leftBadge.innerText = labelText;
-        if (rightBadge) rightBadge.innerText = labelText;
-
-        const viewportMin = Math.min(window.innerWidth, window.innerHeight);
-        const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
-        targetZoomScale = Math.max(0.15, Math.min(2.5, targetScaleFactor));
-      }
-
-      refreshAllNodeVisibilities();
-      savePersistentData();
-    }
-
     function toggleIndividualBot(peerId, enabled) {
       if (globalActiveDirectory[peerId]) {
         globalActiveDirectory[peerId].enabled = enabled;
@@ -1601,6 +1652,8 @@
         lng: coords.lng,
         accountType: userState.type,
         category: userState.category,
+        openTime: userState.openTime,
+        closeTime: userState.closeTime,
         hours: userState.hours,
         interestFilter: userState.interestFilter,
         question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) ? activeTopicState.text : null,
@@ -1619,6 +1672,8 @@
       payload.bubbleColor = payload.bubbleColor || userState.bubbleColor; 
       payload.accountType = userState.type;
       payload.category = userState.category; 
+      payload.openTime = userState.openTime;
+      payload.closeTime = userState.closeTime;
       payload.hours = userState.hours;
       payload.interestFilter = userState.interestFilter;
       payload.makeNamePublic = userState.makeNamePublic;
@@ -1700,7 +1755,7 @@
       const showNameLabel = isBiz;
       const showSonarRipple = matchesFilter && !isBiz;
       const chatRoomName = isBiz ? rawSender : 'Traveler';
-      const hoursBadgeText = hours || 'Open • Closes 9 PM';
+      const hoursBadgeText = hours || 'Open • Closes 9:00 PM';
 
       const onClickJs = `playAudioEffect('chime'); connectToPeer('${peerId}'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')`;
 
@@ -1810,7 +1865,9 @@
     function saveProfile() {
       userState.alias = document.getElementById('avatarNameInput').value.trim() || 'Traveler';
       userState.category = document.getElementById('businessCategorySelect').value;
-      userState.hours = document.getElementById('businessHoursInput').value.trim() || 'Open • Closes 9 PM';
+      userState.openTime = document.getElementById('businessOpenTimeInput').value;
+      userState.closeTime = document.getElementById('businessCloseTimeInput').value;
+      userState.hours = computeBusinessHoursStatus(userState.openTime, userState.closeTime);
       userState.interestFilter = document.getElementById('userInterestFilterSelect').value;
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
       userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
@@ -1841,7 +1898,7 @@
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
       const coords = getBroadcastCoordinates();
-      broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, hours: userState.hours, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
+      broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime, hours: userState.hours, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
       
       closeQuestionModal();
       document.getElementById('questionInput').value = '';
