@@ -1067,8 +1067,9 @@
       targetPanX = 0;
       targetPanY = 0;
       targetZoomScale = 1.0;
+      updateRadius(MIN_RADIUS_METERS);
       playAudioEffect('chime');
-      showToast('Map recentered & zoom reset', 'navigation');
+      showToast('Map recentered & radar reset to 1.0 Mi', 'navigation');
     }
 
     function startSmoothAnimationLoop() {
