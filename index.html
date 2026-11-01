@@ -116,21 +116,21 @@
       border-width: calc(1px / var(--zoom-scale)) !important;
     }
 
-    /* Clean Unclipped Foreground Radar Labels (Action Bar Typography Style) */
+    /* Zoom-Invariant Unclipped Radar Labels matching Action Dock Font */
     .radar-distance-label {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 10px;
       font-weight: 700;
       letter-spacing: -0.011em;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.9);
+      color: rgba(255, 255, 255, 0.95);
       background: transparent;
       padding: 0;
       border: none;
       box-shadow: none;
       white-space: nowrap;
       pointer-events: none;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
     }
 
     /* Anti-Overlap Floating Chat Bubble Stack container */
@@ -222,6 +222,15 @@
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
     }
+
+    /* Highly Transparent Minimal Logo Dock */
+    .transparent-logo-dock {
+      background: rgba(15, 23, 42, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
   </style>
 </head>
 <body id="appBody" class="bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
@@ -259,23 +268,16 @@
     </div>
   </div>
 
-  <!-- Top Glass Header Bar -->
+  <!-- Top Transparent Header Bar -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
-    <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 pointer-events-auto shadow-xl">
+    <div class="transparent-logo-dock px-3.5 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto">
       <div class="relative flex items-center justify-center">
-        <div id="logoBadge" class="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-lg border border-white/40">L</div>
-        <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white"></div>
+        <div id="logoBadge" class="w-7 h-7 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-sm border border-white/30">L</div>
+        <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-slate-900"></div>
       </div>
-      <div>
-        <h1 class="font-bold text-slate-900 text-sm leading-tight tracking-tight">LocaL</h1>
-        <div class="flex items-center gap-2">
-          <p id="accountTypeDisplay" class="text-[10px] text-sky-900 font-medium uppercase tracking-wider">Personal (GPS)</p>
-          <span class="text-[9px] text-slate-400">•</span>
-          <div id="activeUserBadge" class="flex items-center gap-1 text-[10px] text-emerald-800 font-semibold bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-            <span id="p2pNetDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span id="activeUserCount">1 Active</span>
-          </div>
-        </div>
+      <div id="activeUserBadge" class="flex items-center gap-1.5 text-[11px] text-emerald-300 font-semibold bg-emerald-500/20 px-2.5 py-1 rounded-full border border-emerald-500/30">
+        <span id="p2pNetDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="activeUserCount">1 Active</span>
       </div>
     </div>
 
@@ -562,9 +564,9 @@
     const TEN_MILES_METERS = 16093.4;
     const MIN_RADIUS_METERS = 8046.7; // Exactly 5 Miles minimum
     const MAX_RADIUS_METERS = 108630.4; // Maximum boundary 67.5 Miles
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v17';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v17';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v27';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v18';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v18';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v28';
 
     let peer = null;
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
@@ -1472,7 +1474,7 @@
       }
 
       if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v27');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v28');
         broadcastChannel.onmessage = (event) => {
           handleIncomingNetworkPayload(event.data);
         };
@@ -1988,7 +1990,6 @@
       document.getElementById('personalTypeBtn').className = type === 'personal' ? 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
       document.getElementById('businessTypeBtn').className = type === 'business' ? 'p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
       document.getElementById('businessFields').classList.toggle('hidden', type !== 'business');
-      document.getElementById('accountTypeDisplay').innerText = type === 'personal' ? "Personal (GPS)" : "Business (Fixed)";
       if (!skipSave) savePersistentData();
     }
 
@@ -2015,7 +2016,7 @@
     }
 
     function updateMeshUI() {
-      document.getElementById('activeUserCount').innerText = `${Object.keys(activeDataConnections).length + 1} P2P Linked`;
+      document.getElementById('activeUserCount').innerText = `${Object.keys(activeDataConnections).length + 1} Active`;
     }
 
     function quickPostFromDock() {
@@ -2150,7 +2151,7 @@
     }
 
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { document.getElementById('profileModal').classList.close ? document.getElementById('profileModal').classList.close() : document.getElementById('profileModal').classList.add('hidden'); }
+    function closeProfileModal() { document.getElementById('profileModal'].classList.close ? document.getElementById('profileModal').classList.close() : document.getElementById('profileModal').classList.add('hidden'); }
     function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
     function recalculateNodePositions() {}
   </script>
