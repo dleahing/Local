@@ -42,6 +42,13 @@
       text-rendering: optimizeLegibility;
     }
 
+    /* Background lock when modals or chat drawer are open */
+    .content-locked {
+      pointer-events: none !important;
+      user-select: none !important;
+      overflow: hidden !important;
+    }
+
     @keyframes wave-expand {
       0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
       100% { transform: translate(-50%, -50%) scale(5.7); opacity: 0; }
@@ -316,7 +323,7 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Unified Bottom Action Dock Bubble (Fixed to stop event propagation) -->
+  <!-- Unified Bottom Action Dock Bubble -->
   <div id="actionDockContainer" 
        class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu"
        onmousedown="event.stopPropagation()"
@@ -2213,22 +2220,52 @@
         chatRoomsSessions[roomId].forEach(msg => { appendMessage(msg.sender, msg.text, msg.time, msg.isMe); });
       }
 
+      // Lock background map interactions
+      document.getElementById('mapCanvas').classList.add('content-locked');
+      document.body.classList.add('overflow-hidden');
+
       document.getElementById('chatDrawer').classList.remove('hidden');
       document.getElementById('chatBackdrop').classList.remove('hidden');
     }
 
     function closeChatDrawer() {
+      // Unlock background map interactions
+      document.getElementById('mapCanvas').classList.remove('content-locked');
+      document.body.classList.remove('overflow-hidden');
+
       document.getElementById('chatDrawer').classList.add('hidden');
       document.getElementById('chatBackdrop').classList.add('hidden');
       currentActiveChatRoomId = null;
     }
 
-    function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
+    function openProfileModal() { 
+      document.getElementById('mapCanvas').classList.add('content-locked');
+      document.body.classList.add('overflow-hidden');
+      document.getElementById('profileModal').classList.remove('hidden'); 
+    }
+
     function closeProfileModal() { 
+      document.getElementById('mapCanvas').classList.remove('content-locked');
+      document.body.classList.remove('overflow-hidden');
       const modal = document.getElementById('profileModal');
       if (modal) modal.classList.add('hidden'); 
     }
-    function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
+
+    function toggleP2PModal() { 
+      const modal = document.getElementById('p2pModal');
+      const isHidden = modal.classList.contains('hidden');
+      
+      if (isHidden) {
+        document.getElementById('mapCanvas').classList.add('content-locked');
+        document.body.classList.add('overflow-hidden');
+        modal.classList.remove('hidden');
+      } else {
+        document.getElementById('mapCanvas').classList.remove('content-locked');
+        document.body.classList.remove('overflow-hidden');
+        modal.classList.add('hidden');
+      }
+    }
+
     function recalculateNodePositions() {}
   </script>
 </body>
