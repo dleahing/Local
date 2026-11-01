@@ -253,7 +253,7 @@
 
   <!-- Right-Side Chat Bubbles Sidebar -->
   <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-32 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto"
-       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
+       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
         <i data-lucide="message-square" class="w-4 h-4 text-sky-600"></i>
@@ -270,7 +270,7 @@
 
   <!-- Top Translucent Glass Header Bar -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none"
-          onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
+          onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
     <div class="glass-header-transparent px-3 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-102 transition-all" onclick="playAudioEffect('click'); toggleP2PModal()" title="View Network Mesh">
       <div class="relative flex items-center justify-center">
         <div id="logoBadge" class="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-base border border-white/50 shadow-sm">L</div>
@@ -304,7 +304,7 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Unified Bottom Action Dock Bubble -->
+  <!-- Unified Bottom Action Dock Bubble (Propagation completely halted) -->
   <div id="actionDockContainer" 
        class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu"
        onmousedown="event.stopPropagation()"
@@ -332,7 +332,7 @@
 
   <!-- WebRTC P2P Mesh & Directory Modal -->
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4"
-       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
+       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
     <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 flex-shrink-0">
         <div>
@@ -380,7 +380,7 @@
 
   <!-- Profile Customization Modal -->
   <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4"
-       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
+       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-900 tracking-tight">Customize Profile</h3>
@@ -512,10 +512,10 @@
     </div>
   </div>
 
-  <!-- Chat Drawer Overlay & Container -->
+  <!-- Chat Drawer Overlay & Container (Propagation completely halted) -->
   <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
   <div id="chatDrawer" class="hidden fixed top-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-4 rounded-b-3xl flex flex-col transition-all max-h-[85vh]"
-       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()">
+       onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
     <div class="flex items-center justify-between pb-3 pt-1 border-b border-white/30 flex-shrink-0">
       <div class="flex items-center gap-3">
         <div id="chatTargetAvatar" class="w-9 h-9 rounded-full text-white font-medium text-xs flex items-center justify-center shadow-md">
@@ -1007,7 +1007,8 @@
           );
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
-            targetZoomScale = Math.max(0.10, Math.min(4.0, initialPinchScale * factor));
+            // FIXED: Clamped minimum zoom floor to 0.20 to prevent app crashes when zooming out too far
+            targetZoomScale = Math.max(0.20, Math.min(4.0, initialPinchScale * factor));
           }
         }
       }, { passive: true });
@@ -1029,7 +1030,8 @@
         }
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-        targetZoomScale = Math.max(0.10, Math.min(4.0, targetZoomScale * zoomFactor));
+        // FIXED: Clamped minimum zoom floor to 0.20 to prevent app crashes when zooming out too far
+        targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
       }, { passive: false });
     }
 
@@ -1113,7 +1115,8 @@
 
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
-        targetZoomScale = Math.max(0.15, Math.min(2.5, targetScaleFactor));
+        // FIXED: Clamped minimum zoom floor to 0.20 here as well
+        targetZoomScale = Math.max(0.20, Math.min(2.5, targetScaleFactor));
       }
 
       refreshAllNodeVisibilities();
@@ -2213,7 +2216,7 @@
 
     function closeProfileModal() { 
       document.getElementById('mapCanvas').classList.remove('content-locked');
-      document.body.classList.add('overflow-hidden');
+      document.body.classList.remove('overflow-hidden');
       const modal = document.getElementById('profileModal');
       if (modal) modal.classList.add('hidden'); 
     }
