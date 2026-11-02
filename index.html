@@ -332,8 +332,8 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[7px] font-bold text-sky-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="1609.34" max="48280.3" step="500" value="1609.34" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-sky-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
-        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">1.0 Mi</span>
+        <input type="range" id="radarRangeSlider" min="1609.34" max="48280.3" step="500" value="48280.3" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-sky-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
+        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">30.0 Mi</span>
       </div>
     </div>
   </div>
@@ -613,8 +613,8 @@
     let targetPanX = 0;
     let targetPanY = 0;
     
-    let currentZoomScale = 1.0;
-    let targetZoomScale = 1.0;
+    let currentZoomScale = 0.04;
+    let targetZoomScale = 0.04;
 
     let isDraggingMap = false;
     let startDragX = 0;
@@ -636,7 +636,7 @@
       hours: 'Open 9:00 AM • Closes 9:00 PM',
       address: '',
       interestFilter: 'none',
-      radius: MIN_RADIUS_METERS,
+      radius: MAX_RADIUS_METERS,
       lat: 27.2730,
       lng: -80.3582,
       bubbleColor: 'blue',
@@ -783,7 +783,7 @@
 
     let touchTimer = null;
     let isDraggingRadius = false;
-    let dragStartRadiusMeters = MIN_RADIUS_METERS;
+    let dragStartRadiusMeters = MAX_RADIUS_METERS;
     let dragStartDistancePx = 175;
 
     let audioCtx = null;
@@ -863,7 +863,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       loadPersistentData();
-      userState.radius = MIN_RADIUS_METERS;
+      userState.radius = MAX_RADIUS_METERS;
       lucide.createIcons();
       initGPSLocation();
       initUserNode();
@@ -877,7 +877,7 @@
       if (slider) {
         slider.min = MIN_RADIUS_METERS;
         slider.max = MAX_RADIUS_METERS;
-        slider.value = MIN_RADIUS_METERS;
+        slider.value = MAX_RADIUS_METERS;
       }
 
       updateRadius(userState.radius);
@@ -1124,10 +1124,9 @@
     function recenterAndResetZoom() {
       targetPanX = 0;
       targetPanY = 0;
-      targetZoomScale = 1.0;
-      updateRadius(MIN_RADIUS_METERS);
+      updateRadius(MAX_RADIUS_METERS);
       playAudioEffect('chime');
-      showToast('Map recentered & radar reset to 1.0 Mi', 'navigation');
+      showToast('Map recentered & radar set to 30.0 Mi', 'navigation');
     }
 
     function startSmoothAnimationLoop() {
