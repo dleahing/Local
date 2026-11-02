@@ -592,7 +592,7 @@
     const METERS_PER_MILE = 1609.34;
     const MIN_RADIUS_METERS = 1609.34;
     const MAX_RADIUS_METERS = 48280.3;
-    const MIN_ZOOM_SCALE = 0.04; // Set minimum zoom scale to accommodate 30-mile max radius
+    const MIN_ZOOM_SCALE = 0.04;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v21';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v21';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
@@ -1177,7 +1177,6 @@
         if (rightBadge) rightBadge.innerText = labelText;
 
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
-        // Automatically scale map zoom to match the radius, bounded by MIN_ZOOM_SCALE (0.04 for 30 miles)
         const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
         targetZoomScale = Math.max(MIN_ZOOM_SCALE, Math.min(2.5, targetScaleFactor));
       }
@@ -1452,9 +1451,35 @@
       const initialMiles = (userState.radius / METERS_PER_MILE).toFixed(1);
       const initialPx = Math.round((userState.radius / METERS_PER_MILE) * MAP_PIXels_PER_MILE * 2);
 
+      // Intermediate ring diameters for 5mi, 10mi, 15mi, 20mi, 25mi
+      const ring5Px = Math.round(5 * MAP_PIXels_PER_MILE * 2);
+      const ring10Px = Math.round(10 * MAP_PIXels_PER_MILE * 2);
+      const ring15Px = Math.round(15 * MAP_PIXels_PER_MILE * 2);
+      const ring20Px = Math.round(20 * MAP_PIXels_PER_MILE * 2);
+      const ring25Px = Math.round(25 * MAP_PIXels_PER_MILE * 2);
+
+      const intermediateRingsHtml = `
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring5Px}px; height: ${ring5Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.45;">
+          <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[7.5px] font-bold text-sky-300/80 uppercase">5 Mi</span>
+        </div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring10Px}px; height: ${ring10Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.45;">
+          <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[7.5px] font-bold text-sky-300/80 uppercase">10 Mi</span>
+        </div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring15Px}px; height: ${ring15Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.45;">
+          <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[7.5px] font-bold text-sky-300/80 uppercase">15 Mi</span>
+        </div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring20Px}px; height: ${ring20Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.45;">
+          <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[7.5px] font-bold text-sky-300/80 uppercase">20 Mi</span>
+        </div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring25Px}px; height: ${ring25Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.45;">
+          <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[7.5px] font-bold text-sky-300/80 uppercase">25 Mi</span>
+        </div>
+      `;
+
       if (styleType === 'cyberpunk') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
+            ${intermediateRingsHtml}
             <div class="absolute inset-0 rounded-full animate-spin hairline-ring pointer-events-none" style="animation-duration: 25s; transform-origin: center center; border-style: dashed; border-color: ${palette.line};"></div>
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
@@ -1466,6 +1491,7 @@
       } else if (styleType === 'minimal') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
+            ${intermediateRingsHtml}
             <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
             <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
           </div>
@@ -1473,11 +1499,10 @@
       } else if (styleType === 'sonar') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-950/30 cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
+            ${intermediateRingsHtml}
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
-            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
             <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
             <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
           </div>
@@ -1485,11 +1510,10 @@
       } else {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-2xl pointer-events-auto backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
+            ${intermediateRingsHtml}
             <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
-            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
             <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
             <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
           </div>
@@ -2148,7 +2172,6 @@
           }
         }
 
-        // 24-hour inactivity room expiration checker
         if (currentActiveChatRoomId) {
           const lastActivity = roomLastActivity[currentActiveChatRoomId] || Date.now();
           const elapsed = Date.now() - lastActivity;
