@@ -111,15 +111,15 @@
       will-change: transform;
       cursor: grab;
       touch-action: none;
-      transition: transform 0.2s cubic-bezier(0.15, 0.85, 0.35, 1);
+      transition: transform 0.15s cubic-bezier(0.15, 0.85, 0.35, 1);
     }
     #mapCanvas:active {
       cursor: grabbing;
     }
 
-    /* Guarded against division-by-zero / crash on extreme zoom-out (capped at 0.04 for 30-mile max radius) */
+    /* Fixed scale compensator clamped correctly to avoid extreme layout collapse */
     .scale-compensator {
-      transform: scale(calc(1 / max(0.04, var(--zoom-scale, 1))));
+      transform: scale(calc(1 / max(0.08, var(--zoom-scale, 1))));
       will-change: transform;
     }
 
@@ -134,7 +134,7 @@
     }
 
     .hairline-ring {
-      border-width: calc(1px / max(0.04, var(--zoom-scale, 1))) !important;
+      border-width: calc(1px / max(0.08, var(--zoom-scale, 1))) !important;
     }
 
     .radar-distance-label {
@@ -257,7 +257,7 @@
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern"></div>
     
-    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring" style="width: 5625px; height: 5625px;">
+    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring" style="width: 11250px; height: 11250px;">
       <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
     </div>
 
@@ -320,7 +320,6 @@
   <div id="actionDockContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
-        <!-- Neon Gold Chat Icon matching chat bubbles -->
         <i data-lucide="message-square-plus" class="w-4 h-4 text-amber-400 flex-shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" stroke-width="2.5"></i>
         <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
         <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-sky-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-sky-500 transition-all">
@@ -592,7 +591,7 @@
     const METERS_PER_MILE = 1609.34;
     const MIN_RADIUS_METERS = 1609.34;
     const MAX_RADIUS_METERS = 48280.3;
-    const MIN_ZOOM_SCALE = 0.04;
+    const MIN_ZOOM_SCALE = 0.08;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v21';
     const STORAGE_KEY_CHATS = 'local_chat_sessions_v21';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
@@ -613,8 +612,8 @@
     let targetPanX = 0;
     let targetPanY = 0;
     
-    let currentZoomScale = 0.04;
-    let targetZoomScale = 0.04;
+    let currentZoomScale = 0.12;
+    let targetZoomScale = 0.12;
 
     let isDraggingMap = false;
     let startDragX = 0;
@@ -998,9 +997,9 @@
 
     function getPanBounds() {
       const worldRing = document.getElementById('worldMaxBoundaryRing');
-      const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 2812.5;
+      const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 5625;
       const safeScale = Math.max(MIN_ZOOM_SCALE, currentZoomScale);
-      return Math.max(200, (radiusPx * safeScale) - 150);
+      return Math.max(300, (radiusPx * safeScale) - 200);
     }
 
     function initMapPanHandlers() {
@@ -1072,7 +1071,7 @@
           );
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
-            targetZoomScale = Math.max(MIN_ZOOM_SCALE, Math.min(4.0, initialPinchScale * factor));
+            targetZoomScale = Math.max(MIN_ZOOM_SCALE, Math.min(3.0, initialPinchScale * factor));
           }
         }
       }, { passive: true });
@@ -1094,7 +1093,7 @@
         }
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-        targetZoomScale = Math.max(MIN_ZOOM_SCALE, Math.min(4.0, targetZoomScale * zoomFactor));
+        targetZoomScale = Math.max(MIN_ZOOM_SCALE, Math.min(3.0, targetZoomScale * zoomFactor));
       }, { passive: false });
     }
 
@@ -1124,9 +1123,10 @@
     function recenterAndResetZoom() {
       targetPanX = 0;
       targetPanY = 0;
+      targetZoomScale = 0.12;
       updateRadius(MAX_RADIUS_METERS);
       playAudioEffect('chime');
-      showToast('Map recentered & radar set to 30.0 Mi', 'navigation');
+      showToast('Map recentered & radar reset to 30.0 Mi', 'navigation');
     }
 
     function startSmoothAnimationLoop() {
@@ -1175,10 +1175,6 @@
 
         if (leftBadge) leftBadge.innerText = labelText;
         if (rightBadge) rightBadge.innerText = labelText;
-
-        const viewportMin = Math.min(window.innerWidth, window.innerHeight);
-        const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
-        targetZoomScale = Math.max(MIN_ZOOM_SCALE, Math.min(2.5, targetScaleFactor));
       }
 
       refreshAllNodeVisibilities();
@@ -1451,7 +1447,6 @@
       const initialMiles = (userState.radius / METERS_PER_MILE).toFixed(1);
       const initialPx = Math.round((userState.radius / METERS_PER_MILE) * MAP_PIXels_PER_MILE * 2);
 
-      // Intermediate ring diameters for 5mi, 10mi, 15mi, 20mi, 25mi
       const ring5Px = Math.round(5 * MAP_PIXels_PER_MILE * 2);
       const ring10Px = Math.round(10 * MAP_PIXels_PER_MILE * 2);
       const ring15Px = Math.round(15 * MAP_PIXels_PER_MILE * 2);
@@ -2098,7 +2093,7 @@
       }
       let angleRad = (Math.abs(hash) % 360) * (Math.PI / 180);
 
-      const mapCanvasWidth = 5625;
+      const mapCanvasWidth = 11250;
       let leftPercent = 50 + ((Math.cos(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
       let topPercent = 50 + ((Math.sin(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
 
