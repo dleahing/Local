@@ -464,11 +464,11 @@
             <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
               <option value="store">General Retail Store</option>
               <option value="coffee">Coffee & Bakery</option>
-              <option value="utensils">Restaurant & Dining</option>
-              <option value="pill">Pharmacy & Health</option>
+              <option value="utensils-crossed">Restaurant & Dining (Forks & Knives)</option>
+              <option value="capsule">Pharmacy & Health (Capsule)</option>
               <option value="home">Real Estate & Housing</option>
               <option value="wrench">Dumpster & Services</option>
-              <option value="glass-water">Bar & Lounge</option>
+              <option value="martini">Bar & Lounge (Martini)</option>
             </select>
           </div>
           <div>
@@ -699,32 +699,32 @@
         };
       }
       
-      if (category === 'utensils') {
+      if (category === 'utensils-crossed') {
         return {
           bg: SOLID_FLAT_BUSINESS_BG,
           borderClass: 'border-[3.5px] border-amber-400',
           shadowStyle: 'box-shadow: 0 0 25px rgba(251, 191, 36, 0.8);',
           iconColor: 'text-amber-400',
           glowText: 'text-amber-400',
-          lucideIcon: 'utensils'
+          lucideIcon: 'utensils-crossed'
         };
-      } else if (category === 'glass-water') {
+      } else if (category === 'martini') {
         return {
           bg: SOLID_FLAT_BUSINESS_BG,
           borderClass: 'border-[3.5px] border-pink-500',
           shadowStyle: 'box-shadow: 0 0 25px rgba(236, 72, 153, 0.8);',
           iconColor: 'text-pink-400',
           glowText: 'text-pink-400',
-          lucideIcon: 'glass-water'
+          lucideIcon: 'martini'
         };
-      } else if (category === 'pill') {
+      } else if (category === 'capsule') {
         return {
           bg: SOLID_FLAT_BUSINESS_BG,
           borderClass: 'border-[3.5px] border-emerald-400',
           shadowStyle: 'box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);',
           iconColor: 'text-emerald-300',
           glowText: 'text-emerald-400',
-          lucideIcon: 'pill'
+          lucideIcon: 'capsule'
         };
       } else {
         return {
@@ -1778,12 +1778,12 @@
       const sampleUsers = [
         { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
         { name: 'Bot 0.5-Mile Pickleball Fan', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-06mi', targetMiles: 0.6, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
+        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils-crossed', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils-crossed', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-06mi', targetMiles: 0.6, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'martini', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
         { name: '0.7-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 0.7, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
         { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 0.5, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'capsule', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -2425,3 +2425,4 @@
   </script>
 </body>
 </html>
+```[cite: 1]
