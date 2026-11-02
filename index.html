@@ -117,7 +117,6 @@
       cursor: grabbing;
     }
 
-    /* Fixed scale compensator clamped correctly to avoid extreme layout collapse */
     .scale-compensator {
       transform: scale(calc(1 / max(0.08, var(--zoom-scale, 1))));
       will-change: transform;
@@ -612,8 +611,9 @@
     let targetPanX = 0;
     let targetPanY = 0;
     
-    let currentZoomScale = 0.12;
-    let targetZoomScale = 0.12;
+    // Default starting zoom scale (Adjust this value: e.g. 0.5 for closer view, 0.15 for further out)
+    let currentZoomScale = 0.25;
+    let targetZoomScale = 0.25;
 
     let isDraggingMap = false;
     let startDragX = 0;
@@ -1123,10 +1123,10 @@
     function recenterAndResetZoom() {
       targetPanX = 0;
       targetPanY = 0;
-      targetZoomScale = 0.12;
+      targetZoomScale = 0.25;
       updateRadius(MAX_RADIUS_METERS);
       playAudioEffect('chime');
-      showToast('Map recentered & radar reset to 30.0 Mi', 'navigation');
+      showToast('Map recentered & zoom reset', 'navigation');
     }
 
     function startSmoothAnimationLoop() {
