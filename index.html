@@ -111,8 +111,7 @@
       will-change: transform;
       cursor: grab;
       touch-action: none;
-      backface-visibility: hidden;
-      perspective: 1000px;
+      transition: transform 0.15s cubic-bezier(0.15, 0.85, 0.35, 1);
     }
     #mapCanvas:active {
       cursor: grabbing;
@@ -121,13 +120,11 @@
     .scale-compensator {
       transform: scale(calc(1 / max(0.08, var(--zoom-scale, 1))));
       will-change: transform;
-      backface-visibility: hidden;
     }
 
     .node-item {
       pointer-events: auto !important;
       z-index: 100 !important;
-      contain: layout style;
     }
 
     #userAvatarNode {
@@ -614,6 +611,7 @@
     let targetPanX = 0;
     let targetPanY = 0;
     
+    // Default starting zoom scale (Adjust this value: e.g. 0.5 for closer view, 0.15 for further out)
     let currentZoomScale = 0.25;
     let targetZoomScale = 0.25;
 
@@ -621,7 +619,6 @@
     let startDragX = 0;
     let startDragY = 0;
     let animationFrameId = null;
-    let isAnimatingMap = false;
 
     let activeTopicState = { text: null, createdAt: null };
     let currentActiveChatRoomId = null;
@@ -1032,7 +1029,6 @@
         const maxLimit = getPanBounds();
         targetPanX = Math.max(-maxLimit, Math.min(maxLimit, newX));
         targetPanY = Math.max(-maxLimit, Math.min(maxLimit, newY));
-        requestSmoothUpdate();
       };
 
       const handlePanEnd = () => {
@@ -1076,7 +1072,6 @@
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
             targetZoomScale = Math.max(MIN_ZOOM_SCALE, Math.min(3.0, initialPinchScale * factor));
-            requestSmoothUpdate();
           }
         }
       }, { passive: true });
@@ -1099,7 +1094,6 @@
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
         targetZoomScale = Math.max(MIN_ZOOM_SCALE, Math.min(3.0, targetZoomScale * zoomFactor));
-        requestSmoothUpdate();
       }, { passive: false });
     }
 
@@ -1130,56 +1124,29 @@
       targetPanX = 0;
       targetPanY = 0;
       targetZoomScale = 0.25;
-      requestSmoothUpdate();
-      updateRadius(userState.radius);
+      updateRadius(MAX_RADIUS_METERS);
       playAudioEffect('chime');
       showToast('Map recentered & zoom reset', 'navigation');
     }
 
-    function requestSmoothUpdate() {
-      if (!isAnimatingMap) {
-        isAnimatingMap = true;
-        animationFrameId = requestAnimationFrame(renderLoop);
-      }
-    }
+    function startSmoothAnimationLoop() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
 
-    function renderLoop() {
-      const dx = targetPanX - panX;
-      const dy = targetPanY - panY;
-      const dz = targetZoomScale - currentZoomScale;
+      const renderLoop = () => {
+        panX += (targetPanX - panX) * 0.22;
+        panY += (targetPanY - panY) * 0.22;
 
-      if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01 || Math.abs(dz) > 0.0001) {
-        panX += dx * 0.22;
-        panY += dy * 0.22;
-        currentZoomScale += dz * 0.18;
+        currentZoomScale += (targetZoomScale - currentZoomScale) * 0.18;
         if (currentZoomScale < MIN_ZOOM_SCALE) currentZoomScale = MIN_ZOOM_SCALE;
 
-        const mapCanvas = document.getElementById('mapCanvas');
-        if (mapCanvas) {
-          mapCanvas.style.setProperty('--pan-x', `${panX}px`);
-          mapCanvas.style.setProperty('--pan-y', `${panY}px`);
-          mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
-        }
+        mapCanvas.style.setProperty('--pan-x', `${panX}px`);
+        mapCanvas.style.setProperty('--pan-y', `${panY}px`);
+        mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
 
         animationFrameId = requestAnimationFrame(renderLoop);
-      } else {
-        panX = targetPanX;
-        panY = targetPanY;
-        currentZoomScale = targetZoomScale;
-
-        const mapCanvas = document.getElementById('mapCanvas');
-        if (mapCanvas) {
-          mapCanvas.style.setProperty('--pan-x', `${panX}px`);
-          mapCanvas.style.setProperty('--pan-y', `${panY}px`);
-          mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
-        }
-
-        isAnimatingMap = false;
-      }
-    }
-
-    function startSmoothAnimationLoop() {
-      requestSmoothUpdate();
+      };
+      animationFrameId = requestAnimationFrame(renderLoop);
     }
 
     const MAP_PIXels_PER_MILE = 187.5;
