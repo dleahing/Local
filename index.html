@@ -111,7 +111,8 @@
       will-change: transform;
       cursor: grab;
       touch-action: none;
-      transition: transform 0.15s cubic-bezier(0.15, 0.85, 0.35, 1);
+      backface-visibility: hidden;
+      perspective: 1000px;
     }
     #mapCanvas:active {
       cursor: grabbing;
@@ -120,11 +121,13 @@
     .scale-compensator {
       transform: scale(calc(1 / max(0.08, var(--zoom-scale, 1))));
       will-change: transform;
+      backface-visibility: hidden;
     }
 
     .node-item {
       pointer-events: auto !important;
       z-index: 100 !important;
+      contain: layout style;
     }
 
     #userAvatarNode {
@@ -611,7 +614,6 @@
     let targetPanX = 0;
     let targetPanY = 0;
     
-    // Default starting zoom scale (0.25 gives a comfortable regional overview)
     let currentZoomScale = 0.25;
     let targetZoomScale = 0.25;
 
@@ -619,6 +621,7 @@
     let startDragX = 0;
     let startDragY = 0;
     let animationFrameId = null;
+    let isAnimatingMap = false;
 
     let activeTopicState = { text: null, createdAt: null };
     let currentActiveChatRoomId = null;
@@ -1029,6 +1032,7 @@
         const maxLimit = getPanBounds();
         targetPanX = Math.max(-maxLimit, Math.min(maxLimit, newX));
         targetPanY = Math.max(-maxLimit, Math.min(maxLimit, newY));
+        requestSmoothUpdate();
       };
 
       const handlePanEnd = () => {
@@ -1072,6 +1076,7 @@
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
             targetZoomScale = Math.max(MIN_ZOOM_SCALE, Math.min(3.0, initialPinchScale * factor));
+            requestSmoothUpdate();
           }
         }
       }, { passive: true });
@@ -1094,6 +1099,7 @@
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
         targetZoomScale = Math.max(MIN_ZOOM_SCALE, Math.min(3.0, targetZoomScale * zoomFactor));
+        requestSmoothUpdate();
       }, { passive: false });
     }
 
@@ -1124,29 +1130,56 @@
       targetPanX = 0;
       targetPanY = 0;
       targetZoomScale = 0.25;
-      updateRadius(MAX_RADIUS_METERS);
+      requestSmoothUpdate();
+      updateRadius(userState.radius);
       playAudioEffect('chime');
       showToast('Map recentered & zoom reset', 'navigation');
     }
 
-    function startSmoothAnimationLoop() {
-      const mapCanvas = document.getElementById('mapCanvas');
-      if (!mapCanvas) return;
+    function requestSmoothUpdate() {
+      if (!isAnimatingMap) {
+        isAnimatingMap = true;
+        animationFrameId = requestAnimationFrame(renderLoop);
+      }
+    }
 
-      const renderLoop = () => {
-        panX += (targetPanX - panX) * 0.22;
-        panY += (targetPanY - panY) * 0.22;
+    function renderLoop() {
+      const dx = targetPanX - panX;
+      const dy = targetPanY - panY;
+      const dz = targetZoomScale - currentZoomScale;
 
-        currentZoomScale += (targetZoomScale - currentZoomScale) * 0.18;
+      if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01 || Math.abs(dz) > 0.0001) {
+        panX += dx * 0.22;
+        panY += dy * 0.22;
+        currentZoomScale += dz * 0.18;
         if (currentZoomScale < MIN_ZOOM_SCALE) currentZoomScale = MIN_ZOOM_SCALE;
 
-        mapCanvas.style.setProperty('--pan-x', `${panX}px`);
-        mapCanvas.style.setProperty('--pan-y', `${panY}px`);
-        mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
+        const mapCanvas = document.getElementById('mapCanvas');
+        if (mapCanvas) {
+          mapCanvas.style.setProperty('--pan-x', `${panX}px`);
+          mapCanvas.style.setProperty('--pan-y', `${panY}px`);
+          mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
+        }
 
         animationFrameId = requestAnimationFrame(renderLoop);
-      };
-      animationFrameId = requestAnimationFrame(renderLoop);
+      } else {
+        panX = targetPanX;
+        panY = targetPanY;
+        currentZoomScale = targetZoomScale;
+
+        const mapCanvas = document.getElementById('mapCanvas');
+        if (mapCanvas) {
+          mapCanvas.style.setProperty('--pan-x', `${panX}px`);
+          mapCanvas.style.setProperty('--pan-y', `${panY}px`);
+          mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
+        }
+
+        isAnimatingMap = false;
+      }
+    }
+
+    function startSmoothAnimationLoop() {
+      requestSmoothUpdate();
     }
 
     const MAP_PIXels_PER_MILE = 187.5;
@@ -1454,20 +1487,20 @@
       const ring25Px = Math.round(25 * MAP_PIXels_PER_MILE * 2);
 
       const intermediateRingsHtml = `
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring5Px}px; height: ${ring5Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.65;">
-          <span class="absolute top-2 left-1/2 -translate-x-1/2 text-[8px] font-bold text-sky-300 uppercase tracking-widest bg-slate-900/40 px-1.5 py-0.5 rounded-md backdrop-blur-xs">5 Mi</span>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring5Px}px; height: ${ring5Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.45;">
+          <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[7.5px] font-bold text-sky-300/80 uppercase">5 Mi</span>
         </div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring10Px}px; height: ${ring10Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.65;">
-          <span class="absolute top-2 left-1/2 -translate-x-1/2 text-[8px] font-bold text-sky-300 uppercase tracking-widest bg-slate-900/40 px-1.5 py-0.5 rounded-md backdrop-blur-xs">10 Mi</span>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring10Px}px; height: ${ring10Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.45;">
+          <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[7.5px] font-bold text-sky-300/80 uppercase">10 Mi</span>
         </div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring15Px}px; height: ${ring15Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.65;">
-          <span class="absolute top-2 left-1/2 -translate-x-1/2 text-[8px] font-bold text-sky-300 uppercase tracking-widest bg-slate-900/40 px-1.5 py-0.5 rounded-md backdrop-blur-xs">15 Mi</span>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring15Px}px; height: ${ring15Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.45;">
+          <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[7.5px] font-bold text-sky-300/80 uppercase">15 Mi</span>
         </div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring20Px}px; height: ${ring20Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.65;">
-          <span class="absolute top-2 left-1/2 -translate-x-1/2 text-[8px] font-bold text-sky-300 uppercase tracking-widest bg-slate-900/40 px-1.5 py-0.5 rounded-md backdrop-blur-xs">20 Mi</span>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring20Px}px; height: ${ring20Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.45;">
+          <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[7.5px] font-bold text-sky-300/80 uppercase">20 Mi</span>
         </div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring25Px}px; height: ${ring25Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.65;">
-          <span class="absolute top-2 left-1/2 -translate-x-1/2 text-[8px] font-bold text-sky-300 uppercase tracking-widest bg-slate-900/40 px-1.5 py-0.5 rounded-md backdrop-blur-xs">25 Mi</span>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none hairline-ring" style="width: ${ring25Px}px; height: ${ring25Px}px; border-style: dashed; border-color: ${palette.line}; opacity: 0.45;">
+          <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[7.5px] font-bold text-sky-300/80 uppercase">25 Mi</span>
         </div>
       `;
 
