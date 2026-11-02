@@ -311,11 +311,6 @@
       <button onclick="playAudioEffect('click'); openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
         <i data-lucide="user-cog" class="w-4 h-4"></i>
       </button>
-
-      <button onclick="playAudioEffect('click'); toggleP2PModal()" title="WebRTC P2P Mesh Connections" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 relative shadow-lg">
-        <i data-lucide="share-2" class="w-4 h-4"></i>
-        <span id="p2pStatusPingDot" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-      </button>
     </div>
   </header>
 
@@ -1003,7 +998,8 @@
     function getPanBounds() {
       const worldRing = document.getElementById('worldMaxBoundaryRing');
       const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 2812.5;
-      return Math.max(200, (radiusPx * currentZoomScale) - 150);
+      const safeScale = Math.max(0.2, currentZoomScale);
+      return Math.max(200, (radiusPx * safeScale) - 150);
     }
 
     function initMapPanHandlers() {
@@ -1207,7 +1203,8 @@
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
         
-        dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / currentZoomScale;
+        const safeScale = Math.max(0.2, currentZoomScale);
+        dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
         dragStartRadiusMeters = userState.radius;
       };
 
@@ -1219,7 +1216,8 @@
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
         
-        const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / currentZoomScale;
+        const safeScale = Math.max(0.2, currentZoomScale);
+        const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
 
         const deltaPx = currentDistPx - dragStartDistancePx;
         const metersPerPx = METERS_PER_MILE / MAP_PIXels_PER_MILE;
@@ -1753,6 +1751,7 @@
         const senderLabel = data.accountType === 'business' ? data.sender : (data.sender || 'Traveler');
         chatRoomsSessions[targetRoomId].push({ sender: senderLabel, text: data.text, time: timeStr, isMe: false });
         
+        // Timer resets only when an actual message is received/sent in this room
         roomLastActivity[targetRoomId] = Date.now();
         savePersistentData();
         
@@ -2273,6 +2272,7 @@
       if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
       chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'You', text, time: timeStr, isMe: true });
       
+      // Timer resets ONLY when someone sends a message in the chat
       roomLastActivity[currentActiveChatRoomId] = Date.now();
       savePersistentData();
 
@@ -2323,6 +2323,8 @@
 
     function openChatDrawer(roomId, roomName, topic, peerId, isRestoring = false) {
       currentActiveChatRoomId = roomId;
+      
+      // Removed automatic timer reset on open (timer only resets upon sending/receiving a message)
       if (!roomLastActivity[roomId]) {
         roomLastActivity[roomId] = Date.now();
       }
