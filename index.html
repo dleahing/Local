@@ -124,7 +124,7 @@
 
     .node-item {
       pointer-events: auto !important;
-      z-index: 100 !important;
+      z-index: 999999 !important;
     }
 
     #userAvatarNode {
@@ -152,6 +152,7 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
     }
 
+    /* Foreground stacking for chat bubbles so radar never blocks clicks */
     .node-content-stack {
       position: absolute;
       bottom: 100%;
@@ -162,13 +163,14 @@
       align-items: center;
       gap: 8px;
       margin-bottom: 16px;
-      pointer-events: none;
+      pointer-events: auto !important;
       width: max-content;
       max-width: 280px;
-      z-index: 500 !important;
+      z-index: 9999999 !important;
     }
     .node-content-stack > * {
-      pointer-events: auto;
+      pointer-events: auto !important;
+      z-index: 9999999 !important;
     }
 
     .bg-mode-aurora { background: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); }
@@ -247,6 +249,8 @@
       background: #1e1b2e;
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+      pointer-events: auto !important;
+      z-index: 9999999 !important;
     }
   </style>
 </head>
@@ -254,19 +258,19 @@
 
   <!-- Map Canvas -->
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
-    <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern"></div>
+    <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern pointer-events-none"></div>
     
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring" style="width: 5625px; height: 5625px;">
       <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
     </div>
 
-    <!-- Static Radar Center -->
+    <!-- Static Radar Center (Pointer Events Disabled so it never blocks clicks) -->
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center z-0">
       <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_20px_rgba(56,189,248,0.2)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
       <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_15px_rgba(56,189,248,0.15)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
     </div>
 
-    <div id="nodesContainer" class="absolute inset-0 z-50"></div>
+    <div id="nodesContainer" class="absolute inset-0 z-50 pointer-events-auto"></div>
   </div>
 
   <!-- Right-Side Chat Bubbles Sidebar -->
@@ -336,27 +340,13 @@
     </div>
   </div>
 
-  <!-- EMAIL CONFIRMATION BANNER MODAL -->
-  <div id="emailConfirmationModal" class="hidden fixed inset-0 z-[99999999] glass-panel bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl text-center space-y-4">
-      <div class="w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-400 flex items-center justify-center text-sky-700 mx-auto">
-        <i data-lucide="mail-check" class="w-6 h-6"></i>
-      </div>
-      <h3 class="text-lg font-bold text-slate-900 tracking-tight">Check Your Email</h3>
-      <p class="text-xs text-slate-600 leading-relaxed">We've sent a confirmation link to your email address. Please verify your email to fully activate your Supabase account.</p>
-      <button onclick="dismissEmailConfirmationModal()" class="w-full py-3 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-lg active:scale-98">
-        I've Confirmed / Continue to Map
-      </button>
-    </div>
-  </div>
-
-  <!-- MANDATORY SUPABASE ACCOUNT CREATION WALL MODAL -->
-  <div id="welcomeProfileModal" class="fixed inset-0 z-[9999999] glass-panel bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4">
+  <!-- MANDATORY SUPABASE ACCOUNT CREATION / LOGIN WALL MODAL -->
+  <div id="welcomeProfileModal" class="hidden fixed inset-0 z-[9999999] glass-panel bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="text-center mb-5">
         <div class="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 shadow-lg">L</div>
-        <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">Create Supabase Account</h3>
-        <p class="text-xs text-slate-600 mt-1">Sign up or sign in to access the LocaL network map.</p>
+        <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">Welcome to LocaL</h3>
+        <p class="text-xs text-slate-600 mt-1">Sign in or create your profile to access the map.</p>
       </div>
       
       <div class="space-y-4">
@@ -435,9 +425,14 @@
           </div>
         </div>
 
-        <button onclick="registerSupabaseAccountAndProfile()" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-sm shadow-lg active:scale-98 transition-all mt-2">
-          Create Account & Enter Map
-        </button>
+        <div class="flex gap-2 pt-2">
+          <button onclick="registerOrSignInAccount('signup')" class="flex-1 py-3.5 rounded-2xl bg-slate-800 text-white font-bold text-xs shadow-lg active:scale-98 transition-all">
+            Sign Up
+          </button>
+          <button onclick="registerOrSignInAccount('signin')" class="flex-1 py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-lg active:scale-98 transition-all">
+            Sign In
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -502,15 +497,8 @@
         <div class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2.5">
           <label class="block text-xs font-bold text-emerald-950 uppercase tracking-wider">Supabase Account Auth</label>
           <div id="authStatusBanner" class="text-[11px] text-slate-600 font-medium">Not logged in (anonymous mode)</div>
-          <input type="email" id="authEmailInput" placeholder="Email address" class="w-full px-3 py-2 rounded-xl bg-white/80 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
-          <input type="password" id="authPasswordInput" placeholder="Password" class="w-full px-3 py-2 rounded-xl bg-white/80 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
-          <div class="grid grid-cols-2 gap-2" id="authButtonsContainer">
-            <button onclick="playAudioEffect('click'); signUpWithEmail()" type="button" class="py-2 rounded-xl bg-slate-800 text-white font-semibold text-xs shadow-md">Sign Up</button>
-            <button onclick="playAudioEffect('click'); signInWithEmail()" type="button" class="py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Sign In</button>
-          </div>
           <div class="flex items-center justify-between pt-1">
-            <button onclick="playAudioEffect('click'); requestPasswordReset()" type="button" class="text-[10px] text-sky-700 font-semibold hover:underline">Forgot Password?</button>
-            <button id="signOutBtn" onclick="playAudioEffect('click'); signOutUser()" type="button" class="hidden px-3 py-1.5 rounded-xl bg-red-600 text-white font-semibold text-xs shadow-md">Sign Out</button>
+            <button id="signOutBtn" onclick="playAudioEffect('click'); signOutUser()" type="button" class="px-3 py-1.5 rounded-xl bg-red-600 text-white font-semibold text-xs shadow-md">Sign Out / Switch Account</button>
           </div>
         </div>
 
@@ -715,7 +703,7 @@
     let realtimeChannel = null;
     let dbMessagesChannel = null;
     
-    // Pre-configured with your Supabase credentials
+    // Pre-configured Supabase credentials
     let supabaseConfig = { 
       url: 'https://tqwrlcgrhhfxkpwrzoza.supabase.co', 
       key: 'sb_publishable_POYsTkC4ulygZ9YVgqPyOA_FKSiVFS9' 
@@ -863,7 +851,7 @@
     function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle) {
       if (!question) return '';
       return `
-        <div class="px-4 py-2 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 shadow-2xl border-[3px] border-amber-400 flex items-center gap-2 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" style="box-shadow: 0 0 35px rgba(251, 191, 36, 0.8);" onclick="${onClickJs}">
+        <div class="px-4 py-2 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 shadow-2xl border-[3px] border-amber-400 flex items-center gap-2 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[9999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" style="box-shadow: 0 0 35px rgba(251, 191, 36, 0.8);" onclick="${onClickJs}">
           <i data-lucide="message-circle" class="w-4 h-4 text-amber-500 flex-shrink-0" stroke-width="2.5"></i>
           <span class="truncate">${question}</span>
         </div>
@@ -874,7 +862,7 @@
       if (accountType !== 'business') {
         if (!question) return '';
         return `
-          <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-[200] cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="${onClickJs}">
+          <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-[9999999] cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="${onClickJs}">
             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
             <span class="truncate">${question}</span>
           </div>
@@ -884,7 +872,7 @@
       const neonStyle = getBusinessNeonStyle(accountType, category);
 
       return `
-        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-1.5 animate-float z-[200] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-1.5 animate-float z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <div class="flex items-start gap-2.5">
             <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
@@ -982,11 +970,22 @@
       } catch(e) {}
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       loadPersistentData();
       lucide.createIcons();
 
-      if (!userState.profileCreated) {
+      if (window.supabase) {
+        supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (session && session.user) {
+          currentAuthUser = session.user;
+          userState.profileCreated = true;
+          await fetchUserProfile(session.user.id);
+        }
+      }
+
+      if (!userState.profileCreated || !currentAuthUser) {
         document.getElementById('welcomeProfileModal').classList.remove('hidden');
       } else {
         initializeAppSession();
@@ -1001,7 +1000,7 @@
       window._welcomeType = type;
     }
 
-    async function registerSupabaseAccountAndProfile() {
+    async function registerOrSignInAccount(actionType) {
       const alias = document.getElementById('welcomeAliasInput').value.trim();
       const email = document.getElementById('welcomeEmailInput').value.trim();
       const password = document.getElementById('welcomePasswordInput').value.trim();
@@ -1015,29 +1014,31 @@
         return;
       }
 
-      savePersistentData();
-
-      let needsEmailConfirmation = false;
-
       try {
         if (window.supabase) {
           supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
-          const { data, error } = await supabaseClient.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: alias } }
-          });
+          
+          let authResult;
+          if (actionType === 'signup') {
+            authResult = await supabaseClient.auth.signUp({
+              email,
+              password,
+              options: { data: { full_name: alias } }
+            });
+          } else {
+            authResult = await supabaseClient.auth.signInWithPassword({
+              email,
+              password
+            });
+          }
 
-          if (error) {
-            showToast(error.message, 'x-circle');
+          if (authResult.error) {
+            showToast(authResult.error.message, 'x-circle');
             return;
           }
 
-          if (data?.user) {
-            currentAuthUser = data.user;
-            if (!data.session) {
-              needsEmailConfirmation = true;
-            }
+          if (authResult.data?.user || authResult.data?.session?.user) {
+            currentAuthUser = authResult.data.user || authResult.data.session.user;
             await supabaseClient.from('profiles').upsert({
               id: currentAuthUser.id,
               alias: alias,
@@ -1049,7 +1050,7 @@
           }
         }
       } catch(e) {
-        // Fallback locally if offline or misconfigured
+        // Fallback locally
       }
 
       userState.alias = alias;
@@ -1069,19 +1070,8 @@
 
       savePersistentData();
       document.getElementById('welcomeProfileModal').classList.add('hidden');
-
-      if (needsEmailConfirmation) {
-        document.getElementById('emailConfirmationModal').classList.remove('hidden');
-      } else {
-        initializeAppSession();
-        showToast('Account created and saved on Supabase!', 'check-circle');
-      }
-    }
-
-    function dismissEmailConfirmationModal() {
-      document.getElementById('emailConfirmationModal').classList.add('hidden');
       initializeAppSession();
-      showToast('Account ready! Welcome to LocaL.', 'check-circle');
+      showToast('Successfully logged in & connected to map!', 'check-circle');
     }
 
     function initializeAppSession() {
@@ -1573,10 +1563,10 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${userState.type === 'business' ? userState.alias : 'Traveler'}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you')`;
 
       if (userState.type === 'business') {
-        topBubble.className = "block relative z-[999999]";
+        topBubble.className = "block relative z-[9999999]";
         topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours);
       } else {
-        topBubble.className = "relative z-[999999]";
+        topBubble.className = "relative z-[9999999]";
         topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, userState.alias, onClickJs, isGiggle);
       }
       topBubble.classList.remove('hidden');
@@ -1621,9 +1611,9 @@
       mapCanvas.className = `absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-${mode}`;
       if (gridOverlay) {
         if (mode === 'cyber' || mode === 'midnight') {
-          gridOverlay.className = 'absolute inset-0 opacity-20 map-grid-pattern-dark';
+          gridOverlay.className = 'absolute inset-0 opacity-20 map-grid-pattern-dark pointer-events-none';
         } else {
-          gridOverlay.className = 'absolute inset-0 opacity-20 map-grid-pattern';
+          gridOverlay.className = 'absolute inset-0 opacity-20 map-grid-pattern pointer-events-none';
         }
       }
     }
@@ -1661,6 +1651,7 @@
       const initialMiles = (userState.radius / METERS_PER_MILE).toFixed(1);
       const initialPx = Math.round((userState.radius / METERS_PER_MILE) * MAP_PIXels_PER_MILE * 2);
 
+      // Add pointer-events-none to underlying radar geometry so chat bubbles take top priority for clicks
       if (styleType === 'cyberpunk') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
@@ -1710,7 +1701,7 @@
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
       userDiv.id = 'userAvatarNode';
-      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[999999] cursor-pointer node-item';
+      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[999999] cursor-pointer node-item pointer-events-auto';
       
       const isBiz = userState.type === 'business';
       const neonStyle = getBusinessNeonStyle(userState.type, userState.category);
@@ -1720,14 +1711,14 @@
       const shadowStyle = isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW;
 
       userDiv.innerHTML = `
-        <div class="relative flex flex-col items-center group">
+        <div class="relative flex flex-col items-center group pointer-events-auto">
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
 
           ${getRadarStyleHtml(userState.radarStyle || 'futuristic')}
 
-          <div class="scale-compensator flex flex-col items-center relative z-[999999] pointer-events-auto">
-            <div class="node-content-stack z-[999999]">
-              <div id="userTopBubble" class="hidden z-[999999]"></div>
+          <div class="scale-compensator flex flex-col items-center relative z-[9999999] pointer-events-auto">
+            <div class="node-content-stack z-[9999999] pointer-events-auto">
+              <div id="userTopBubble" class="hidden z-[9999999] pointer-events-auto"></div>
             </div>
 
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-emerald-400/40 blur-lg animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
@@ -1883,6 +1874,7 @@
       supabaseClient.auth.onAuthStateChange(async (event, session) => {
         updateAuthUI(session?.user || null);
         if (session?.user) {
+          currentAuthUser = session.user;
           await fetchUserProfile(session.user.id);
         }
       });
@@ -1891,98 +1883,27 @@
     function updateAuthUI(user) {
       currentAuthUser = user;
       const statusBanner = document.getElementById('authStatusBanner');
-      const authButtons = document.getElementById('authButtonsContainer');
       const signOutBtn = document.getElementById('signOutBtn');
 
       if (user) {
         statusBanner.innerText = `Logged in as: ${user.email}`;
         statusBanner.className = 'text-[11px] text-emerald-700 font-semibold';
-        authButtons.classList.add('hidden');
-        signOutBtn.classList.remove('hidden');
+        if (signOutBtn) signOutBtn.classList.remove('hidden');
       } else {
         statusBanner.innerText = 'Not logged in (anonymous mode)';
         statusBanner.className = 'text-[11px] text-slate-600 font-medium';
-        authButtons.classList.remove('hidden');
-        signOutBtn.classList.add('hidden');
-      }
-    }
-
-    async function signUpWithEmail() {
-      if (!supabaseClient) {
-        showToast('Supabase client not initialized', 'alert-circle');
-        return;
-      }
-      const email = document.getElementById('authEmailInput').value.trim();
-      const password = document.getElementById('authPasswordInput').value.trim();
-      const alias = document.getElementById('avatarNameInput').value.trim();
-      if (!email || !password) {
-        showToast('Enter email and password', 'alert-circle');
-        return;
-      }
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: alias } }
-      });
-      if (error) {
-        showToast(error.message, 'x-circle');
-      } else {
-        if (!data.session) {
-          document.getElementById('emailConfirmationModal').classList.remove('hidden');
-        } else {
-          showToast('Sign up successful and verified!', 'check-circle');
-        }
-      }
-    }
-
-    async function signInWithEmail() {
-      if (!supabaseClient) {
-        showToast('Supabase client not initialized', 'alert-circle');
-        return;
-      }
-      const email = document.getElementById('authEmailInput').value.trim();
-      const password = document.getElementById('authPasswordInput').value.trim();
-      if (!email || !password) {
-        showToast('Enter email and password', 'alert-circle');
-        return;
-      }
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        if (error.message.includes('Email not confirmed')) {
-          document.getElementById('emailConfirmationModal').classList.remove('hidden');
-        } else {
-          showToast(error.message, 'x-circle');
-        }
-      } else {
-        showToast('Logged in successfully!', 'check-circle');
-        closeProfileModal();
-      }
-    }
-
-    async function requestPasswordReset() {
-      if (!supabaseClient) {
-        showToast('Supabase client not initialized', 'alert-circle');
-        return;
-      }
-      const email = document.getElementById('authEmailInput').value.trim();
-      if (!email) {
-        showToast('Please enter your email address above to reset password', 'alert-circle');
-        return;
-      }
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.href
-      });
-      if (error) {
-        showToast(error.message, 'x-circle');
-      } else {
-        showToast('Password reset email sent! Check your inbox.', 'mail');
+        if (signOutBtn) signOutBtn.classList.add('hidden');
       }
     }
 
     async function signOutUser() {
       if (!supabaseClient) return;
       await supabaseClient.auth.signOut();
+      currentAuthUser = null;
+      userState.profileCreated = false;
+      savePersistentData();
       showToast('Logged out successfully', 'log-out');
+      setTimeout(() => { location.reload(); }, 800);
     }
 
     async function fetchUserProfile(userId) {
@@ -2427,7 +2348,7 @@
       if (!nodeElem) {
         nodeElem = document.createElement('div');
         nodeElem.id = peerKey;
-        nodeElem.className = `absolute z-50 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item ${isBot ? 'bot-node-elem' : ''}`;
+        nodeElem.className = `absolute z-[999999] cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item pointer-events-auto ${isBot ? 'bot-node-elem' : ''}`;
         container.appendChild(nodeElem);
       }
 
@@ -2464,14 +2385,14 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')`;
 
       nodeElem.innerHTML = `
-        <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto">
+        <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[9999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'}; border-width: 1px;"></div>
           
-          <div class="node-content-stack">
+          <div class="node-content-stack pointer-events-auto z-[9999999]">
             ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs, hours) : ''}
           </div>
 
-          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
             ${renderNodeIconContent(accountType, category)}
           </div>
         </div>
