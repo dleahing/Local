@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - P2P Proximity Social Network</title>
+  <title>LocaL - Supabase Proximity Social Network</title>
   
   <!-- Mobile & PWA Configuration -->
   <meta name="theme-color" content="#fbcfe8">
@@ -16,10 +16,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS, Lucide Icons & Supabase JS -->
+  <!-- Tailwind CSS, Lucide Icons & Supabase JS Client -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
   <!-- ========================================== -->
   <!-- 1. STYLES & BACKGROUND EFFECTS SECTION      -->
@@ -252,36 +252,6 @@
 </head>
 <body id="appBody" class="bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
-  <!-- Supabase Authentication Modal -->
-  <div id="authModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl space-y-4">
-      <div class="text-center">
-        <h2 class="text-xl font-bold text-slate-900">Welcome to LocaL</h2>
-        <p class="text-xs text-slate-600 mt-1">Sign in with Supabase or GitHub to join the radar mesh</p>
-      </div>
-
-      <button onclick="signInWithGitHub()" class="w-full py-3 rounded-2xl bg-slate-900 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
-        <i data-lucide="github" class="w-4 h-4"></i> Sign In with GitHub
-      </button>
-
-      <div class="relative flex py-1 items-center">
-        <div class="flex-grow border-t border-slate-300"></div>
-        <span class="flex-shrink mx-2 text-[10px] text-slate-400 font-bold uppercase">Or Email</span>
-        <div class="flex-grow border-t border-slate-300"></div>
-      </div>
-
-      <div class="space-y-3">
-        <input type="email" id="authEmail" placeholder="Email address" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400">
-        <input type="password" id="authPassword" placeholder="Password" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-400">
-        
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="handleEmailAuth('signin')" class="py-2.5 rounded-2xl bg-sky-600 text-white text-xs font-semibold shadow-md active:scale-95">Sign In</button>
-          <button onclick="handleEmailAuth('signup')" class="py-2.5 rounded-2xl bg-emerald-600 text-white text-xs font-semibold shadow-md active:scale-95">Sign Up</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Map Canvas -->
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern"></div>
@@ -319,13 +289,13 @@
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
     <div class="glass-header-transparent px-3 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-102 transition-all" onclick="playAudioEffect('click'); toggleP2PModal()" title="View Network Mesh">
       <div class="relative flex items-center justify-center">
-        <div id="logoBadge" class="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center text-white font-bold text-base border border-white/50 shadow-sm">L</div>
+        <div id="logoBadge" class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-base border border-white/50 shadow-sm">L</div>
         <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white animate-pulse"></div>
       </div>
       
       <div class="flex flex-col">
         <span class="text-xs font-bold text-slate-900 leading-tight">LocaL</span>
-        <span id="activeUserCount" class="text-[9px] text-emerald-950 font-semibold">Supabase Connected</span>
+        <span id="activeUserCount" class="text-[9px] text-emerald-950 font-semibold">1 Active Peer</span>
       </div>
     </div>
 
@@ -351,7 +321,7 @@
       <div class="flex items-center gap-2.5">
         <i data-lucide="message-square-plus" class="w-4 h-4 text-amber-400 flex-shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" stroke-width="2.5"></i>
         <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
-        <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-sky-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-sky-500 transition-all">
+        <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-emerald-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-emerald-500 transition-all">
           <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
         </button>
       </div>
@@ -359,46 +329,74 @@
       <div class="h-px bg-white/10 w-full"></div>
 
       <div class="flex items-center gap-3">
-        <span class="text-[7px] font-bold text-sky-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="1609.34" max="48280.3" step="500" value="1609.34" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-sky-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
+        <span class="text-[7px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
+        <input type="range" id="radarRangeSlider" min="1609.34" max="48280.3" step="500" value="1609.34" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
         <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">1.0 Mi</span>
       </div>
     </div>
   </div>
 
-  <!-- Supabase Users Directory Modal -->
+  <!-- Supabase Realtime Network & Directory Modal -->
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 flex-shrink-0">
         <div>
-          <h3 class="text-lg font-bold text-slate-900 tracking-tight">Supabase Network Mesh</h3>
-          <p class="text-[10px] text-sky-900 font-semibold uppercase tracking-wider">Manage connections and profiles</p>
+          <h3 class="text-lg font-bold text-slate-900 tracking-tight">Supabase Realtime Mesh</h3>
+          <p class="text-[10px] text-emerald-900 font-semibold uppercase tracking-wider">Manage Supabase settings & network peers</p>
         </div>
         <button onclick="playAudioEffect('click'); toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4 overflow-y-auto flex-1 pr-1">
         <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Discovered Users (<span id="modalActiveCount">1</span>)</label>
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Supabase Realtime Connection Status</label>
+          <div class="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-semibold">
+            <div class="flex items-center gap-2">
+              <span id="peerServerDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span id="peerServerStatusText">Connected to Supabase Realtime</span>
+            </div>
+            <button onclick="playAudioEffect('click'); reconnectSupabase()" class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-semibold shadow-sm active:scale-95">Reconnect</button>
+          </div>
+        </div>
+
+        <div class="space-y-2 pt-2 border-t border-slate-200/60">
+          <label class="block text-xs font-semibold text-slate-800 uppercase tracking-wider">Supabase Credentials</label>
+          <input type="text" id="supabaseUrlInput" placeholder="Supabase Project URL (e.g. https://xyz.supabase.co)" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400">
+          <input type="password" id="supabaseKeyInput" placeholder="Supabase Anon Key" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400">
+          <button onclick="playAudioEffect('chime'); saveSupabaseCredentials()" class="w-full py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">
+            Save Credentials & Reconnect
+          </button>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-semibold text-slate-800 uppercase tracking-wider">Discovered Peers & Bots (<span id="modalActiveCount">1</span>)</label>
+          </div>
           <div id="globalUsersDirectory" class="space-y-2 max-h-48 overflow-y-auto pr-1">
             <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">
-              Loading users from Supabase...
+              Searching network mesh for peers...
             </div>
           </div>
         </div>
 
-        <div class="pt-2">
-          <button onclick="signOut()" class="w-full py-2.5 rounded-2xl bg-red-500/10 text-red-700 font-semibold text-xs border border-red-200 active:scale-95">Sign Out</button>
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Your Node ID</label>
+          <div class="flex items-center gap-2">
+            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-medium focus:outline-none shadow-inner" value="Initializing Node ID...">
+            <button onclick="playAudioEffect('click'); copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-emerald-600 text-white font-semibold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Profile Customization Modal -->
+  <!-- Profile Customization & Creation Modal -->
   <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Customize Profile</h3>
+        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Create & Edit Profile</h3>
         <button onclick="playAudioEffect('click'); closeProfileModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
@@ -406,9 +404,9 @@
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
           <div class="grid grid-cols-2 gap-2">
-            <button onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-sky-500/20 border border-sky-400 flex flex-col items-center gap-1 transition-all">
-              <i data-lucide="user" class="w-4 h-4 text-sky-800"></i>
-              <span class="text-[11px] font-semibold text-sky-950">Personal (GPS)</span>
+            <button onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all">
+              <i data-lucide="user" class="w-4 h-4 text-emerald-800"></i>
+              <span class="text-[11px] font-semibold text-emerald-950">Personal (GPS)</span>
             </button>
             <button onclick="playAudioEffect('click'); selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
               <i data-lucide="store" class="w-4 h-4 text-slate-700"></i>
@@ -419,12 +417,12 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1">Display Alias / Store Name</label>
-          <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Map Background Style</label>
-          <select id="bgModeSelect" onchange="updateBackgroundStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <select id="bgModeSelect" onchange="updateBackgroundStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
             <option value="aurora">Gradient Aurora (Vibrant)</option>
             <option value="cyber">Cyber Grid Dark (Tactical)</option>
             <option value="minimal">Clean Minimalist Light (Paper)</option>
@@ -434,7 +432,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Radar Style / Type</label>
-          <select id="radarStyleSelect" onchange="updateRadarStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <select id="radarStyleSelect" onchange="updateRadarStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
             <option value="futuristic">Futuristic Neon Rings</option>
             <option value="cyberpunk">Cyberpunk Grid & Sweep</option>
             <option value="minimal">Clean Minimalist Pulse</option>
@@ -444,7 +442,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Radar Line Color</label>
-          <select id="radarColorSelect" onchange="updateRadarColor(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <select id="radarColorSelect" onchange="updateRadarColor(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
             <option value="cyan">Neon Cyan / Sky</option>
             <option value="emerald">Military Emerald Green</option>
             <option value="pink">Cyberpunk Hot Pink</option>
@@ -455,7 +453,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter (Chat Matching)</label>
-          <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+          <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
             <option value="none">No Filter At All</option>
             <option value="Life">Life</option>
             <option value="Cars">Cars</option>
@@ -470,7 +468,7 @@
         <div id="businessFields" class="hidden space-y-3">
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Business Category & Flat Icon</label>
-            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
               <option value="store">General Retail Store</option>
               <option value="coffee">Coffee & Bakery</option>
               <option value="utensils">Restaurant & Dining</option>
@@ -485,22 +483,22 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <span class="text-[10px] text-slate-500 font-medium">Opening Time</span>
-                <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+                <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
               </div>
               <div>
                 <span class="text-[10px] text-slate-500 font-medium">Closing Time</span>
-                <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+                <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
               </div>
             </div>
             <div class="mt-1.5 flex items-center justify-between">
               <span class="text-[10px] text-slate-500 font-medium">Status display text:</span>
-              <span id="businessHoursPreview" class="text-[10px] font-semibold text-sky-800">Open 9:00 AM • Closes 9:00 PM</span>
+              <span id="businessHoursPreview" class="text-[10px] font-semibold text-emerald-800">Open 9:00 AM • Closes 9:00 PM</span>
             </div>
             <input type="hidden" id="businessHoursInput" value="Open 9:00 AM • Closes 9:00 PM">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Store Street Address (Fixed)</label>
-            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner">
+            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
           </div>
         </div>
 
@@ -508,20 +506,20 @@
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
             <span>Show My Business Name on Map</span>
-            <input type="checkbox" id="privacyMakeNamePublic" checked class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+            <input type="checkbox" id="privacyMakeNamePublic" checked class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
             <span>Ghost Mode (Invisible on map)</span>
-            <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+            <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
             <span>Fuzz Location (~500m jitter)</span>
-            <input type="checkbox" id="privacyFuzzLocation" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+            <input type="checkbox" id="privacyFuzzLocation" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
         </div>
 
-        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-sky-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all">
-          Save Profile & Settings
+        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all">
+          Save Profile & Broadcast
         </button>
       </div>
     </div>
@@ -531,59 +529,105 @@
   <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-35 bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
   <div id="chatDrawer" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg glass-drawer-top p-5 rounded-3xl flex flex-col transition-all max-h-[82vh] border border-white/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)]">
     
-    <!-- Chat Header Bar -->
     <div class="flex items-center justify-between pb-3.5 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-3">
         <div id="chatTargetAvatar" class="w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden">
           <div class="bubble-glare"></div>
         </div>
         <div>
-          <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm tracking-tight drop-shadow-sm">Supabase Global Realtime Chat</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-sky-800 font-semibold uppercase tracking-wider">Cloud Database Live Sync</p>
+          <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm tracking-tight drop-shadow-sm">Supabase Realtime Channel</h4>
+          <p id="chatTargetStatus" class="text-[10px] text-emerald-800 font-semibold uppercase tracking-wider">Broadcast Channel Sync</p>
         </div>
       </div>
       
       <div class="flex items-center gap-2">
+        <button id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Room
+        </button>
         <button onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 hover:text-slate-900 transition-all shadow-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
     </div>
 
-    <!-- Messages Container -->
+    <div id="chatExpiryTimerBar" class="my-2 px-3.5 py-2 rounded-2xl bg-white/60 backdrop-blur-md border border-amber-400/40 text-amber-950 text-xs font-semibold flex items-center justify-between flex-shrink-0 shadow-sm">
+      <div class="flex items-center gap-2">
+        <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
+        <span>Auto-deletes if inactive:</span>
+      </div>
+      <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900 px-2 py-0.5 rounded-lg bg-amber-400/20 border border-amber-400/40">24h 00m</span>
+    </div>
+
+    <div id="mainTopicContainer" class="hidden my-2 p-3 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-md flex items-start gap-2.5 flex-shrink-0">
+      <i data-lucide="pin" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+      <div>
+        <p id="mainTopicText" class="text-xs font-normal text-slate-900 leading-snug"></p>
+        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-emerald-700 mt-0.5 block">Visible for 60m 00s</span>
+      </div>
+    </div>
+
     <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-3.5 max-h-[38vh] pr-1"></div>
 
-    <!-- Chat Input Bar -->
     <div class="pt-3 pb-1 flex-shrink-0">
-      <div class="glass-card rounded-[28px] p-2 pl-4 border border-white/90 shadow-xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-sky-400 transition-all bg-white/80">
-        <textarea id="chatInput" rows="1" placeholder="Type a message..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendSupabaseChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
+      <div class="glass-card rounded-[28px] p-2 pl-4 border border-white/90 shadow-xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-emerald-400 transition-all bg-white/80">
+        <textarea id="chatInput" rows="1" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/60">
           <div class="flex items-center gap-1">
-            <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-sky-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="plus" class="w-4 h-4"></i></button>
+            <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="plus" class="w-4 h-4"></i></button>
+            <button onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors"><i data-lucide="mic" class="w-4 h-4"></i></button>
           </div>
-          <button onclick="sendSupabaseChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-sky-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-sky-500 transition-all"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+          <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-emerald-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-emerald-500 transition-all"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- 3. JAVASCRIPT & SUPABASE INTEGRATION      -->
+  <!-- 3. JAVASCRIPT LOGIC SECTION               -->
   <!-- ========================================== -->
   <script>
-    const SUPABASE_URL = 'YOUR_SUPABASE_PROJECT_URL';
-    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const MESH_ROOM_KEY = 'local-proximity-public';
 
-    let currentUser = null;
-    let globalActiveDirectory = {};
-    let chatRoomsSessions = {};
-    let currentActiveChatRoomId = 'global';
-    let currentLayoutMode = 'map';
-
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const MIN_RADIUS_METERS = 1609.34;
     const MAX_RADIUS_METERS = 48280.3;
-    const MAP_PIXels_PER_MILE = 187.5;
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v21';
+    const STORAGE_KEY_CHATS = 'local_chat_sessions_v21';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v21';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v21';
+    const STORAGE_KEY_ROOM_TIMESTAMPS = 'local_room_last_activity_v21';
+    const STORAGE_KEY_SUPABASE_CONFIG = 'local_supabase_config_v1';
+
+    let supabaseClient = null;
+    let realtimeChannel = null;
+    let supabaseConfig = { url: '', key: '' };
+
+    let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
+    let globalActiveDirectory = {};
+    let processedMsgIds = new Set();
+    let wakeLock = null;
+    let broadcastChannel = null;
+
+    let panX = 0;
+    let panY = 0;
+    let targetPanX = 0;
+    let targetPanY = 0;
+    
+    let currentZoomScale = 1.0;
+    let targetZoomScale = 1.0;
+
+    let isDraggingMap = false;
+    let startDragX = 0;
+    let startDragY = 0;
+    let animationFrameId = null;
+
+    let activeTopicState = { text: null, createdAt: null };
+    let currentActiveChatRoomId = null;
+    let chatRoomsSessions = {}; 
+    let roomLastActivity = {};
+    let currentLayoutMode = 'map';
 
     let userState = {
       alias: 'Traveler',
@@ -606,146 +650,156 @@
       makeNamePublic: true
     };
 
-    window.addEventListener('DOMContentLoaded', async () => {
-      lucide.createIcons();
-      await checkAuthSession();
-      initSupabaseRealtimeChat();
+    const RADAR_PALETTES = {
+      cyan: { line: 'rgba(56, 189, 248, 0.35)', sweep: 'rgba(56, 189, 248, 0.50)', bg: 'rgba(56, 189, 248, 0.07)' },
+      emerald: { line: 'rgba(52, 211, 153, 0.35)', sweep: 'rgba(52, 211, 153, 0.50)', bg: 'rgba(52, 211, 153, 0.07)' },
+      pink: { line: 'rgba(236, 72, 153, 0.35)', sweep: 'rgba(236, 72, 153, 0.50)', bg: 'rgba(236, 72, 153, 0.07)' },
+      amber: { line: 'rgba(251, 191, 36, 0.35)', sweep: 'rgba(251, 191, 36, 0.50)', bg: 'rgba(251, 191, 36, 0.07)' },
+      purple: { line: 'rgba(192, 132, 252, 0.35)', sweep: 'rgba(192, 132, 252, 0.50)', bg: 'rgba(192, 132, 252, 0.07)' }
+    };
 
-      const slider = document.getElementById('radarRangeSlider');
-      if (slider) {
-        slider.min = MIN_RADIUS_METERS;
-        slider.max = MAX_RADIUS_METERS;
-        slider.value = MIN_RADIUS_METERS;
+    const SOLID_FLAT_BUSINESS_BG = '#1e1b2e';
+
+    function formatTime12h(timeStr) {
+      if (!timeStr) return '';
+      const [hStr, mStr] = timeStr.split(':');
+      let hours = parseInt(hStr, 10);
+      if (isNaN(hours)) return timeStr;
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return `${hours}:${mStr} ${ampm}`;
+    }
+
+    function computeBusinessHoursStatus(openTime, closeTime) {
+      if (!openTime || !closeTime) return 'Open 9:00 AM • Closes 9:00 PM';
+      const openFormatted = formatTime12h(openTime);
+      const closeFormatted = formatTime12h(closeTime);
+      return `Open ${openFormatted} • Closes ${closeFormatted}`;
+    }
+
+    function updateBusinessHoursFromTimes() {
+      const openTime = document.getElementById('businessOpenTimeInput').value;
+      const closeTime = document.getElementById('businessCloseTimeInput').value;
+      userState.openTime = openTime;
+      userState.closeTime = closeTime;
+      const statusText = computeBusinessHoursStatus(openTime, closeTime);
+      userState.hours = statusText;
+      document.getElementById('businessHoursInput').value = statusText;
+      const preview = document.getElementById('businessHoursPreview');
+      if (preview) preview.innerText = statusText;
+    }
+
+    function getBusinessNeonStyle(accountType, category) {
+      if (accountType !== 'business') {
+        return {
+          bg: 'transparent',
+          borderClass: 'border border-white/40',
+          shadowStyle: 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);',
+          iconColor: 'text-white',
+          glowText: 'text-yellow-400',
+          lucideIcon: 'user'
+        };
       }
-      updateRadius(userState.radius);
-    });
-
-    async function checkAuthSession() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        currentUser = session.user;
-        await loadUserProfileFromSupabase();
-        document.getElementById('authModal').classList.add('hidden');
-      } else {
-        document.getElementById('authModal').classList.remove('hidden');
-      }
-
-      supabase.auth.onAuthStateChange(async (event, session) => {
-        if (session) {
-          currentUser = session.user;
-          await loadUserProfileFromSupabase();
-          document.getElementById('authModal').classList.add('hidden');
-        } else {
-          currentUser = null;
-          document.getElementById('authModal').classList.remove('hidden');
-        }
-      });
-    }
-
-    async function signInWithGitHub() {
-      await supabase.auth.signInWithOAuth({ provider: 'github' });
-    }
-
-    async function handleEmailAuth(type) {
-      const email = document.getElementById('authEmail').value;
-      const password = document.getElementById('authPassword').value;
-      if (!email || !password) return alert('Enter email and password');
-
-      const { error } = type === 'signup' 
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) alert(error.message);
-      else if (type === 'signup') alert('Check your email for confirmation!');
-    }
-
-    async function signOut() {
-      await supabase.auth.signOut();
-      location.reload();
-    }
-
-    async function loadUserProfileFromSupabase() {
-      if (!currentUser) return;
-      const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-      if (data) {
-        userState.alias = data.alias || 'Traveler';
-        userState.type = data.account_type || 'personal';
-        userState.category = data.category || 'store';
-        document.getElementById('avatarNameInput').value = userState.alias;
-      }
-    }
-
-    async function saveProfile() {
-      userState.alias = document.getElementById('avatarNameInput').value.trim() || 'Traveler';
-      userState.category = document.getElementById('businessCategorySelect').value;
       
-      if (currentUser) {
-        await supabase.from('profiles').update({
-          alias: userState.alias,
-          account_type: userState.type,
-          category: userState.category,
-          updated_at: new Date()
-        }).eq('id', currentUser.id);
-      }
-
-      closeProfileModal();
-      showToast('Profile saved to Supabase!', 'check-circle');
-    }
-
-    function initSupabaseRealtimeChat() {
-      supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(50).then(({ data }) => {
-        if (data) {
-          data.forEach(msg => {
-            const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            if (!chatRoomsSessions['global']) chatRoomsSessions['global'] = [];
-            chatRoomsSessions['global'].push({ sender: msg.sender_alias, text: msg.content, time: timeStr, isMe: msg.sender_id === currentUser?.id });
-          });
-        }
-      });
-
-      supabase.channel('public:messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-          const msg = payload.new;
-          const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const isMe = currentUser && msg.sender_id === currentUser.id;
-          
-          if (!chatRoomsSessions['global']) chatRoomsSessions['global'] = [];
-          chatRoomsSessions['global'].push({ sender: msg.sender_alias, text: msg.content, time: timeStr, isMe });
-
-          if (currentActiveChatRoomId === 'global') {
-            appendMessage(msg.sender_alias, msg.content, timeStr, isMe);
-          }
-          playAudioEffect('bell');
-          showToast(`New message from ${msg.sender_alias}`, 'message-square');
-        })
-        .subscribe();
-    }
-
-    async function sendSupabaseChatMessage() {
-      const input = document.getElementById('chatInput');
-      const content = input.value.trim();
-      if (!content || !currentUser) return;
-
-      const { error } = await supabase.from('messages').insert([{
-        sender_id: currentUser.id,
-        sender_alias: userState.alias,
-        room_id: 'global',
-        content: content
-      }]);
-
-      if (!error) {
-        input.value = '';
-        input.style.height = '26px';
+      if (category === 'utensils') {
+        return {
+          bg: SOLID_FLAT_BUSINESS_BG,
+          borderClass: 'border-[3.5px] border-amber-400',
+          shadowStyle: 'box-shadow: 0 0 25px rgba(251, 191, 36, 0.8);',
+          iconColor: 'text-amber-400',
+          glowText: 'text-amber-400',
+          lucideIcon: 'utensils'
+        };
+      } else if (category === 'glass-water') {
+        return {
+          bg: SOLID_FLAT_BUSINESS_BG,
+          borderClass: 'border-[3.5px] border-pink-500',
+          shadowStyle: 'box-shadow: 0 0 25px rgba(236, 72, 153, 0.8);',
+          iconColor: 'text-pink-400',
+          glowText: 'text-pink-400',
+          lucideIcon: 'glass-water'
+        };
+      } else if (category === 'pill') {
+        return {
+          bg: SOLID_FLAT_BUSINESS_BG,
+          borderClass: 'border-[3.5px] border-emerald-400',
+          shadowStyle: 'box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);',
+          iconColor: 'text-emerald-300',
+          glowText: 'text-emerald-400',
+          lucideIcon: 'pill'
+        };
+      } else {
+        return {
+          bg: SOLID_FLAT_BUSINESS_BG,
+          borderClass: 'border-[3.5px] border-purple-400',
+          shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);',
+          iconColor: 'text-purple-300',
+          glowText: 'text-purple-300',
+          lucideIcon: category || 'store'
+        };
       }
     }
+
+    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle) {
+      if (!question) return '';
+      return `
+        <div class="px-4 py-2 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 shadow-2xl border-[3px] border-amber-400 flex items-center gap-2 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" style="box-shadow: 0 0 35px rgba(251, 191, 36, 0.8);" onclick="${onClickJs}">
+          <i data-lucide="message-circle" class="w-4 h-4 text-amber-500 flex-shrink-0" stroke-width="2.5"></i>
+          <span class="truncate">${question}</span>
+        </div>
+      `;
+    }
+
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours) {
+      if (accountType !== 'business') {
+        if (!question) return '';
+        return `
+          <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-[200] cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="${onClickJs}">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
+            <span class="truncate">${question}</span>
+          </div>
+        `;
+      }
+
+      const neonStyle = getBusinessNeonStyle(accountType, category);
+
+      return `
+        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-1.5 animate-float z-[200] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+          <div class="flex items-start gap-2.5">
+            <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
+            <div class="min-w-0 flex-1">
+              <span class="text-xs font-bold ${neonStyle.glowText} block truncate mb-0.5">${businessName || 'Business'}</span>
+              ${question ? `<p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>` : ''}
+            </div>
+          </div>
+          ${hours ? `
+            <div class="pt-1.5 mt-0.5 border-t border-white/10 flex items-center justify-between">
+              <span class="text-[10px] text-slate-400 font-medium">Open</span>
+              <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${hours}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    let touchTimer = null;
+    let isDraggingRadius = false;
+    let dragStartRadiusMeters = MIN_RADIUS_METERS;
+    let dragStartDistancePx = 175;
 
     let audioCtx = null;
+
     function initAudioContext() {
       if (!audioCtx) {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (AC) audioCtx = new AC();
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
       }
-      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
     }
 
     function playAudioEffect(type = 'click') {
@@ -753,84 +807,1602 @@
         initAudioContext();
         if (!audioCtx) return;
         const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.frequency.setValueAtTime(600, now);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 0.04);
+        if (type === 'click') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(200, now + 0.04);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } else if (type === 'bubble') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'bell') {
+          [880, 1320, 1760].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const t = now + (idx * 0.04);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t);
+            gain.gain.setValueAtTime(0.2, t);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + 0.8);
+          });
+        } else if (type === 'chime') {
+          [523.25, 659.25, 783.99].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const noteTime = now + (idx * 0.05);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, noteTime);
+            gain.gain.setValueAtTime(0.12, noteTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.25);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(noteTime);
+            osc.stop(noteTime + 0.25);
+          });
+        }
       } catch(e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadPersistentData();
+      userState.radius = MIN_RADIUS_METERS;
+      lucide.createIcons();
+      initGPSLocation();
+      initUserNode();
+      initSupabaseNetwork();
+      requestScreenWakeLock();
+      spawnDefaultSimulatedUsers();
+      checkChatExpiryLoop();
+      restoreActiveChatRoom();
+      
+      const slider = document.getElementById('radarRangeSlider');
+      if (slider) {
+        slider.min = MIN_RADIUS_METERS;
+        slider.max = MAX_RADIUS_METERS;
+        slider.value = MIN_RADIUS_METERS;
+      }
+
+      updateRadius(userState.radius);
+
+      window.addEventListener('resize', recalculateNodePositions);
+      initRadiusDragHandlers();
+      initTapRippleHandler();
+      initMapPanHandlers();
+      initPinchZoomHandlers();
+      initWheelZoomHandler();
+      initDoubleTapHandler();
+      startSmoothAnimationLoop();
+    });
+
+    async function requestScreenWakeLock() {
+      if ('wakeLock' in navigator) {
+        try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+      }
+    }
+
+    function triggerHapticFeedback(pattern = 40) {
+      if ('vibrate' in navigator) { try { navigator.vibrate(pattern); } catch(e) {} }
+    }
+
+    function loadPersistentData() {
+      try {
+        const savedProfile = localStorage.getItem(STORAGE_KEY_PROFILE);
+        if (savedProfile) {
+          const parsed = JSON.parse(savedProfile);
+          userState = { ...userState, ...parsed };
+          document.getElementById('avatarNameInput').value = userState.alias;
+          document.getElementById('businessAddressInput').value = userState.address || '';
+          document.getElementById('businessOpenTimeInput').value = userState.openTime || '09:00';
+          document.getElementById('businessCloseTimeInput').value = userState.closeTime || '21:00';
+          document.getElementById('businessHoursInput').value = userState.hours || 'Open 9:00 AM • Closes 9:00 PM';
+          document.getElementById('businessCategorySelect').value = userState.category || 'store';
+          document.getElementById('userInterestFilterSelect').value = userState.interestFilter || 'none';
+          document.getElementById('radarStyleSelect').value = userState.radarStyle || 'futuristic';
+          document.getElementById('radarColorSelect').value = userState.radarColor || 'cyan';
+          document.getElementById('bgModeSelect').value = userState.bgMode || 'aurora';
+          document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
+          document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
+          document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
+          selectAccountType(userState.type || 'personal', true);
+          applyBackgroundMode(userState.bgMode || 'aurora');
+          applyRadarColorCSS(userState.radarColor || 'cyan');
+          updateMyDisplayLabel();
+          updateBusinessHoursFromTimes();
+        }
+
+        const savedSupabase = localStorage.getItem(STORAGE_KEY_SUPABASE_CONFIG);
+        if (savedSupabase) {
+          supabaseConfig = JSON.parse(savedSupabase);
+          document.getElementById('supabaseUrlInput').value = supabaseConfig.url || '';
+          document.getElementById('supabaseKeyInput').value = supabaseConfig.key || '';
+        }
+
+        const savedChats = localStorage.getItem(STORAGE_KEY_CHATS);
+        if (savedChats) {
+          chatRoomsSessions = JSON.parse(savedChats);
+        }
+
+        const savedTimestamps = localStorage.getItem(STORAGE_KEY_ROOM_TIMESTAMPS);
+        if (savedTimestamps) {
+          roomLastActivity = JSON.parse(savedTimestamps);
+        }
+
+        const savedTopicState = localStorage.getItem(STORAGE_KEY_TOPIC_STATE);
+        if (savedTopicState) {
+          activeTopicState = JSON.parse(savedTopicState);
+        }
+      } catch (e) {}
+    }
+
+    function savePersistentData() {
+      try {
+        localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
+        localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
+        localStorage.setItem(STORAGE_KEY_ROOM_TIMESTAMPS, JSON.stringify(roomLastActivity));
+        localStorage.setItem(STORAGE_KEY_TOPIC_STATE, JSON.stringify(activeTopicState));
+        localStorage.setItem(STORAGE_KEY_SUPABASE_CONFIG, JSON.stringify(supabaseConfig));
+        if (currentActiveChatRoomId) {
+          localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
+        } else {
+          localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
+        }
+      } catch (e) {}
+    }
+
+    function saveSupabaseCredentials() {
+      const url = document.getElementById('supabaseUrlInput').value.trim();
+      const key = document.getElementById('supabaseKeyInput').value.trim();
+      supabaseConfig = { url, key };
+      savePersistentData();
+      initSupabaseNetwork();
+      showToast('Supabase settings saved. Reconnecting...', 'wifi');
+    }
+
+    function restoreActiveChatRoom() {
+      try {
+        const savedRoomId = localStorage.getItem(STORAGE_KEY_ACTIVE_ROOM);
+        if (savedRoomId && chatRoomsSessions[savedRoomId]) {
+          const peerIdMatch = savedRoomId.replace('room-peer-', '');
+          const peerData = globalActiveDirectory[peerIdMatch];
+          const roomName = savedRoomId === 'room-you' ? (userState.type === 'business' ? userState.alias : 'Traveler') : (peerData ? peerData.rawSender : 'Active Session');
+          const topic = savedRoomId === 'room-you' ? activeTopicState.text : (peerData ? peerData.question : null);
+          openChatDrawer(savedRoomId, roomName, topic, peerIdMatch, true);
+        }
+      } catch (e) {}
     }
 
     function showToast(message, icon = 'info') {
       const toastContainer = document.getElementById('toastContainer');
       const toast = document.createElement('div');
       toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-900 text-xs font-semibold border border-white/60';
-      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-sky-600"></i> <span>${message}</span>`;
+      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-emerald-600"></i> <span>${message}</span>`;
       toastContainer.appendChild(toast);
       lucide.createIcons();
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    function updateRadius(val) {
-      userState.radius = Math.max(MIN_RADIUS_METERS, Number(val));
-    }
-    function updateRadiusFromSlider(val) { updateRadius(val); }
-
-    function openChatDrawer() {
-      document.getElementById('chatDrawer').classList.remove('hidden');
-      document.getElementById('chatBackdrop').classList.remove('hidden');
-      const msgBox = document.getElementById('chatMessages');
-      msgBox.innerHTML = '';
-      if (chatRoomsSessions['global']) {
-        chatRoomsSessions['global'].forEach(msg => appendMessage(msg.sender, msg.text, msg.time, msg.isMe));
+    function setLayoutMode(mode) {
+      currentLayoutMode = mode;
+      document.getElementById('layoutModeSelect').value = mode;
+      const sidebar = document.getElementById('rightSideBubblesSidebar');
+      if (mode === 'right') {
+        sidebar.classList.remove('hidden');
+        renderRightSidebarBubbles();
+        showToast('Switched to Right-Side Bubbles List', 'list');
+      } else {
+        sidebar.classList.add('hidden');
+        showToast('Switched to Map View', 'navigation');
       }
     }
-    function closeChatDrawer() {
-      document.getElementById('chatDrawer').classList.add('hidden');
-      document.getElementById('chatBackdrop').classList.add('hidden');
+
+    function getPanBounds() {
+      const worldRing = document.getElementById('worldMaxBoundaryRing');
+      const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 2812.5;
+      const safeScale = Math.max(0.2, currentZoomScale);
+      return Math.max(200, (radiusPx * safeScale) - 150);
     }
+
+    function initMapPanHandlers() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+
+      const handlePanStart = (e) => {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider')) {
+          return;
+        }
+        if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
+        isDraggingMap = true;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        startDragX = clientX - targetPanX;
+        startDragY = clientY - targetPanY;
+      };
+
+      const handlePanMove = (e) => {
+        if (!isDraggingMap || (e.touches && e.touches.length > 1)) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        let newX = clientX - startDragX;
+        let newY = clientY - startDragY;
+
+        const maxLimit = getPanBounds();
+        targetPanX = Math.max(-maxLimit, Math.min(maxLimit, newX));
+        targetPanY = Math.max(-maxLimit, Math.min(maxLimit, newY));
+      };
+
+      const handlePanEnd = () => {
+        isDraggingMap = false;
+      };
+
+      mapCanvas.addEventListener('mousedown', handlePanStart);
+      window.addEventListener('mousemove', handlePanMove);
+      window.addEventListener('mouseup', handlePanEnd);
+
+      mapCanvas.addEventListener('touchstart', handlePanStart, { passive: true });
+      window.addEventListener('touchmove', handlePanMove, { passive: true });
+      window.addEventListener('touchend', handlePanEnd);
+    }
+
+    let initialPinchDistance = null;
+    let initialPinchScale = 1.0;
+
+    function initPinchZoomHandlers() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+
+      mapCanvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          isDraggingMap = false;
+          initialPinchDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          if (initialPinchDistance < 1) initialPinchDistance = 1;
+          initialPinchScale = targetZoomScale;
+        }
+      }, { passive: true });
+
+      mapCanvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && initialPinchDistance && initialPinchDistance > 0) {
+          const currentDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          const factor = currentDistance / initialPinchDistance;
+          if (!isNaN(factor) && isFinite(factor)) {
+            targetZoomScale = Math.max(0.20, Math.min(4.0, initialPinchScale * factor));
+          }
+        }
+      }, { passive: true });
+
+      mapCanvas.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) {
+          initialPinchDistance = null;
+        }
+      });
+    }
+
+    function initWheelZoomHandler() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+
+      mapCanvas.addEventListener('wheel', (e) => {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar')) {
+          return;
+        }
+        e.preventDefault();
+        const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+        targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
+      }, { passive: false });
+    }
+
+    let lastTapTime = 0;
+    function initDoubleTapHandler() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+
+      mapCanvas.addEventListener('touchend', (e) => {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTapTime;
+        if (tapLength < 300 && tapLength > 0) {
+          recenterAndResetZoom();
+          e.preventDefault();
+        }
+        lastTapTime = currentTime;
+      });
+
+      mapCanvas.addEventListener('dblclick', (e) => {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar')) {
+          return;
+        }
+        recenterAndResetZoom();
+      });
+    }
+
+    function recenterAndResetZoom() {
+      targetPanX = 0;
+      targetPanY = 0;
+      targetZoomScale = 1.0;
+      updateRadius(MIN_RADIUS_METERS);
+      playAudioEffect('chime');
+      showToast('Map recentered & radar reset to 1.0 Mi', 'navigation');
+    }
+
+    function startSmoothAnimationLoop() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+
+      const renderLoop = () => {
+        panX += (targetPanX - panX) * 0.22;
+        panY += (targetPanY - panY) * 0.22;
+
+        currentZoomScale += (targetZoomScale - currentZoomScale) * 0.18;
+        if (currentZoomScale < 0.20) currentZoomScale = 0.20;
+
+        mapCanvas.style.setProperty('--pan-x', `${panX}px`);
+        mapCanvas.style.setProperty('--pan-y', `${panY}px`);
+        mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
+
+        animationFrameId = requestAnimationFrame(renderLoop);
+      };
+      animationFrameId = requestAnimationFrame(renderLoop);
+    }
+
+    const MAP_PIXels_PER_MILE = 187.5;
+
+    function updateRadius(val) {
+      const meters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val)));
+      userState.radius = meters;
+
+      const ring = document.getElementById('radarBoundaryRing');
+      const leftBadge = document.getElementById('radarRingDistanceLabelLeft');
+      const rightBadge = document.getElementById('radarRingDistanceLabelRight');
+      const slider = document.getElementById('radarRangeSlider');
+      const sliderLabel = document.getElementById('sliderRangeLabel');
+      
+      const miles = (meters / METERS_PER_MILE).toFixed(1);
+      const labelText = `${miles} Mi`;
+
+      if (slider) slider.value = meters;
+      if (sliderLabel) sliderLabel.innerText = labelText;
+
+      if (ring) {
+        const milesVal = meters / METERS_PER_MILE;
+        const pixelDiameter = Math.round(milesVal * MAP_PIXels_PER_MILE * 2);
+        ring.style.width = `${pixelDiameter}px`;
+        ring.style.height = `${pixelDiameter}px`;
+
+        if (leftBadge) leftBadge.innerText = labelText;
+        if (rightBadge) rightBadge.innerText = labelText;
+
+        const viewportMin = Math.min(window.innerWidth, window.innerHeight);
+        const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
+        targetZoomScale = Math.max(0.20, Math.min(2.5, targetScaleFactor));
+      }
+
+      refreshAllNodeVisibilities();
+      savePersistentData();
+    }
+
+    function updateRadiusFromSlider(val) {
+      updateRadius(val);
+    }
+
+    function initRadiusDragHandlers() {
+      const ring = document.getElementById('radarBoundaryRing');
+      if (!ring) return;
+
+      const handleStart = (e) => {
+        isDraggingRadius = true;
+        e.stopPropagation();
+        e.preventDefault();
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        
+        const safeScale = Math.max(0.2, currentZoomScale);
+        dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
+        dragStartRadiusMeters = userState.radius;
+      };
+
+      const handleMove = (e) => {
+        if (!isDraggingRadius) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        
+        const safeScale = Math.max(0.2, currentZoomScale);
+        const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
+
+        const deltaPx = currentDistPx - dragStartDistancePx;
+        const metersPerPx = METERS_PER_MILE / MAP_PIXels_PER_MILE;
+        
+        const newMeters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
+
+        updateRadius(newMeters);
+      };
+
+      const handleEnd = () => {
+        isDraggingRadius = false;
+      };
+
+      ring.addEventListener('mousedown', handleStart);
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+
+      ring.addEventListener('touchstart', handleStart, { passive: false });
+      window.addEventListener('touchmove', handleMove, { passive: false });
+      window.addEventListener('touchend', handleEnd);
+    }
+
+    function matchesInterestFilter(peerInterestFilter) {
+      if (!userState.interestFilter || userState.interestFilter === 'none') return true;
+      if (!peerInterestFilter || peerInterestFilter === 'none') return true;
+      return userState.interestFilter.toLowerCase() === peerInterestFilter.toLowerCase();
+    }
+
+    function refreshAllNodeVisibilities() {
+      Object.keys(globalActiveDirectory).forEach(peerId => {
+        const peer = globalActiveDirectory[peerId];
+        let peerKey = 'node-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
+        let nodeElem = document.getElementById(peerKey);
+
+        if (nodeElem) {
+          const isEnabled = peer.enabled !== false;
+          const matchesFilter = matchesInterestFilter(peer.interestFilter);
+          const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter;
+          
+          nodeElem.style.display = isEnabled ? 'block' : 'none';
+          nodeElem.style.opacity = isWithinRadius ? '1' : '0.15';
+          nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
+
+          const sonarRing = nodeElem.querySelector('.peer-sonar-ring');
+          if (sonarRing) {
+            const shouldRipple = matchesFilter && peer.accountType !== 'business';
+            sonarRing.style.display = shouldRipple ? 'block' : 'none';
+          }
+        }
+      });
+      renderGlobalUsersDirectory();
+      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+    }
+
+    function getBroadcastCoordinates() {
+      if (userState.type === 'business') { return { lat: userState.lat, lng: userState.lng }; }
+      if (!userState.lat || !userState.lng) return { lat: 27.2730, lng: -80.3582 };
+      if (!userState.fuzzLocation) return { lat: userState.lat, lng: userState.lng };
+
+      return {
+        lat: userState.lat + ((Math.random() - 0.5) * 0.005),
+        lng: userState.lng + ((Math.random() - 0.5) * 0.005)
+      };
+    }
+
+    function initGPSLocation() {
+      if (userState.type === 'personal' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          userState.lat = pos.coords.latitude;
+          userState.lng = pos.coords.longitude;
+          announcePresence();
+          showToast('GPS Location acquired!', 'navigation');
+        }, (err) => {
+          showToast('GPS unavailable. Using fallback coordinates.', 'alert-triangle');
+        }, { enableHighAccuracy: true, timeout: 10000 });
+
+        navigator.geolocation.watchPosition((pos) => {
+          userState.lat = pos.coords.latitude;
+          userState.lng = pos.coords.longitude;
+          announcePresence();
+        }, (err) => {}, { enableHighAccuracy: true });
+      }
+    }
+
+    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+      const R = 6371e3;
+      const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180, Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))));
+    }
+
+    function createBubbleRipple() {
+      if (userState.type === 'business') return;
+
+      playAudioEffect('bubble');
+      triggerHapticFeedback(50);
+      const ringContainer = document.getElementById('radiusRippleContainer');
+      const targetRing = document.getElementById('radarBoundaryRing');
+      if (!ringContainer || !targetRing) return;
+
+      const sizePx = targetRing.offsetWidth || 375;
+      const ripple = document.createElement('div');
+      
+      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-emerald-400/80 bg-emerald-400/28 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(52,211,153,0.56)] hairline-ring';
+      ripple.style.width = `${sizePx}px`;
+      ripple.style.height = `${sizePx}px`;
+
+      ringContainer.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 2200);
+    }
+
+    function initTapRippleHandler() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+
+      const triggerRipple = (e) => {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider')) {
+          return;
+        }
+        createBubbleRipple();
+      };
+
+      mapCanvas.addEventListener('click', triggerRipple);
+    }
+
+    function updateMyDisplayLabel() {
+      renderUserTopBubbleContent(false);
+    }
+
+    function renderUserTopBubbleContent(isGiggle = false) {
+      const topBubble = document.getElementById('userTopBubble');
+      if (!topBubble) return;
+
+      const hasValidActiveTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
+      
+      if (!hasValidActiveTopic && userState.type !== 'business') {
+        topBubble.classList.add('hidden');
+        return;
+      }
+
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${userState.type === 'business' ? userState.alias : 'Traveler'}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you')`;
+
+      if (userState.type === 'business') {
+        topBubble.className = "block relative z-[999999]";
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours);
+      } else {
+        topBubble.className = "relative z-[999999]";
+        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, userState.alias, onClickJs, isGiggle);
+      }
+      topBubble.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function triggerBubbleBounce(elementId) {
+      const circle = document.getElementById(elementId);
+      if (!circle) return;
+      circle.classList.remove('animate-bounce-press');
+      void circle.offsetWidth;
+      circle.classList.add('animate-bounce-press');
+    }
+
+    function refreshRadarAndSearch() {
+      createBubbleRipple();
+      triggerBubbleBounce('userAvatarCircle');
+      announcePresence();
+      showToast('Radar refreshed! Searching for chats in area.', 'radar');
+    }
+
+    const UPGRADED_PERSONAL_ICON_BG = 'radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 1) 0%, rgba(125, 211, 252, 0.9) 38%, rgba(14, 165, 233, 0.95) 75%, rgba(3, 105, 161, 1) 100%)';
+    const UPGRADED_PERSONAL_ICON_BORDER = 'border-[2px] border-white/90';
+    const UPGRADED_PERSONAL_ICON_SHADOW = 'box-shadow: 0 12px 35px rgba(14, 165, 233, 0.55), inset 0 3px 6px rgba(255, 255, 255, 0.9), inset 0 -3px 6px rgba(0, 0, 0, 0.25);';
+
+    function renderNodeIconContent(accountType, category) {
+      const isBiz = accountType === 'business';
+      if (!isBiz) {
+        return `<div class="bubble-glare"></div><i data-lucide="user" class="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
+      }
+      
+      const neonStyle = getBusinessNeonStyle(accountType, category);
+      return `<i data-lucide="${neonStyle.lucideIcon}" class="w-5 h-5 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>`;
+    }
+
+    function applyBackgroundMode(mode) {
+      userState.bgMode = mode;
+      const mapCanvas = document.getElementById('mapCanvas');
+      const gridOverlay = document.getElementById('mapGridOverlay');
+      if (!mapCanvas) return;
+
+      mapCanvas.className = `absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-${mode}`;
+      if (gridOverlay) {
+        if (mode === 'cyber' || mode === 'midnight') {
+          gridOverlay.className = 'absolute inset-0 opacity-20 map-grid-pattern-dark';
+        } else {
+          gridOverlay.className = 'absolute inset-0 opacity-20 map-grid-pattern';
+        }
+      }
+    }
+
+    function updateBackgroundStyle(mode) {
+      applyBackgroundMode(mode);
+      savePersistentData();
+      showToast(`Map background style updated to ${mode}!`, 'palette');
+    }
+
+    function applyRadarColorCSS(colorName) {
+      userState.radarColor = colorName;
+      const palette = RADAR_PALETTES[colorName] || RADAR_PALETTES.cyan;
+      const root = document.documentElement;
+      root.style.setProperty('--radar-line-color', palette.line);
+      root.style.setProperty('--radar-sweep-color', palette.sweep);
+      root.style.setProperty('--radar-bg-color', palette.bg);
+    }
+
+    function updateRadarColor(colorName) {
+      applyRadarColorCSS(colorName);
+      savePersistentData();
+      const existingRing = document.getElementById('radarBoundaryRing');
+      if (existingRing) {
+        const currentStyle = userState.radarStyle || 'futuristic';
+        existingRing.outerHTML = getRadarStyleHtml(currentStyle);
+        initRadiusDragHandlers();
+        updateRadius(userState.radius);
+      }
+      showToast(`Radar color theme updated to ${colorName}!`, 'palette');
+    }
+
+    function getRadarStyleHtml(styleType) {
+      const palette = RADAR_PALETTES[userState.radarColor || 'cyan'];
+      const initialMiles = (userState.radius / METERS_PER_MILE).toFixed(1);
+      const initialPx = Math.round((userState.radius / METERS_PER_MILE) * MAP_PIXels_PER_MILE * 2);
+
+      if (styleType === 'cyberpunk') {
+        return `
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
+            <div class="absolute inset-0 rounded-full animate-spin hairline-ring pointer-events-none" style="animation-duration: 25s; transform-origin: center center; border-style: dashed; border-color: ${palette.line};"></div>
+            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+              <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
+            </div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+          </div>
+        `;
+      } else if (styleType === 'minimal') {
+        return `
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+          </div>
+        `;
+      } else if (styleType === 'sonar') {
+        return `
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-950/30 cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
+            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+              <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
+            </div>
+            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
+            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+          </div>
+        `;
+      } else {
+        return `
+          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-2xl pointer-events-auto backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
+            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+              <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
+            </div>
+            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
+            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+          </div>
+        `;
+      }
+    }
+
+    function initUserNode() {
+      const container = document.getElementById('nodesContainer');
+      const userDiv = document.createElement('div');
+      userDiv.id = 'userAvatarNode';
+      userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[999999] cursor-pointer node-item';
+      
+      const isBiz = userState.type === 'business';
+      const neonStyle = getBusinessNeonStyle(userState.type, userState.category);
+
+      const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
+      const borderClass = isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER;
+      const shadowStyle = isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW;
+
+      userDiv.innerHTML = `
+        <div class="relative flex flex-col items-center group">
+          <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
+
+          ${getRadarStyleHtml(userState.radarStyle || 'futuristic')}
+
+          <div class="scale-compensator flex flex-col items-center relative z-[999999] pointer-events-auto">
+            <div class="node-content-stack z-[999999]">
+              <div id="userTopBubble" class="hidden z-[999999]"></div>
+            </div>
+
+            <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-emerald-400/40 blur-lg animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
+
+            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[58px] h-[58px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
+              ${renderNodeIconContent(userState.type, userState.category)}
+            </div>
+          </div>
+        </div>
+      `;
+      container.appendChild(userDiv);
+
+      renderUserTopBubbleContent(false);
+
+      const circle = document.getElementById('userAvatarCircle');
+      circle.addEventListener('mousedown', () => { handlePressStart(); });
+      circle.addEventListener('mouseup', () => clearTimeout(touchTimer));
+    }
+
+    function updateRadarStyle(styleName) {
+      userState.radarStyle = styleName;
+      savePersistentData();
+      
+      const existingRing = document.getElementById('radarBoundaryRing');
+      if (existingRing) {
+        existingRing.outerHTML = getRadarStyleHtml(styleName);
+        initRadiusDragHandlers();
+        updateRadius(userState.radius);
+      }
+      showToast(`Radar style updated to ${styleName}!`, 'radar');
+    }
+
+    function handlePressStart() {
+      touchTimer = setTimeout(() => { openProfileModal(); }, 600);
+    }
+
+    /* ============================================================ */
+    /* SUPABASE REALTIME MESH NETWORK & BROADCAST IMPLEMENTATION     */
+    /* ============================================================ */
+
+    function initSupabaseNetwork() {
+      document.getElementById('myPeerIdDisplay').value = myPeerId;
+
+      if (!supabaseConfig.url || !supabaseConfig.key) {
+        updatePeerServerStatus(false, "Supabase Offline (Configure URL & Key)");
+        setupLocalBroadcastFallback();
+        return;
+      }
+
+      try {
+        if (window.supabase) {
+          supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
+          
+          realtimeChannel = supabaseClient.channel(MESH_ROOM_KEY, {
+            config: {
+              broadcast: { self: false },
+              presence: { key: myPeerId }
+            }
+          });
+
+          realtimeChannel
+            .on('presence', { event: 'sync' }, () => {
+              const state = realtimeChannel.presenceState();
+              handleSupabasePresenceSync(state);
+            })
+            .on('broadcast', { event: 'local_mesh_broadcast' }, (data) => {
+              if (data && data.payload) {
+                handleIncomingNetworkPayload(data.payload);
+              }
+            })
+            .subscribe((status) => {
+              if (status === 'SUBSCRIBED') {
+                updatePeerServerStatus(true, "Connected to Supabase Realtime");
+                announcePresence();
+              } else {
+                updatePeerServerStatus(false, "Status: " + status);
+              }
+            });
+        } else {
+          updatePeerServerStatus(false, "Supabase JS SDK Missing");
+          setupLocalBroadcastFallback();
+        }
+      } catch(e) {
+        updatePeerServerStatus(false, "Supabase Connection Error");
+        setupLocalBroadcastFallback();
+      }
+
+      setupLocalBroadcastFallback();
+    }
+
+    function reconnectSupabase() {
+      if (realtimeChannel) {
+        realtimeChannel.unsubscribe();
+      }
+      initSupabaseNetwork();
+    }
+
+    function setupLocalBroadcastFallback() {
+      if ('BroadcastChannel' in window && !broadcastChannel) {
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v29');
+        broadcastChannel.onmessage = (event) => {
+          handleIncomingNetworkPayload(event.data);
+        };
+      }
+
+      window.addEventListener('storage', (event) => {
+        if (event.key === STORAGE_BEACON_KEY && event.newValue) {
+          try {
+            handleIncomingNetworkPayload(JSON.parse(event.newValue));
+          } catch(e) {}
+        }
+      });
+    }
+
+    function handleSupabasePresenceSync(state) {
+      Object.keys(state).forEach(key => {
+        const presenceList = state[key];
+        if (presenceList && presenceList.length > 0) {
+          const peerData = presenceList[0];
+          if (peerData && peerData.peerId && peerData.peerId !== myPeerId) {
+            handleIncomingNetworkPayload(peerData);
+          }
+        }
+      });
+    }
+
+    function updatePeerServerStatus(connected, customStatusText) {
+      const textElem = document.getElementById('peerServerStatusText');
+      const dot = document.getElementById('peerServerDot');
+      if (connected) {
+        textElem.innerText = customStatusText || 'Connected to Supabase Realtime Network';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-ping';
+      } else {
+        textElem.innerText = customStatusText || 'Local Broadcast Fallback Active';
+        dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+      }
+    }
+
+    function handleIncomingNetworkPayload(data) {
+      if (!data || data.peerId === myPeerId || (data.id && processedMsgIds.has(data.id))) return;
+      if (data.id) processedMsgIds.add(data.id);
+
+      const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
+
+      if (!globalActiveDirectory[data.peerId]) {
+        globalActiveDirectory[data.peerId] = { enabled: true };
+      }
+
+      const calculatedHours = (data.accountType === 'business' && data.openTime && data.closeTime) 
+        ? computeBusinessHoursStatus(data.openTime, data.closeTime) 
+        : (data.hours || 'Open 9:00 AM • Closes 9:00 PM');
+
+      globalActiveDirectory[data.peerId] = {
+        ...globalActiveDirectory[data.peerId],
+        rawSender: data.sender,
+        peerId: data.peerId,
+        lat: data.lat,
+        lng: data.lng,
+        distance: distance,
+        bubbleColor: data.bubbleColor || 'violet',
+        accountType: data.accountType || 'personal',
+        category: data.category || 'store',
+        openTime: data.openTime || '09:00',
+        closeTime: data.closeTime || '21:00',
+        hours: calculatedHours,
+        interestFilter: data.interestFilter || 'none',
+        lastSeen: Date.now(),
+        question: data.text || data.question,
+        createdAt: data.createdAt
+      };
+
+      updateMeshUI();
+      renderGlobalUsersDirectory();
+      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+
+      let distanceFormatted = distance >= 1000 
+        ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
+        : Math.max(distance, 10) + 'm';
+
+      if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
+        updatePeerNodeOnMap(
+          data.sender, distance, distanceFormatted, data.lat, data.lng, 
+          data.text || data.question, data.createdAt, data.peerId, 
+          data.bubbleColor, data.accountType, data.category, calculatedHours, data.interestFilter, false
+        );
+      } else if (data.type === 'CHAT_MSG') {
+        const targetRoomId = data.roomId;
+        if (!targetRoomId) return;
+        const timeStr = data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
+        const senderLabel = data.accountType === 'business' ? data.sender : (data.sender || 'Traveler');
+        chatRoomsSessions[targetRoomId].push({ sender: senderLabel, text: data.text, time: timeStr, isMe: false });
+        
+        roomLastActivity[targetRoomId] = Date.now();
+        savePersistentData();
+        
+        playAudioEffect('bell');
+        triggerHapticFeedback([100, 50, 100, 50, 100]);
+        showToast(`New reply in chat bubble from ${senderLabel}!`, 'bell');
+
+        if (currentActiveChatRoomId === targetRoomId) appendMessage(senderLabel, data.text, timeStr, false);
+      } else if (data.type === 'DELETE_ROOM') {
+        const targetRoomId = data.roomId;
+        if (targetRoomId) {
+          delete chatRoomsSessions[targetRoomId];
+          delete roomLastActivity[targetRoomId];
+          savePersistentData();
+          if (currentActiveChatRoomId === targetRoomId) {
+            closeChatDrawer();
+            showToast('The owner deleted this chat room.', 'trash-2');
+          }
+        }
+      }
+    }
+
+    function spawnDefaultSimulatedUsers() {
+      const sampleUsers = [
+        { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
+        { name: 'Bot 0.5-Mile Pickleball Fan', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-06mi', targetMiles: 0.6, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
+        { name: '0.7-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 0.7, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
+        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 0.5, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+      ];
+
+      sampleUsers.forEach((u, i) => {
+        const distMeters = u.targetMiles * METERS_PER_MILE;
+        const angleRad = u.angleDeg * (Math.PI / 180);
+        
+        const latOffset = (Math.sin(angleRad) * distMeters) / 111320;
+        const lngOffset = (Math.cos(angleRad) * distMeters) / (111320 * Math.cos(userState.lat * Math.PI / 180));
+
+        const lat = userState.lat + latOffset;
+        const lng = userState.lng + lngOffset;
+        const dist = calculateHaversineDistance(userState.lat, userState.lng, lat, lng);
+        
+        if (!globalActiveDirectory[u.peerId]) {
+          globalActiveDirectory[u.peerId] = { enabled: true };
+        }
+
+        const computedHours = u.accountType === 'business' ? computeBusinessHoursStatus(u.openTime, u.closeTime) : u.hours;
+
+        globalActiveDirectory[u.peerId] = {
+          ...globalActiveDirectory[u.peerId],
+          rawSender: u.name,
+          peerId: u.peerId,
+          lat,
+          lng,
+          distance: dist,
+          bubbleColor: u.color,
+          accountType: u.accountType,
+          category: u.category,
+          openTime: u.openTime,
+          closeTime: u.closeTime,
+          hours: computedHours,
+          interestFilter: u.interestFilter,
+          lastSeen: Date.now(),
+          question: u.question,
+          createdAt: Date.now() - (i * 300000)
+        };
+
+        updatePeerNodeOnMap(u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true);
+      });
+      if (typeof renderGlobalUsersDirectory === 'function') {
+        renderGlobalUsersDirectory();
+      }
+      if (currentLayoutMode === 'right' && typeof renderRightSidebarBubbles === 'function') {
+        renderRightSidebarBubbles();
+      }
+    }
+
+    function renderGlobalUsersDirectory() {
+      const container = document.getElementById('globalUsersDirectory');
+      if (!container) return;
+      const peerIds = Object.keys(globalActiveDirectory);
+      const activeCountElem = document.getElementById('modalActiveCount');
+      if (activeCountElem) activeCountElem.innerText = peerIds.length + 1;
+
+      if (peerIds.length === 0) {
+        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No other peers discovered yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      peerIds.forEach(peerId => {
+        const peer = globalActiveDirectory[peerId];
+        const matchesFilter = matchesInterestFilter(peer.interestFilter);
+        const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter;
+        const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
+        const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
+        const isBiz = peer.accountType === 'business';
+        const isEnabled = peer.enabled !== false;
+        const displayLabel = peer.rawSender;
+
+        const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
+        const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
+
+        container.innerHTML += `
+          <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+                ${renderNodeIconContent(peer.accountType, peer.category)}
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <h4 class="font-bold text-slate-900 text-xs">${peer.rawSender} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
+                </div>
+                <p class="text-[10px] text-emerald-900 font-semibold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
+                ${isBiz && peer.hours ? `<div class="mt-0.5 flex items-center justify-between"><span class="text-[9px] text-slate-400">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${peer.hours}</span></div>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="relative inline-flex items-center cursor-pointer" title="Turn off individual bot">
+                <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleIndividualBot('${peerId}', this.checked)" class="sr-only peer">
+                <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+              <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
+            </div>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function renderRightSidebarBubbles() {
+      const container = document.getElementById('rightSidebarBubblesContainer');
+      if (!container) return;
+      const peerIds = Object.keys(globalActiveDirectory);
+      
+      let validBubbles = [];
+      
+      const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
+      if (userState.type === 'business' || hasSelfTopic) {
+        validBubbles.push({
+          name: userState.type === 'business' ? userState.alias : 'You',
+          question: hasSelfTopic ? activeTopicState.text : '',
+          bubbleColor: userState.bubbleColor,
+          peerId: 'you',
+          roomId: 'room-you',
+          accountType: userState.type,
+          category: userState.category,
+          hours: userState.hours
+        });
+      }
+
+      peerIds.forEach(pId => {
+        const p = globalActiveDirectory[pId];
+        const hasValidQuestion = p.question && p.createdAt && (Date.now() - p.createdAt < ONE_HOUR_MS);
+        if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
+          const matches = matchesInterestFilter(p.interestFilter);
+          const inRadius = userState.radius === 0 || p.distance <= userState.radius;
+          if (matches && inRadius) {
+            validBubbles.push({
+              name: p.rawSender,
+              question: hasValidQuestion ? p.question : '',
+              bubbleColor: p.bubbleColor,
+              peerId: p.peerId,
+              roomId: 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-'),
+              accountType: p.accountType,
+              category: p.category,
+              hours: p.hours
+            });
+          }
+        }
+      });
+
+      const countElem = document.getElementById('rightSidebarCount');
+      if (countElem) countElem.innerText = validBubbles.length;
+
+      if (validBubbles.length === 0) {
+        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No active chat bubbles in range.</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      validBubbles.forEach(b => {
+        const isBiz = b.accountType === 'business';
+        const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
+        const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
+
+        if (isBiz) {
+          container.innerHTML += `
+            <div onclick="playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="dark-biz-bubble p-3.5 rounded-2xl shadow-xl hover:scale-[1.02] transition-all cursor-pointer flex flex-col gap-2">
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-full flex-shrink-0 bubble-node flex items-center justify-center shadow-md overflow-hidden ${neonStyle.borderClass}" style="background: ${circleBg}; ${neonStyle.shadowStyle}; border-radius: 50%;">
+                  <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-bold ${neonStyle.glowText} block truncate mb-0.5">${b.name}</span>
+                  ${b.question ? `<p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${b.question}</p>` : ''}
+                </div>
+              </div>
+              ${b.hours ? `
+                <div class="pt-1.5 mt-0.5 border-t border-white/10 flex items-center justify-between">
+                  <span class="text-[10px] text-slate-400 font-medium">Open</span>
+                  <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${b.hours}</span>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        } else {
+          container.innerHTML += `
+            <div onclick="playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-white/90 shadow-lg hover:bg-white transition-all cursor-pointer flex flex-col gap-2">
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-full flex-shrink-0 bubble-node flex items-center justify-center shadow-md overflow-hidden ${UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+                  <div class="bubble-glare"></div>
+                  <i data-lucide="user" class="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-bold text-slate-900 block truncate mb-0.5">${b.name}</span>
+                  ${b.question ? `
+                    <div class="px-3 py-1.5 rounded-xl bg-white/90 backdrop-blur-md text-xs font-semibold text-slate-900 shadow-md border-[2px] border-amber-400 flex items-center gap-1.5 mt-1">
+                      <i data-lucide="message-circle" class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" stroke-width="2.5"></i>
+                      <span class="truncate">${b.question}</span>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      });
+      lucide.createIcons();
+    }
+
+    function toggleIndividualBot(peerId, enabled) {
+      if (globalActiveDirectory[peerId]) {
+        globalActiveDirectory[peerId].enabled = enabled;
+      }
+      playAudioEffect('click');
+      refreshAllNodeVisibilities();
+      renderGlobalUsersDirectory();
+      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+      showToast(enabled ? 'Bot enabled' : 'Bot turned off', 'bot');
+    }
+
+    function copyMyPeerId() {
+      navigator.clipboard.writeText(document.getElementById('myPeerIdDisplay').value);
+      showToast('Node ID copied!', 'copy');
+    }
+
+    function announcePresence() {
+      if (userState.ghostMode && userState.type !== 'business') return;
+      const coords = getBroadcastCoordinates();
+      
+      const payload = {
+        id: 'ping-' + Math.random().toString(36).substring(2, 9),
+        type: 'PEER_PRESENCE',
+        sender: userState.alias,
+        bubbleColor: userState.bubbleColor,
+        peerId: myPeerId,
+        lat: coords.lat,
+        lng: coords.lng,
+        accountType: userState.type,
+        category: userState.category,
+        openTime: userState.openTime,
+        closeTime: userState.closeTime,
+        hours: userState.hours,
+        interestFilter: userState.interestFilter,
+        question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) ? activeTopicState.text : null,
+        createdAt: activeTopicState.createdAt,
+        makeNamePublic: userState.makeNamePublic
+      };
+
+      if (realtimeChannel) {
+        realtimeChannel.track(payload);
+      }
+      broadcastData(payload);
+    }
+
+    function broadcastData(payload) {
+      if (userState.ghostMode && userState.type !== 'business') return;
+      const coords = getBroadcastCoordinates();
+      payload.lat = payload.lat || coords.lat; 
+      payload.lng = payload.lng || coords.lng;
+      payload.sender = payload.sender || userState.alias; 
+      payload.peerId = payload.peerId || myPeerId;
+      payload.bubbleColor = payload.bubbleColor || userState.bubbleColor; 
+      payload.accountType = userState.type;
+      payload.category = userState.category; 
+      payload.openTime = userState.openTime;
+      payload.closeTime = userState.closeTime;
+      payload.hours = userState.hours;
+      payload.interestFilter = userState.interestFilter;
+      payload.makeNamePublic = userState.makeNamePublic;
+
+      if (realtimeChannel) {
+        realtimeChannel.send({
+          type: 'broadcast',
+          event: 'local_mesh_broadcast',
+          payload: payload
+        });
+      }
+
+      if (broadcastChannel) {
+        try { broadcastChannel.postMessage(payload); } catch(e) {}
+      }
+
+      try {
+        localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload));
+      } catch(e) {}
+    }
+
+    function updatePeerNodeOnMap(rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, hours, interestFilter, isBot) {
+      const container = document.getElementById('nodesContainer');
+      let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
+      let nodeElem = document.getElementById(peerKey);
+
+      const milesFromCenter = distance / METERS_PER_MILE;
+      let pixelDistanceFromCenter = milesFromCenter * MAP_PIXels_PER_MILE;
+
+      let hash = 0;
+      for (let i = 0; i < peerId.length; i++) {
+        hash = ((hash << 5) - hash) + peerId.charCodeAt(i);
+        hash |= 0;
+      }
+      let angleRad = (Math.abs(hash) % 360) * (Math.PI / 180);
+
+      const mapCanvasWidth = 5625;
+      let leftPercent = 50 + ((Math.cos(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
+      let topPercent = 50 + ((Math.sin(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
+
+      if (!nodeElem) {
+        nodeElem = document.createElement('div');
+        nodeElem.id = peerKey;
+        nodeElem.className = `absolute z-50 cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item ${isBot ? 'bot-node-elem' : ''}`;
+        container.appendChild(nodeElem);
+      }
+
+      nodeElem.style.left = `${leftPercent}%`;
+      nodeElem.style.top = `${topPercent}%`;
+
+      const peerRecord = globalActiveDirectory[peerId] || {};
+      const isEnabled = peerRecord.enabled !== false;
+      const matchesFilter = matchesInterestFilter(interestFilter);
+      const isWithinRadius = (userState.radius === 0 || distance <= userState.radius) && matchesFilter;
+      
+      let opacityVal = 1;
+      if (!matchesFilter) {
+        opacityVal = 0.05;
+      } else if (distance > userState.radius) {
+        const excess = distance - userState.radius;
+        opacityVal = Math.max(0.05, 1 - (excess / (userState.radius * 0.75)));
+      }
+
+      nodeElem.style.display = isEnabled ? 'block' : 'none';
+      nodeElem.style.opacity = isWithinRadius ? '1' : opacityVal.toString();
+      nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
+      
+      const isBiz = accountType === 'business';
+      const neonStyle = getBusinessNeonStyle(accountType, category);
+      const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
+      
+      let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
+      let roomId = 'room-peer-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
+      
+      const showSonarRipple = matchesFilter && !isBiz;
+      const chatRoomName = isBiz ? rawSender : 'Traveler';
+
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')`;
+
+      nodeElem.innerHTML = `
+        <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto">
+          <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'}; border-width: 1px;"></div>
+          
+          <div class="node-content-stack">
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs, hours) : ''}
+          </div>
+
+          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-50 pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+            ${renderNodeIconContent(accountType, category)}
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function checkChatExpiryLoop() {
+      setInterval(() => {
+        if (activeTopicState.createdAt) {
+          const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
+          if (remainingMs <= 0) {
+            activeTopicState.text = null; 
+            activeTopicState.createdAt = null;
+            renderUserTopBubbleContent();
+            savePersistentData();
+          } else {
+            const badge = document.getElementById('topicExpiryBadge');
+            if (badge) badge.innerText = `Visible for ${Math.floor(remainingMs / 60000)}m`;
+          }
+        }
+
+        if (currentActiveChatRoomId) {
+          const lastActivity = roomLastActivity[currentActiveChatRoomId] || Date.now();
+          const elapsed = Date.now() - lastActivity;
+          const remaining24h = TWENTY_FOUR_HOURS_MS - elapsed;
+          const countdownElem = document.getElementById('chatExpiryCountdown');
+
+          if (countdownElem) {
+            if (remaining24h <= 0) {
+              countdownElem.innerText = "Expired (Deleting room...)";
+              delete chatRoomsSessions[currentActiveChatRoomId];
+              delete roomLastActivity[currentActiveChatRoomId];
+              savePersistentData();
+              closeChatDrawer();
+              showToast('Chat expired due to 24h inactivity', 'clock');
+            } else {
+              const hours = Math.floor(remaining24h / (1000 * 60 * 60));
+              const mins = Math.floor((remaining24h % (1000 * 60 * 60)) / (1000 * 60));
+              countdownElem.innerText = `${hours}h ${mins < 10 ? '0' : ''}${mins}m`;
+            }
+          }
+        }
+      }, 1000);
+    }
+
+    function selectAccountType(type, skipSave = false) {
+      userState.type = type;
+      document.getElementById('personalTypeBtn').className = type === 'personal' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
+      document.getElementById('businessTypeBtn').className = type === 'business' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
+      document.getElementById('businessFields').classList.toggle('hidden', type !== 'business');
+      if (!skipSave) savePersistentData();
+    }
+
+    function saveProfile() {
+      userState.alias = document.getElementById('avatarNameInput').value.trim() || 'Traveler';
+      userState.category = document.getElementById('businessCategorySelect').value;
+      userState.openTime = document.getElementById('businessOpenTimeInput').value;
+      userState.closeTime = document.getElementById('businessCloseTimeInput').value;
+      userState.hours = computeBusinessHoursStatus(userState.openTime, userState.closeTime);
+      userState.interestFilter = document.getElementById('userInterestFilterSelect').value;
+      userState.radarStyle = document.getElementById('radarStyleSelect').value;
+      userState.radarColor = document.getElementById('radarColorSelect').value;
+      userState.bgMode = document.getElementById('bgModeSelect').value;
+      userState.ghostMode = document.getElementById('privacyGhostMode').checked;
+      userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
+      userState.makeNamePublic = document.getElementById('privacyMakeNamePublic').checked;
+      if (userState.type === 'business') userState.address = document.getElementById('businessAddressInput').value.trim();
+
+      updateMyDisplayLabel();
+      savePersistentData();
+      announcePresence();
+      closeProfileModal();
+      location.reload();
+    }
+
+    function updateMeshUI() {
+      const countElem = document.getElementById('activeUserCount');
+      if (countElem) {
+        countElem.innerText = `${Object.keys(globalActiveDirectory).length + 1} Active Peer`;
+      }
+    }
+
+    function quickPostFromDock() {
+      const input = document.getElementById('quickPostInput');
+      const text = input ? input.value.trim() : '';
+      if (!text) return;
+      
+      chatRoomsSessions = {};
+      roomLastActivity = {};
+      closeChatDrawer();
+
+      activeTopicState.text = text; 
+      activeTopicState.createdAt = Date.now();
+      
+      renderUserTopBubbleContent(true);
+      document.getElementById('mainTopicText').innerText = text;
+
+      const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
+      processedMsgIds.add(msgId);
+      const coords = getBroadcastCoordinates();
+      broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime, hours: userState.hours, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
+      
+      input.value = '';
+      showToast('New chat posted! Previous chats cleared.', 'check-circle');
+      playAudioEffect('bell');
+      savePersistentData();
+
+      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+    }
+
+    function autoResizeTextArea(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; }
+
+    function handleDockFocus(e) {
+      if (e) e.stopPropagation();
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+    }
+
+    function handleDockBlur(e) {
+      if (e) e.stopPropagation();
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+      }, 50);
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input ? input.value.trim() : '';
+      
+      if (!currentActiveChatRoomId) {
+        currentActiveChatRoomId = 'room-you';
+      }
+      
+      if (!text) return;
+
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      appendMessage('You', text, timeStr, true);
+
+      if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
+      chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'You', text, time: timeStr, isMe: true });
+      
+      roomLastActivity[currentActiveChatRoomId] = Date.now();
+      savePersistentData();
+
+      input.value = ''; 
+      input.style.height = '26px';
+
+      if (currentActiveChatRoomId === 'room-peer-sim-peer-tutorial-bot') {
+        setTimeout(() => {
+          let botReply = "Welcome to LocaL! Tap your bubble anytime to edit your post or review details.";
+          const botTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          appendMessage('LocaL Guide', botReply, botTimeStr, false);
+          chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'LocaL Guide', text: botReply, time: botTimeStr, isMe: false });
+          roomLastActivity[currentActiveChatRoomId] = Date.now();
+          savePersistentData();
+          playAudioEffect('bell');
+        }, 800);
+      }
+
+      const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
+      processedMsgIds.add(msgId);
+      
+      broadcastData({ 
+        id: msgId, 
+        type: 'CHAT_MSG', 
+        sender: userState.alias, 
+        roomId: currentActiveChatRoomId, 
+        text,
+        time: timeStr,
+        accountType: userState.type 
+      });
+    }
+
     function appendMessage(sender, text, time, isMe) {
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
+      
       msgBox.innerHTML += `
-        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} w-full">
+        <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full">
           <div class="flex items-center gap-1.5 px-1.5 mb-0.5">
             <span class="text-[10px] text-slate-700 font-bold">${sender}</span>
-            <span class="text-[9px] text-slate-500">${time || ''}</span>
+            <span class="text-[9px] text-slate-500 font-medium">${time || ''}</span>
           </div>
-          <div class="px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${isMe ? 'bg-sky-600 text-white rounded-br-none' : 'bg-white/80 text-slate-900 rounded-bl-none border'}">${text}</div>
+          <div class="px-4 py-2.5 rounded-2xl text-xs max-w-[85%] font-light leading-relaxed shadow-md ${isMe ? 'bg-emerald-600 text-white rounded-br-none shadow-emerald-500/20' : 'glass-card bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none border border-white/90 shadow-sm'}">${text.replace(/\n/g, '<br>')}</div>
         </div>
       `;
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
-    function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
-    function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
-    function autoResizeTextArea(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; }
-    function handleDockFocus(e) { e.stopPropagation(); }
-    function handleDockBlur(e) { e.stopPropagation(); }
-    function quickPostFromDock() {
-      const input = document.getElementById('quickPostInput');
-      if (input.value.trim()) {
-        sendSupabaseChatMessage();
-        input.value = '';
+    function openChatDrawer(roomId, roomName, topic, peerId, isRestoring = false) {
+      currentActiveChatRoomId = roomId;
+      
+      if (!roomLastActivity[roomId]) {
+        roomLastActivity[roomId] = Date.now();
+      }
+      savePersistentData();
+      
+      document.getElementById('chatTargetName').innerText = roomName;
+      
+      const isSelf = roomId === 'room-you';
+      const isBiz = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business');
+      const accountType = isSelf ? userState.type : globalActiveDirectory[peerId]?.accountType;
+      const category = isSelf ? userState.category : globalActiveDirectory[peerId]?.category;
+      
+      const isOwner = isSelf || (peerId === 'you');
+      const deleteBtn = document.getElementById('ownerDeleteRoomBtn');
+      if (deleteBtn) {
+        if (isOwner) {
+          deleteBtn.classList.remove('hidden');
+        } else {
+          deleteBtn.classList.add('hidden');
+        }
+      }
+
+      const neonStyle = getBusinessNeonStyle(accountType, category);
+      const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
+
+      const avatarEl = document.getElementById('chatTargetAvatar');
+      avatarEl.className = `w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
+      avatarEl.style.background = circleBg;
+      if (isBiz) {
+        avatarEl.style.cssText += neonStyle.shadowStyle;
+      }
+      avatarEl.innerHTML = renderNodeIconContent(accountType, category);
+
+      if ((topic || (isSelf && activeTopicState.text)) && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
+        document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
+        document.getElementById('mainTopicContainer').classList.remove('hidden');
+      } else {
+        document.getElementById('mainTopicContainer').classList.add('hidden');
+      }
+
+      const msgBox = document.getElementById('chatMessages');
+      msgBox.innerHTML = '';
+      if (chatRoomsSessions[roomId]) {
+        chatRoomsSessions[roomId].forEach(msg => { appendMessage(msg.sender, msg.text, msg.time, msg.isMe); });
+      }
+
+      const actionDock = document.getElementById('actionDockContainer');
+      if (actionDock) actionDock.classList.add('hidden');
+
+      document.getElementById('chatDrawer').classList.remove('hidden');
+      document.getElementById('chatBackdrop').classList.remove('hidden');
+    }
+
+    function ownerDeleteEntireChatRoom() {
+      if (!currentActiveChatRoomId) return;
+      if (confirm("Are you sure you want to delete this entire chat room for all participants?")) {
+        delete chatRoomsSessions[currentActiveChatRoomId];
+        delete roomLastActivity[currentActiveChatRoomId];
+        
+        if (currentActiveChatRoomId === 'room-you') {
+          activeTopicState.text = null;
+          activeTopicState.createdAt = null;
+          renderUserTopBubbleContent();
+        }
+
+        savePersistentData();
+        
+        broadcastData({
+          id: 'del-' + Math.random().toString(36).substring(2, 9),
+          type: 'DELETE_ROOM',
+          roomId: currentActiveChatRoomId
+        });
+
+        closeChatDrawer();
+        showToast('Chat room deleted successfully.', 'trash-2');
+        playAudioEffect('chime');
       }
     }
-    function selectAccountType(type) {
-      userState.type = type;
-      document.getElementById('businessFields').classList.toggle('hidden', type !== 'business');
+
+    function closeChatDrawer() {
+      document.getElementById('chatDrawer').classList.add('hidden');
+      document.getElementById('chatBackdrop').classList.add('hidden');
+      
+      const actionDock = document.getElementById('actionDockContainer');
+      if (actionDock) actionDock.classList.remove('hidden');
+
+      currentActiveChatRoomId = null;
+      savePersistentData();
     }
-    function updateBackgroundStyle(mode) { 
-      document.getElementById('mapCanvas').className = `absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-${mode}`; 
+
+    function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
+    function closeProfileModal() { 
+      const modal = document.getElementById('profileModal');
+      if (modal) modal.classList.add('hidden'); 
     }
-    function updateRadarStyle() {}
-    function updateRadarColor() {}
-    function setLayoutMode(mode) { currentLayoutMode = mode; }
+    function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
+    function recalculateNodePositions() {}
   </script>
 </body>
 </html>
