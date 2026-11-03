@@ -340,14 +340,14 @@
     </div>
   </div>
 
-  <!-- THEMED WELCOME / SIGN-IN WALL MODAL -->
+  <!-- THEMED WELCOME / SIGN-IN WALL MODAL (Only shown if no profile exists) -->
   <div id="welcomeProfileModal" class="hidden fixed inset-0 z-[99999999] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4 pointer-events-auto">
     <div class="dark-biz-bubble w-full max-w-sm rounded-[32px] p-6 border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] max-h-[90vh] overflow-y-auto pointer-events-auto relative z-[99999999]">
       
       <div class="text-center mb-5">
         <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white font-bold text-2xl mx-auto mb-2 shadow-[0_0_20px_rgba(52,211,153,0.5)]">L</div>
         <h3 class="text-xl font-extrabold text-white tracking-tight">Welcome to LocaL</h3>
-        <p class="text-xs text-slate-400 mt-1">Sign in or switch accounts to explore the proximity network.</p>
+        <p class="text-xs text-slate-400 mt-1">Set up your profile once to get started.</p>
       </div>
       
       <div class="space-y-4">
@@ -485,11 +485,11 @@
     </div>
   </div>
 
-  <!-- Profile Customization & Auth Modal -->
+  <!-- Profile Customization & Auth Modal (Includes Alias/Store Name Setting) -->
   <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Create & Edit Profile</h3>
+        <h3 class="text-lg font-bold text-slate-900 tracking-tight">Profile Settings</h3>
         <button onclick="playAudioEffect('click'); closeProfileModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
@@ -519,7 +519,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1">Display Alias / Store Name</label>
-          <input type="text" id="avatarNameInput" value="Traveler" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <input type="text" id="avatarNameInput" placeholder="Enter your alias or store name..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
         </div>
 
         <div>
@@ -694,7 +694,7 @@
     const METERS_PER_MILE = 1609.34;
     const MIN_RADIUS_METERS = 1609.34;
     const MAX_RADIUS_METERS = 48280.3;
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v21';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v22';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
     const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v21';
     const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v21';
@@ -980,12 +980,12 @@
         
         if (session && session.user) {
           currentAuthUser = session.user;
-          userState.profileCreated = true;
           await fetchUserProfile(session.user.id);
         }
       }
 
-      if (!userState.profileCreated || !currentAuthUser) {
+      // Check if profile has already been successfully created & saved
+      if (!userState.profileCreated || !userState.alias) {
         document.getElementById('welcomeProfileModal').classList.remove('hidden');
       } else {
         initializeAppSession();
@@ -1068,9 +1068,7 @@
             });
           }
         }
-      } catch(e) {
-        // Fallback locally
-      }
+      } catch(e) {}
 
       userState.alias = alias;
       userState.type = window._welcomeType || 'personal';
@@ -1090,7 +1088,7 @@
       savePersistentData();
       document.getElementById('welcomeProfileModal').classList.add('hidden');
       initializeAppSession();
-      showToast('Successfully logged in & connected to map!', 'check-circle');
+      showToast('Successfully logged in & connected!', 'check-circle');
     }
 
     function initializeAppSession() {
@@ -1121,7 +1119,7 @@
       initDoubleTapHandler();
       startSmoothAnimationLoop();
 
-      document.getElementById('avatarNameInput').value = userState.alias;
+      document.getElementById('avatarNameInput').value = userState.alias || '';
       document.getElementById('businessAddressInput').value = userState.address || '';
       document.getElementById('businessOpenTimeInput').value = userState.openTime || '09:00';
       document.getElementById('businessCloseTimeInput').value = userState.closeTime || '21:00';
@@ -1503,20 +1501,22 @@
     }
 
     function initGPSLocation() {
-      if (userState.type === 'personal' && navigator.geolocation) {
+      if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
           userState.lat = pos.coords.latitude;
           userState.lng = pos.coords.longitude;
           announcePresence();
+          refreshAllPeerDistancesAndPositions();
           showToast('GPS Location acquired!', 'navigation');
         }, (err) => {
-          showToast('GPS unavailable. Using fallback coordinates.', 'alert-triangle');
+          showToast('GPS unavailable. Using default coordinates.', 'alert-triangle');
         }, { enableHighAccuracy: true, timeout: 10000 });
 
         navigator.geolocation.watchPosition((pos) => {
           userState.lat = pos.coords.latitude;
           userState.lng = pos.coords.longitude;
           announcePresence();
+          refreshAllPeerDistancesAndPositions();
         }, (err) => {}, { enableHighAccuracy: true });
       }
     }
@@ -1528,6 +1528,30 @@
       const Δφ = (lat2 - lat1) * Math.PI / 180, Δλ = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
       return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))));
+    }
+
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+      let brng = Math.atan2(y, x) * 180 / Math.PI;
+      return (brng + 360) % 360;
+    }
+
+    function refreshAllPeerDistancesAndPositions() {
+      Object.keys(globalActiveDirectory).forEach(peerId => {
+        const peer = globalActiveDirectory[peerId];
+        if (peer.lat && peer.lng) {
+          peer.distance = calculateHaversineDistance(userState.lat, userState.lng, peer.lat, peer.lng);
+          updatePeerNodeOnMap(
+            peer.rawSender, peer.distance, peer.distance + 'm', peer.lat, peer.lng, 
+            peer.question, peer.createdAt, peer.peerId, peer.bubbleColor, 
+            peer.accountType, peer.category, peer.hours, peer.interestFilter, peer.isBot
+          );
+        }
+      });
+      refreshAllNodeVisibilities();
     }
 
     function createBubbleRipple() {
@@ -1938,8 +1962,10 @@
         userState.type = data.account_type || userState.type;
         userState.category = data.category || userState.category;
         userState.interestFilter = data.interest_filter || userState.interestFilter;
+        userState.profileCreated = true;
         document.getElementById('avatarNameInput').value = userState.alias;
         updateMyDisplayLabel();
+        savePersistentData();
       }
     }
 
@@ -2039,43 +2065,36 @@
       renderGlobalUsersDirectory();
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
 
-      let distanceFormatted = distance >= 1000 
-        ? (distance / METERS_PER_MILE).toFixed(1) + 'mi' 
-        : Math.max(distance, 10) + 'm';
-
       if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
         updatePeerNodeOnMap(
-          data.sender, distance, distanceFormatted, data.lat, data.lng, 
+          data.sender, distance, distance + 'm', data.lat, data.lng, 
           data.text || data.question, data.createdAt, data.peerId, 
           data.bubbleColor, data.accountType, data.category, calculatedHours, data.interestFilter, false
         );
       } else if (data.type === 'DELETE_ROOM') {
         const targetRoomId = data.roomId;
-        if (targetRoomId) {
-          if (currentActiveChatRoomId === targetRoomId) {
-            closeChatDrawer();
-            showToast('The owner deleted this chat room.', 'trash-2');
-          }
+        if (targetRoomId && currentActiveChatRoomId === targetRoomId) {
+          closeChatDrawer();
+          showToast('The owner deleted this chat room.', 'trash-2');
         }
       }
     }
 
     function spawnDefaultSimulatedUsers() {
+      // Sample peers placed at actual GPS-calculated distances around user current coordinates
       const sampleUsers = [
-        { name: 'LocaL Guide (Tutorial Bot)', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
-        { name: 'Bot 0.5-Mile Pickleball Fan', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament anyone?', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Fine Dining', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, angleDeg: 220, question: 'Fine dining & wood-fired pizza!\nOpen patio seating available.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Bella Vista Trattoria', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Authentic Italian pasta & fresh seafood specials!', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'The Velvet Lounge', peerId: 'sim-peer-lounge-06mi', targetMiles: 0.6, angleDeg: 180, question: 'Signature craft cocktails, martinis & live DJ sets tonight!', color: 'pink', accountType: 'business', category: 'glass-water', openTime: '16:00', closeTime: '02:00', hours: 'Open 4:00 PM • Closes 2:00 AM', interestFilter: 'Food', isBot: true },
-        { name: '0.7-Mile Trail Hiking Club', peerId: 'sim-peer-business-1', targetMiles: 0.7, angleDeg: 285, question: 'Trail meetup this weekend!', color: 'yellow', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Hiking', isBot: true },
-        { name: 'Bot_CarEnthusiast', peerId: 'sim-peer-bot-buddy', targetMiles: 0.5, angleDeg: 15, question: 'Cars & coffee tomorrow morning.', color: 'violet', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Cars', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, angleDeg: 170, question: 'Licensed compounding rx\nPrescriptions ready for pickup.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
+        { name: 'Pickleball Club', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, angleDeg: 220, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, angleDeg: 170, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
         const distMeters = u.targetMiles * METERS_PER_MILE;
         const angleRad = u.angleDeg * (Math.PI / 180);
         
+        // Exact GPS offset calculation: 1 degree latitude approx 111,320 meters
         const latOffset = (Math.sin(angleRad) * distMeters) / 111320;
         const lngOffset = (Math.cos(angleRad) * distMeters) / (111320 * Math.cos(userState.lat * Math.PI / 180));
 
@@ -2105,17 +2124,15 @@
           interestFilter: u.interestFilter,
           lastSeen: Date.now(),
           question: u.question,
-          createdAt: Date.now() - (i * 300000)
+          createdAt: Date.now() - (i * 300000),
+          isBot: true
         };
 
-        updatePeerNodeOnMap(u.name, dist, (dist / METERS_PER_MILE).toFixed(1) + 'mi', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true);
+        updatePeerNodeOnMap(u.name, dist, dist + 'm', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true);
       });
-      if (typeof renderGlobalUsersDirectory === 'function') {
-        renderGlobalUsersDirectory();
-      }
-      if (currentLayoutMode === 'right' && typeof renderRightSidebarBubbles === 'function') {
-        renderRightSidebarBubbles();
-      }
+
+      renderGlobalUsersDirectory();
+      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
     }
 
     function renderGlobalUsersDirectory() {
@@ -2355,19 +2372,15 @@
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
-      const milesFromCenter = distance / METERS_PER_MILE;
-      let pixelDistanceFromCenter = milesFromCenter * MAP_PIXels_PER_MILE;
-
-      let hash = 0;
-      for (let i = 0; i < peerId.length; i++) {
-        hash = ((hash << 5) - hash) + peerId.charCodeAt(i);
-        hash |= 0;
-      }
-      let angleRad = (Math.abs(hash) % 360) * (Math.PI / 180);
+      // Precise geographic positioning based on Haversine distance and true GPS bearing
+      const bearingDeg = calculateBearing(userState.lat, userState.lng, lat, lng);
+      const bearingRad = bearingDeg * (Math.PI / 180);
+      
+      const pixelDistanceFromCenter = (distance / METERS_PER_MILE) * MAP_PIXels_PER_MILE;
 
       const mapCanvasWidth = 5625;
-      let leftPercent = 50 + ((Math.cos(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
-      let topPercent = 50 + ((Math.sin(angleRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
+      let leftPercent = 50 + ((Math.sin(bearingRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
+      let topPercent = 50 - ((Math.cos(bearingRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
 
       if (!nodeElem) {
         nodeElem = document.createElement('div');
@@ -2450,7 +2463,13 @@
     }
 
     function saveProfile() {
-      userState.alias = document.getElementById('avatarNameInput').value.trim() || 'Traveler';
+      const newAlias = document.getElementById('avatarNameInput').value.trim();
+      if (!newAlias) {
+        showToast('Please enter a valid display alias or store name', 'alert-circle');
+        return;
+      }
+
+      userState.alias = newAlias;
       userState.category = document.getElementById('businessCategorySelect').value;
       userState.openTime = document.getElementById('businessOpenTimeInput').value;
       userState.closeTime = document.getElementById('businessCloseTimeInput').value;
@@ -2463,13 +2482,14 @@
       userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
       userState.makeNamePublic = document.getElementById('privacyMakeNamePublic').checked;
       if (userState.type === 'business') userState.address = document.getElementById('businessAddressInput').value.trim();
+      userState.profileCreated = true;
 
       updateMyDisplayLabel();
       savePersistentData();
       saveUserProfileToSupabase();
       announcePresence();
       closeProfileModal();
-      location.reload();
+      showToast('Profile & Alias saved successfully!', 'check-circle');
     }
 
     function updateMeshUI() {
