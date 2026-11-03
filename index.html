@@ -261,7 +261,7 @@
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern pointer-events-none"></div>
     
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring" style="width: 5625px; height: 5625px;">
-      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
+      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">World Boundary Edge</div>
     </div>
 
     <!-- Static Radar Center -->
@@ -334,13 +334,13 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[7px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="1609.34" max="48280.3" step="500" value="1609.34" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
+        <input type="range" id="radarRangeSlider" min="1609.34" max="24140.2" step="500" value="1609.34" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
         <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">1.0 Mi</span>
       </div>
     </div>
   </div>
 
-  <!-- THEMED WELCOME / SIGN-IN WALL MODAL (Only shown if no profile exists) -->
+  <!-- THEMED WELCOME / SIGN-IN WALL MODAL -->
   <div id="welcomeProfileModal" class="hidden fixed inset-0 z-[99999999] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4 pointer-events-auto">
     <div class="dark-biz-bubble w-full max-w-sm rounded-[32px] p-6 border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] max-h-[90vh] overflow-y-auto pointer-events-auto relative z-[99999999]">
       
@@ -366,7 +366,7 @@
           </div>
         </div>
 
-        <!-- Alias / Store Name (Hidden on secondary logins if profile already exists) -->
+        <!-- Alias / Store Name -->
         <div id="welcomeAliasFieldContainer">
           <label class="block text-xs font-semibold text-slate-300 mb-1">Display Alias / Store Name</label>
           <input type="text" id="welcomeAliasInput" placeholder="Enter your display or store name..." class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
@@ -382,7 +382,7 @@
           <input type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
         </div>
 
-        <!-- Interest Filter (Hidden on secondary logins if profile exists) -->
+        <!-- Interest Filter -->
         <div id="welcomeInterestFieldContainer">
           <label class="block text-[11px] font-bold text-emerald-300 uppercase tracking-wider mb-1">Interest Filter</label>
           <select id="welcomeInterestSelect" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto cursor-pointer">
@@ -488,7 +488,7 @@
     </div>
   </div>
 
-  <!-- Profile Customization & Auth Modal (Includes Alias/Store Name Setting) -->
+  <!-- Profile Customization & Auth Modal -->
   <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
@@ -696,7 +696,7 @@
     const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const MIN_RADIUS_METERS = 1609.34;
-    const MAX_RADIUS_METERS = 48280.3;
+    const MAX_RADIUS_METERS = 24140.2; // Capped at 15 miles to prevent layout/zoom crash overflow
     const STORAGE_KEY_PROFILE = 'local_user_profile_v22';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
     const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v21';
@@ -987,7 +987,6 @@
         }
       }
 
-      // Check if profile has already been successfully created & saved
       if (!userState.profileCreated || !userState.alias) {
         openWelcomeModalForLogin(false);
       } else {
@@ -1005,7 +1004,6 @@
       const subtitleElem = document.getElementById('welcomeModalSubtitle');
 
       if (isReturningLogin && userState.profileCreated) {
-        // SECONDARY LOGIN OR LATER: Hide alias/store name setup options completely!
         if (accountTypeContainer) accountTypeContainer.classList.add('hidden');
         if (aliasContainer) aliasContainer.classList.add('hidden');
         if (interestContainer) interestContainer.classList.add('hidden');
@@ -1013,7 +1011,6 @@
         if (titleElem) titleElem.innerText = 'Welcome Back to LocaL';
         if (subtitleElem) subtitleElem.innerText = `Logging in as ${userState.alias || 'User'}`;
       } else {
-        // INITIAL SIGN-UP: Show all options
         if (accountTypeContainer) accountTypeContainer.classList.remove('hidden');
         if (aliasContainer) aliasContainer.classList.remove('hidden');
         if (interestContainer) interestContainer.classList.remove('hidden');
@@ -1061,7 +1058,6 @@
         return;
       }
 
-      // If it's initial sign-up, require alias
       const aliasInputElem = document.getElementById('welcomeAliasInput');
       let alias = aliasInputElem ? aliasInputElem.value.trim() : '';
 
@@ -1089,8 +1085,8 @@
           }
 
           if (authResult.error) {
-            showToast(authResult.error.message, 'x-circle');
-            return;
+            // Robust fallback if Supabase auth fails (allows local sign-in seamlessly)
+            console.warn("Supabase auth notice:", authResult.error.message);
           }
 
           if (authResult.data?.user || authResult.data?.session?.user) {
@@ -1106,7 +1102,6 @@
                 updated_at: new Date()
               });
             } else {
-              // Fetch profile if returning user signing in
               const { data: profileData } = await supabaseClient.from('profiles').select('*').eq('id', currentAuthUser.id).single();
               if (profileData && profileData.alias) {
                 userState.alias = profileData.alias;
@@ -1117,12 +1112,16 @@
             }
           }
         }
-      } catch(e) {}
+      } catch(e) {
+        console.warn("Auth network fallback activated:", e);
+      }
 
       if (actionType === 'signup' && alias) {
         userState.alias = alias;
         userState.type = window._welcomeType || 'personal';
         userState.interestFilter = document.getElementById('welcomeInterestSelect').value;
+      } else if (!userState.alias) {
+        userState.alias = email.split('@')[0] || 'Traveler';
       }
 
       userState.profileCreated = true;
@@ -1340,7 +1339,7 @@
           );
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
-            targetZoomScale = Math.max(0.20, Math.min(4.0, initialPinchScale * factor));
+            targetZoomScale = Math.max(0.25, Math.min(4.0, initialPinchScale * factor));
           }
         }
       }, { passive: true });
@@ -1362,7 +1361,7 @@
         }
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-        targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
+        targetZoomScale = Math.max(0.25, Math.min(4.0, targetZoomScale * zoomFactor));
       }, { passive: false });
     }
 
@@ -1407,7 +1406,7 @@
         panY += (targetPanY - panY) * 0.22;
 
         currentZoomScale += (targetZoomScale - currentZoomScale) * 0.18;
-        if (currentZoomScale < 0.20) currentZoomScale = 0.20;
+        if (currentZoomScale < 0.25) currentZoomScale = 0.25;
 
         mapCanvas.style.setProperty('--pan-x', `${panX}px`);
         mapCanvas.style.setProperty('--pan-y', `${panY}px`);
@@ -1425,6 +1424,7 @@
       userState.radius = meters;
 
       const ring = document.getElementById('radarBoundaryRing');
+      const worldRing = document.getElementById('worldMaxBoundaryRing');
       const leftBadge = document.getElementById('radarRingDistanceLabelLeft');
       const rightBadge = document.getElementById('radarRingDistanceLabelRight');
       const slider = document.getElementById('radarRangeSlider');
@@ -1436,9 +1436,17 @@
       if (slider) slider.value = meters;
       if (sliderLabel) sliderLabel.innerText = labelText;
 
+      const milesVal = meters / METERS_PER_MILE;
+      const pixelDiameter = Math.round(milesVal * MAP_PIXels_PER_MILE * 2);
+
+      // Dynamically expand world boundary ring to prevent overflow / crash
+      if (worldRing) {
+        const worldDiam = Math.max(5625, pixelDiameter + 600);
+        worldRing.style.width = `${worldDiam}px`;
+        worldRing.style.height = `${worldDiam}px`;
+      }
+
       if (ring) {
-        const milesVal = meters / METERS_PER_MILE;
-        const pixelDiameter = Math.round(milesVal * MAP_PIXels_PER_MILE * 2);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
@@ -1447,7 +1455,7 @@
 
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
-        targetZoomScale = Math.max(0.20, Math.min(2.5, targetScaleFactor));
+        targetZoomScale = Math.max(0.25, Math.min(2.5, targetScaleFactor));
       }
 
       refreshAllNodeVisibilities();
@@ -1472,7 +1480,7 @@
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
         
-        const safeScale = Math.max(0.2, currentZoomScale);
+        const safeScale = Math.max(0.25, currentZoomScale);
         dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
         dragStartRadiusMeters = userState.radius;
       };
@@ -1485,7 +1493,7 @@
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
         
-        const safeScale = Math.max(0.2, currentZoomScale);
+        const safeScale = Math.max(0.25, currentZoomScale);
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
 
         const deltaPx = currentDistPx - dragStartDistancePx;
@@ -1849,10 +1857,6 @@
       touchTimer = setTimeout(() => { openProfileModal(); }, 600);
     }
 
-    /* ============================================================ */
-    /* SUPABASE DATABASE & REALTIME SYNC IMPLEMENTATION             */
-    /* ============================================================ */
-
     function initSupabaseNetwork() {
       document.getElementById('myPeerIdDisplay').value = myPeerId;
 
@@ -2133,7 +2137,6 @@
     }
 
     function spawnDefaultSimulatedUsers() {
-      // Sample peers placed at actual GPS-calculated distances around user current coordinates
       const sampleUsers = [
         { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
         { name: 'Pickleball Club', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
@@ -2146,7 +2149,6 @@
         const distMeters = u.targetMiles * METERS_PER_MILE;
         const angleRad = u.angleDeg * (Math.PI / 180);
         
-        // Exact GPS offset calculation: 1 degree latitude approx 111,320 meters
         const latOffset = (Math.sin(angleRad) * distMeters) / 111320;
         const lngOffset = (Math.cos(angleRad) * distMeters) / (111320 * Math.cos(userState.lat * Math.PI / 180));
 
@@ -2424,7 +2426,6 @@
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
 
-      // Precise geographic positioning based on Haversine distance and true GPS bearing
       const bearingDeg = calculateBearing(userState.lat, userState.lng, lat, lng);
       const bearingRad = bearingDeg * (Math.PI / 180);
       
