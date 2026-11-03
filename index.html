@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Friends List & Sorted Sidebar Hierarchy]</title>
+  <title>LocaL - Supabase Proximity Social Network [Custom Aesthetics & Dynamic Styling]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LocaL">
 
+  <!-- Google Fonts: Inter & Space Grotesk for Radar Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -76,17 +77,31 @@
       80% { transform: scale(1.04) rotate(-3deg); }
       100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
-    @keyframes radius-ring-pulse {
-      0% { transform: translate(-50%, -50%) scale(0.01); opacity: 1; }
-      80% { opacity: 0.75; }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    
+    /* UPDATED: Screen Tap Shockwave Waveform Animation */
+    @keyframes screen-tap-pulse {
+      0% {
+        transform: translate(-50%, -50%) scale(0.05);
+        opacity: 0.95;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.8), inset 0 0 15px rgba(168, 85, 247, 0.6);
+      }
+      50% {
+        opacity: 0.7;
+        box-shadow: 0 0 45px rgba(56, 189, 248, 0.6), inset 0 0 30px rgba(236, 72, 153, 0.5);
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(2.2);
+        opacity: 0;
+        box-shadow: 0 0 70px rgba(56, 189, 248, 0), inset 0 0 40px rgba(168, 85, 247, 0);
+      }
     }
+    
     @keyframes rainbow-rotate {
       0% { filter: hue-rotate(0deg); }
       100% { filter: hue-rotate(360deg); }
     }
 
-    .animate-radius-ripple { animation: radius-ring-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards; will-change: transform, opacity; }
+    .animate-screen-tap { animation: screen-tap-pulse 1.4s cubic-bezier(0.1, 0.8, 0.2, 1) forwards; will-change: transform, opacity; }
     .animate-giggle { animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; will-change: transform; }
     .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; will-change: transform; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; will-change: transform, opacity; }
@@ -95,7 +110,7 @@
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; will-change: transform; }
     .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; will-change: transform, opacity; }
 
-    /* Enhanced Rainbow Border Wrapper with More Gold for Administrator */
+    /* Admin Rainbow Wrapper */
     .admin-rainbow-border-wrap {
       position: relative;
       border-radius: 18px;
@@ -137,17 +152,21 @@
 
     .hairline-ring { border-width: calc(1px / max(0.20, var(--zoom-scale, 1))) !important; }
 
+    /* UPDATED: Radar Distance Label - Pure Futuristic Typography with NO Borders, Outlines, or Background Boxes */
     .radar-distance-label {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 8.4px !important;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 11px !important;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: rgba(125, 211, 252, 0.95);
-      background: transparent;
-      padding: 0; border: none; box-shadow: none;
-      white-space: nowrap; pointer-events: none;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
+      color: rgba(56, 189, 248, 0.95);
+      background: none !important;
+      padding: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      white-space: nowrap;
+      pointer-events: none;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
     }
 
     .node-content-stack {
@@ -239,6 +258,9 @@
 </head>
 <body id="appBody" class="bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
+  <!-- Dynamic Screen Tap Pulse Waveform Container -->
+  <div id="tapPulseContainer" class="fixed inset-0 pointer-events-none z-[99999999] overflow-hidden"></div>
+
   <!-- Map Canvas -->
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern pointer-events-none"></div>
@@ -262,9 +284,12 @@
   <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-36 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
+        <!-- SVG Chat Bubble Icon -->
         <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
           <div class="bubble-glare"></div>
-          <i data-lucide="message-square" class="w-3 h-3 text-white drop-shadow-sm z-10" stroke-width="2.5"></i>
+          <svg class="w-3.5 h-3.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
+          </svg>
         </div>
         <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Chat Bubbles (<span id="rightSidebarCount">0</span>)</h3>
       </div>
@@ -315,7 +340,9 @@
       <div class="flex items-center gap-2.5">
         <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(56,189,248,0.7)] relative overflow-hidden">
           <div class="bubble-glare"></div>
-          <i data-lucide="message-square" class="w-3.5 h-3.5 text-white drop-shadow-sm z-10" stroke-width="2.5"></i>
+          <svg class="w-3.5 h-3.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
+          </svg>
         </div>
         <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
         <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-emerald-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-emerald-500 transition-all">
@@ -804,6 +831,19 @@
 
     const SOLID_FLAT_BUSINESS_BG = '#1e1b2e';
 
+    /* UPDATED: Dynamic Business Category Text Colors matching type */
+    function getBusinessCategoryTextColorClass(category) {
+      switch (category) {
+        case 'utensils': return 'text-amber-400 font-extrabold';
+        case 'glass-water': return 'text-pink-400 font-extrabold';
+        case 'pill': return 'text-emerald-400 font-extrabold';
+        case 'coffee': return 'text-orange-400 font-extrabold';
+        case 'home': return 'text-sky-400 font-extrabold';
+        case 'wrench': return 'text-yellow-400 font-extrabold';
+        default: return 'text-purple-300 font-extrabold';
+      }
+    }
+
     function initBackgroundKeepAlive() {
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
@@ -844,7 +884,6 @@
                 globalActiveDirectory[id].createdAt = cachedData.createdAt;
               }
             } else {
-              // Re-hydrate peer if created while offline
               const isPeerAdmin = id.includes('admin') || cachedData.question.toLowerCase().includes('admin');
               const isPeerFriend = friendPeerIds.has(id);
               globalActiveDirectory[id] = {
@@ -949,6 +988,8 @@
       if (category === 'utensils') return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-amber-400', shadowStyle: 'box-shadow: 0 0 25px rgba(251, 191, 36, 0.8);', iconColor: 'text-amber-400', glowText: 'text-amber-400', lucideIcon: 'utensils' };
       else if (category === 'glass-water') return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-pink-500', shadowStyle: 'box-shadow: 0 0 25px rgba(236, 72, 153, 0.8);', iconColor: 'text-pink-400', glowText: 'text-pink-400', lucideIcon: 'glass-water' };
       else if (category === 'pill') return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-emerald-400', shadowStyle: 'box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);', iconColor: 'text-emerald-300', glowText: 'text-emerald-400', lucideIcon: 'pill' };
+      else if (category === 'coffee') return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-orange-400', shadowStyle: 'box-shadow: 0 0 25px rgba(251, 146, 60, 0.8);', iconColor: 'text-orange-400', glowText: 'text-orange-400', lucideIcon: 'coffee' };
+      else if (category === 'home') return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-sky-400', shadowStyle: 'box-shadow: 0 0 25px rgba(56, 189, 248, 0.8);', iconColor: 'text-sky-400', glowText: 'text-sky-400', lucideIcon: 'home' };
       else return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-purple-400', shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);', iconColor: 'text-purple-300', glowText: 'text-purple-300', lucideIcon: category || 'store' };
     }
 
@@ -962,6 +1003,7 @@
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
+    /* UPDATED: Chat Bubble Cards with SVG Vector Graphic Icon */
     function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle, isMainUser = false, isAdmin = false) {
       if (!question) return '';
       if (isAdmin) {
@@ -974,7 +1016,9 @@
               <div class="flex items-center justify-center gap-1.5 py-0.5">
                 <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                   <div class="bubble-glare"></div>
-                  <i data-lucide="message-square" class="w-2.5 h-2.5 text-white drop-shadow-sm z-10" stroke-width="2.5"></i>
+                  <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
+                  </svg>
                 </div>
                 <span class="truncate">${question}</span>
               </div>
@@ -988,7 +1032,9 @@
           <div class="flex items-center justify-center gap-1.5 py-0.5">
             <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
               <div class="bubble-glare"></div>
-              <i data-lucide="message-square" class="w-2.5 h-2.5 text-white drop-shadow-sm z-10" stroke-width="2.5"></i>
+              <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
+              </svg>
             </div>
             <span class="truncate">${question}</span>
           </div>
@@ -996,19 +1042,24 @@
       `;
     }
 
+    /* UPDATED: Business Bubble Cards with Dynamic Color Matching Category Type */
     function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false) {
       const displayName = getDisplayName(businessName, hideMyName, accountType);
+      const nameColorClass = getBusinessCategoryTextColorClass(category);
+
       if (isAdmin) {
         return `
           <div class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] animate-float" onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-3.5 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1.5">
-              <div class="flex items-center justify-between text-[9px] text-amber-400 font-mono font-bold uppercase">
-                <span class="truncate">${displayName}</span>
+              <div class="flex items-center justify-between text-[9px] font-mono uppercase">
+                <span class="truncate ${nameColorClass}">${displayName}</span>
               </div>
               <div class="flex items-center gap-1.5">
                 <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                   <div class="bubble-glare"></div>
-                  <i data-lucide="message-square" class="w-2.5 h-2.5 text-white drop-shadow-sm z-10" stroke-width="2.5"></i>
+                  <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
+                  </svg>
                 </div>
                 <p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>
               </div>
@@ -1024,7 +1075,9 @@
             <div class="flex items-center gap-1.5 py-0.5">
               <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                 <div class="bubble-glare"></div>
-                <i data-lucide="message-square" class="w-2.5 h-2.5 text-white drop-shadow-sm z-10" stroke-width="2.5"></i>
+                <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
+                </svg>
               </div>
               <span class="truncate">${question}</span>
             </div>
@@ -1039,14 +1092,16 @@
             <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between mb-0.5">
-                <span class="text-xs font-bold text-slate-500 truncate">${displayName}</span>
+                <span class="text-xs truncate ${nameColorClass}">${displayName}</span>
                 <span class="text-[9px] font-mono text-slate-400 font-bold px-1.5 py-0.2 rounded bg-slate-800">Store</span>
               </div>
               ${question ? `
                 <div class="flex items-center gap-1.5 mt-1">
                   <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                     <div class="bubble-glare"></div>
-                    <i data-lucide="message-square" class="w-2.5 h-2.5 text-white drop-shadow-sm z-10" stroke-width="2.5"></i>
+                    <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
+                    </svg>
                   </div>
                   <p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>
                 </div>
@@ -1868,29 +1923,28 @@
       refreshAllNodeVisibilities();
     }
 
-    function createBubbleRipple() {
-      if (userState.type === 'business') return;
-      playAudioEffect('bubble');
-      triggerHapticFeedback(50);
-      const ringContainer = document.getElementById('radiusRippleContainer');
-      const targetRing = document.getElementById('radarBoundaryRing');
-      if (!ringContainer || !targetRing) return;
+    /* UPDATED: Screen Tap Pulse Waveform Effect Trigger */
+    function createScreenTapPulseAt(clientX, clientY) {
+      playAudioEffect('click');
+      triggerHapticFeedback(35);
+      const container = document.getElementById('tapPulseContainer');
+      if (!container) return;
 
-      const sizePx = targetRing.offsetWidth || 375;
-      const ripple = document.createElement('div');
-      ripple.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-400/90 bg-amber-400/30 pointer-events-none animate-radius-ripple shadow-[0_0_25px_rgba(251,191,36,0.7)] hairline-ring';
-      ripple.style.width = `${sizePx}px`;
-      ripple.style.height = `${sizePx}px`;
-      ringContainer.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 2200);
+      const wave = document.createElement('div');
+      wave.className = 'absolute rounded-full border-2 border-sky-400/90 pointer-events-none animate-screen-tap backdrop-blur-xs';
+      wave.style.left = `${clientX}px`;
+      wave.style.top = `${clientY}px`;
+      wave.style.width = '160px';
+      wave.style.height = '160px';
+
+      container.appendChild(wave);
+      setTimeout(() => wave.remove(), 1400);
     }
 
     function initTapRippleHandler() {
-      const mapCanvas = document.getElementById('mapCanvas');
-      if (!mapCanvas) return;
-      mapCanvas.addEventListener('click', (e) => {
+      window.addEventListener('click', (e) => {
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsContainer')) return;
-        createBubbleRipple();
+        createScreenTapPulseAt(e.clientX, e.clientY);
       });
     }
 
@@ -1931,7 +1985,7 @@
     }
 
     function refreshRadarAndSearch() {
-      createBubbleRipple();
+      createScreenTapPulseAt(window.innerWidth / 2, window.innerHeight / 2);
       triggerBubbleBounce('userAvatarCircle');
       announcePresence();
       showToast('Radar refreshed! Searching for chats in area.', 'radar');
@@ -1986,6 +2040,7 @@
       showToast(`Radar color theme updated to ${colorName}!`, 'palette');
     }
 
+    /* UPDATED: Radar HTML Structure with Clean Typography Text Labels (NO Borders/Outlines/Background Boxes) */
     function getRadarStyleHtml(styleType) {
       const palette = RADAR_PALETTES[userState.radarColor || 'cyan'];
       const initialMiles = unlimitedRadarActive ? 'Unlimited' : (userState.radius / METERS_PER_MILE).toFixed(1);
@@ -1998,8 +2053,8 @@
           </div>
           <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
           <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
-          <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
-          <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
+          <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-10">${initialMiles} Mi</div>
+          <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-10">${initialMiles} Mi</div>
         </div>
       `;
     }
@@ -2342,7 +2397,7 @@
         { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.3, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
         { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.4, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
         { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 0.8, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.2, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.2, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'coffee', openTime: '06:00', closeTime: '18:00', hours: 'Open 6:00 AM • Closes 6:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 1.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
@@ -2436,6 +2491,7 @@
       lucide.createIcons();
     }
 
+    /* UPDATED: Pinned Side List Cards with Colored Business Names */
     function renderPinnedChats() {
       const container = document.getElementById('pinnedChatsContainer');
       if (!container) return;
@@ -2490,7 +2546,6 @@
         }
       });
 
-      // Strict Hierarchy Order: Admin, Main User, Friends, Other/Businesses
       const pinnedList = [...adminList, ...mainUserList, ...friendList, ...otherList];
 
       if (pinnedList.length === 0) {
@@ -2502,6 +2557,7 @@
       pinnedList.forEach(item => {
         const isBiz = item.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(item.accountType, item.category);
+        const nameColorClass = isBiz ? getBusinessCategoryTextColorClass(item.category) : 'text-slate-900 font-bold';
         const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${item.name}', '${item.question || ''}', '${item.peerId}', ${item.createdAt})`;
         
         if (item.isAdmin) {
@@ -2512,8 +2568,8 @@
                   ${renderNodeIconContent(item.accountType, item.category)}
                 </div>
                 <div class="min-w-0 flex-1">
-                  <div class="flex items-center justify-between text-[9px] text-amber-400 font-mono font-bold uppercase">
-                    <span class="truncate">${item.name}</span>
+                  <div class="flex items-center justify-between text-[9px] font-mono uppercase">
+                    <span class="truncate ${isBiz ? nameColorClass : 'text-amber-400 font-bold'}">${item.name}</span>
                   </div>
                   <span class="text-[9px] text-white font-medium block truncate">${item.question || 'Pinned Chat'}</span>
                 </div>
@@ -2529,7 +2585,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between">
-                  <span class="text-[9px] text-slate-500 font-bold uppercase">${item.isFriend ? 'Friend' : 'Chat'}</span>
+                  <span class="text-[9px] uppercase truncate ${nameColorClass}">${item.name}</span>
                 </div>
                 <span class="text-[9px] text-slate-700 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
               </div>
@@ -2563,6 +2619,7 @@
         const isBiz = peer.accountType === 'business';
         const displayLabel = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
         const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
+        const nameColorClass = isBiz ? getBusinessCategoryTextColorClass(peer.category) : 'text-slate-900 font-bold';
 
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
@@ -2572,7 +2629,7 @@
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
-                  <h4 class="font-bold text-slate-900 text-xs">${displayLabel}</h4>
+                  <h4 class="text-xs ${nameColorClass}">${displayLabel}</h4>
                   ${isFriend ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold">Friend</span>' : ''}
                 </div>
                 <p class="text-[10px] text-slate-500 font-semibold">Distance: ${distStr}</p>
@@ -2641,7 +2698,6 @@
         }
       });
 
-      // Strict Sidebar Hierarchy: Admin, Main User, Friends, Other/Businesses
       const validBubbles = [...adminBubbles, ...mainUserBubbles, ...friendBubbles, ...otherBubbles];
 
       const countElem = document.getElementById('rightSidebarCount');
