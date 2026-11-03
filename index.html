@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Bubble Illustration & Name Rules]</title>
+  <title>LocaL - Supabase Proximity Social Network [Admin Pin & Round Bubble Illustration]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -310,9 +310,10 @@
   <div id="actionDockContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
-        <!-- Rounded-square chat box with plus icon matching the reference image -->
-        <div class="w-7 h-7 rounded-xl bg-amber-400/20 border border-amber-400 flex items-center justify-center flex-shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
-          <i data-lucide="message-square-plus" class="w-3.5 h-3.5 text-amber-400" stroke-width="2.5"></i>
+        <!-- Round chat bubble illustration matching the center of the reference image -->
+        <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(56,189,248,0.7)] relative overflow-hidden">
+          <div class="bubble-glare"></div>
+          <i data-lucide="message-square" class="w-3.5 h-3.5 text-white drop-shadow-sm z-10" stroke-width="2.5"></i>
         </div>
         <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
         <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-emerald-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-emerald-500 transition-all">
@@ -888,8 +889,6 @@
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
-    // Main user's chat bubble gets neon gold outline, chat bubble icon illustration restored, and NO alias/name header inside the bubble.
-    // Administrator retains rainbow border and neon gold admin name inside the bubble.
     function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle, isMainUser = false, isAdmin = false) {
       if (!question) return '';
       if (isAdmin) {
@@ -1788,7 +1787,7 @@
 
       const sizePx = targetRing.offsetWidth || 375;
       const ripple = document.createElement('div');
-      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-amber-400/90 bg-amber-400/30 pointer-events-none animate-radius-ripple shadow-[0_0_25px_rgba(251,191,36,0.7)] hairline-ring';
+      ripple.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-400/90 bg-amber-400/30 pointer-events-none animate-radius-ripple shadow-[0_0_25px_rgba(251,191,36,0.7)] hairline-ring';
       ripple.style.width = `${sizePx}px`;
       ripple.style.height = `${sizePx}px`;
       ringContainer.appendChild(ripple);
@@ -1853,7 +1852,7 @@
 
     function renderNodeIconContent(accountType, category) {
       const isBiz = accountType === 'business';
-      if (!isBiz) return `<div class="bubble-glare"></div><i data-lucide="user" class="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
+      if (!isBiz) return `<div class="bubble-glare"></div><i data-lucide="message-square" class="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
       const neonStyle = getBusinessNeonStyle(accountType, category);
       return `<i data-lucide="${neonStyle.lucideIcon}" class="w-5 h-5 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>`;
     }
@@ -2318,12 +2317,14 @@
       const container = document.getElementById('pinnedChatsContainer');
       if (!container) return;
 
-      let pinnedList = [];
+      let adminList = [];
+      let regularList = [];
+      
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt;
       const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
       
       if (participatedChatRoomIds.has('room-you') || userState.type === 'business' || hasSelfTopic) {
-        pinnedList.push({
+        const item = {
           roomId: 'room-you',
           name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
           question: hasSelfTopic ? activeTopicState.text : 'Your Broadcast',
@@ -2333,7 +2334,9 @@
           createdAt: activeTopicState.createdAt,
           isAdmin: isUserAdmin,
           isMainUser: !isUserAdmin
-        });
+        };
+        if (isUserAdmin) adminList.push(item);
+        else regularList.push(item);
       }
 
       participatedChatRoomIds.forEach(roomId => {
@@ -2342,7 +2345,7 @@
         const peer = globalActiveDirectory[peerId];
         if (peer && peer.createdAt) {
           const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
-          pinnedList.push({
+          const item = {
             roomId,
             name: getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType),
             question: peer.question || 'Chat',
@@ -2352,9 +2355,14 @@
             createdAt: peer.createdAt,
             isAdmin: peerIsAdmin,
             isMainUser: false
-          });
+          };
+          if (peerIsAdmin) adminList.push(item);
+          else regularList.push(item);
         }
       });
+
+      // Administrator chat bubbles are strictly sorted FIRST at the top of the side chat lists
+      const pinnedList = [...adminList, ...regularList];
 
       if (pinnedList.length === 0) {
         container.innerHTML = '';
@@ -2454,19 +2462,22 @@
       const container = document.getElementById('rightSidebarBubblesContainer');
       if (!container) return;
       const peerIds = Object.keys(globalActiveDirectory);
-      let validBubbles = [];
+      let adminBubbles = [];
+      let regularBubbles = [];
       
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt;
       const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
 
       if (userState.type === 'business' || hasSelfTopic) {
-        validBubbles.push({
+        const item = {
           name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
           question: hasSelfTopic ? activeTopicState.text : '',
           peerId: 'you', roomId: 'room-you', accountType: userState.type,
           category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName,
           createdAt: activeTopicState.createdAt, isAdmin: isUserAdmin, isMainUser: !isUserAdmin
-        });
+        };
+        if (isUserAdmin) adminBubbles.push(item);
+        else regularBubbles.push(item);
       }
 
       peerIds.forEach(pId => {
@@ -2481,16 +2492,21 @@
           const matches = matchesInterestFilter(p.interestFilter);
           const inRadius = peerIsAdmin || isFriend || unlimitedRadarActive || (userState.radius === 0 || p.distance <= userState.radius);
           if ((matches && inRadius) || isParticipated || unlimitedRadarActive || peerIsAdmin) {
-            validBubbles.push({
+            const item = {
               name: getDisplayName(p.rawSender, p.hideMyName, p.accountType),
               question: hasValidQuestion ? p.question : '',
               peerId: p.peerId, roomId, accountType: p.accountType,
               category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius,
               createdAt: p.createdAt, isAdmin: peerIsAdmin, isMainUser: false
-            });
+            };
+            if (peerIsAdmin) adminBubbles.push(item);
+            else regularBubbles.push(item);
           }
         }
       });
+
+      // Administrator chat bubbles are strictly sorted FIRST at the top of the right-side chat list
+      const validBubbles = [...adminBubbles, ...regularBubbles];
 
       const countElem = document.getElementById('rightSidebarCount');
       if (countElem) countElem.innerText = validBubbles.length;
