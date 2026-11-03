@@ -348,27 +348,19 @@
       <div class="text-center mb-5">
         <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white font-bold text-2xl mx-auto mb-2 shadow-[0_0_20px_rgba(52,211,153,0.5)]">L</div>
         <h3 class="text-xl font-extrabold text-white tracking-tight" id="welcomeModalTitle">Welcome to LocaL</h3>
-        <p class="text-xs text-slate-400 mt-1" id="welcomeModalSubtitle">Set up your profile once to get started.</p>
+        <p class="text-xs text-slate-400 mt-1" id="welcomeModalSubtitle">Sign in or create an account to get started.</p>
       </div>
       
       <div class="space-y-4">
-        <div id="welcomeAccountTypeContainer">
-          <label class="block text-[11px] font-bold text-emerald-300 uppercase tracking-wider mb-1.5">Account Type</label>
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick="playAudioEffect('click'); selectWelcomeAccountType('personal')" id="welcomePersonalBtn" type="button" class="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all cursor-pointer">
-              <i data-lucide="user" class="w-4 h-4 text-emerald-300"></i>
-              <span class="text-[11px] font-semibold text-white">Personal (GPS)</span>
-            </button>
-            <button onclick="playAudioEffect('click'); selectWelcomeAccountType('business')" id="welcomeBusinessBtn" type="button" class="p-3 rounded-2xl bg-slate-800/80 border border-white/10 flex flex-col items-center gap-1 transition-all cursor-pointer">
-              <i data-lucide="store" class="w-4 h-4 text-slate-400"></i>
-              <span class="text-[11px] font-semibold text-slate-300">Business (Fixed)</span>
-            </button>
-          </div>
+        <!-- Mode Tabs -->
+        <div class="grid grid-cols-2 gap-1 bg-slate-900/80 p-1 rounded-2xl border border-slate-700">
+          <button type="button" onclick="setAuthTab('signin')" id="tabSigninBtn" class="py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold transition-all shadow-sm">Sign In</button>
+          <button type="button" onclick="setAuthTab('signup')" id="tabSignupBtn" class="py-2 rounded-xl text-slate-400 text-xs font-bold transition-all hover:text-white">Create Account</button>
         </div>
 
-        <div id="welcomeAliasFieldContainer">
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Display Alias / Store Name</label>
-          <input type="text" id="welcomeAliasInput" placeholder="Enter your display or store name..." class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
+        <div id="welcomeAliasFieldContainer" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Username / Display Name</label>
+          <input type="text" id="welcomeAliasInput" placeholder="Choose a unique username..." class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
         </div>
 
         <div>
@@ -381,57 +373,8 @@
           <input type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
         </div>
 
-        <div id="welcomeInterestFieldContainer">
-          <label class="block text-[11px] font-bold text-emerald-300 uppercase tracking-wider mb-1">Interest Filter</label>
-          <select id="welcomeInterestSelect" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto cursor-pointer">
-            <option value="none" class="bg-slate-900">No Filter At All</option>
-            <option value="Life" class="bg-slate-900">Life</option>
-            <option value="Cars" class="bg-slate-900">Cars</option>
-            <option value="Moms" class="bg-slate-900">Moms</option>
-            <option value="Dads" class="bg-slate-900">Dads</option>
-            <option value="Food" class="bg-slate-900">Food</option>
-            <option value="Hiking" class="bg-slate-900">Hiking</option>
-            <option value="Pickleball" class="bg-slate-900">Pickleball</option>
-          </select>
-        </div>
-
-        <div id="welcomeBusinessFields" class="hidden space-y-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Business Category</label>
-            <select id="welcomeCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto cursor-pointer">
-              <option value="store" class="bg-slate-900">General Retail Store</option>
-              <option value="coffee" class="bg-slate-900">Coffee & Bakery</option>
-              <option value="utensils" class="bg-slate-900">Restaurant & Dining</option>
-              <option value="pill" class="bg-slate-900">Pharmacy & Health</option>
-              <option value="home" class="bg-slate-900">Real Estate & Housing</option>
-              <option value="wrench" class="bg-slate-900">Dumpster & Services</option>
-              <option value="glass-water" class="bg-slate-900">Bar & Lounge</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Store Hours</label>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <span class="text-[10px] text-slate-400 font-medium">Opening</span>
-                <input type="time" id="welcomeOpenTime" value="09:00" class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700 text-white text-xs pointer-events-auto">
-              </div>
-              <div>
-                <span class="text-[10px] text-slate-400 font-medium">Closing</span>
-                <input type="time" id="welcomeCloseTime" value="21:00" class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700 text-white text-xs pointer-events-auto">
-              </div>
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Store Street Address</label>
-            <input type="text" id="welcomeAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-light pointer-events-auto">
-          </div>
-        </div>
-
-        <div class="flex gap-2 pt-3">
-          <button type="button" onclick="registerOrSignInAccount('signup')" id="welcomeSignUpBtn" class="flex-1 py-3.5 rounded-2xl bg-slate-800 text-white font-bold text-xs shadow-lg active:scale-98 transition-all cursor-pointer pointer-events-auto border border-white/10 hover:bg-slate-700">
-            Sign Up
-          </button>
-          <button type="button" onclick="registerOrSignInAccount('signin')" class="flex-1 py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500">
+        <div class="pt-2">
+          <button type="button" onclick="handleAuthSubmit()" id="welcomeSubmitBtn" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500">
             Sign In
           </button>
         </div>
@@ -505,22 +448,8 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all">
-              <i data-lucide="user" class="w-4 h-4 text-emerald-800"></i>
-              <span class="text-[11px] font-semibold text-emerald-950">Personal (GPS)</span>
-            </button>
-            <button onclick="playAudioEffect('click'); selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
-              <i data-lucide="store" class="w-4 h-4 text-slate-700"></i>
-              <span class="text-[11px] font-semibold text-slate-800">Business (Fixed)</span>
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1">Display Alias / Store Name</label>
-          <input type="text" id="avatarNameInput" placeholder="Enter your alias or store name..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <label class="block text-xs font-semibold text-slate-800 mb-1">Username / Display Alias</label>
+          <input type="text" id="avatarNameInput" placeholder="Enter your username..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
         </div>
 
         <div>
@@ -568,47 +497,10 @@
           </select>
         </div>
 
-        <div id="businessFields" class="hidden space-y-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-800 mb-1">Business Category & Flat Icon</label>
-            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
-              <option value="store">General Retail Store</option>
-              <option value="coffee">Coffee & Bakery</option>
-              <option value="utensils">Restaurant & Dining</option>
-              <option value="pill">Pharmacy & Health</option>
-              <option value="home">Real Estate & Housing</option>
-              <option value="wrench">Dumpster & Services</option>
-              <option value="glass-water">Bar & Lounge</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-800 mb-1">Store Operating Hours</label>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <span class="text-[10px] text-slate-500 font-medium">Opening Time</span>
-                <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
-              </div>
-              <div>
-                <span class="text-[10px] text-slate-500 font-medium">Closing Time</span>
-                <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
-              </div>
-            </div>
-            <div class="mt-1.5 flex items-center justify-between">
-              <span class="text-[10px] text-slate-500 font-medium">Status display text:</span>
-              <span id="businessHoursPreview" class="text-[10px] font-semibold text-emerald-800">Open 9:00 AM • Closes 9:00 PM</span>
-            </div>
-            <input type="hidden" id="businessHoursInput" value="Open 9:00 AM • Closes 9:00 PM">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-800 mb-1">Store Street Address (Fixed)</label>
-            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
-          </div>
-        </div>
-
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
-            <span>Hide My Display Name (Show Anonymous)</span>
+            <span>Hide My Username (Show Anonymous)</span>
             <input type="checkbox" id="privacyMakeNamePublic" onchange="toggleNameVisibility(this.checked)" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
@@ -716,6 +608,7 @@
     };
 
     let currentAuthUser = null;
+    let authMode = 'signin'; // 'signin' or 'signup'
 
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
     let globalActiveDirectory = {};
@@ -774,38 +667,7 @@
 
     const SOLID_FLAT_BUSINESS_BG = '#1e1b2e';
 
-    function formatTime12h(timeStr) {
-      if (!timeStr) return '';
-      const [hStr, mStr] = timeStr.split(':');
-      let hours = parseInt(hStr, 10);
-      if (isNaN(hours)) return timeStr;
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12;
-      if (hours === 0) hours = 12;
-      return `${hours}:${mStr} ${ampm}`;
-    }
-
-    function computeBusinessHoursStatus(openTime, closeTime) {
-      if (!openTime || !closeTime) return 'Open 9:00 AM • Closes 9:00 PM';
-      const openFormatted = formatTime12h(openTime);
-      const closeFormatted = formatTime12h(closeTime);
-      return `Open ${openFormatted} • Closes ${closeFormatted}`;
-    }
-
-    function updateBusinessHoursFromTimes() {
-      const openTime = document.getElementById('businessOpenTimeInput').value;
-      const closeTime = document.getElementById('businessCloseTimeInput').value;
-      userState.openTime = openTime;
-      userState.closeTime = closeTime;
-      const statusText = computeBusinessHoursStatus(openTime, closeTime);
-      userState.hours = statusText;
-      document.getElementById('businessHoursInput').value = statusText;
-      const preview = document.getElementById('businessHoursPreview');
-      if (preview) preview.innerText = statusText;
-    }
-
     function getDisplayName(rawSender, hideMyName, accountType) {
-      if (accountType === 'business') return rawSender || 'Business Store';
       if (hideMyName) return 'Anonymous Local';
       return rawSender || 'Local Peer';
     }
@@ -816,54 +678,14 @@
     }
 
     function getBusinessNeonStyle(accountType, category) {
-      if (accountType !== 'business') {
-        return {
-          bg: 'transparent',
-          borderClass: 'border border-white/40',
-          shadowStyle: 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);',
-          iconColor: 'text-white',
-          glowText: 'text-yellow-400',
-          lucideIcon: 'user'
-        };
-      }
-      
-      if (category === 'utensils') {
-        return {
-          bg: SOLID_FLAT_BUSINESS_BG,
-          borderClass: 'border-[3.5px] border-amber-400',
-          shadowStyle: 'box-shadow: 0 0 25px rgba(251, 191, 36, 0.8);',
-          iconColor: 'text-amber-400',
-          glowText: 'text-amber-400',
-          lucideIcon: 'utensils'
-        };
-      } else if (category === 'glass-water') {
-        return {
-          bg: SOLID_FLAT_BUSINESS_BG,
-          borderClass: 'border-[3.5px] border-pink-500',
-          shadowStyle: 'box-shadow: 0 0 25px rgba(236, 72, 153, 0.8);',
-          iconColor: 'text-pink-400',
-          glowText: 'text-pink-400',
-          lucideIcon: 'glass-water'
-        };
-      } else if (category === 'pill') {
-        return {
-          bg: SOLID_FLAT_BUSINESS_BG,
-          borderClass: 'border-[3.5px] border-emerald-400',
-          shadowStyle: 'box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);',
-          iconColor: 'text-emerald-300',
-          glowText: 'text-emerald-400',
-          lucideIcon: 'pill'
-        };
-      } else {
-        return {
-          bg: SOLID_FLAT_BUSINESS_BG,
-          borderClass: 'border-[3.5px] border-purple-400',
-          shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);',
-          iconColor: 'text-purple-300',
-          glowText: 'text-purple-300',
-          lucideIcon: category || 'store'
-        };
-      }
+      return {
+        bg: 'transparent',
+        borderClass: 'border border-white/40',
+        shadowStyle: 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);',
+        iconColor: 'text-white',
+        glowText: 'text-yellow-400',
+        lucideIcon: 'user'
+      };
     }
 
     function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle) {
@@ -878,37 +700,14 @@
 
     function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName) {
       const displayName = getDisplayName(businessName, hideMyName, accountType);
-      
-      if (accountType !== 'business') {
-        if (!question) return '';
-        return `
-          <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
-            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block truncate">${displayName}</span>
-            <div class="flex items-center gap-1.5">
-              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
-              <span class="truncate">${question}</span>
-            </div>
-          </div>
-        `;
-      }
-
-      const neonStyle = getBusinessNeonStyle(accountType, category);
-
+      if (!question) return '';
       return `
-        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-1.5 animate-float z-[99999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
-          <div class="flex items-start gap-2.5">
-            <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
-            <div class="min-w-0 flex-1">
-              <span class="text-xs font-bold ${neonStyle.glowText} block truncate mb-0.5">${displayName}</span>
-              ${question ? `<p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>` : ''}
-            </div>
+        <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
+          <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block truncate">${displayName}</span>
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
+            <span class="truncate">${question}</span>
           </div>
-          ${hours ? `
-            <div class="pt-1.5 mt-0.5 border-t border-white/10 flex items-center justify-between">
-              <span class="text-[10px] text-slate-400 font-medium">Open</span>
-              <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${hours}</span>
-            </div>
-          ` : ''}
         </div>
       `;
     }
@@ -1014,75 +813,51 @@
       }
     });
 
-    function openWelcomeModalForLogin(isReturningLogin = false) {
-      const modal = document.getElementById('welcomeProfileModal');
-      const accountTypeContainer = document.getElementById('welcomeAccountTypeContainer');
+    function setAuthTab(mode) {
+      authMode = mode;
+      const btnSignin = document.getElementById('tabSigninBtn');
+      const btnSignup = document.getElementById('tabSignupBtn');
       const aliasContainer = document.getElementById('welcomeAliasFieldContainer');
-      const interestContainer = document.getElementById('welcomeInterestFieldContainer');
-      const signUpBtn = document.getElementById('welcomeSignUpBtn');
+      const submitBtn = document.getElementById('welcomeSubmitBtn');
       const titleElem = document.getElementById('welcomeModalTitle');
       const subtitleElem = document.getElementById('welcomeModalSubtitle');
 
-      if (isReturningLogin && userState.profileCreated) {
-        if (accountTypeContainer) accountTypeContainer.classList.add('hidden');
-        if (aliasContainer) aliasContainer.classList.add('hidden');
-        if (interestContainer) interestContainer.classList.add('hidden');
-        if (signUpBtn) signUpBtn.classList.add('hidden');
-        if (titleElem) titleElem.innerText = 'Welcome Back to LocaL';
-        if (subtitleElem) subtitleElem.innerText = `Logging in as ${getDisplayName(userState.alias, userState.hideMyName, userState.type)}`;
+      if (mode === 'signin') {
+        btnSignin.className = 'py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold transition-all shadow-sm';
+        btnSignup.className = 'py-2 rounded-xl text-slate-400 text-xs font-bold transition-all hover:text-white';
+        aliasContainer.classList.add('hidden');
+        submitBtn.innerText = 'Sign In';
+        titleElem.innerText = 'Welcome Back to LocaL';
+        subtitleElem.innerText = 'Sign in with your email and password.';
       } else {
-        if (accountTypeContainer) accountTypeContainer.classList.remove('hidden');
-        if (aliasContainer) aliasContainer.classList.remove('hidden');
-        if (interestContainer) interestContainer.classList.remove('hidden');
-        if (signUpBtn) signUpBtn.classList.remove('hidden');
-        if (titleElem) titleElem.innerText = 'Welcome to LocaL';
-        if (subtitleElem) subtitleElem.innerText = 'Set up your profile once to get started.';
+        btnSignup.className = 'py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold transition-all shadow-sm';
+        btnSignin.className = 'py-2 rounded-xl text-slate-400 text-xs font-bold transition-all hover:text-white';
+        aliasContainer.classList.remove('hidden');
+        submitBtn.innerText = 'Create Account';
+        titleElem.innerText = 'Join LocaL';
+        subtitleElem.innerText = 'Create a username and account to get started.';
       }
+    }
 
+    function openWelcomeModalForLogin(isReturningLogin = false) {
+      const modal = document.getElementById('welcomeProfileModal');
+      setAuthTab(isReturningLogin ? 'signin' : 'signin');
       modal.classList.remove('hidden');
     }
 
-    function selectWelcomeAccountType(type) {
-      const isPersonal = type === 'personal';
-      const personalBtn = document.getElementById('welcomePersonalBtn');
-      const businessBtn = document.getElementById('welcomeBusinessBtn');
-      
-      if (isPersonal) {
-        personalBtn.className = 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all cursor-pointer';
-        personalBtn.querySelector('i').className = 'w-4 h-4 text-emerald-300';
-        personalBtn.querySelector('span').className = 'text-[11px] font-semibold text-white';
-        
-        businessBtn.className = 'p-3 rounded-2xl bg-slate-800/80 border border-white/10 flex flex-col items-center gap-1 transition-all cursor-pointer';
-        businessBtn.querySelector('i').className = 'w-4 h-4 text-slate-400';
-        businessBtn.querySelector('span').className = 'text-[11px] font-semibold text-slate-300';
-      } else {
-        businessBtn.className = 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all cursor-pointer';
-        businessBtn.querySelector('i').className = 'w-4 h-4 text-emerald-300';
-        businessBtn.querySelector('span').className = 'text-[11px] font-semibold text-white';
-        
-        personalBtn.className = 'p-3 rounded-2xl bg-slate-800/80 border border-white/10 flex flex-col items-center gap-1 transition-all cursor-pointer';
-        personalBtn.querySelector('i').className = 'w-4 h-4 text-slate-400';
-        personalBtn.querySelector('span').className = 'text-[11px] font-semibold text-slate-300';
-      }
-
-      document.getElementById('welcomeBusinessFields').classList.toggle('hidden', isPersonal);
-      window._welcomeType = type;
-    }
-
-    async function registerOrSignInAccount(actionType) {
+    async function handleAuthSubmit() {
       const email = document.getElementById('welcomeEmailInput').value.trim();
       const password = document.getElementById('welcomePasswordInput').value.trim();
-
-      if (!email || !password) {
-        showToast('Please enter email and password', 'alert-circle');
-        return;
-      }
-
       const aliasInputElem = document.getElementById('welcomeAliasInput');
       let alias = aliasInputElem ? aliasInputElem.value.trim() : '';
 
-      if (actionType === 'signup' && !alias) {
-        showToast('Please enter your display or store name', 'alert-circle');
+      if (!email || !password) {
+        showToast('Please enter your email and password', 'alert-circle');
+        return;
+      }
+
+      if (authMode === 'signup' && !alias) {
+        showToast('Please choose a username for your account', 'alert-circle');
         return;
       }
 
@@ -1091,7 +866,7 @@
           supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
           
           let authResult;
-          if (actionType === 'signup') {
+          if (authMode === 'signup') {
             authResult = await supabaseClient.auth.signUp({
               email,
               password,
@@ -1112,50 +887,34 @@
           if (authResult.data?.user || authResult.data?.session?.user) {
             currentAuthUser = authResult.data.user || authResult.data.session.user;
             
-            if (actionType === 'signup' && alias) {
+            if (authMode === 'signup' && alias) {
               await supabaseClient.from('profiles').upsert({
                 id: currentAuthUser.id,
                 alias: alias,
-                account_type: window._welcomeType || 'personal',
-                category: document.getElementById('welcomeCategorySelect').value,
-                interest_filter: document.getElementById('welcomeInterestSelect').value,
+                account_type: 'personal',
                 updated_at: new Date()
               });
             } else {
               const { data: profileData } = await supabaseClient.from('profiles').select('*').eq('id', currentAuthUser.id).single();
               if (profileData && profileData.alias) {
                 userState.alias = profileData.alias;
-                userState.type = profileData.account_type || userState.type;
-                userState.category = profileData.category || userState.category;
-                userState.interestFilter = profileData.interest_filter || userState.interestFilter;
               }
             }
           }
         }
       } catch(e) {}
 
-      if (actionType === 'signup' && alias) {
+      if (authMode === 'signup' && alias) {
         userState.alias = alias;
-        userState.type = window._welcomeType || 'personal';
-        userState.interestFilter = document.getElementById('welcomeInterestSelect').value;
+      } else if (!userState.alias) {
+        userState.alias = email.split('@')[0];
       }
 
       userState.profileCreated = true;
-
-      if (userState.type === 'business' && actionType === 'signup') {
-        userState.category = document.getElementById('welcomeCategorySelect').value;
-        const openT = document.getElementById('welcomeOpenTime').value;
-        const closeT = document.getElementById('welcomeCloseTime').value;
-        userState.openTime = openT;
-        userState.closeTime = closeT;
-        userState.hours = computeBusinessHoursStatus(openT, closeT);
-        userState.address = document.getElementById('welcomeAddressInput').value.trim();
-      }
-
       savePersistentData();
       document.getElementById('welcomeProfileModal').classList.add('hidden');
       initializeAppSession();
-      showToast('Successfully logged in & connected!', 'check-circle');
+      showToast('Successfully authenticated & connected!', 'check-circle');
     }
 
     async function initializeAppSession() {
@@ -1188,11 +947,6 @@
       startSmoothAnimationLoop();
 
       document.getElementById('avatarNameInput').value = userState.alias || '';
-      document.getElementById('businessAddressInput').value = userState.address || '';
-      document.getElementById('businessOpenTimeInput').value = userState.openTime || '09:00';
-      document.getElementById('businessCloseTimeInput').value = userState.closeTime || '21:00';
-      document.getElementById('businessHoursInput').value = userState.hours || 'Open 9:00 AM • Closes 9:00 PM';
-      document.getElementById('businessCategorySelect').value = userState.category || 'store';
       document.getElementById('userInterestFilterSelect').value = userState.interestFilter || 'none';
       document.getElementById('radarStyleSelect').value = userState.radarStyle || 'futuristic';
       document.getElementById('radarColorSelect').value = userState.radarColor || 'cyan';
@@ -1200,7 +954,6 @@
       document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
       document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
       document.getElementById('privacyMakeNamePublic').checked = !!userState.hideMyName;
-      selectAccountType(userState.type || 'personal', true);
       applyBackgroundMode(userState.bgMode || 'aurora');
       applyRadarColorCSS(userState.radarColor || 'cyan');
     }
@@ -1572,7 +1325,6 @@
     }
 
     function getBroadcastCoordinates() {
-      if (userState.type === 'business') { return { lat: userState.lat, lng: userState.lng }; }
       if (!userState.lat || !userState.lng) return { lat: 27.2730, lng: -80.3582 };
       if (!userState.fuzzLocation) return { lat: userState.lat, lng: userState.lng };
 
@@ -1637,8 +1389,6 @@
     }
 
     function createBubbleRipple() {
-      if (userState.type === 'business') return;
-
       playAudioEffect('bubble');
       triggerHapticFeedback(50);
       const ringContainer = document.getElementById('radiusRippleContainer');
@@ -1680,21 +1430,16 @@
 
       const hasValidActiveTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
       
-      if (!hasValidActiveTopic && userState.type !== 'business') {
+      if (!hasValidActiveTopic) {
         topBubble.classList.add('hidden');
         return;
       }
 
       const myDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
-      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you')`;
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${activeTopicState.text}', 'you')`;
 
-      if (userState.type === 'business') {
-        topBubble.className = "block relative z-[99999999]";
-        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName);
-      } else {
-        topBubble.className = "relative z-[99999999]";
-        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle);
-      }
+      topBubble.className = "relative z-[99999999]";
+      topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle);
       topBubble.classList.remove('hidden');
       lucide.createIcons();
     }
@@ -1719,13 +1464,7 @@
     const UPGRADED_PERSONAL_ICON_SHADOW = 'box-shadow: 0 12px 35px rgba(14, 165, 233, 0.55), inset 0 3px 6px rgba(255, 255, 255, 0.9), inset 0 -3px 6px rgba(0, 0, 0, 0.25);';
 
     function renderNodeIconContent(accountType, category) {
-      const isBiz = accountType === 'business';
-      if (!isBiz) {
-        return `<div class="bubble-glare"></div><i data-lucide="user" class="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
-      }
-      
-      const neonStyle = getBusinessNeonStyle(accountType, category);
-      return `<i data-lucide="${neonStyle.lucideIcon}" class="w-5 h-5 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>`;
+      return `<div class="bubble-glare"></div><i data-lucide="user" class="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
     }
 
     function applyBackgroundMode(mode) {
@@ -1828,12 +1567,9 @@
       userDiv.id = 'userAvatarNode';
       userDiv.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[99999999] cursor-pointer node-item pointer-events-auto';
       
-      const isBiz = userState.type === 'business';
-      const neonStyle = getBusinessNeonStyle(userState.type, userState.category);
-
-      const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
-      const borderClass = isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER;
-      const shadowStyle = isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW;
+      const circleBg = UPGRADED_PERSONAL_ICON_BG;
+      const borderClass = UPGRADED_PERSONAL_ICON_BORDER;
+      const shadowStyle = UPGRADED_PERSONAL_ICON_SHADOW;
 
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group pointer-events-auto">
@@ -1849,7 +1585,7 @@
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-emerald-400/40 blur-lg animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
 
             <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[58px] h-[58px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[99999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
-              ${renderNodeIconContent(userState.type, userState.category)}
+              ${renderNodeIconContent()}
             </div>
           </div>
         </div>
@@ -2009,9 +1745,6 @@
                 peerId: p.id,
                 lat: p.lat || userState.lat + (Math.random() - 0.5) * 0.01,
                 lng: p.lng || userState.lng + (Math.random() - 0.5) * 0.01,
-                accountType: p.account_type || 'personal',
-                category: p.category || 'store',
-                hours: p.hours,
                 interestFilter: p.interest_filter || 'none',
                 hideMyName: p.hide_my_name || false,
                 question: p.active_topic,
@@ -2076,8 +1809,6 @@
       const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
       if (data && !error) {
         userState.alias = data.alias || userState.alias;
-        userState.type = data.account_type || userState.type;
-        userState.category = data.category || userState.category;
         userState.interestFilter = data.interest_filter || userState.interestFilter;
         userState.hideMyName = data.hide_my_name || false;
         userState.profileCreated = true;
@@ -2102,8 +1833,6 @@
       await supabaseClient.from('profiles').upsert({
         id: currentAuthUser.id,
         alias: userState.alias,
-        account_type: userState.type,
-        category: userState.category,
         interest_filter: userState.interestFilter,
         hide_my_name: userState.hideMyName,
         updated_at: new Date()
@@ -2167,10 +1896,6 @@
         globalActiveDirectory[data.peerId] = { enabled: true };
       }
 
-      const calculatedHours = (data.accountType === 'business' && data.openTime && data.closeTime) 
-        ? computeBusinessHoursStatus(data.openTime, data.closeTime) 
-        : (data.hours || 'Open 9:00 AM • Closes 9:00 PM');
-
       globalActiveDirectory[data.peerId] = {
         ...globalActiveDirectory[data.peerId],
         rawSender: data.sender,
@@ -2179,11 +1904,6 @@
         lng: data.lng,
         distance: distance,
         bubbleColor: data.bubbleColor || 'violet',
-        accountType: data.accountType || 'personal',
-        category: data.category || 'store',
-        openTime: data.openTime || '09:00',
-        closeTime: data.closeTime || '21:00',
-        hours: calculatedHours,
         interestFilter: data.interestFilter || 'none',
         hideMyName: data.hideMyName || false,
         lastSeen: Date.now(),
@@ -2199,7 +1919,7 @@
         updatePeerNodeOnMap(
           data.sender, distance, distance + 'm', data.lat, data.lng, 
           data.text || data.question, data.createdAt, data.peerId, 
-          data.bubbleColor, data.accountType, data.category, calculatedHours, data.interestFilter, false, data.hideMyName
+          data.bubbleColor, data.interestFilter, false, data.hideMyName
         );
       } else if (data.type === 'DELETE_ROOM') {
         const targetRoomId = data.roomId;
@@ -2212,11 +1932,8 @@
 
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
-        { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
-        { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, angleDeg: 220, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, angleDeg: 170, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', interestFilter: 'Life', isBot: true, isTutorial: true },
+        { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament this afternoon!', color: 'emerald', interestFilter: 'Pickleball', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -2234,8 +1951,6 @@
           globalActiveDirectory[u.peerId] = { enabled: true };
         }
 
-        const computedHours = u.accountType === 'business' ? computeBusinessHoursStatus(u.openTime, u.closeTime) : u.hours;
-
         globalActiveDirectory[u.peerId] = {
           ...globalActiveDirectory[u.peerId],
           rawSender: u.name,
@@ -2244,11 +1959,6 @@
           lng,
           distance: dist,
           bubbleColor: u.color,
-          accountType: u.accountType,
-          category: u.category,
-          openTime: u.openTime,
-          closeTime: u.closeTime,
-          hours: computedHours,
           interestFilter: u.interestFilter,
           hideMyName: false,
           lastSeen: Date.now(),
@@ -2257,7 +1967,7 @@
           isBot: true
         };
 
-        updatePeerNodeOnMap(u.name, dist, dist + 'm', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true, false);
+        updatePeerNodeOnMap(u.name, dist, dist + 'm', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.interestFilter, true, false);
       });
 
       renderGlobalUsersDirectory();
@@ -2283,25 +1993,22 @@
         const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter;
         const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
-        const isBiz = peer.accountType === 'business';
         const isEnabled = peer.enabled !== false;
-        const displayLabel = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
+        const displayLabel = getDisplayName(peer.rawSender, peer.hideMyName, 'personal');
 
-        const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
-        const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
+        const circleBg = UPGRADED_PERSONAL_ICON_BG;
 
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
-                ${renderNodeIconContent(peer.accountType, peer.category)}
+              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+                ${renderNodeIconContent()}
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
                   <h4 class="font-bold text-slate-900 text-xs">${displayLabel} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
                 </div>
                 <p class="text-[10px] text-emerald-900 font-semibold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
-                ${isBiz && peer.hours ? `<div class="mt-0.5 flex items-center justify-between"><span class="text-[9px] text-slate-400">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${peer.hours}</span></div>` : ''}
               </div>
             </div>
             <div class="flex items-center gap-2">
@@ -2325,16 +2032,13 @@
       let validBubbles = [];
       
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
-      if (userState.type === 'business' || hasSelfTopic) {
+      if (hasSelfTopic) {
         validBubbles.push({
           name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
-          question: hasSelfTopic ? activeTopicState.text : '',
+          question: activeTopicState.text,
           bubbleColor: userState.bubbleColor,
           peerId: 'you',
           roomId: 'room-you',
-          accountType: userState.type,
-          category: userState.category,
-          hours: userState.hours,
           hideMyName: userState.hideMyName
         });
       }
@@ -2345,19 +2049,16 @@
         const roomId = 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const isParticipated = participatedChatRoomIds.has(roomId);
 
-        if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
+        if (p.enabled !== false && hasValidQuestion) {
           const matches = matchesInterestFilter(p.interestFilter);
           const inRadius = userState.radius === 0 || p.distance <= userState.radius;
           if ((matches && inRadius) || isParticipated) {
             validBubbles.push({
-              name: getDisplayName(p.rawSender, p.hideMyName, p.accountType),
-              question: hasValidQuestion ? p.question : '',
+              name: getDisplayName(p.rawSender, p.hideMyName, 'personal'),
+              question: p.question,
               bubbleColor: p.bubbleColor,
               peerId: p.peerId,
               roomId: roomId,
-              accountType: p.accountType,
-              category: p.category,
-              hours: p.hours,
               isParticipated: isParticipated && !inRadius
             });
           }
@@ -2374,24 +2075,22 @@
 
       container.innerHTML = '';
       validBubbles.forEach(b => {
-        const isBiz = b.accountType === 'business';
-        const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
-        const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
-        const borderClass = isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER;
-        const shadowStyle = isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW;
+        const circleBg = UPGRADED_PERSONAL_ICON_BG;
+        const borderClass = UPGRADED_PERSONAL_ICON_BORDER;
+        const shadowStyle = UPGRADED_PERSONAL_ICON_SHADOW;
         const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')`;
 
         container.innerHTML += `
           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/80 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
             <div class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;">
-              ${renderNodeIconContent(b.accountType, b.category)}
+              ${renderNodeIconContent()}
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-900 truncate">${b.name} ${b.isParticipated ? '(Out of range)' : ''}</span>
               </div>
               <div class="mt-1">
-                ${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false)}
+                ${renderUserBubbleCardHtml(b.question, b.name, onClickJs, false)}
               </div>
             </div>
           </div>
@@ -2417,7 +2116,7 @@
     }
 
     function announcePresence() {
-      if (userState.ghostMode && userState.type !== 'business') return;
+      if (userState.ghostMode) return;
       const coords = getBroadcastCoordinates();
       
       const payload = {
@@ -2428,11 +2127,6 @@
         peerId: myPeerId,
         lat: coords.lat,
         lng: coords.lng,
-        accountType: userState.type,
-        category: userState.category,
-        openTime: userState.openTime,
-        closeTime: userState.closeTime,
-        hours: userState.hours,
         interestFilter: userState.interestFilter,
         hideMyName: userState.hideMyName,
         question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) ? activeTopicState.text : null,
@@ -2446,18 +2140,13 @@
     }
 
     function broadcastData(payload) {
-      if (userState.ghostMode && userState.type !== 'business') return;
+      if (userState.ghostMode) return;
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat; 
       payload.lng = payload.lng || coords.lng;
       payload.sender = payload.sender || userState.alias; 
       payload.peerId = payload.peerId || myPeerId;
       payload.bubbleColor = payload.bubbleColor || userState.bubbleColor; 
-      payload.accountType = userState.type;
-      payload.category = userState.category; 
-      payload.openTime = userState.openTime;
-      payload.closeTime = userState.closeTime;
-      payload.hours = userState.hours;
       payload.interestFilter = userState.interestFilter;
       payload.hideMyName = userState.hideMyName;
 
@@ -2478,7 +2167,7 @@
       } catch(e) {}
     }
 
-    function updatePeerNodeOnMap(rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, hours, interestFilter, isBot, hideMyName) {
+    function updatePeerNodeOnMap(rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, interestFilter, isBot, hideMyName) {
       const container = document.getElementById('nodesContainer');
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
@@ -2524,13 +2213,11 @@
       nodeElem.style.opacity = isWithinRadius || isParticipated ? '1' : opacityVal.toString();
       nodeElem.style.pointerEvents = (isWithinRadius || isParticipated) ? 'auto' : 'none';
       
-      const isBiz = accountType === 'business';
-      const neonStyle = getBusinessNeonStyle(accountType, category);
-      const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
+      const circleBg = UPGRADED_PERSONAL_ICON_BG;
       
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
-      const showSonarRipple = matchesFilter && !isBiz;
-      const chatRoomName = getDisplayName(rawSender, hideMyName, accountType);
+      const showSonarRipple = matchesFilter;
+      const chatRoomName = getDisplayName(rawSender, hideMyName, 'personal');
 
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')`;
 
@@ -2539,11 +2226,11 @@
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'}; border-width: 1px;"></div>
           
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs, hours, hideMyName) : ''}
+            ${hasValidQuestion ? renderUserBubbleCardHtml(question, rawSender, onClickJs, false) : ''}
           </div>
 
-          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
-            ${renderNodeIconContent(accountType, category)}
+          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999999] pointer-events-auto cursor-pointer overflow-hidden ${UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+            ${renderNodeIconContent()}
           </div>
         </div>
       `;
@@ -2567,26 +2254,14 @@
       }, 1000);
     }
 
-    function selectAccountType(type, skipSave = false) {
-      userState.type = type;
-      document.getElementById('personalTypeBtn').className = type === 'personal' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
-      document.getElementById('businessTypeBtn').className = type === 'business' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
-      document.getElementById('businessFields').classList.toggle('hidden', type !== 'business');
-      if (!skipSave) savePersistentData();
-    }
-
     function saveProfile() {
       const newAlias = document.getElementById('avatarNameInput').value.trim();
       if (!newAlias) {
-        showToast('Please enter a valid display alias or store name', 'alert-circle');
+        showToast('Please enter a valid username', 'alert-circle');
         return;
       }
 
       userState.alias = newAlias;
-      userState.category = document.getElementById('businessCategorySelect').value;
-      userState.openTime = document.getElementById('businessOpenTimeInput').value;
-      userState.closeTime = document.getElementById('businessCloseTimeInput').value;
-      userState.hours = computeBusinessHoursStatus(userState.openTime, userState.closeTime);
       userState.interestFilter = document.getElementById('userInterestFilterSelect').value;
       userState.radarStyle = document.getElementById('radarStyleSelect').value;
       userState.radarColor = document.getElementById('radarColorSelect').value;
@@ -2594,7 +2269,6 @@
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
       userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
       userState.hideMyName = document.getElementById('privacyMakeNamePublic').checked;
-      if (userState.type === 'business') userState.address = document.getElementById('businessAddressInput').value.trim();
       userState.profileCreated = true;
 
       updateMyDisplayLabel();
@@ -2632,8 +2306,6 @@
         await supabaseClient.from('profiles').upsert({
           id: currentAuthUser.id,
           alias: userState.alias,
-          account_type: userState.type,
-          category: userState.category,
           active_topic: text,
           topic_created_at: new Date(activeTopicState.createdAt).toISOString(),
           lat: coords.lat,
@@ -2655,9 +2327,6 @@
         peerId: myPeerId, 
         lat: coords.lat, 
         lng: coords.lng, 
-        accountType: userState.type, 
-        category: userState.category, 
-        hours: userState.hours, 
         interestFilter: userState.interestFilter, 
         hideMyName: userState.hideMyName,
         createdAt: activeTopicState.createdAt 
@@ -2755,10 +2424,6 @@
       document.getElementById('chatTargetName').innerText = roomName;
       
       const isSelf = roomId === 'room-you';
-      const isBiz = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business');
-      const accountType = isSelf ? userState.type : globalActiveDirectory[peerId]?.accountType;
-      const category = isSelf ? userState.category : globalActiveDirectory[peerId]?.category;
-      
       const isOwner = isSelf || (peerId === 'you');
       const deleteBtn = document.getElementById('ownerDeleteRoomBtn');
       if (deleteBtn) {
@@ -2766,15 +2431,12 @@
         else deleteBtn.classList.add('hidden');
       }
 
-      const neonStyle = getBusinessNeonStyle(accountType, category);
-      const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
+      const circleBg = UPGRADED_PERSONAL_ICON_BG;
 
-      // UNIFIED HEADER AVATAR MATCHING BUBBLE EXACT STYLE
       const avatarEl = document.getElementById('chatTargetAvatar');
-      avatarEl.className = `w-12 h-12 rounded-full font-bold text-xs flex items-center justify-center shadow-xl bubble-node flex-shrink-0 overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
+      avatarEl.className = `w-12 h-12 rounded-full font-bold text-xs flex items-center justify-center shadow-xl bubble-node flex-shrink-0 overflow-hidden ${UPGRADED_PERSONAL_ICON_BORDER}`;
       avatarEl.style.background = circleBg;
-      if (isBiz) avatarEl.style.cssText += neonStyle.shadowStyle;
-      avatarEl.innerHTML = renderNodeIconContent(accountType, category);
+      avatarEl.innerHTML = renderNodeIconContent();
 
       if ((topic || (isSelf && activeTopicState.text)) && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
