@@ -118,7 +118,7 @@
     }
 
     .scale-compensator {
-      transform: scale(calc(1 / max(0.2, var(--zoom-scale, 1))));
+      transform: scale(calc(1 / max(0.20, var(--zoom-scale, 1))));
       will-change: transform;
     }
 
@@ -133,7 +133,7 @@
     }
 
     .hairline-ring {
-      border-width: calc(1px / max(0.2, var(--zoom-scale, 1))) !important;
+      border-width: calc(1px / max(0.20, var(--zoom-scale, 1))) !important;
     }
 
     .radar-distance-label {
@@ -261,7 +261,7 @@
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern pointer-events-none"></div>
     
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring" style="width: 5625px; height: 5625px;">
-      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">World Boundary Edge</div>
+      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
     </div>
 
     <!-- Static Radar Center -->
@@ -334,7 +334,7 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[7px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="1609.34" max="24140.2" step="500" value="1609.34" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
+        <input type="range" id="radarRangeSlider" min="1609.34" max="48280.3" step="500" value="1609.34" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
         <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">1.0 Mi</span>
       </div>
     </div>
@@ -351,7 +351,6 @@
       </div>
       
       <div class="space-y-4">
-        <!-- Account Type selection (Only visible during initial sign-up) -->
         <div id="welcomeAccountTypeContainer">
           <label class="block text-[11px] font-bold text-emerald-300 uppercase tracking-wider mb-1.5">Account Type</label>
           <div class="grid grid-cols-2 gap-2">
@@ -366,7 +365,6 @@
           </div>
         </div>
 
-        <!-- Alias / Store Name -->
         <div id="welcomeAliasFieldContainer">
           <label class="block text-xs font-semibold text-slate-300 mb-1">Display Alias / Store Name</label>
           <input type="text" id="welcomeAliasInput" placeholder="Enter your display or store name..." class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
@@ -382,7 +380,6 @@
           <input type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
         </div>
 
-        <!-- Interest Filter -->
         <div id="welcomeInterestFieldContainer">
           <label class="block text-[11px] font-bold text-emerald-300 uppercase tracking-wider mb-1">Interest Filter</label>
           <select id="welcomeInterestSelect" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto cursor-pointer">
@@ -696,7 +693,7 @@
     const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const MIN_RADIUS_METERS = 1609.34;
-    const MAX_RADIUS_METERS = 24140.2; // Capped at 15 miles to prevent layout/zoom crash overflow
+    const MAX_RADIUS_METERS = 48280.3;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v22';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
     const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v21';
@@ -1085,8 +1082,8 @@
           }
 
           if (authResult.error) {
-            // Robust fallback if Supabase auth fails (allows local sign-in seamlessly)
-            console.warn("Supabase auth notice:", authResult.error.message);
+            showToast(authResult.error.message, 'x-circle');
+            return;
           }
 
           if (authResult.data?.user || authResult.data?.session?.user) {
@@ -1112,16 +1109,12 @@
             }
           }
         }
-      } catch(e) {
-        console.warn("Auth network fallback activated:", e);
-      }
+      } catch(e) {}
 
       if (actionType === 'signup' && alias) {
         userState.alias = alias;
         userState.type = window._welcomeType || 'personal';
         userState.interestFilter = document.getElementById('welcomeInterestSelect').value;
-      } else if (!userState.alias) {
-        userState.alias = email.split('@')[0] || 'Traveler';
       }
 
       userState.profileCreated = true;
@@ -1142,13 +1135,14 @@
       showToast('Successfully logged in & connected!', 'check-circle');
     }
 
-    function initializeAppSession() {
+    async function initializeAppSession() {
       userState.radius = MIN_RADIUS_METERS;
       initGPSLocation();
       initUserNode();
       initSupabaseNetwork();
       requestScreenWakeLock();
       spawnDefaultSimulatedUsers();
+      await fetchProfilesAndTopicsFromSupabase();
       checkChatExpiryLoop();
       restoreActiveChatRoom();
       
@@ -1266,7 +1260,7 @@
     function getPanBounds() {
       const worldRing = document.getElementById('worldMaxBoundaryRing');
       const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 2812.5;
-      const safeScale = Math.max(0.2, currentZoomScale);
+      const safeScale = Math.max(0.20, currentZoomScale);
       return Math.max(200, (radiusPx * safeScale) - 150);
     }
 
@@ -1339,7 +1333,8 @@
           );
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
-            targetZoomScale = Math.max(0.25, Math.min(4.0, initialPinchScale * factor));
+            // CLAMP ZOOM SCALE STRICTLY ABOVE 0.20 TO PREVENT CRASH
+            targetZoomScale = Math.max(0.20, Math.min(4.0, initialPinchScale * factor));
           }
         }
       }, { passive: true });
@@ -1361,7 +1356,8 @@
         }
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-        targetZoomScale = Math.max(0.25, Math.min(4.0, targetZoomScale * zoomFactor));
+        // CLAMP ZOOM SCALE STRICTLY ABOVE 0.20 TO PREVENT CRASH
+        targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
       }, { passive: false });
     }
 
@@ -1406,11 +1402,11 @@
         panY += (targetPanY - panY) * 0.22;
 
         currentZoomScale += (targetZoomScale - currentZoomScale) * 0.18;
-        if (currentZoomScale < 0.25) currentZoomScale = 0.25;
+        if (currentZoomScale < 0.20) currentZoomScale = 0.20;
 
         mapCanvas.style.setProperty('--pan-x', `${panX}px`);
         mapCanvas.style.setProperty('--pan-y', `${panY}px`);
-        mapCanvas.style.setProperty('--zoom-scale', currentZoomScale.toFixed(4));
+        mapCanvas.style.setProperty('--zoom-scale', Math.max(0.20, currentZoomScale).toFixed(4));
 
         animationFrameId = requestAnimationFrame(renderLoop);
       };
@@ -1424,7 +1420,6 @@
       userState.radius = meters;
 
       const ring = document.getElementById('radarBoundaryRing');
-      const worldRing = document.getElementById('worldMaxBoundaryRing');
       const leftBadge = document.getElementById('radarRingDistanceLabelLeft');
       const rightBadge = document.getElementById('radarRingDistanceLabelRight');
       const slider = document.getElementById('radarRangeSlider');
@@ -1436,17 +1431,9 @@
       if (slider) slider.value = meters;
       if (sliderLabel) sliderLabel.innerText = labelText;
 
-      const milesVal = meters / METERS_PER_MILE;
-      const pixelDiameter = Math.round(milesVal * MAP_PIXels_PER_MILE * 2);
-
-      // Dynamically expand world boundary ring to prevent overflow / crash
-      if (worldRing) {
-        const worldDiam = Math.max(5625, pixelDiameter + 600);
-        worldRing.style.width = `${worldDiam}px`;
-        worldRing.style.height = `${worldDiam}px`;
-      }
-
       if (ring) {
+        const milesVal = meters / METERS_PER_MILE;
+        const pixelDiameter = Math.round(milesVal * MAP_PIXels_PER_MILE * 2);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
 
@@ -1455,7 +1442,7 @@
 
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
-        targetZoomScale = Math.max(0.25, Math.min(2.5, targetScaleFactor));
+        targetZoomScale = Math.max(0.20, Math.min(2.5, targetScaleFactor));
       }
 
       refreshAllNodeVisibilities();
@@ -1480,7 +1467,7 @@
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
         
-        const safeScale = Math.max(0.25, currentZoomScale);
+        const safeScale = Math.max(0.20, currentZoomScale);
         dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
         dragStartRadiusMeters = userState.radius;
       };
@@ -1493,7 +1480,7 @@
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
         
-        const safeScale = Math.max(0.25, currentZoomScale);
+        const safeScale = Math.max(0.20, currentZoomScale);
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
 
         const deltaPx = currentDistPx - dragStartDistancePx;
@@ -1857,6 +1844,10 @@
       touchTimer = setTimeout(() => { openProfileModal(); }, 600);
     }
 
+    /* ============================================================ */
+    /* SUPABASE DATABASE & REALTIME SYNC IMPLEMENTATION             */
+    /* ============================================================ */
+
     function initSupabaseNetwork() {
       document.getElementById('myPeerIdDisplay').value = myPeerId;
 
@@ -1964,6 +1955,35 @@
       }
     }
 
+    async function fetchProfilesAndTopicsFromSupabase() {
+      if (!supabaseClient) return;
+      const { data: profiles, error } = await supabaseClient.from('profiles').select('*');
+      if (!error && profiles) {
+        profiles.forEach(p => {
+          if (p.id !== currentAuthUser?.id && p.active_topic && p.topic_created_at) {
+            const createdAtTime = new Date(p.topic_created_at).getTime();
+            if (Date.now() - createdAtTime < ONE_HOUR_MS) {
+              globalActiveDirectory[p.id] = {
+                ...(globalActiveDirectory[p.id] || {}),
+                rawSender: p.alias || 'Traveler',
+                peerId: p.id,
+                lat: p.lat || userState.lat + (Math.random() - 0.5) * 0.01,
+                lng: p.lng || userState.lng + (Math.random() - 0.5) * 0.01,
+                accountType: p.account_type || 'personal',
+                category: p.category || 'store',
+                hours: p.hours,
+                interestFilter: p.interest_filter || 'none',
+                question: p.active_topic,
+                createdAt: createdAtTime,
+                distance: calculateHaversineDistance(userState.lat, userState.lng, p.lat || userState.lat, p.lng || userState.lng)
+              };
+            }
+          }
+        });
+        refreshAllNodeVisibilities();
+      }
+    }
+
     async function initAuthListener() {
       if (!supabaseClient) return;
       const { data: { session } } = await supabaseClient.auth.getSession();
@@ -2019,6 +2039,16 @@
         userState.category = data.category || userState.category;
         userState.interestFilter = data.interest_filter || userState.interestFilter;
         userState.profileCreated = true;
+        
+        if (data.active_topic && data.topic_created_at) {
+          const tTime = new Date(data.topic_created_at).getTime();
+          if (Date.now() - tTime < ONE_HOUR_MS) {
+            activeTopicState.text = data.active_topic;
+            activeTopicState.createdAt = tTime;
+            renderUserTopBubbleContent();
+          }
+        }
+
         document.getElementById('avatarNameInput').value = userState.alias;
         updateMyDisplayLabel();
         savePersistentData();
@@ -2482,7 +2512,7 @@
             ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs, hours) : ''}
           </div>
 
-          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
             ${renderNodeIconContent(accountType, category)}
           </div>
         </div>
@@ -2552,26 +2582,57 @@
       }
     }
 
-    function quickPostFromDock() {
+    async function quickPostFromDock() {
       const input = document.getElementById('quickPostInput');
       const text = input ? input.value.trim() : '';
       if (!text) return;
       
       closeChatDrawer();
 
+      // OPTIMISTIC INSTANT UI UPDATE
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
       
       renderUserTopBubbleContent(true);
       document.getElementById('mainTopicText').innerText = text;
 
+      // PERSIST TO SUPABASE PROFILES SO IT STAYS ACTIVE EVEN IF APP CLOSES
+      const coords = getBroadcastCoordinates();
+      if (supabaseClient && currentAuthUser) {
+        await supabaseClient.from('profiles').upsert({
+          id: currentAuthUser.id,
+          alias: userState.alias,
+          account_type: userState.type,
+          category: userState.category,
+          active_topic: text,
+          topic_created_at: new Date(activeTopicState.createdAt).toISOString(),
+          lat: coords.lat,
+          lng: coords.lng,
+          updated_at: new Date()
+        });
+      }
+
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
-      const coords = getBroadcastCoordinates();
-      broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime, hours: userState.hours, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
+      
+      broadcastData({ 
+        id: msgId, 
+        type: 'NEW_QUESTION', 
+        text, 
+        sender: userState.alias, 
+        bubbleColor: userState.bubbleColor, 
+        peerId: myPeerId, 
+        lat: coords.lat, 
+        lng: coords.lng, 
+        accountType: userState.type, 
+        category: userState.category, 
+        hours: userState.hours, 
+        interestFilter: userState.interestFilter, 
+        createdAt: activeTopicState.createdAt 
+      });
       
       input.value = '';
-      showToast('New chat posted!', 'check-circle');
+      showToast('New chat posted & persisted!', 'check-circle');
       playAudioEffect('bell');
       savePersistentData();
 
@@ -2608,6 +2669,11 @@
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       
+      // OPTIMISTIC INSTANT MESSAGE RENDERING
+      appendMessage('You', text, timeStr, true);
+      input.value = ''; 
+      input.style.height = '26px';
+
       if (supabaseClient) {
         await supabaseClient.from('chat_messages').insert({
           room_id: currentActiveChatRoomId,
@@ -2616,13 +2682,9 @@
           message: text
         });
       } else {
-        appendMessage('You', text, timeStr, true);
         if (!localChatCache[currentActiveChatRoomId]) localChatCache[currentActiveChatRoomId] = [];
         localChatCache[currentActiveChatRoomId].push({ sender: 'You', text, time: timeStr, isMe: true });
       }
-
-      input.value = ''; 
-      input.style.height = '26px';
 
       if (currentActiveChatRoomId === 'room-peer-sim-peer-tutorial-bot') {
         setTimeout(() => {
@@ -2698,6 +2760,12 @@
       if (confirm("Are you sure you want to delete this entire chat room for all participants?")) {
         if (supabaseClient) {
           await supabaseClient.from('chat_messages').delete().eq('room_id', currentActiveChatRoomId);
+          if (currentActiveChatRoomId === 'room-you' && currentAuthUser) {
+            await supabaseClient.from('profiles').update({
+              active_topic: null,
+              topic_created_at: null
+            }).eq('id', currentAuthUser.id);
+          }
         }
         delete localChatCache[currentActiveChatRoomId];
         
