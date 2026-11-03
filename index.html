@@ -549,7 +549,7 @@
         </div>
         <div>
           <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm tracking-tight drop-shadow-sm">Supabase Realtime Channel</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-emerald-800 font-semibold uppercase tracking-wider">Broadcast Channel Sync</p>
+          <p id="chatTargetStatus" class="text-[10px] text-emerald-800 font-semibold uppercase tracking-wider">Database Sync Active</p>
         </div>
       </div>
       
@@ -606,15 +606,14 @@
     const MIN_RADIUS_METERS = 1609.34;
     const MAX_RADIUS_METERS = 48280.3;
     const STORAGE_KEY_PROFILE = 'local_user_profile_v21';
-    const STORAGE_KEY_CHATS = 'local_chat_sessions_v21';
     const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
     const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v21';
     const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v21';
-    const STORAGE_KEY_ROOM_TIMESTAMPS = 'local_room_last_activity_v21';
     const STORAGE_KEY_SUPABASE_CONFIG = 'local_supabase_config_v1';
 
     let supabaseClient = null;
     let realtimeChannel = null;
+    let dbMessagesChannel = null;
     let supabaseConfig = { url: '', key: '' };
     let currentAuthUser = null;
 
@@ -639,8 +638,7 @@
 
     let activeTopicState = { text: null, createdAt: null };
     let currentActiveChatRoomId = null;
-    let chatRoomsSessions = {}; 
-    let roomLastActivity = {};
+    let localChatCache = {}; 
     let currentLayoutMode = 'map';
 
     let userState = {
@@ -951,16 +949,6 @@
           document.getElementById('supabaseKeyInput').value = supabaseConfig.key || '';
         }
 
-        const savedChats = localStorage.getItem(STORAGE_KEY_CHATS);
-        if (savedChats) {
-          chatRoomsSessions = JSON.parse(savedChats);
-        }
-
-        const savedTimestamps = localStorage.getItem(STORAGE_KEY_ROOM_TIMESTAMPS);
-        if (savedTimestamps) {
-          roomLastActivity = JSON.parse(savedTimestamps);
-        }
-
         const savedTopicState = localStorage.getItem(STORAGE_KEY_TOPIC_STATE);
         if (savedTopicState) {
           activeTopicState = JSON.parse(savedTopicState);
@@ -971,8 +959,6 @@
     function savePersistentData() {
       try {
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
-        localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chatRoomsSessions));
-        localStorage.setItem(STORAGE_KEY_ROOM_TIMESTAMPS, JSON.stringify(roomLastActivity));
         localStorage.setItem(STORAGE_KEY_TOPIC_STATE, JSON.stringify(activeTopicState));
         localStorage.setItem(STORAGE_KEY_SUPABASE_CONFIG, JSON.stringify(supabaseConfig));
         if (currentActiveChatRoomId) {
@@ -995,7 +981,7 @@
     function restoreActiveChatRoom() {
       try {
         const savedRoomId = localStorage.getItem(STORAGE_KEY_ACTIVE_ROOM);
-        if (savedRoomId && chatRoomsSessions[savedRoomId]) {
+        if (savedRoomId) {
           const peerIdMatch = savedRoomId.replace('room-peer-', '');
           const peerData = globalActiveDirectory[peerIdMatch];
           const roomName = savedRoomId === 'room-you' ? (userState.type === 'business' ? userState.alias : 'Traveler') : (peerData ? peerData.rawSender : 'Active Session');
@@ -1589,7 +1575,7 @@
     }
 
     /* ============================================================ */
-    /* SUPABASE REALTIME MESH NETWORK & AUTH INTEGRATION             */
+    /* SUPABASE DATABASE & REALTIME SYNC IMPLEMENTATION             */
     /* ============================================================ */
 
     function initSupabaseNetwork() {
@@ -1606,6 +1592,7 @@
           supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
           
           initAuthListener();
+          subscribeToDbChatMessages();
 
           realtimeChannel = supabaseClient.channel(MESH_ROOM_KEY, {
             config: {
@@ -1642,6 +1629,60 @@
       }
 
       setupLocalBroadcastFallback();
+    }
+
+    function subscribeToDbChatMessages() {
+      if (!supabaseClient) return;
+      if (dbMessagesChannel) dbMessagesChannel.unsubscribe();
+
+      dbMessagesChannel = supabaseClient
+        .channel('public:chat_messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+          const newMsg = payload.new;
+          if (newMsg) {
+            const timeStr = new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
+            
+            if (currentActiveChatRoomId === newMsg.room_id) {
+              appendMessage(newMsg.sender_alias, newMsg.message, timeStr, isMe);
+            } else if (!isMe) {
+              playAudioEffect('bell');
+              showToast(`New database message from ${newMsg.sender_alias}`, 'message-square');
+            }
+          }
+        })
+        .subscribe();
+    }
+
+    async function loadDbChatHistory(roomId) {
+      const msgBox = document.getElementById('chatMessages');
+      if (!msgBox) return;
+      msgBox.innerHTML = '<div class="text-center text-xs text-slate-500 py-4">Syncing history from Supabase...</div>';
+
+      if (!supabaseClient) {
+        msgBox.innerHTML = '';
+        if (localChatCache[roomId]) {
+          localChatCache[roomId].forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe));
+        }
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('chat_messages')
+        .select('*')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
+
+      msgBox.innerHTML = '';
+      if (!error && data && data.length > 0) {
+        data.forEach(msg => {
+          const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const isMe = currentAuthUser ? (msg.sender_id === currentAuthUser.id) : (msg.sender_alias === userState.alias);
+          appendMessage(msg.sender_alias, msg.message, timeStr, isMe);
+        });
+      } else if (localChatCache[roomId]) {
+        localChatCache[roomId].forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe));
+      }
     }
 
     async function initAuthListener() {
@@ -1748,9 +1789,8 @@
     }
 
     function reconnectSupabase() {
-      if (realtimeChannel) {
-        realtimeChannel.unsubscribe();
-      }
+      if (realtimeChannel) realtimeChannel.unsubscribe();
+      if (dbMessagesChannel) dbMessagesChannel.unsubscribe();
       initSupabaseNetwork();
     }
 
@@ -1842,28 +1882,9 @@
           data.text || data.question, data.createdAt, data.peerId, 
           data.bubbleColor, data.accountType, data.category, calculatedHours, data.interestFilter, false
         );
-      } else if (data.type === 'CHAT_MSG') {
-        const targetRoomId = data.roomId;
-        if (!targetRoomId) return;
-        const timeStr = data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        if (!chatRoomsSessions[targetRoomId]) chatRoomsSessions[targetRoomId] = [];
-        const senderLabel = data.accountType === 'business' ? data.sender : (data.sender || 'Traveler');
-        chatRoomsSessions[targetRoomId].push({ sender: senderLabel, text: data.text, time: timeStr, isMe: false });
-        
-        roomLastActivity[targetRoomId] = Date.now();
-        savePersistentData();
-        
-        playAudioEffect('bell');
-        triggerHapticFeedback([100, 50, 100, 50, 100]);
-        showToast(`New reply in chat bubble from ${senderLabel}!`, 'bell');
-
-        if (currentActiveChatRoomId === targetRoomId) appendMessage(senderLabel, data.text, timeStr, false);
       } else if (data.type === 'DELETE_ROOM') {
         const targetRoomId = data.roomId;
         if (targetRoomId) {
-          delete chatRoomsSessions[targetRoomId];
-          delete roomLastActivity[targetRoomId];
-          savePersistentData();
           if (currentActiveChatRoomId === targetRoomId) {
             closeChatDrawer();
             showToast('The owner deleted this chat room.', 'trash-2');
@@ -2250,28 +2271,6 @@
             if (badge) badge.innerText = `Visible for ${Math.floor(remainingMs / 60000)}m`;
           }
         }
-
-        if (currentActiveChatRoomId) {
-          const lastActivity = roomLastActivity[currentActiveChatRoomId] || Date.now();
-          const elapsed = Date.now() - lastActivity;
-          const remaining24h = TWENTY_FOUR_HOURS_MS - elapsed;
-          const countdownElem = document.getElementById('chatExpiryCountdown');
-
-          if (countdownElem) {
-            if (remaining24h <= 0) {
-              countdownElem.innerText = "Expired (Deleting room...)";
-              delete chatRoomsSessions[currentActiveChatRoomId];
-              delete roomLastActivity[currentActiveChatRoomId];
-              savePersistentData();
-              closeChatDrawer();
-              showToast('Chat expired due to 24h inactivity', 'clock');
-            } else {
-              const hours = Math.floor(remaining24h / (1000 * 60 * 60));
-              const mins = Math.floor((remaining24h % (1000 * 60 * 60)) / (1000 * 60));
-              countdownElem.innerText = `${hours}h ${mins < 10 ? '0' : ''}${mins}m`;
-            }
-          }
-        }
       }, 1000);
     }
 
@@ -2309,7 +2308,7 @@
     function updateMeshUI() {
       const countElem = document.getElementById('activeUserCount');
       if (countElem) {
-        countElem.innerText = `${Object.keys(activeDataConnections).length + 1} Active Peer`;
+        countElem.innerText = `${Object.keys(globalActiveDirectory).length + 1} Active Peer`;
       }
     }
 
@@ -2318,8 +2317,6 @@
       const text = input ? input.value.trim() : '';
       if (!text) return;
       
-      chatRoomsSessions = {};
-      roomLastActivity = {};
       closeChatDrawer();
 
       activeTopicState.text = text; 
@@ -2334,7 +2331,7 @@
       broadcastData({ id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias, bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type, category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime, hours: userState.hours, interestFilter: userState.interestFilter, createdAt: activeTopicState.createdAt, makeNamePublic: userState.makeNamePublic });
       
       input.value = '';
-      showToast('New chat posted! Previous chats cleared.', 'check-circle');
+      showToast('New chat posted!', 'check-circle');
       playAudioEffect('bell');
       savePersistentData();
 
@@ -2359,7 +2356,7 @@
       }, 50);
     }
 
-    function sendChatMessage() {
+    async function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input ? input.value.trim() : '';
       
@@ -2370,13 +2367,19 @@
       if (!text) return;
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      appendMessage('You', text, timeStr, true);
-
-      if (!chatRoomsSessions[currentActiveChatRoomId]) chatRoomsSessions[currentActiveChatRoomId] = [];
-      chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'You', text, time: timeStr, isMe: true });
       
-      roomLastActivity[currentActiveChatRoomId] = Date.now();
-      savePersistentData();
+      if (supabaseClient) {
+        await supabaseClient.from('chat_messages').insert({
+          room_id: currentActiveChatRoomId,
+          sender_id: currentAuthUser ? currentAuthUser.id : null,
+          sender_alias: userState.alias,
+          message: text
+        });
+      } else {
+        appendMessage('You', text, timeStr, true);
+        if (!localChatCache[currentActiveChatRoomId]) localChatCache[currentActiveChatRoomId] = [];
+        localChatCache[currentActiveChatRoomId].push({ sender: 'You', text, time: timeStr, isMe: true });
+      }
 
       input.value = ''; 
       input.style.height = '26px';
@@ -2386,25 +2389,9 @@
           let botReply = "Welcome to LocaL! Tap your bubble anytime to edit your post or review details.";
           const botTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           appendMessage('LocaL Guide', botReply, botTimeStr, false);
-          chatRoomsSessions[currentActiveChatRoomId].push({ sender: 'LocaL Guide', text: botReply, time: botTimeStr, isMe: false });
-          roomLastActivity[currentActiveChatRoomId] = Date.now();
-          savePersistentData();
           playAudioEffect('bell');
         }, 800);
       }
-
-      const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
-      processedMsgIds.add(msgId);
-      
-      broadcastData({ 
-        id: msgId, 
-        type: 'CHAT_MSG', 
-        sender: userState.alias, 
-        roomId: currentActiveChatRoomId, 
-        text,
-        time: timeStr,
-        accountType: userState.type 
-      });
     }
 
     function appendMessage(sender, text, time, isMe) {
@@ -2423,12 +2410,8 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
-    function openChatDrawer(roomId, roomName, topic, peerId, isRestoring = false) {
+    async function openChatDrawer(roomId, roomName, topic, peerId, isRestoring = false) {
       currentActiveChatRoomId = roomId;
-      
-      if (!roomLastActivity[roomId]) {
-        roomLastActivity[roomId] = Date.now();
-      }
       savePersistentData();
       
       document.getElementById('chatTargetName').innerText = roomName;
@@ -2441,11 +2424,8 @@
       const isOwner = isSelf || (peerId === 'you');
       const deleteBtn = document.getElementById('ownerDeleteRoomBtn');
       if (deleteBtn) {
-        if (isOwner) {
-          deleteBtn.classList.remove('hidden');
-        } else {
-          deleteBtn.classList.add('hidden');
-        }
+        if (isOwner) deleteBtn.classList.remove('hidden');
+        else deleteBtn.classList.add('hidden');
       }
 
       const neonStyle = getBusinessNeonStyle(accountType, category);
@@ -2454,9 +2434,7 @@
       const avatarEl = document.getElementById('chatTargetAvatar');
       avatarEl.className = `w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
       avatarEl.style.background = circleBg;
-      if (isBiz) {
-        avatarEl.style.cssText += neonStyle.shadowStyle;
-      }
+      if (isBiz) avatarEl.style.cssText += neonStyle.shadowStyle;
       avatarEl.innerHTML = renderNodeIconContent(accountType, category);
 
       if ((topic || (isSelf && activeTopicState.text)) && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
@@ -2466,24 +2444,22 @@
         document.getElementById('mainTopicContainer').classList.add('hidden');
       }
 
-      const msgBox = document.getElementById('chatMessages');
-      msgBox.innerHTML = '';
-      if (chatRoomsSessions[roomId]) {
-        chatRoomsSessions[roomId].forEach(msg => { appendMessage(msg.sender, msg.text, msg.time, msg.isMe); });
-      }
-
       const actionDock = document.getElementById('actionDockContainer');
       if (actionDock) actionDock.classList.add('hidden');
 
       document.getElementById('chatDrawer').classList.remove('hidden');
       document.getElementById('chatBackdrop').classList.remove('hidden');
+
+      await loadDbChatHistory(roomId);
     }
 
-    function ownerDeleteEntireChatRoom() {
+    async function ownerDeleteEntireChatRoom() {
       if (!currentActiveChatRoomId) return;
       if (confirm("Are you sure you want to delete this entire chat room for all participants?")) {
-        delete chatRoomsSessions[currentActiveChatRoomId];
-        delete roomLastActivity[currentActiveChatRoomId];
+        if (supabaseClient) {
+          await supabaseClient.from('chat_messages').delete().eq('room_id', currentActiveChatRoomId);
+        }
+        delete localChatCache[currentActiveChatRoomId];
         
         if (currentActiveChatRoomId === 'room-you') {
           activeTopicState.text = null;
@@ -2500,7 +2476,7 @@
         });
 
         closeChatDrawer();
-        showToast('Chat room deleted successfully.', 'trash-2');
+        showToast('Chat room deleted from Supabase.', 'trash-2');
         playAudioEffect('chime');
       }
     }
