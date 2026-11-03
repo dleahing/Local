@@ -1521,7 +1521,7 @@
       const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
       const Δλ = (lon2 - lon1) * Math.PI / 180;
       const y = Math.sin(Δλ) * Math.cos(φ2);
-      const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+      const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.sin(Δλ);
       let brng = Math.atan2(y, x) * 180 / Math.PI;
       return (brng + 360) % 360;
     }
@@ -1534,7 +1534,7 @@
           updatePeerNodeOnMap(
             peer.rawSender, peer.distance, peer.distance + 'm', peer.lat, peer.lng, 
             peer.question, peer.createdAt, peer.peerId, peer.bubbleColor, 
-            peer.accountType, peer.category, peer.hours, peer.interestFilter, peer.isBot, peer.hideMyName
+            peer.accountType, peer.category, peer.hours, peer.interestFilter, peer.isBot, peer.hideMyName, peer.isOffline
           );
         }
       });
@@ -1822,6 +1822,24 @@
                 handleIncomingNetworkPayload(data.payload);
               }
             })
+            .on('broadcast', { event: 'chat_reply' }, (data) => {
+              if (data && data.payload) {
+                const payload = data.payload;
+                const timeStr = new Date(payload.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const isMe = currentAuthUser ? (payload.sender_id === currentAuthUser.id) : (payload.sender_alias === userState.alias);
+                
+                participatedChatRoomIds.add(payload.room_id);
+                savePersistentData();
+                refreshAllNodeVisibilities();
+
+                if (currentActiveChatRoomId === payload.room_id) {
+                  appendMessage(payload.sender_alias, payload.message, timeStr, isMe);
+                } else if (!isMe) {
+                  playAudioEffect('bell');
+                  showToast(`New reply from ${payload.sender_alias}`, 'message-square');
+                }
+              }
+            })
             .subscribe((status) => {
               if (status === 'SUBSCRIBED') {
                 updatePeerServerStatus(true, "Connected to Supabase Realtime");
@@ -2039,15 +2057,44 @@
     }
 
     function handleSupabasePresenceSync(state) {
+      const activePresentPeerIds = new Set();
       Object.keys(state).forEach(key => {
         const presenceList = state[key];
         if (presenceList && presenceList.length > 0) {
           const peerData = presenceList[0];
-          if (peerData && peerData.peerId && peerData.peerId !== myPeerId) {
-            handleIncomingNetworkPayload(peerData);
+          if (peerData && peerData.peerId) {
+            activePresentPeerIds.add(peerData.peerId);
+            if (peerData.peerId !== myPeerId) {
+              handleIncomingNetworkPayload(peerData);
+            }
           }
         }
       });
+
+      Object.keys(globalActiveDirectory).forEach(peerId => {
+        const peer = globalActiveDirectory[peerId];
+        if (!peer.isBot && peerId !== myPeerId) {
+          const isCurrentlyOnline = activePresentPeerIds.has(peerId);
+          peer.isOffline = !isCurrentlyOnline;
+          
+          const hasValidTopic = peer.question && peer.createdAt && (Date.now() - peer.createdAt < ONE_HOUR_MS);
+          
+          if (!isCurrentlyOnline && !hasValidTopic) {
+            let peerKey = 'node-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
+            let nodeElem = document.getElementById(peerKey);
+            if (nodeElem) nodeElem.remove();
+            delete globalActiveDirectory[peerId];
+          } else {
+            updatePeerNodeOnMap(
+              peer.rawSender, peer.distance, peer.distance + 'm', peer.lat, peer.lng, 
+              peer.question, peer.createdAt, peer.peerId, peer.bubbleColor, 
+              peer.accountType, peer.category, peer.hours, peer.interestFilter, peer.isBot, peer.hideMyName, peer.isOffline
+            );
+          }
+        }
+      });
+      renderGlobalUsersDirectory();
+      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
     }
 
     function updatePeerServerStatus(connected, customStatusText) {
@@ -2104,7 +2151,7 @@
         updatePeerNodeOnMap(
           data.sender, distance, distance + 'm', data.lat, data.lng, 
           data.text || data.question, data.createdAt, data.peerId, 
-          data.bubbleColor, data.accountType, data.category, calculatedHours, data.interestFilter, false, data.hideMyName
+          data.bubbleColor, data.accountType, data.category, calculatedHours, data.interestFilter, false, data.hideMyName, false
         );
       } else if (data.type === 'DELETE_ROOM') {
         const targetRoomId = data.roomId;
@@ -2162,7 +2209,7 @@
           isBot: true
         };
 
-        updatePeerNodeOnMap(u.name, dist, dist + 'm', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true, false);
+        updatePeerNodeOnMap(u.name, dist, dist + 'm', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true, false, false);
       });
 
       renderGlobalUsersDirectory();
@@ -2383,7 +2430,7 @@
       } catch(e) {}
     }
 
-    function updatePeerNodeOnMap(rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, hours, interestFilter, isBot, hideMyName) {
+    function updatePeerNodeOnMap(rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, hours, interestFilter, isBot, hideMyName, isOffline = false) {
       const container = document.getElementById('nodesContainer');
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
@@ -2434,7 +2481,7 @@
       const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
       
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
-      const showSonarRipple = matchesFilter && !isBiz;
+      const showSonarRipple = matchesFilter && !isBiz && !isOffline;
       const chatRoomName = getDisplayName(rawSender, hideMyName, accountType);
 
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')`;
@@ -2447,9 +2494,11 @@
             ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs, hours, hideMyName) : ''}
           </div>
 
-          <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
-            ${renderNodeIconContent(accountType, category)}
-          </div>
+          ${!isOffline ? `
+            <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+              ${renderNodeIconContent(accountType, category)}
+            </div>
+          ` : ''}
         </div>
       `;
       lucide.createIcons();
@@ -2469,6 +2518,32 @@
             if (badge) badge.innerText = `Visible for ${Math.floor(remainingMs / 60000)}m`;
           }
         }
+
+        Object.keys(globalActiveDirectory).forEach(peerId => {
+          const peer = globalActiveDirectory[peerId];
+          if (peer.createdAt) {
+            const rem = ONE_HOUR_MS - (Date.now() - peer.createdAt);
+            if (rem <= 0) {
+              peer.question = null;
+              peer.createdAt = null;
+              if (peer.isOffline) {
+                let peerKey = 'node-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
+                let nodeElem = document.getElementById(peerKey);
+                if (nodeElem) nodeElem.remove();
+                delete globalActiveDirectory[peerId];
+              } else {
+                updatePeerNodeOnMap(
+                  peer.rawSender, peer.distance, peer.distance + 'm', peer.lat, peer.lng, 
+                  null, null, peer.peerId, peer.bubbleColor, 
+                  peer.accountType, peer.category, peer.hours, peer.interestFilter, peer.isBot, peer.hideMyName, false
+                );
+              }
+            }
+          }
+        });
+
+        renderGlobalUsersDirectory();
+        if (currentLayoutMode === 'right') renderRightSidebarBubbles();
       }, 1000);
     }
 
@@ -2614,6 +2689,22 @@
       appendMessage(senderDisplayName, text, timeStr, true);
       input.value = ''; 
       input.style.height = '26px';
+
+      const payloadMsg = {
+        room_id: currentActiveChatRoomId,
+        sender_id: currentAuthUser ? currentAuthUser.id : null,
+        sender_alias: senderDisplayName,
+        message: text,
+        created_at: new Date().toISOString()
+      };
+
+      if (realtimeChannel) {
+        realtimeChannel.send({
+          type: 'broadcast',
+          event: 'chat_reply',
+          payload: payloadMsg
+        });
+      }
 
       if (supabaseClient) {
         await supabaseClient.from('chat_messages').insert({
