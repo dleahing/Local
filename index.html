@@ -336,6 +336,20 @@
     </div>
   </div>
 
+  <!-- EMAIL CONFIRMATION BANNER MODAL -->
+  <div id="emailConfirmationModal" class="hidden fixed inset-0 z-[99999999] glass-panel bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl text-center space-y-4">
+      <div class="w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-400 flex items-center justify-center text-sky-700 mx-auto">
+        <i data-lucide="mail-check" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-lg font-bold text-slate-900 tracking-tight">Check Your Email</h3>
+      <p class="text-xs text-slate-600 leading-relaxed">We've sent a confirmation link to your email address. Please verify your email to fully activate your Supabase account.</p>
+      <button onclick="dismissEmailConfirmationModal()" class="w-full py-3 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-lg active:scale-98">
+        I've Confirmed / Continue to Map
+      </button>
+    </div>
+  </div>
+
   <!-- MANDATORY SUPABASE ACCOUNT CREATION WALL MODAL -->
   <div id="welcomeProfileModal" class="fixed inset-0 z-[9999999] glass-panel bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -505,7 +519,10 @@
             <button onclick="playAudioEffect('click'); signUpWithEmail()" type="button" class="py-2 rounded-xl bg-slate-800 text-white font-semibold text-xs shadow-md">Sign Up</button>
             <button onclick="playAudioEffect('click'); signInWithEmail()" type="button" class="py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Sign In</button>
           </div>
-          <button id="signOutBtn" onclick="playAudioEffect('click'); signOutUser()" type="button" class="hidden w-full py-2 rounded-xl bg-red-600 text-white font-semibold text-xs shadow-md">Sign Out</button>
+          <div class="flex items-center justify-between pt-1">
+            <button onclick="playAudioEffect('click'); requestPasswordReset()" type="button" class="text-[10px] text-sky-700 font-semibold hover:underline">Forgot Password?</button>
+            <button id="signOutBtn" onclick="playAudioEffect('click'); signOutUser()" type="button" class="hidden px-3 py-1.5 rounded-xl bg-red-600 text-white font-semibold text-xs shadow-md">Sign Out</button>
+          </div>
         </div>
 
         <div>
@@ -1017,6 +1034,8 @@
       supabaseConfig = { url, key };
       savePersistentData();
 
+      let needsEmailConfirmation = false;
+
       try {
         if (window.supabase) {
           supabaseClient = window.supabase.createClient(url, key);
@@ -1033,6 +1052,9 @@
 
           if (data?.user) {
             currentAuthUser = data.user;
+            if (!data.session) {
+              needsEmailConfirmation = true;
+            }
             await supabaseClient.from('profiles').upsert({
               id: currentAuthUser.id,
               alias: alias,
@@ -1064,8 +1086,19 @@
 
       savePersistentData();
       document.getElementById('welcomeProfileModal').classList.add('hidden');
+
+      if (needsEmailConfirmation) {
+        document.getElementById('emailConfirmationModal').classList.remove('hidden');
+      } else {
+        initializeAppSession();
+        showToast('Account created and saved on Supabase!', 'check-circle');
+      }
+    }
+
+    function dismissEmailConfirmationModal() {
+      document.getElementById('emailConfirmationModal').classList.add('hidden');
       initializeAppSession();
-      showToast('Account created and saved on Supabase!', 'check-circle');
+      showToast('Account ready! Welcome to LocaL.', 'check-circle');
     }
 
     function initializeAppSession() {
@@ -1908,13 +1941,20 @@
         showToast('Enter email and password', 'alert-circle');
         return;
       }
-      const { error } = await supabaseClient.auth.signUp({
+      const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: { data: { full_name: alias } }
       });
-      if (error) showToast(error.message, 'x-circle');
-      else showToast('Sign up successful! Check email if confirmation is required.', 'check-circle');
+      if (error) {
+        showToast(error.message, 'x-circle');
+      } else {
+        if (!data.session) {
+          document.getElementById('emailConfirmationModal').classList.remove('hidden');
+        } else {
+          showToast('Sign up successful and verified!', 'check-circle');
+        }
+      }
     }
 
     async function signInWithEmail() {
@@ -1929,10 +1969,35 @@
         return;
       }
       const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) showToast(error.message, 'x-circle');
-      else {
+      if (error) {
+        if (error.message.includes('Email not confirmed')) {
+          document.getElementById('emailConfirmationModal').classList.remove('hidden');
+        } else {
+          showToast(error.message, 'x-circle');
+        }
+      } else {
         showToast('Logged in successfully!', 'check-circle');
         closeProfileModal();
+      }
+    }
+
+    async function requestPasswordReset() {
+      if (!supabaseClient) {
+        showToast('Configure Supabase URL and Key first', 'alert-circle');
+        return;
+      }
+      const email = document.getElementById('authEmailInput').value.trim();
+      if (!email) {
+        showToast('Please enter your email address above to reset password', 'alert-circle');
+        return;
+      }
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href
+      });
+      if (error) {
+        showToast(error.message, 'x-circle');
+      } else {
+        showToast('Password reset email sent! Check your inbox.', 'mail');
       }
     }
 
