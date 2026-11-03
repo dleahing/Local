@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Timer in Drawer & Gold Ripples]</title>
+  <title>LocaL - Supabase Proximity Social Network [Cleaned Bubbles & Gold User Outline]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -244,7 +244,7 @@
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
         <i data-lucide="message-square" class="w-4 h-4 text-sky-600"></i>
-        <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Active Chat Bubbles (<span id="rightSidebarCount">0</span>)</h3>
+        <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Chat Bubbles (<span id="rightSidebarCount">0</span>)</h3>
       </div>
       <button onclick="playAudioEffect('click'); setLayoutMode('map')" class="text-slate-500 hover:text-slate-800 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
@@ -291,7 +291,10 @@
   <div id="actionDockContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
-        <i data-lucide="message-square-plus" class="w-4 h-4 text-amber-400 flex-shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" stroke-width="2.5"></i>
+        <!-- Upgraded circular chat icon with centered plus sign -->
+        <div class="w-7 h-7 rounded-full bg-amber-400/20 border border-amber-400 flex items-center justify-center flex-shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
+          <i data-lucide="message-square-plus" class="w-3.5 h-3.5 text-amber-400" stroke-width="2.5"></i>
+        </div>
         <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
         <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-emerald-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-emerald-500 transition-all">
           <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
@@ -323,13 +326,11 @@
       </div>
 
       <div class="space-y-5">
-        <!-- Admin Tabs -->
         <div class="flex rounded-2xl bg-slate-900 p-1 border border-slate-800">
           <button type="button" onclick="setAdminTab('bots')" id="adminTabBotsBtn" class="flex-1 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md">Active Bots Editor</button>
           <button type="button" onclick="setAdminTab('users')" id="adminTabUsersBtn" class="flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all">Network Users Editor</button>
         </div>
 
-        <!-- BOTS TAB CONTENT -->
         <div id="adminTabBotsContent" class="space-y-4">
           <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
             <div>
@@ -366,7 +367,7 @@
               </div>
             </div>
             <div>
-              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Initial Chat Bubble Question / Message</label>
+              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Chat Bubble Question / Message</label>
               <input type="text" id="newBotQuestionInput" placeholder="e.g. Live music at the pavilion tonight!" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
             </div>
             <div class="grid grid-cols-2 gap-2">
@@ -391,7 +392,6 @@
           </div>
         </div>
 
-        <!-- USERS TAB CONTENT -->
         <div id="adminTabUsersContent" class="hidden space-y-4">
           <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
             <h4 class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -668,7 +668,7 @@
       <i data-lucide="pin" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
       <div>
         <p id="mainTopicText" class="text-xs font-normal text-slate-900 leading-snug"></p>
-        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-emerald-700 mt-0.5 block">Active Chat Topic</span>
+        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-emerald-700 mt-0.5 block">Chat Topic</span>
       </div>
     </div>
 
@@ -699,10 +699,10 @@
     const DEFAULT_RADIUS_METERS = 804.67; // 0.5 miles default
     const MAX_RADIUS_METERS = 48280.3;
     
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v29';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v38';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v28';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v28';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v30';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v39';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v29';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v29';
     const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v5';
     const STORAGE_KEY_FRIENDS = 'local_friends_list_v4';
     const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v1';
@@ -871,48 +871,48 @@
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
-    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle) {
+    // Main user's chat bubble gets neon gold outline, bot/other users do NOT
+    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle, isMainUser = false) {
       if (!question) return '';
+      const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
       return `
-        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 shadow-2xl border-[3px] border-amber-400 flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" style="box-shadow: 0 0 35px rgba(251, 191, 36, 0.8);" onclick="${onClickJs}">
+        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
           <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1">
-            <span class="text-[9px] text-amber-700 font-mono font-extrabold uppercase">Active Chat</span>
-            <span class="text-[9px] text-slate-500 truncate">${businessName}</span>
+            <span class="text-[9px] text-slate-500 font-mono font-medium truncate">${businessName}</span>
           </div>
-          <div class="flex items-center gap-1.5 py-0.5">
-            <i data-lucide="message-circle" class="w-4 h-4 text-amber-500 flex-shrink-0" stroke-width="2.5"></i>
+          <div class="flex items-center justify-center gap-1.5 py-0.5">
             <span class="truncate">${question}</span>
           </div>
         </div>
       `;
     }
 
-    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName) {
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false) {
       const displayName = getDisplayName(businessName, hideMyName, accountType);
       if (accountType !== 'business') {
         if (!question) return '';
+        const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
         return `
-          <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
-            <div class="flex items-center justify-between gap-1 text-[9px] text-purple-700 font-mono font-bold">
-              <span>Active Chat</span>
+          <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
+            <div class="flex items-center justify-between gap-1 text-[9px] text-slate-500 font-mono font-medium">
               <span class="truncate">${displayName}</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
               <span class="truncate">${question}</span>
             </div>
           </div>
         `;
       }
       const neonStyle = getBusinessNeonStyle(accountType, category);
+      const bizOutline = isMainUser ? 'border-[3.5px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.9)]' : 'border border-white/20 shadow-2xl';
       return `
-        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-1.5 animate-float z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 animate-float z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <div class="flex items-start gap-2.5">
             <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between mb-0.5">
-                <span class="text-xs font-bold ${neonStyle.glowText} truncate">${displayName}</span>
-                <span class="text-[9px] font-mono text-amber-300 font-bold px-1.5 py-0.2 rounded bg-amber-500/20">Store</span>
+                <span class="text-xs font-bold text-slate-500 truncate">${displayName}</span>
+                <span class="text-[9px] font-mono text-slate-400 font-bold px-1.5 py-0.2 rounded bg-slate-800">Store</span>
               </div>
               ${question ? `<p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>` : ''}
             </div>
@@ -1741,7 +1741,6 @@
 
       const sizePx = targetRing.offsetWidth || 375;
       const ripple = document.createElement('div');
-      // Updated ripple color to vibrant Gold (rgba(251, 191, 36, ...))
       ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-amber-400/90 bg-amber-400/30 pointer-events-none animate-radius-ripple shadow-[0_0_25px_rgba(251,191,36,0.7)] hairline-ring';
       ripple.style.width = `${sizePx}px`;
       ripple.style.height = `${sizePx}px`;
@@ -1775,10 +1774,12 @@
 
       if (userState.type === 'business') {
         topBubble.className = "block relative z-[99999999]";
-        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName);
+        // Main user gets gold outline (isMainUser = true)
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName, true);
       } else {
         topBubble.className = "relative z-[99999999]";
-        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle);
+        // Main user gets gold outline (isMainUser = true)
+        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle, true);
       }
       topBubble.classList.remove('hidden');
       lucide.createIcons();
@@ -1912,10 +1913,6 @@
       }
       showToast(`Radar style updated to ${styleName}!`, 'radar');
     }
-
-    /* ============================================================ */
-    /* SUPABASE REALTIME & PINNED CHATS (TOP LEFT)                   */
-    /* ============================================================ */
 
     function initSupabaseNetwork() {
       document.getElementById('myPeerIdDisplay').value = myPeerId;
@@ -2241,7 +2238,7 @@
           bubbleColor: u.color || 'blue', accountType: u.accountType || 'personal', category: u.category || 'store',
           openTime: u.openTime || '', closeTime: u.closeTime || '', hours: computedHours || '',
           interestFilter: u.interestFilter || 'none', hideMyName: false, lastSeen: Date.now(),
-          question: u.question || 'Active Bot Bubble', createdAt: u.createdAt || (Date.now() - (i * 300000)), isBot: true
+          question: u.question || 'Bot Bubble', createdAt: u.createdAt || (Date.now() - (i * 300000)), isBot: true
         };
       });
 
@@ -2289,7 +2286,8 @@
           accountType: userState.type,
           category: userState.category,
           peerId: 'you',
-          createdAt: activeTopicState.createdAt
+          createdAt: activeTopicState.createdAt,
+          isMainUser: true
         });
       }
 
@@ -2301,11 +2299,12 @@
           pinnedList.push({
             roomId,
             name: getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType),
-            question: peer.question || 'Active Chat',
+            question: peer.question || 'Chat',
             accountType: peer.accountType,
             category: peer.category,
             peerId,
-            createdAt: peer.createdAt
+            createdAt: peer.createdAt,
+            isMainUser: false
           });
         }
       });
@@ -2320,18 +2319,19 @@
         const isBiz = item.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(item.accountType, item.category);
         const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${item.name}', '${item.question || ''}', '${item.peerId}', ${item.createdAt})`;
+        // Main user gets gold outline when listed, others do not
+        const cardOutline = item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : 'border border-white/80 shadow-xl';
 
         container.innerHTML += `
-          <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 border border-white/80 cursor-pointer hover:scale-105 transition-all max-w-[240px]">
+          <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
             <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
               ${renderNodeIconContent(item.accountType, item.category)}
             </div>
             <div class="min-w-0 flex-1">
-              <div class="flex items-center justify-between text-[9px] text-amber-900 font-mono font-bold">
+              <div class="flex items-center justify-between text-[9px] text-slate-500 font-mono font-medium">
                 <span class="truncate">${item.name}</span>
-                <span class="text-[8px] text-emerald-800 uppercase">Active</span>
               </div>
-              <span class="text-[9px] text-emerald-800 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
+              <span class="text-[9px] text-slate-700 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
             </div>
           </div>
         `;
@@ -2374,7 +2374,7 @@
                   <h4 class="font-bold text-slate-900 text-xs">${displayLabel}</h4>
                   ${isFriend ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold">Friend</span>' : ''}
                 </div>
-                <p class="text-[10px] text-emerald-900 font-semibold">Distance: ${distStr}</p>
+                <p class="text-[10px] text-slate-500 font-semibold">Distance: ${distStr}</p>
               </div>
             </div>
             <div class="flex items-center gap-1.5">
@@ -2402,7 +2402,7 @@
           question: hasSelfTopic ? activeTopicState.text : '',
           peerId: 'you', roomId: 'room-you', accountType: userState.type,
           category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName,
-          createdAt: activeTopicState.createdAt
+          createdAt: activeTopicState.createdAt, isMainUser: true
         });
       }
 
@@ -2422,7 +2422,7 @@
               question: hasValidQuestion ? p.question : '',
               peerId: p.peerId, roomId, accountType: p.accountType,
               category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius,
-              createdAt: p.createdAt
+              createdAt: p.createdAt, isMainUser: false
             });
           }
         }
@@ -2448,8 +2448,8 @@
               ${renderNodeIconContent(b.accountType, b.category)}
             </div>
             <div class="flex-1 min-w-0">
-              <span class="text-xs font-bold text-slate-900 truncate block">${b.name}</span>
-              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false)}</div>
+              <span class="text-xs font-bold text-slate-500 truncate block">${b.name}</span>
+              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false, b.isMainUser)}</div>
             </div>
           </div>
         `;
@@ -2529,7 +2529,7 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName) : ''}
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName, false) : ''}
           </div>
           ${!peer.isOffline ? `
             <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
@@ -2555,7 +2555,6 @@
           }
         }
 
-        // Check bot chat bubble expiry & auto-respawn immediately
         Object.keys(globalActiveDirectory).forEach(peerId => {
           const peer = globalActiveDirectory[peerId];
           if (peer.isBot && peer.createdAt) {
@@ -2566,7 +2565,6 @@
           }
         });
 
-        // Update active drawer timer if a peer chat room is open
         if (currentActiveChatRoomId && currentActiveChatRoomId !== 'room-you') {
           const peerId = currentActiveChatRoomId.replace('room-peer-', '');
           const peer = globalActiveDirectory[peerId];
