@@ -392,7 +392,7 @@
     </div>
   </div>
 
-  <!-- Profile Customization & Creation Modal -->
+  <!-- Profile Customization & Auth Modal -->
   <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
@@ -401,6 +401,19 @@
       </div>
       
       <div class="space-y-4">
+        <!-- Supabase Auth Section -->
+        <div class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2.5">
+          <label class="block text-xs font-bold text-emerald-950 uppercase tracking-wider">Supabase Account Auth</label>
+          <div id="authStatusBanner" class="text-[11px] text-slate-600 font-medium">Not logged in (anonymous mode)</div>
+          <input type="email" id="authEmailInput" placeholder="Email address" class="w-full px-3 py-2 rounded-xl bg-white/80 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+          <input type="password" id="authPasswordInput" placeholder="Password" class="w-full px-3 py-2 rounded-xl bg-white/80 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+          <div class="grid grid-cols-2 gap-2" id="authButtonsContainer">
+            <button onclick="playAudioEffect('click'); signUpWithEmail()" type="button" class="py-2 rounded-xl bg-slate-800 text-white font-semibold text-xs shadow-md">Sign Up</button>
+            <button onclick="playAudioEffect('click'); signInWithEmail()" type="button" class="py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Sign In</button>
+          </div>
+          <button id="signOutBtn" onclick="playAudioEffect('click'); signOutUser()" type="button" class="hidden w-full py-2 rounded-xl bg-red-600 text-white font-semibold text-xs shadow-md">Sign Out</button>
+        </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
           <div class="grid grid-cols-2 gap-2">
@@ -603,6 +616,7 @@
     let supabaseClient = null;
     let realtimeChannel = null;
     let supabaseConfig = { url: '', key: '' };
+    let currentAuthUser = null;
 
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
     let globalActiveDirectory = {};
@@ -1575,7 +1589,7 @@
     }
 
     /* ============================================================ */
-    /* SUPABASE REALTIME MESH NETWORK & BROADCAST IMPLEMENTATION     */
+    /* SUPABASE REALTIME MESH NETWORK & AUTH INTEGRATION             */
     /* ============================================================ */
 
     function initSupabaseNetwork() {
@@ -1591,6 +1605,8 @@
         if (window.supabase) {
           supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
           
+          initAuthListener();
+
           realtimeChannel = supabaseClient.channel(MESH_ROOM_KEY, {
             config: {
               broadcast: { self: false },
@@ -1626,6 +1642,109 @@
       }
 
       setupLocalBroadcastFallback();
+    }
+
+    async function initAuthListener() {
+      if (!supabaseClient) return;
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      updateAuthUI(session?.user || null);
+
+      supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        updateAuthUI(session?.user || null);
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        }
+      });
+    }
+
+    function updateAuthUI(user) {
+      currentAuthUser = user;
+      const statusBanner = document.getElementById('authStatusBanner');
+      const authButtons = document.getElementById('authButtonsContainer');
+      const signOutBtn = document.getElementById('signOutBtn');
+
+      if (user) {
+        statusBanner.innerText = `Logged in as: ${user.email}`;
+        statusBanner.className = 'text-[11px] text-emerald-700 font-semibold';
+        authButtons.classList.add('hidden');
+        signOutBtn.classList.remove('hidden');
+      } else {
+        statusBanner.innerText = 'Not logged in (anonymous mode)';
+        statusBanner.className = 'text-[11px] text-slate-600 font-medium';
+        authButtons.classList.remove('hidden');
+        signOutBtn.classList.add('hidden');
+      }
+    }
+
+    async function signUpWithEmail() {
+      if (!supabaseClient) {
+        showToast('Configure Supabase URL and Key first', 'alert-circle');
+        return;
+      }
+      const email = document.getElementById('authEmailInput').value.trim();
+      const password = document.getElementById('authPasswordInput').value.trim();
+      const alias = document.getElementById('avatarNameInput').value.trim();
+      if (!email || !password) {
+        showToast('Enter email and password', 'alert-circle');
+        return;
+      }
+      const { error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: alias } }
+      });
+      if (error) showToast(error.message, 'x-circle');
+      else showToast('Sign up successful! Check email if confirmation is required.', 'check-circle');
+    }
+
+    async function signInWithEmail() {
+      if (!supabaseClient) {
+        showToast('Configure Supabase URL and Key first', 'alert-circle');
+        return;
+      }
+      const email = document.getElementById('authEmailInput').value.trim();
+      const password = document.getElementById('authPasswordInput').value.trim();
+      if (!email || !password) {
+        showToast('Enter email and password', 'alert-circle');
+        return;
+      }
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) showToast(error.message, 'x-circle');
+      else {
+        showToast('Logged in successfully!', 'check-circle');
+        closeProfileModal();
+      }
+    }
+
+    async function signOutUser() {
+      if (!supabaseClient) return;
+      await supabaseClient.auth.signOut();
+      showToast('Logged out successfully', 'log-out');
+    }
+
+    async function fetchUserProfile(userId) {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
+      if (data && !error) {
+        userState.alias = data.alias || userState.alias;
+        userState.type = data.account_type || userState.type;
+        userState.category = data.category || userState.category;
+        userState.interestFilter = data.interest_filter || userState.interestFilter;
+        document.getElementById('avatarNameInput').value = userState.alias;
+        updateMyDisplayLabel();
+      }
+    }
+
+    async function saveUserProfileToSupabase() {
+      if (!supabaseClient || !currentAuthUser) return;
+      await supabaseClient.from('profiles').upsert({
+        id: currentAuthUser.id,
+        alias: userState.alias,
+        account_type: userState.type,
+        category: userState.category,
+        interest_filter: userState.interestFilter,
+        updated_at: new Date()
+      });
     }
 
     function reconnectSupabase() {
@@ -2181,6 +2300,7 @@
 
       updateMyDisplayLabel();
       savePersistentData();
+      saveUserProfileToSupabase();
       announcePresence();
       closeProfileModal();
       location.reload();
@@ -2189,7 +2309,7 @@
     function updateMeshUI() {
       const countElem = document.getElementById('activeUserCount');
       if (countElem) {
-        countElem.innerText = `${Object.keys(globalActiveDirectory).length + 1} Active Peer`;
+        countElem.innerText = `${Object.keys(activeDataConnections).length + 1} Active Peer`;
       }
     }
 
