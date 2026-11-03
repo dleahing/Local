@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Single Active Chat & Live Timers]</title>
+  <title>LocaL - Supabase Proximity Social Network [Auto-Respawning Bots & Admin Fixes]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -317,71 +317,92 @@
           <i data-lucide="shield-check" class="w-6 h-6 text-amber-400"></i>
           <div>
             <h3 class="text-lg font-extrabold text-white tracking-tight">Administrator Control Center</h3>
-            <p class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider">Manage Bots & Remove Radar Limits</p>
+            <p class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider">Manage Bots & Network Users Separately</p>
           </div>
         </div>
         <button onclick="playAudioEffect('click'); closeAdminModal()" class="text-slate-400 hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
 
       <div class="space-y-5">
-        <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
-          <div>
-            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Remove Radar Limits</h4>
-            <p class="text-[11px] text-slate-300 font-light">Allow all active users & chat bubbles to be seen across the entire map regardless of distance.</p>
-          </div>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="unlimitedRadarToggle" onchange="toggleUnlimitedRadar(this.checked)" class="sr-only peer">
-            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-          </label>
+        <!-- Admin Tabs -->
+        <div class="flex rounded-2xl bg-slate-900 p-1 border border-slate-800">
+          <button type="button" onclick="setAdminTab('bots')" id="adminTabBotsBtn" class="flex-1 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md">Active Bots Editor</button>
+          <button type="button" onclick="setAdminTab('users')" id="adminTabUsersBtn" class="flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all">Network Users Editor</button>
         </div>
 
-        <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-          <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="user-plus" class="w-4 h-4"></i> Add New Bot to Mesh
-          </h4>
-          <div class="grid grid-cols-2 gap-2">
+        <!-- BOTS TAB CONTENT -->
+        <div id="adminTabBotsContent" class="space-y-4">
+          <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
             <div>
-              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Bot Name / Alias</label>
-              <input type="text" id="newBotNameInput" placeholder="e.g. Marina Patrol Bot" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none">
+              <h4 class="text-xs font-bold text-white uppercase tracking-wider">Remove Radar Limits</h4>
+              <p class="text-[11px] text-slate-300 font-light">Allow all active users & chat bubbles to be seen across the entire map regardless of distance.</p>
             </div>
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Interest Filter</label>
-              <select id="newBotInterestInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
-                <option value="none">None (All)</option>
-                <option value="Life">Life</option>
-                <option value="Cars">Cars</option>
-                <option value="Moms">Moms</option>
-                <option value="Dads">Dads</option>
-                <option value="Food">Food</option>
-                <option value="Hiking">Hiking</option>
-                <option value="Pickleball">Pickleball</option>
-              </select>
-            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="unlimitedRadarToggle" onchange="toggleUnlimitedRadar(this.checked)" class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            </label>
           </div>
+
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+            <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="user-plus" class="w-4 h-4"></i> Add New Bot to Mesh
+            </h4>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-300 mb-1">Bot Name / Alias</label>
+                <input type="text" id="newBotNameInput" placeholder="e.g. Marina Patrol Bot" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-300 mb-1">Interest Filter</label>
+                <select id="newBotInterestInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+                  <option value="none">None (All)</option>
+                  <option value="Life">Life</option>
+                  <option value="Cars">Cars</option>
+                  <option value="Moms">Moms</option>
+                  <option value="Dads">Dads</option>
+                  <option value="Food">Food</option>
+                  <option value="Hiking">Hiking</option>
+                  <option value="Pickleball">Pickleball</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Initial Chat Bubble Question / Message</label>
+              <input type="text" id="newBotQuestionInput" placeholder="e.g. Live music at the pavilion tonight!" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-300 mb-1">Distance (Miles)</label>
+                <input type="number" id="newBotMilesInput" value="0.4" step="0.1" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-300 mb-1">Account Type</label>
+                <select id="newBotTypeInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+                  <option value="personal">Personal User Bot</option>
+                  <option value="business">Business Store Bot</option>
+                </select>
+              </div>
+            </div>
+            <button onclick="createNewCustomBot()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">Deploy Bot to Map</button>
+          </div>
+
           <div>
-            <label class="block text-[10px] font-semibold text-slate-300 mb-1">Initial Chat Bubble Question / Message</label>
-            <input type="text" id="newBotQuestionInput" placeholder="e.g. Live music at the pavilion tonight!" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+            <h4 class="text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">Active Bot Profiles Editor</h4>
+            <div id="adminBotEditorList" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
           </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Distance (Miles)</label>
-              <input type="number" id="newBotMilesInput" value="0.4" step="0.1" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
-            </div>
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Account Type</label>
-              <select id="newBotTypeInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
-                <option value="personal">Personal User Bot</option>
-                <option value="business">Business Store Bot</option>
-              </select>
-            </div>
-          </div>
-          <button onclick="createNewCustomBot()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">Deploy Bot to Map</button>
         </div>
 
-        <div>
-          <h4 class="text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">Active Bot Profiles & Editor</h4>
-          <div id="adminBotEditorList" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+        <!-- USERS TAB CONTENT -->
+        <div id="adminTabUsersContent" class="hidden space-y-4">
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+            <h4 class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="users" class="w-4 h-4"></i> Connected Network Users Directory
+            </h4>
+            <p class="text-[11px] text-slate-400">View and manage all real users connected to your local proximity mesh.</p>
+            <div id="adminUsersEditorList" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -679,12 +700,13 @@
     const DEFAULT_RADIUS_METERS = 804.67; // 0.5 miles default
     const MAX_RADIUS_METERS = 48280.3;
     
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v28';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v37';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v27';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v27';
-    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v4';
-    const STORAGE_KEY_FRIENDS = 'local_friends_list_v3';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v29';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v38';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v28';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v28';
+    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v5';
+    const STORAGE_KEY_FRIENDS = 'local_friends_list_v4';
+    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v1';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -704,6 +726,7 @@
     let processedMsgIds = new Set();
     let participatedChatRoomIds = new Set();
     let friendPeerIds = new Set();
+    let customBotDefinitions = [];
     let wakeLock = null;
     let broadcastChannel = null;
     let backgroundAudioOscillator = null;
@@ -843,7 +866,7 @@
       if (!createdAt) return '60m 00s';
       const elapsed = Date.now() - createdAt;
       const remaining = ONE_HOUR_MS - elapsed;
-      if (remaining <= 0) return 'Expired';
+      if (remaining <= 0) return '0m 00s';
       const mins = Math.floor(remaining / 60000);
       const secs = Math.floor((remaining % 60000) / 1000);
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
@@ -1074,9 +1097,30 @@
       }
     }
 
+    function setAdminTab(tabName) {
+      const btnBots = document.getElementById('adminTabBotsBtn');
+      const btnUsers = document.getElementById('adminTabUsersBtn');
+      const contentBots = document.getElementById('adminTabBotsContent');
+      const contentUsers = document.getElementById('adminTabUsersContent');
+
+      if (tabName === 'bots') {
+        btnBots.className = 'flex-1 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md';
+        btnUsers.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
+        contentBots.classList.remove('hidden');
+        contentUsers.classList.add('hidden');
+        renderAdminBotEditorList();
+      } else {
+        btnUsers.className = 'flex-1 py-2 rounded-xl bg-sky-500 text-slate-950 font-bold text-xs transition-all shadow-md';
+        btnBots.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
+        contentUsers.classList.remove('hidden');
+        contentBots.classList.add('hidden');
+        renderAdminUsersEditorList();
+      }
+    }
+
     function openAdminModal() {
       document.getElementById('adminManagementModal').classList.remove('hidden');
-      renderAdminBotEditorList();
+      setAdminTab('bots');
     }
 
     function closeAdminModal() { document.getElementById('adminManagementModal').classList.add('hidden'); }
@@ -1109,12 +1153,16 @@
       const lat = userState.lat + latOffset;
       const lng = userState.lng + lngOffset;
 
-      globalActiveDirectory[botId] = {
-        rawSender: name, peerId: botId, lat, lng, distance: distMeters,
+      const newBot = {
+        peerId: botId, rawSender: name, lat, lng, distance: distMeters,
         bubbleColor: 'purple', accountType, category: 'store',
         hours: 'Open 9:00 AM • Closes 9:00 PM', interestFilter: interest,
         hideMyName: false, lastSeen: Date.now(), question, createdAt: Date.now(), isBot: true
       };
+
+      globalActiveDirectory[botId] = newBot;
+      customBotDefinitions.push(newBot);
+      savePersistentData();
 
       refreshAllPeerDistancesAndPositions();
       renderGlobalUsersDirectory();
@@ -1129,7 +1177,7 @@
     function renderAdminBotEditorList() {
       const container = document.getElementById('adminBotEditorList');
       if (!container) return;
-      const peerIds = Object.keys(globalActiveDirectory);
+      const peerIds = Object.keys(globalActiveDirectory).filter(id => globalActiveDirectory[id].isBot);
       if (peerIds.length === 0) {
         container.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-center text-xs text-slate-400">No active bots found.</div>`;
         return;
@@ -1153,6 +1201,53 @@
       });
     }
 
+    function renderAdminUsersEditorList() {
+      const container = document.getElementById('adminUsersEditorList');
+      if (!container) return;
+      const userPeerIds = Object.keys(globalActiveDirectory).filter(id => !globalActiveDirectory[id].isBot);
+      
+      let html = `
+        <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-white">${userState.alias} (You - Admin)</span>
+            <span class="text-[10px] text-emerald-400 block font-mono">ID: ${myPeerId}</span>
+          </div>
+          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">Active Session</span>
+        </div>
+      `;
+
+      if (userPeerIds.length === 0) {
+        container.innerHTML = html + `<div class="p-3 rounded-xl bg-slate-950 text-center text-xs text-slate-400 mt-2">No other network users online.</div>`;
+        return;
+      }
+
+      userPeerIds.forEach(id => {
+        const peer = globalActiveDirectory[id];
+        html += `
+          <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between mt-2">
+            <div>
+              <span class="text-xs font-bold text-white">${peer.rawSender} (${peer.accountType})</span>
+              <span class="text-[10px] text-sky-400 block font-mono">Distance: ${peer.distance}m</span>
+            </div>
+            <button onclick="kickNetworkUser('${id}')" class="px-2.5 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Disconnect</button>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function kickNetworkUser(id) {
+      if (globalActiveDirectory[id]) {
+        let peerKey = 'node-' + id.replace(/[^a-zA-Z0-9]/g, '-');
+        let nodeElem = document.getElementById(peerKey);
+        if (nodeElem) nodeElem.remove();
+        delete globalActiveDirectory[id];
+        renderAdminUsersEditorList();
+        renderGlobalUsersDirectory();
+        showToast('User disconnected from mesh view.', 'user-minus');
+      }
+    }
+
     function saveBotProfileEdit(id) {
       const newName = document.getElementById(`edit-name-${id}`).value.trim();
       const newQ = document.getElementById(`edit-q-${id}`).value.trim();
@@ -1160,9 +1255,21 @@
         globalActiveDirectory[id].rawSender = newName;
         globalActiveDirectory[id].question = newQ;
         globalActiveDirectory[id].createdAt = Date.now();
+        
+        // Also update in customBotDefinitions to ensure persistence
+        const customIdx = customBotDefinitions.findIndex(b => b.peerId === id);
+        if (customIdx !== -1) {
+          customBotDefinitions[customIdx].rawSender = newName;
+          customBotDefinitions[customIdx].question = newQ;
+          customBotDefinitions[customIdx].createdAt = Date.now();
+          savePersistentData();
+        }
+
         refreshAllPeerDistancesAndPositions();
         renderAdminBotEditorList();
-        showToast('Bot profile updated successfully!', 'check-circle');
+        renderPinnedChats();
+        if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+        showToast('Bot profile updated successfully in code & map!', 'check-circle');
       }
     }
 
@@ -1172,6 +1279,10 @@
         let nodeElem = document.getElementById(peerKey);
         if (nodeElem) nodeElem.remove();
         delete globalActiveDirectory[id];
+        
+        customBotDefinitions = customBotDefinitions.filter(b => b.peerId !== id);
+        savePersistentData();
+
         renderAdminBotEditorList();
         renderGlobalUsersDirectory();
         if (currentLayoutMode === 'right') renderRightSidebarBubbles();
@@ -1245,6 +1356,8 @@
         if (savedRooms) participatedChatRoomIds = new Set(JSON.parse(savedRooms));
         const savedFriends = localStorage.getItem(STORAGE_KEY_FRIENDS);
         if (savedFriends) friendPeerIds = new Set(JSON.parse(savedFriends));
+        const savedBots = localStorage.getItem(STORAGE_KEY_CUSTOM_BOTS);
+        if (savedBots) customBotDefinitions = JSON.parse(savedBots);
       } catch (e) {}
     }
 
@@ -1255,6 +1368,7 @@
         localStorage.setItem(STORAGE_KEY_SUPABASE_CONFIG, JSON.stringify(supabaseConfig));
         localStorage.setItem(STORAGE_KEY_PARTICIPATED_ROOMS, JSON.stringify(Array.from(participatedChatRoomIds)));
         localStorage.setItem(STORAGE_KEY_FRIENDS, JSON.stringify(Array.from(friendPeerIds)));
+        localStorage.setItem(STORAGE_KEY_CUSTOM_BOTS, JSON.stringify(customBotDefinitions));
         if (currentActiveChatRoomId) localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
         else localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
       } catch (e) {}
@@ -2096,7 +2210,7 @@
     }
 
     function spawnDefaultSimulatedUsers() {
-      const sampleUsers = [
+      const defaultBots = [
         { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.3, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
         { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.4, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
         { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 0.8, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
@@ -2104,9 +2218,15 @@
         { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 1.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
-      sampleUsers.forEach((u, i) => {
-        const distMeters = u.targetMiles * METERS_PER_MILE;
-        const bearingRad = getDeterministicBearing(u.peerId, u.name);
+      // Merge saved custom bots with defaults if not already present
+      const allBotsMap = {};
+      [...defaultBots, ...customBotDefinitions].forEach(b => {
+        allBotsMap[b.peerId] = b;
+      });
+
+      Object.values(allBotsMap).forEach((u, i) => {
+        const distMeters = u.targetMiles ? u.targetMiles * METERS_PER_MILE : (u.distance || 0.4 * METERS_PER_MILE);
+        const bearingRad = getDeterministicBearing(u.peerId, u.name || u.rawSender);
         
         const latOffset = (Math.cos(bearingRad) * distMeters) / 111320;
         const lngOffset = (Math.sin(bearingRad) * distMeters) / (111320 * Math.cos(userState.lat * Math.PI / 180));
@@ -2120,11 +2240,11 @@
 
         globalActiveDirectory[u.peerId] = {
           ...globalActiveDirectory[u.peerId],
-          rawSender: u.name, peerId: u.peerId, lat, lng, distance: dist,
-          bubbleColor: u.color, accountType: u.accountType, category: u.category,
-          openTime: u.openTime, closeTime: u.closeTime, hours: computedHours,
-          interestFilter: u.interestFilter, hideMyName: false, lastSeen: Date.now(),
-          question: u.question, createdAt: Date.now() - (i * 300000), isBot: true
+          rawSender: u.name || u.rawSender, peerId: u.peerId, lat, lng, distance: dist,
+          bubbleColor: u.color || 'blue', accountType: u.accountType || 'personal', category: u.category || 'store',
+          openTime: u.openTime || '', closeTime: u.closeTime || '', hours: computedHours || '',
+          interestFilter: u.interestFilter || 'none', hideMyName: false, lastSeen: Date.now(),
+          question: u.question || 'Active Bot Bubble', createdAt: u.createdAt || (Date.now() - (i * 300000)), isBot: true
         };
       });
 
@@ -2411,7 +2531,7 @@
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
-          <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'}; border-width: 1px;"></div>
+          <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]">
             ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName, peer.createdAt) : ''}
           </div>
@@ -2427,10 +2547,12 @@
 
     function checkChatExpiryLoop() {
       setInterval(() => {
+        // User active topic expiry check & auto-respawn if needed (or let user chat wipe handle it)
         if (activeTopicState.createdAt) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
-            activeTopicState.text = null; activeTopicState.createdAt = null;
+            // Auto respawn user chat bubble if active topic expires
+            activeTopicState.createdAt = Date.now();
             renderUserTopBubbleContent();
             savePersistentData();
           } else if (currentActiveChatRoomId === 'room-you') {
@@ -2438,6 +2560,19 @@
             if (countdownEl) countdownEl.innerText = formatCountdownTime(activeTopicState.createdAt);
           }
         }
+
+        // Check bot chat bubble expiry & auto-respawn immediately
+        Object.keys(globalActiveDirectory).forEach(peerId => {
+          const peer = globalActiveDirectory[peerId];
+          if (peer.isBot && peer.createdAt) {
+            const elapsed = Date.now() - peer.createdAt;
+            if (elapsed >= ONE_HOUR_MS) {
+              // Immediately create the same chat bubble with fresh timer
+              peer.createdAt = Date.now();
+            }
+          }
+        });
+
         renderGlobalUsersDirectory();
         renderPinnedChats();
         if (currentLayoutMode === 'right') renderRightSidebarBubbles();
