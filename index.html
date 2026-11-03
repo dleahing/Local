@@ -77,6 +77,16 @@
       80% { transform: scale(1.04) rotate(-3deg); }
       100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
+
+    /* Continuous Unread Reply Jiggle Animation */
+    @keyframes jiggle-continuous {
+      0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+      20% { transform: translate3d(-1.5px, 1px, 0) rotate(-2.5deg) scale(1.02); }
+      40% { transform: translate3d(1.5px, -1px, 0) rotate(2.5deg) scale(1.02); }
+      60% { transform: translate3d(-1px, -1px, 0) rotate(-1.5deg) scale(1.01); }
+      80% { transform: translate3d(1px, 1px, 0) rotate(1.5deg) scale(1.01); }
+      100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+    }
     
     @keyframes tap-ripple-wave {
       0% {
@@ -102,6 +112,7 @@
 
     .animate-screen-tap { animation: tap-ripple-wave 1.2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards; will-change: transform, opacity; }
     .animate-giggle { animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; will-change: transform; }
+    .animate-jiggle-continuous { animation: jiggle-continuous 0.38s ease-in-out infinite !important; will-change: transform; }
     .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; will-change: transform; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; will-change: transform, opacity; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; will-change: transform; }
@@ -770,6 +781,7 @@
     const STORAGE_KEY_FRIENDS = 'local_friends_list_v4';
     const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v1';
     const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v1';
+    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v1';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -777,7 +789,8 @@
     let currentAuthTab = 'signin';
     let isAdminUser = false;
     let unlimitedRadarActive = false;
-    let leftChatListHidden = false; // State for hide/show left chat list
+    let leftChatListHidden = false;
+    let unreadRoomIds = new Set();
     
     let supabaseConfig = { 
       url: 'https://tqwrlcgrhhfxkpwrzoza.supabase.co', 
@@ -1008,15 +1021,17 @@
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
-    function renderUserBubbleCardHtml(question, senderName, onClickJs, routerIsAdmin = false, isGiggle = false, isMainUser = false, isAdmin = false) {
+    /* RENDER CARDS WITH MAIN USER NAME REMOVAL & CONTINUOUS UNREAD JIGGLE */
+    function renderUserBubbleCardHtml(question, senderName, onClickJs, routerIsAdmin = false, isGiggle = false, isMainUser = false, isAdmin = false, hasUnread = false) {
       if (!question) return '';
+      const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float');
+      const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span></div>`;
+
       if (isAdmin) {
         return `
-          <div class="admin-rainbow-border-wrap cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
+          <div class="admin-rainbow-border-wrap cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-4 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1">
-              <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-1">
-                <span class="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider">${senderName}</span>
-              </div>
+              ${isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-white/10 pb-1"><span class="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider">${senderName}</span></div>`}
               <div class="flex items-center justify-center gap-1.5 py-0.5">
                 <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                   <div class="bubble-glare"></div>
@@ -1032,10 +1047,8 @@
       }
       const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
       return `
-        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
-          <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5">
-            <span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span>
-          </div>
+        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">
+          ${headerHtml}
           <div class="flex items-center justify-center gap-1.5 py-0.5">
             <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
               <div class="bubble-glare"></div>
@@ -1049,17 +1062,16 @@
       `;
     }
 
-    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false) {
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false, hasUnread = false) {
       const displayName = getDisplayName(businessName, hideMyName, accountType);
       const nameColorClass = getBusinessCategoryTextColorClass(category);
+      const animClass = hasUnread ? 'animate-jiggle-continuous' : 'animate-float';
 
       if (isAdmin) {
         return `
-          <div class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] animate-float" onclick="${onClickJs}">
+          <div class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-3.5 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1.5">
-              <div class="flex items-center justify-between text-[9px] font-mono uppercase">
-                <span class="truncate ${nameColorClass}">${displayName}</span>
-              </div>
+              ${isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${nameColorClass}">${displayName}</span></div>`}
               <div class="flex items-center gap-1.5">
                 <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                   <div class="bubble-glare"></div>
@@ -1076,11 +1088,10 @@
       if (accountType !== 'business') {
         if (!question) return '';
         const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
+        const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${displayName}</span></div>`;
         return `
-          <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
-            <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5">
-              <span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${displayName}</span>
-            </div>
+          <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 ${animClass} z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
+            ${headerHtml}
             <div class="flex items-center gap-1.5 py-0.5">
               <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                 <div class="bubble-glare"></div>
@@ -1095,15 +1106,14 @@
       }
       const neonStyle = getBusinessNeonStyle(accountType, category);
       const bizOutline = isMainUser ? 'border-[3.5px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.9)]' : 'border border-white/20 shadow-2xl';
+      const bizHeaderHtml = isMainUser ? '' : `<div class="flex items-center justify-between mb-0.5"><span class="text-xs truncate ${nameColorClass}">${displayName}</span><span class="text-[9px] font-mono text-slate-400 font-bold px-1.5 py-0.2 rounded bg-slate-800">Store</span></div>`;
+      
       return `
-        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 animate-float z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 ${animClass} z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <div class="flex items-start gap-2.5">
             <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
-              <div class="flex items-center justify-between mb-0.5">
-                <span class="text-xs truncate ${nameColorClass}">${displayName}</span>
-                <span class="text-[9px] font-mono text-slate-400 font-bold px-1.5 py-0.2 rounded bg-slate-800">Store</span>
-              </div>
+              ${bizHeaderHtml}
               ${question ? `
                 <div class="flex items-center gap-1.5 mt-1">
                   <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
@@ -1553,6 +1563,8 @@
         if (savedFriends) friendPeerIds = new Set(JSON.parse(savedFriends));
         const savedBots = localStorage.getItem(STORAGE_KEY_CUSTOM_BOTS);
         if (savedBots) customBotDefinitions = JSON.parse(savedBots);
+        const savedUnread = localStorage.getItem(STORAGE_KEY_UNREAD_ROOMS);
+        if (savedUnread) unreadRoomIds = new Set(JSON.parse(savedUnread));
       } catch (e) {}
     }
 
@@ -1564,6 +1576,7 @@
         localStorage.setItem(STORAGE_KEY_PARTICIPATED_ROOMS, JSON.stringify(Array.from(participatedChatRoomIds)));
         localStorage.setItem(STORAGE_KEY_FRIENDS, JSON.stringify(Array.from(friendPeerIds)));
         localStorage.setItem(STORAGE_KEY_CUSTOM_BOTS, JSON.stringify(customBotDefinitions));
+        localStorage.setItem(STORAGE_KEY_UNREAD_ROOMS, JSON.stringify(Array.from(unreadRoomIds)));
         captureOfflineTopicsSnapshot();
         if (currentActiveChatRoomId) localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
         else localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
@@ -1629,7 +1642,6 @@
       if (mode === 'right') {
         sidebar.classList.remove('hidden');
         renderRightSidebarBubbles();
-        // REQUIREMENT: Hide the left list when showing the right list
         leftChatListHidden = true;
         applyLeftChatListVisibility();
         showToast('Switched to Right-Side Bubbles List', 'list');
@@ -1654,7 +1666,6 @@
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper')) return;
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
         isDraggingMap = true;
-        // REQUIREMENT: Hide the left list when user interacts with the map
         if (!leftChatListHidden) {
           leftChatListHidden = true;
           applyLeftChatListVisibility();
@@ -1695,7 +1706,6 @@
       mapCanvas.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
           isDraggingMap = false;
-          // REQUIREMENT: Hide left list on map touch/pinch interaction
           if (!leftChatListHidden) {
             leftChatListHidden = true;
             applyLeftChatListVisibility();
@@ -1725,7 +1735,6 @@
       mapCanvas.addEventListener('wheel', (e) => {
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal, #pinnedChatsWrapper')) return;
         e.preventDefault();
-        // REQUIREMENT: Hide left list on wheel zoom
         if (!leftChatListHidden) {
           leftChatListHidden = true;
           applyLeftChatListVisibility();
@@ -1735,18 +1744,28 @@
       }, { passive: false });
     }
 
+    /* DOUBLE TAP HANDLER - TOGGLES SHOW/HIDE BUTTON */
     let lastTapTime = 0;
     function initDoubleTapHandler() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
+
       mapCanvas.addEventListener('touchend', (e) => {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper')) return;
         const currentTime = new Date().getTime();
         const tapLength = currentTime - lastTapTime;
         if (tapLength < 300 && tapLength > 0) {
           recenterAndResetZoom();
+          toggleLeftChatList();
           e.preventDefault();
         }
         lastTapTime = currentTime;
+      });
+
+      mapCanvas.addEventListener('dblclick', (e) => {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper')) return;
+        recenterAndResetZoom();
+        toggleLeftChatList();
       });
     }
 
@@ -1754,7 +1773,7 @@
       targetPanX = 0; targetPanY = 0; targetZoomScale = 1.0;
       updateRadius(DEFAULT_RADIUS_METERS);
       playAudioEffect('chime');
-      showToast('Map recentered & radar reset to 0.5 Mi', 'navigation');
+      showToast('Map recentered & list toggled', 'navigation');
     }
 
     function startSmoothAnimationLoop() {
@@ -1820,7 +1839,6 @@
       const handleStart = (e) => {
         if (unlimitedRadarActive) return;
         isDraggingRadius = true;
-        // REQUIREMENT: Hide left list when interacting with radar boundary
         if (!leftChatListHidden) {
           leftChatListHidden = true;
           applyLeftChatListVisibility();
@@ -2003,7 +2021,6 @@
     function initTapRippleHandler() {
       window.addEventListener('click', (e) => {
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper')) return;
-        // REQUIREMENT: Hide left list when tapping on the map
         if (!leftChatListHidden) {
           leftChatListHidden = true;
           applyLeftChatListVisibility();
@@ -2028,13 +2045,14 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you', ${activeTopicState.createdAt})`;
 
       const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
+      const hasUnread = unreadRoomIds.has('room-you');
 
       if (userState.type === 'business') {
         topBubble.className = "block relative z-[99999999]";
-        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName, !isUserAdmin, isUserAdmin);
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName, true, isUserAdmin, hasUnread);
       } else {
         topBubble.className = "relative z-[99999999]";
-        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isUserAdmin, isGiggle, !isUserAdmin, isUserAdmin);
+        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isUserAdmin, isGiggle, true, isUserAdmin, hasUnread);
       }
       topBubble.classList.remove('hidden');
       lucide.createIcons();
@@ -2196,15 +2214,16 @@
                 const timeStr = new Date(payload.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const isMe = currentAuthUser ? (payload.sender_id === currentAuthUser.id) : (payload.sender_alias === userState.alias);
                 participatedChatRoomIds.add(payload.room_id);
-                savePersistentData();
-                refreshAllNodeVisibilities();
 
                 if (currentActiveChatRoomId === payload.room_id) {
                   appendMessage(payload.sender_alias, payload.message, timeStr, isMe);
                 } else if (!isMe) {
+                  unreadRoomIds.add(payload.room_id);
                   playAudioEffect('bell');
                   showToast(`New reply from ${payload.sender_alias}`, 'message-square');
                 }
+                savePersistentData();
+                refreshAllNodeVisibilities();
               }
             })
             .subscribe(async (status) => {
@@ -2241,15 +2260,16 @@
             const timeStr = new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
             participatedChatRoomIds.add(newMsg.room_id);
-            savePersistentData();
-            refreshAllNodeVisibilities();
 
             if (currentActiveChatRoomId === newMsg.room_id) {
               appendMessage(newMsg.sender_alias, newMsg.message, timeStr, isMe);
             } else if (!isMe) {
+              unreadRoomIds.add(newMsg.room_id);
               playAudioEffect('bell');
               showToast(`New reply from ${newMsg.sender_alias}`, 'message-square');
             }
+            savePersistentData();
+            refreshAllNodeVisibilities();
           }
         })
         .subscribe();
@@ -2577,7 +2597,8 @@
           createdAt: activeTopicState.createdAt,
           isAdmin: isUserAdmin,
           isMainUser: !isUserAdmin,
-          isFriend: false
+          isFriend: false,
+          hasUnread: unreadRoomIds.has('room-you')
         };
         if (isUserAdmin) adminList.push(item);
         else mainUserList.push(item);
@@ -2606,7 +2627,8 @@
             createdAt: peer.createdAt,
             isAdmin: peerIsAdmin,
             isMainUser: false,
-            isFriend
+            isFriend,
+            hasUnread: unreadRoomIds.has(roomId)
           };
 
           if (peerIsAdmin) adminList.push(item);
@@ -2628,18 +2650,17 @@
         const neonStyle = getBusinessNeonStyle(item.accountType, item.category);
         const nameColorClass = isBiz ? getBusinessCategoryTextColorClass(item.category) : 'text-slate-900 font-bold';
         const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${item.name}', '${item.question || ''}', '${item.peerId}', ${item.createdAt})`;
+        const jiggleClass = item.hasUnread ? 'animate-jiggle-continuous' : '';
         
         if (item.isAdmin) {
           container.innerHTML += `
-            <div onclick="${onClickJs}" class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] hover:scale-105 transition-all">
+            <div onclick="${onClickJs}" class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] hover:scale-105 transition-all ${jiggleClass}">
               <div class="admin-rainbow-inner px-3 py-2.5 rounded-[15px] shadow-xl flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
                   ${renderNodeIconContent(item.accountType, item.category)}
                 </div>
                 <div class="min-w-0 flex-1">
-                  <div class="flex items-center justify-between text-[9px] font-mono uppercase">
-                    <span class="truncate ${isBiz ? nameColorClass : 'text-amber-400 font-bold'}">${item.name}</span>
-                  </div>
+                  ${item.isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${isBiz ? nameColorClass : 'text-amber-400 font-bold'}">${item.name}</span></div>`}
                   <span class="text-[9px] text-white font-medium block truncate">${item.question || 'Pinned Chat'}</span>
                 </div>
               </div>
@@ -2648,14 +2669,12 @@
         } else {
           const cardOutline = item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (item.isFriend ? 'border-[2px] border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.6)]' : 'border border-white/80 shadow-xl');
           container.innerHTML += `
-            <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
+            <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} ${jiggleClass} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
               <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
                 ${renderNodeIconContent(item.accountType, item.category)}
               </div>
               <div class="min-w-0 flex-1">
-                <div class="flex items-center justify-between">
-                  <span class="text-[9px] uppercase truncate ${nameColorClass}">${item.name}</span>
-                </div>
+                ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">${item.name}</span></div>`}
                 <span class="text-[9px] text-slate-700 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
               </div>
             </div>
@@ -2735,7 +2754,8 @@
           question: hasSelfTopic ? activeTopicState.text : '',
           peerId: 'you', roomId: 'room-you', accountType: userState.type,
           category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName,
-          createdAt: activeTopicState.createdAt, isAdmin: isUserAdmin, isMainUser: !isUserAdmin, isFriend: false
+          createdAt: activeTopicState.createdAt, isAdmin: isUserAdmin, isMainUser: !isUserAdmin, isFriend: false,
+          hasUnread: unreadRoomIds.has('room-you')
         };
         if (isUserAdmin) adminBubbles.push(item);
         else mainUserBubbles.push(item);
@@ -2758,7 +2778,8 @@
               question: hasValidQuestion ? p.question : '',
               peerId: p.peerId, roomId, accountType: p.accountType,
               category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius,
-              createdAt: p.createdAt, isAdmin: peerIsAdmin, isMainUser: false, isFriend
+              createdAt: p.createdAt, isAdmin: peerIsAdmin, isMainUser: false, isFriend,
+              hasUnread: unreadRoomIds.has(roomId)
             };
             if (peerIsAdmin) adminBubbles.push(item);
             else if (isFriend) friendBubbles.push(item);
@@ -2789,7 +2810,7 @@
               ${renderNodeIconContent(b.accountType, b.category)}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, b.isAdmin, false, b.isMainUser, b.isAdmin)}</div>
+              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin, b.hasUnread) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, b.isAdmin, false, b.isMainUser, b.isAdmin, b.hasUnread)}</div>
             </div>
           </div>
         `;
@@ -2845,6 +2866,7 @@
       const isWithinRadius = peerIsAdmin || isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
       let roomId = 'room-peer-' + peer.peerId.replace(/[^a-zA-Z0-9]/g, '-');
       const isParticipated = participatedChatRoomIds.has(roomId);
+      const hasUnread = unreadRoomIds.has(roomId);
 
       let opacityVal = 1;
       if (peerIsAdmin || isParticipated || isFriend || unlimitedRadarActive) opacityVal = 0.95;
@@ -2870,7 +2892,7 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin) : ''}
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread) : ''}
           </div>
           ${!peer.isOffline ? `
             <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
@@ -3041,7 +3063,10 @@
 
     async function openChatDrawer(roomId, roomName, topic, peerId, createdAtVal) {
       currentActiveChatRoomId = roomId;
+      unreadRoomIds.delete(roomId);
       savePersistentData();
+      refreshAllNodeVisibilities();
+
       document.getElementById('chatTargetName').innerText = roomName;
       
       const isSelf = roomId === 'room-you';
@@ -3103,6 +3128,7 @@
         }
         delete localChatCache[currentActiveChatRoomId];
         participatedChatRoomIds.delete(currentActiveChatRoomId);
+        unreadRoomIds.delete(currentActiveChatRoomId);
         if (currentActiveChatRoomId === 'room-you') {
           activeTopicState.text = null; activeTopicState.createdAt = null;
           renderUserTopBubbleContent();
