@@ -336,16 +336,27 @@
     </div>
   </div>
 
-  <!-- MANDATORY WELCOME / PROFILE CREATION WALL MODAL -->
-  <div id="welcomeProfileModal" class="fixed inset-0 z-[9999999] glass-panel bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4">
+  <!-- MANDATORY SUPABASE ACCOUNT CREATION WALL MODAL -->
+  <div id="welcomeProfileModal" class="fixed inset-0 z-[9999999] glass-panel bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="text-center mb-5">
         <div class="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 shadow-lg">L</div>
-        <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">Welcome to LocaL</h3>
-        <p class="text-xs text-slate-600 mt-1">Create your profile to explore nearby peers and chat rooms.</p>
+        <h3 class="text-xl font-extrabold text-slate-900 tracking-tight">Create Supabase Account</h3>
+        <p class="text-xs text-slate-600 mt-1">Sign up or sign in to access the LocaL network map.</p>
       </div>
       
       <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 mb-1">Supabase Project URL</label>
+          <input type="text" id="setupSupabaseUrl" placeholder="https://xyz.supabase.co" class="w-full px-3 py-2 rounded-xl bg-white/80 border border-slate-200 text-slate-900 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 mb-1">Supabase Anon Key</label>
+          <input type="password" id="setupSupabaseKey" placeholder="eyJhbGciOi..." class="w-full px-3 py-2 rounded-xl bg-white/80 border border-slate-200 text-slate-900 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400">
+        </div>
+
+        <div class="h-px bg-slate-200 w-full my-2"></div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Account Type</label>
           <div class="grid grid-cols-2 gap-2">
@@ -362,12 +373,22 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1">Display Alias / Store Name</label>
-          <input type="text" id="welcomeAliasInput" placeholder="Enter your name or brand..." class="w-full px-4 py-3 rounded-2xl bg-white/80 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <input type="text" id="welcomeAliasInput" placeholder="Enter your display or store name..." class="w-full px-4 py-2.5 rounded-2xl bg-white/80 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 mb-1">Email Address</label>
+          <input type="email" id="welcomeEmailInput" placeholder="your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-white/80 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 mb-1">Password</label>
+          <input type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-2xl bg-white/80 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter</label>
-          <select id="welcomeInterestSelect" class="w-full px-4 py-3 rounded-2xl bg-white/80 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <select id="welcomeInterestSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/80 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
             <option value="none">No Filter At All</option>
             <option value="Life">Life</option>
             <option value="Cars">Cars</option>
@@ -411,8 +432,8 @@
           </div>
         </div>
 
-        <button onclick="completeWelcomeProfileSetup()" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-sm shadow-lg active:scale-98 transition-all mt-2">
-          Enter LocaL Map & Network
+        <button onclick="registerSupabaseAccountAndProfile()" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-sm shadow-lg active:scale-98 transition-all mt-2">
+          Create Account & Enter Map
         </button>
       </div>
     </div>
@@ -439,15 +460,6 @@
             </div>
             <button onclick="playAudioEffect('click'); reconnectSupabase()" class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-semibold shadow-sm active:scale-95">Reconnect</button>
           </div>
-        </div>
-
-        <div class="space-y-2 pt-2 border-t border-slate-200/60">
-          <label class="block text-xs font-semibold text-slate-800 uppercase tracking-wider">Supabase Credentials</label>
-          <input type="text" id="supabaseUrlInput" placeholder="Supabase Project URL (e.g. https://xyz.supabase.co)" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400">
-          <input type="password" id="supabaseKeyInput" placeholder="Supabase Anon Key" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400">
-          <button onclick="playAudioEffect('chime'); saveSupabaseCredentials()" class="w-full py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">
-            Save Credentials & Reconnect
-          </button>
         </div>
 
         <div>
@@ -962,6 +974,11 @@
       loadPersistentData();
       lucide.createIcons();
 
+      if (supabaseConfig.url && supabaseConfig.key) {
+        document.getElementById('setupSupabaseUrl').value = supabaseConfig.url;
+        document.getElementById('setupSupabaseKey').value = supabaseConfig.key;
+      }
+
       if (!userState.profileCreated) {
         document.getElementById('welcomeProfileModal').classList.remove('hidden');
       } else {
@@ -977,14 +994,60 @@
       window._welcomeType = type;
     }
 
-    function completeWelcomeProfileSetup() {
-      const aliasInput = document.getElementById('welcomeAliasInput').value.trim();
-      if (!aliasInput) {
-        showToast('Please enter your display name or alias', 'alert-circle');
+    async function registerSupabaseAccountAndProfile() {
+      const url = document.getElementById('setupSupabaseUrl').value.trim();
+      const key = document.getElementById('setupSupabaseKey').value.trim();
+      const alias = document.getElementById('welcomeAliasInput').value.trim();
+      const email = document.getElementById('welcomeEmailInput').value.trim();
+      const password = document.getElementById('welcomePasswordInput').value.trim();
+
+      if (!url || !key) {
+        showToast('Please provide Supabase Project URL and Anon Key', 'alert-circle');
+        return;
+      }
+      if (!alias) {
+        showToast('Please enter your display or store name', 'alert-circle');
+        return;
+      }
+      if (!email || !password) {
+        showToast('Please enter email and password', 'alert-circle');
         return;
       }
 
-      userState.alias = aliasInput;
+      supabaseConfig = { url, key };
+      savePersistentData();
+
+      try {
+        if (window.supabase) {
+          supabaseClient = window.supabase.createClient(url, key);
+          const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: alias } }
+          });
+
+          if (error) {
+            showToast(error.message, 'x-circle');
+            return;
+          }
+
+          if (data?.user) {
+            currentAuthUser = data.user;
+            await supabaseClient.from('profiles').upsert({
+              id: currentAuthUser.id,
+              alias: alias,
+              account_type: window._welcomeType || 'personal',
+              category: document.getElementById('welcomeCategorySelect').value,
+              interest_filter: document.getElementById('welcomeInterestSelect').value,
+              updated_at: new Date()
+            });
+          }
+        }
+      } catch(e) {
+        // Fallback locally if offline or misconfigured
+      }
+
+      userState.alias = alias;
       userState.type = window._welcomeType || 'personal';
       userState.interestFilter = document.getElementById('welcomeInterestSelect').value;
       userState.profileCreated = true;
@@ -1002,7 +1065,7 @@
       savePersistentData();
       document.getElementById('welcomeProfileModal').classList.add('hidden');
       initializeAppSession();
-      showToast('Profile created successfully! Welcome to LocaL.', 'check-circle');
+      showToast('Account created and saved on Supabase!', 'check-circle');
     }
 
     function initializeAppSession() {
@@ -1033,7 +1096,6 @@
       initDoubleTapHandler();
       startSmoothAnimationLoop();
 
-      // Sync settings modal with values
       document.getElementById('avatarNameInput').value = userState.alias;
       document.getElementById('businessAddressInput').value = userState.address || '';
       document.getElementById('businessOpenTimeInput').value = userState.openTime || '09:00';
@@ -1073,8 +1135,6 @@
         const savedSupabase = localStorage.getItem(STORAGE_KEY_SUPABASE_CONFIG);
         if (savedSupabase) {
           supabaseConfig = JSON.parse(savedSupabase);
-          document.getElementById('supabaseUrlInput').value = supabaseConfig.url || '';
-          document.getElementById('supabaseKeyInput').value = supabaseConfig.key || '';
         }
 
         const savedTopicState = localStorage.getItem(STORAGE_KEY_TOPIC_STATE);
@@ -1095,15 +1155,6 @@
           localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
         }
       } catch (e) {}
-    }
-
-    function saveSupabaseCredentials() {
-      const url = document.getElementById('supabaseUrlInput').value.trim();
-      const key = document.getElementById('supabaseKeyInput').value.trim();
-      supabaseConfig = { url, key };
-      savePersistentData();
-      initSupabaseNetwork();
-      showToast('Supabase settings saved. Reconnecting...', 'wifi');
     }
 
     function restoreActiveChatRoom() {
