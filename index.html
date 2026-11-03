@@ -235,22 +235,24 @@
       transform: rotate(-25deg);
       pointer-events: none;
     }
-    .glass-drawer-top {
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(40px) saturate(190%);
-      -webkit-backdrop-filter: blur(40px) saturate(190%);
-      border-bottom: 1.5px solid rgba(255, 255, 255, 0.9);
-      border-left: 1px solid rgba(255, 255, 255, 0.7);
-      border-right: 1px solid rgba(255, 255, 255, 0.7);
-      box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 1);
-    }
 
+    /* Standard Dark Bubble Styling */
     .dark-biz-bubble {
       background: #1e1b2e;
       border: 1px solid rgba(255, 255, 255, 0.2);
       box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
       pointer-events: auto !important;
       z-index: 99999999 !important;
+    }
+
+    /* Scaled-Up Group Chat Window Matching Chat Bubble Visual Aesthetic */
+    .scaled-chat-bubble-window {
+      background: rgba(30, 27, 46, 0.94);
+      backdrop-filter: blur(35px) saturate(190%);
+      -webkit-backdrop-filter: blur(35px) saturate(190%);
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 30px 70px -10px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+      border-radius: 36px;
     }
   </style>
 </head>
@@ -260,12 +262,12 @@
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern pointer-events-none"></div>
     
-    <!-- BACKGROUND RADAR ELEMENTS (Layered in Background z-0) -->
+    <!-- BACKGROUND RADAR ELEMENTS -->
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring z-0" style="width: 5625px; height: 5625px;">
       <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
     </div>
 
-    <!-- Static Radar Center (z-0 background) -->
+    <!-- Static Radar Center -->
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center z-0">
       <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_20px_rgba(56,189,248,0.2)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
       <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_15px_rgba(56,189,248,0.15)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
@@ -274,7 +276,7 @@
     <div id="nodesContainer" class="absolute inset-0 z-50 pointer-events-auto"></div>
   </div>
 
-  <!-- Right-Side Chat Bubbles Sidebar (Unified Visuals) -->
+  <!-- Right-Side Chat Bubbles Sidebar -->
   <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-36 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
@@ -628,55 +630,55 @@
     </div>
   </div>
 
-  <!-- Chat Drawer Overlay & Container -->
-  <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-[9999998] bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
-  <div id="chatDrawer" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-[99999999] w-full max-w-lg glass-drawer-top p-5 rounded-3xl flex flex-col transition-all max-h-[82vh] border border-white/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] pointer-events-auto">
+  <!-- Chat Drawer Overlay & Container (Styled to Match Chat Bubble Aesthetic) -->
+  <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-[9999998] bg-slate-950/70 backdrop-blur-md transition-opacity"></div>
+  <div id="chatDrawer" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-[99999999] w-full max-w-lg scaled-chat-bubble-window p-6 flex flex-col transition-all max-h-[82vh] pointer-events-auto">
     
-    <div class="flex items-center justify-between pb-3.5 mb-2 border-b border-white/40 flex-shrink-0">
+    <div class="flex items-center justify-between pb-4 mb-2 border-b border-white/10 flex-shrink-0">
       <div class="flex items-center gap-3">
-        <div id="chatTargetAvatar" class="w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden">
+        <div id="chatTargetAvatar" class="w-11 h-11 rounded-full font-medium text-xs flex items-center justify-center shadow-2xl bubble-node overflow-hidden">
           <div class="bubble-glare"></div>
         </div>
         <div>
-          <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm tracking-tight drop-shadow-sm">Supabase Realtime Channel</h4>
-          <p id="chatTargetStatus" class="text-[10px] text-emerald-800 font-semibold uppercase tracking-wider">Database Sync Active</p>
+          <h4 id="chatTargetName" class="font-bold text-white text-base tracking-tight drop-shadow-md">Supabase Realtime Channel</h4>
+          <p id="chatTargetStatus" class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Database Sync Active</p>
         </div>
       </div>
       
       <div class="flex items-center gap-2">
-        <button id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all">
+        <button id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-3 py-1.5 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 text-[10px] font-bold flex items-center gap-1 transition-all">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Room
         </button>
-        <button onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 hover:text-slate-900 transition-all shadow-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <button onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all shadow-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
     </div>
 
-    <div id="chatExpiryTimerBar" class="my-2 px-3.5 py-2 rounded-2xl bg-white/60 backdrop-blur-md border border-amber-400/40 text-amber-950 text-xs font-semibold flex items-center justify-between flex-shrink-0 shadow-sm">
+    <div id="chatExpiryTimerBar" class="my-2 px-4 py-2 rounded-2xl bg-white/5 border border-amber-400/30 text-amber-300 text-xs font-semibold flex items-center justify-between flex-shrink-0 shadow-sm">
       <div class="flex items-center gap-2">
-        <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
+        <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
         <span>Auto-deletes if inactive:</span>
       </div>
-      <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900 px-2 py-0.5 rounded-lg bg-amber-400/20 border border-amber-400/40">24h 00m</span>
+      <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-300 px-2 py-0.5 rounded-lg bg-amber-400/20 border border-amber-400/30">24h 00m</span>
     </div>
 
-    <div id="mainTopicContainer" class="hidden my-2 p-3 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-md flex items-start gap-2.5 flex-shrink-0">
-      <i data-lucide="pin" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+    <div id="mainTopicContainer" class="hidden my-2 p-3.5 rounded-2xl bg-white/10 border border-white/15 shadow-md flex items-start gap-2.5 flex-shrink-0">
+      <i data-lucide="pin" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
       <div>
-        <p id="mainTopicText" class="text-xs font-normal text-slate-900 leading-snug"></p>
-        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-emerald-700 mt-0.5 block">Visible for 60m 00s</span>
+        <p id="mainTopicText" class="text-xs font-normal text-white leading-snug"></p>
+        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-emerald-300 mt-0.5 block">Visible for 60m 00s</span>
       </div>
     </div>
 
     <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-3.5 max-h-[38vh] pr-1 pointer-events-auto"></div>
 
     <div class="pt-3 pb-1 flex-shrink-0 pointer-events-auto">
-      <div class="glass-card rounded-[28px] p-2 pl-4 border border-white/90 shadow-xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-emerald-400 transition-all bg-white/95 pointer-events-auto">
-        <textarea id="chatInput" rows="1" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
+      <div class="bg-slate-900/90 rounded-[28px] p-2 pl-4 border border-white/20 shadow-2xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-emerald-400 transition-all pointer-events-auto">
+        <textarea id="chatInput" rows="1" placeholder="Type a reply..." class="w-full bg-transparent text-white text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
         
-        <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 pointer-events-auto">
+        <div class="flex items-center justify-between pt-1 border-t border-white/10 pointer-events-auto">
           <div class="flex items-center gap-1">
-            <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer"><i data-lucide="plus" class="w-4 h-4"></i></button>
-            <button onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer"><i data-lucide="mic" class="w-4 h-4"></i></button>
+            <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-400 hover:text-emerald-400 rounded-full hover:bg-white/10 transition-colors cursor-pointer"><i data-lucide="plus" class="w-4 h-4"></i></button>
+            <button onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-400 hover:text-emerald-400 rounded-full hover:bg-white/10 transition-colors cursor-pointer"><i data-lucide="mic" class="w-4 h-4"></i></button>
           </div>
           <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-emerald-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-emerald-500 transition-all cursor-pointer"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
         </div>
@@ -1438,7 +1440,6 @@
 
     const MAP_PIXels_PER_MILE = 187.5;
 
-    // 1:1 RATIO RADAR TO MAP ZOOM SYNCHRONIZATION
     function updateRadius(val) {
       const meters = Math.max(MIN_RADIUS_METERS, Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val))));
       userState.radius = meters;
@@ -1464,7 +1465,6 @@
         if (leftBadge) leftBadge.innerText = labelText;
         if (rightBadge) rightBadge.innerText = labelText;
 
-        // Enforce exact 1:1 proportional zoom mapping so map scales identically with the radar radius
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
         const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
         targetZoomScale = Math.max(0.20, Math.min(3.5, targetScaleFactor));
@@ -1965,7 +1965,7 @@
     async function loadDbChatHistory(roomId) {
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
-      msgBox.innerHTML = '<div class="text-center text-xs text-slate-500 py-4">Syncing history from Supabase...</div>';
+      msgBox.innerHTML = '<div class="text-center text-xs text-slate-400 py-4">Syncing history from Supabase...</div>';
 
       if (!supabaseClient) {
         msgBox.innerHTML = '';
@@ -2315,7 +2315,6 @@
       lucide.createIcons();
     }
 
-    // UNIFIED SIDEBAR BUBBLES: RENDERS EXACTLY LIKE THE MAP NODES (HTML STRUCTURAL PARITY)
     function renderRightSidebarBubbles() {
       const container = document.getElementById('rightSidebarBubblesContainer');
       if (!container) return;
@@ -2380,7 +2379,6 @@
         const shadowStyle = isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW;
         const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')`;
 
-        // Exact Structural Replica of Map Node Layout for Sidebar
         container.innerHTML += `
           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/80 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
             <div class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;">
@@ -2739,10 +2737,10 @@
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full">
           <div class="flex items-center gap-1.5 px-1.5 mb-0.5">
-            <span class="text-[10px] text-slate-700 font-bold">${sender}</span>
-            <span class="text-[9px] text-slate-500 font-medium">${time || ''}</span>
+            <span class="text-[10px] text-slate-300 font-bold">${sender}</span>
+            <span class="text-[9px] text-slate-400 font-medium">${time || ''}</span>
           </div>
-          <div class="px-4 py-2.5 rounded-2xl text-xs max-w-[85%] font-light leading-relaxed shadow-md ${isMe ? 'bg-emerald-600 text-white rounded-br-none shadow-emerald-500/20' : 'glass-card bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none border border-white/90 shadow-sm'}">${text.replace(/\n/g, '<br>')}</div>
+          <div class="px-4 py-2.5 rounded-2xl text-xs max-w-[85%] font-light leading-relaxed shadow-md ${isMe ? 'bg-emerald-600 text-white rounded-br-none shadow-emerald-500/20' : 'bg-white/10 backdrop-blur-md text-white rounded-bl-none border border-white/20 shadow-sm'}">${text.replace(/\n/g, '<br>')}</div>
         </div>
       `;
       msgBox.scrollTop = msgBox.scrollHeight;
@@ -2770,7 +2768,7 @@
       const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
 
       const avatarEl = document.getElementById('chatTargetAvatar');
-      avatarEl.className = `w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
+      avatarEl.className = `w-11 h-11 rounded-full font-medium text-xs flex items-center justify-center shadow-2xl bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
       avatarEl.style.background = circleBg;
       if (isBiz) avatarEl.style.cssText += neonStyle.shadowStyle;
       avatarEl.innerHTML = renderNodeIconContent(accountType, category);
