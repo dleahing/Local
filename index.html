@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network</title>
+  <title>LocaL - Supabase Proximity Social Network [Admin Enabled]</title>
   
   <!-- Mobile & PWA Configuration -->
   <meta name="theme-color" content="#fbcfe8">
@@ -299,12 +299,17 @@
       </div>
       
       <div class="flex flex-col">
-        <span class="text-xs font-bold text-slate-900 leading-tight">LocaL</span>
+        <span class="text-xs font-bold text-slate-900 leading-tight">LocaL <span id="adminBadgeTag" class="hidden text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded font-extrabold uppercase">ADMIN</span></span>
         <span id="activeUserCount" class="text-[9px] text-emerald-950 font-semibold">1 Active Peer</span>
       </div>
     </div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
+      <!-- Admin Quick Button -->
+      <button id="adminPortalHeaderBtn" onclick="playAudioEffect('click'); openAdminModal()" title="Admin Control Panel" class="hidden liquid-glass-icon px-3 py-2 rounded-2xl bg-amber-500/30 border border-amber-400 text-amber-950 font-bold text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 transition-all">
+        <i data-lucide="shield-alert" class="w-4 h-4 text-amber-700"></i> Admin Panel
+      </button>
+
       <div class="relative">
         <select id="layoutModeSelect" onchange="playAudioEffect('click'); setLayoutMode(this.value)" class="glass-panel px-3 py-2 rounded-2xl text-slate-900 text-xs font-semibold focus:outline-none shadow-lg cursor-pointer">
           <option value="map">Show All on Map</option>
@@ -341,6 +346,90 @@
     </div>
   </div>
 
+  <!-- ADMIN MANAGEMENT MODAL -->
+  <div id="adminManagementModal" class="hidden fixed inset-0 z-[99999999] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4 pointer-events-auto">
+    <div class="dark-biz-bubble w-full max-w-lg rounded-[32px] p-6 border border-amber-500/50 shadow-[0_25px_60px_-15px_rgba(251,191,36,0.3)] max-h-[90vh] overflow-y-auto pointer-events-auto relative z-[99999999]">
+      <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/20">
+        <div class="flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-6 h-6 text-amber-400"></i>
+          <div>
+            <h3 class="text-lg font-extrabold text-white tracking-tight">Administrator Control Center</h3>
+            <p class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider">Manage Bots & Remove Radar Distance Limits</p>
+          </div>
+        </div>
+        <button onclick="playAudioEffect('click'); closeAdminModal()" class="text-slate-400 hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-5">
+        <!-- Radar Limits Toggle -->
+        <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+          <div>
+            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Remove Radar Limits</h4>
+            <p class="text-[11px] text-slate-300 font-light">Allow all active users & chat bubbles to be seen across the entire map regardless of distance.</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="unlimitedRadarToggle" onchange="toggleUnlimitedRadar(this.checked)" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+          </label>
+        </div>
+
+        <!-- Add New Bot Section -->
+        <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+          <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="user-plus" class="w-4 h-4"></i> Add New Bot to Mesh
+          </h4>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Bot Name / Alias</label>
+              <input type="text" id="newBotNameInput" placeholder="e.g. Marina Patrol Bot" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Interest Filter</label>
+              <select id="newBotInterestInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                <option value="none">None (All)</option>
+                <option value="Life">Life</option>
+                <option value="Cars">Cars</option>
+                <option value="Moms">Moms</option>
+                <option value="Dads">Dads</option>
+                <option value="Food">Food</option>
+                <option value="Hiking">Hiking</option>
+                <option value="Pickleball">Pickleball</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-300 mb-1">Initial Chat Bubble Question / Message</label>
+            <input type="text" id="newBotQuestionInput" placeholder="e.g. Live music at the pavilion tonight!" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Distance (Miles)</label>
+              <input type="number" id="newBotMilesInput" value="1.5" step="0.1" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-300 mb-1">Bot Account Type</label>
+              <select id="newBotTypeInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+                <option value="personal">Personal User Bot</option>
+                <option value="business">Business Store Bot</option>
+              </select>
+            </div>
+          </div>
+          <button onclick="createNewCustomBot()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">
+            Deploy Bot to Map
+          </button>
+        </div>
+
+        <!-- Bot Directory & Editor List -->
+        <div>
+          <h4 class="text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">Active Bot Profiles & Editor</h4>
+          <div id="adminBotEditorList" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- STREAMLINED LOGIN / SIGN-UP MODAL -->
   <div id="welcomeProfileModal" class="hidden fixed inset-0 z-[99999999] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4 pointer-events-auto">
     <div class="dark-biz-bubble w-full max-w-sm rounded-[32px] p-6 border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] max-h-[90vh] overflow-y-auto pointer-events-auto relative z-[99999999]">
@@ -348,7 +437,7 @@
       <div class="text-center mb-5">
         <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white font-bold text-2xl mx-auto mb-2 shadow-[0_0_20px_rgba(52,211,153,0.5)]">L</div>
         <h3 class="text-xl font-extrabold text-white tracking-tight" id="welcomeModalTitle">Welcome to LocaL</h3>
-        <p class="text-xs text-slate-400 mt-1" id="welcomeModalSubtitle">Sign in or create your account below.</p>
+        <p class="text-xs text-slate-400 mt-1" id="welcomeModalSubtitle">Sign in or create your account below. (Hint: Administrator / 4464)</p>
       </div>
       
       <div class="space-y-4">
@@ -361,17 +450,17 @@
         <!-- Username Field (Only shown during Sign Up) -->
         <div id="signupUsernameContainer" class="hidden">
           <label class="block text-xs font-semibold text-slate-300 mb-1">Username / Display Alias</label>
-          <input type="text" id="welcomeUsernameInput" placeholder="e.g. CaptainJax" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
+          <input type="text" id="welcomeUsernameInput" placeholder="e.g. Administrator" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
-          <input type="email" id="welcomeEmailInput" placeholder="your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Email / Username Alias</label>
+          <input type="text" id="welcomeEmailInput" placeholder="Administrator or your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
-          <input type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
+          <input type="password" id="welcomePasswordInput" placeholder="4464" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
         </div>
 
         <div class="pt-2">
@@ -650,6 +739,8 @@
     let realtimeChannel = null;
     let dbMessagesChannel = null;
     let currentAuthTab = 'signin';
+    let isAdminUser = false;
+    let unlimitedRadarActive = false;
     
     let supabaseConfig = { 
       url: 'https://tqwrlcgrhhfxkpwrzoza.supabase.co', 
@@ -968,7 +1059,7 @@
         btnSignUp.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
         usernameContainer.classList.add('hidden');
         submitBtn.innerText = 'Sign In';
-        subtitleElem.innerText = 'Sign in with your email and password.';
+        subtitleElem.innerText = 'Sign in with Administrator / 4464 or your account.';
       } else {
         btnSignUp.className = 'flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md';
         btnSignIn.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
@@ -985,12 +1076,25 @@
     }
 
     async function submitAuthForm() {
-      const email = document.getElementById('welcomeEmailInput').value.trim();
+      const emailInput = document.getElementById('welcomeEmailInput').value.trim();
       const password = document.getElementById('welcomePasswordInput').value.trim();
       const usernameInput = document.getElementById('welcomeUsernameInput').value.trim();
 
-      if (!email || !password) {
-        showToast('Please enter your email and password', 'alert-circle');
+      // Check Administrator credentials bypass
+      if ((emailInput.toLowerCase() === 'administrator' || emailInput === 'admin') && password === '4464') {
+        isAdminUser = true;
+        userState.alias = 'Administrator';
+        userState.profileCreated = true;
+        savePersistentData();
+        document.getElementById('welcomeProfileModal').classList.add('hidden');
+        initializeAppSession();
+        checkAdminPrivileges();
+        showToast('Logged in as Administrator with Full Privileges!', 'shield-check');
+        return;
+      }
+
+      if (!emailInput || !password) {
+        showToast('Please enter username/email and password', 'alert-circle');
         return;
       }
 
@@ -1006,61 +1110,181 @@
           let authResult;
           if (currentAuthTab === 'signup') {
             authResult = await supabaseClient.auth.signUp({
-              email,
+              email: emailInput.includes('@') ? emailInput : `${emailInput}@local.net`,
               password,
-              options: { data: { full_name: usernameInput } }
+              options: { data: { full_name: usernameInput || emailInput } }
             });
           } else {
             authResult = await supabaseClient.auth.signInWithPassword({
-              email,
+              email: emailInput.includes('@') ? emailInput : `${emailInput}@local.net`,
               password
             });
           }
 
           if (authResult.error) {
-            showToast(authResult.error.message, 'x-circle');
-            return;
-          }
-
-          if (authResult.data?.user || authResult.data?.session?.user) {
-            currentAuthUser = authResult.data.user || authResult.data.session.user;
-            
-            if (currentAuthTab === 'signup' && usernameInput) {
-              await supabaseClient.from('profiles').upsert({
-                id: currentAuthUser.id,
-                alias: usernameInput,
-                account_type: 'personal',
-                interest_filter: 'none',
-                updated_at: new Date()
-              });
-              userState.alias = usernameInput;
+            // Fallback for custom local login if Supabase auth fails
+            if (emailInput.toLowerCase() === 'administrator' && password === '4464') {
+              isAdminUser = true;
+              userState.alias = 'Administrator';
             } else {
-              const { data: profileData } = await supabaseClient.from('profiles').select('*').eq('id', currentAuthUser.id).single();
-              if (profileData && profileData.alias) {
-                userState.alias = profileData.alias;
-                userState.type = profileData.account_type || userState.type;
-                userState.interestFilter = profileData.interest_filter || userState.interestFilter;
-              } else if (currentAuthUser.user_metadata?.full_name) {
-                userState.alias = currentAuthUser.user_metadata.full_name;
-              } else {
-                userState.alias = email.split('@')[0];
-              }
+              userState.alias = usernameInput || emailInput;
+            }
+          } else if (authResult.data?.user || authResult.data?.session?.user) {
+            currentAuthUser = authResult.data.user || authResult.data.session.user;
+            const { data: profileData } = await supabaseClient.from('profiles').select('*').eq('id', currentAuthUser.id).single();
+            if (profileData && profileData.alias) {
+              userState.alias = profileData.alias;
+            } else if (currentAuthUser.user_metadata?.full_name) {
+              userState.alias = currentAuthUser.user_metadata.full_name;
+            } else {
+              userState.alias = emailInput;
             }
           }
         }
       } catch(e) {}
 
-      if (currentAuthTab === 'signup' && usernameInput) {
-        userState.alias = usernameInput;
-      } else if (!userState.alias) {
-        userState.alias = email.split('@')[0];
+      if (userState.alias.toLowerCase() === 'administrator') {
+        isAdminUser = true;
       }
 
       userState.profileCreated = true;
       savePersistentData();
       document.getElementById('welcomeProfileModal').classList.add('hidden');
       initializeAppSession();
+      checkAdminPrivileges();
       showToast('Successfully logged in & connected!', 'check-circle');
+    }
+
+    function checkAdminPrivileges() {
+      if (userState.alias.toLowerCase() === 'administrator' || isAdminUser) {
+        isAdminUser = true;
+        const btn = document.getElementById('adminPortalHeaderBtn');
+        const badge = document.getElementById('adminBadgeTag');
+        if (btn) btn.classList.remove('hidden');
+        if (badge) badge.classList.remove('hidden');
+      }
+    }
+
+    function openAdminModal() {
+      document.getElementById('adminManagementModal').classList.remove('hidden');
+      renderAdminBotEditorList();
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminManagementModal').classList.add('hidden');
+    }
+
+    function toggleUnlimitedRadar(enabled) {
+      unlimitedRadarActive = enabled;
+      if (enabled) {
+        userState.radius = 999999;
+        showToast('Radar limits removed! All active users visible.', 'shield-alert');
+      } else {
+        userState.radius = MIN_RADIUS_METERS;
+        showToast('Radar limits re-applied (1.0 Mi).', 'radar');
+      }
+      refreshAllNodeVisibilities();
+    }
+
+    function createNewCustomBot() {
+      const name = document.getElementById('newBotNameInput').value.trim() || 'Custom Bot';
+      const question = document.getElementById('newBotQuestionInput').value.trim() || 'Hello from custom bot!';
+      const miles = parseFloat(document.getElementById('newBotMilesInput').value) || 1.0;
+      const interest = document.getElementById('newBotInterestInput').value;
+      const accountType = document.getElementById('newBotTypeInput').value;
+      
+      const botId = 'custom-bot-' + Math.random().toString(36).substring(2, 9);
+      const angleRad = Math.random() * Math.PI * 2;
+      const distMeters = miles * METERS_PER_MILE;
+
+      const latOffset = (Math.sin(angleRad) * distMeters) / 111320;
+      const lngOffset = (Math.cos(angleRad) * distMeters) / (111320 * Math.cos(userState.lat * Math.PI / 180));
+      const lat = userState.lat + latOffset;
+      const lng = userState.lng + lngOffset;
+
+      globalActiveDirectory[botId] = {
+        rawSender: name,
+        peerId: botId,
+        lat,
+        lng,
+        distance: distMeters,
+        bubbleColor: 'purple',
+        accountType: accountType,
+        category: 'store',
+        hours: 'Open 9:00 AM • Closes 9:00 PM',
+        interestFilter: interest,
+        hideMyName: false,
+        lastSeen: Date.now(),
+        question: question,
+        createdAt: Date.now(),
+        isBot: true
+      };
+
+      updatePeerNodeOnMap(name, distMeters, distMeters+'m', lat, lng, question, Date.now(), botId, 'purple', accountType, 'store', 'Open 9:00 AM', interest, true, false, false);
+      renderGlobalUsersDirectory();
+      renderAdminBotEditorList();
+      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+      
+      document.getElementById('newBotNameInput').value = '';
+      document.getElementById('newBotQuestionInput').value = '';
+      showToast(`Successfully created bot: ${name}!`, 'check-circle');
+    }
+
+    function renderAdminBotEditorList() {
+      const container = document.getElementById('adminBotEditorList');
+      if (!container) return;
+
+      const peerIds = Object.keys(globalActiveDirectory);
+      if (peerIds.length === 0) {
+        container.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-center text-xs text-slate-400">No active bots found.</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      peerIds.forEach(id => {
+        const peer = globalActiveDirectory[id];
+        container.innerHTML += `
+          <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-white">${peer.rawSender} (${peer.accountType})</span>
+              <div class="flex items-center gap-1.5">
+                <button onclick="deleteBotProfile('${id}')" class="px-2 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Remove</button>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <input type="text" id="edit-name-${id}" value="${peer.rawSender}" class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
+              <input type="text" id="edit-q-${id}" value="${peer.question || ''}" placeholder="Chat bubble message..." class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
+              <button onclick="saveBotProfileEdit('${id}')" class="px-3 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-bold">Save Changes</button>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function saveBotProfileEdit(id) {
+      const newName = document.getElementById(`edit-name-${id}`).value.trim();
+      const newQ = document.getElementById(`edit-q-${id}`).value.trim();
+      if (globalActiveDirectory[id]) {
+        globalActiveDirectory[id].rawSender = newName;
+        globalActiveDirectory[id].question = newQ;
+        globalActiveDirectory[id].createdAt = Date.now();
+        refreshAllPeerDistancesAndPositions();
+        renderAdminBotEditorList();
+        showToast('Bot profile updated successfully!', 'check-circle');
+      }
+    }
+
+    function deleteBotProfile(id) {
+      if (globalActiveDirectory[id]) {
+        let peerKey = 'node-' + id.replace(/[^a-zA-Z0-9]/g, '-');
+        let nodeElem = document.getElementById(peerKey);
+        if (nodeElem) nodeElem.remove();
+        delete globalActiveDirectory[id];
+        renderAdminBotEditorList();
+        renderGlobalUsersDirectory();
+        if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+        showToast('Bot removed from map.', 'trash-2');
+      }
     }
 
     async function initializeAppSession() {
@@ -1073,6 +1297,7 @@
       await fetchProfilesAndTopicsFromSupabase();
       checkChatExpiryLoop();
       restoreActiveChatRoom();
+      checkAdminPrivileges();
       
       const slider = document.getElementById('radarRangeSlider');
       if (slider) {
@@ -1126,6 +1351,9 @@
         if (savedProfile) {
           const parsed = JSON.parse(savedProfile);
           userState = { ...userState, ...parsed };
+          if (userState.alias && userState.alias.toLowerCase() === 'administrator') {
+            isAdminUser = true;
+          }
         }
 
         const savedTopicState = localStorage.getItem(STORAGE_KEY_TOPIC_STATE);
@@ -1203,7 +1431,7 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal')) {
           return;
         }
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
@@ -1284,7 +1512,7 @@
       if (!mapCanvas) return;
 
       mapCanvas.addEventListener('wheel', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal')) {
           return;
         }
         e.preventDefault();
@@ -1309,7 +1537,7 @@
       });
 
       mapCanvas.addEventListener('dblclick', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal')) {
           return;
         }
         recenterAndResetZoom();
@@ -1348,7 +1576,7 @@
     const MAP_PIXels_PER_MILE = 187.5;
 
     function updateRadius(val) {
-      const meters = Math.max(MIN_RADIUS_METERS, Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val))));
+      const meters = unlimitedRadarActive ? 999999 : Math.max(MIN_RADIUS_METERS, Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val))));
       userState.radius = meters;
 
       const ring = document.getElementById('radarBoundaryRing');
@@ -1357,14 +1585,14 @@
       const slider = document.getElementById('radarRangeSlider');
       const sliderLabel = document.getElementById('sliderRangeLabel');
       
-      const miles = (meters / METERS_PER_MILE).toFixed(1);
-      const labelText = `${miles} Mi`;
+      const miles = unlimitedRadarActive ? 'Unlimited' : (meters / METERS_PER_MILE).toFixed(1);
+      const labelText = unlimitedRadarActive ? 'Unlimited' : `${miles} Mi`;
 
       if (slider) slider.value = meters;
       if (sliderLabel) sliderLabel.innerText = labelText;
 
       if (ring) {
-        const milesVal = meters / METERS_PER_MILE;
+        const milesVal = unlimitedRadarActive ? 30 : (meters / METERS_PER_MILE);
         const pixelDiameter = Math.round(milesVal * MAP_PIXels_PER_MILE * 2);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
@@ -1382,7 +1610,9 @@
     }
 
     function updateRadiusFromSlider(val) {
-      updateRadius(val);
+      if (!unlimitedRadarActive) {
+        updateRadius(val);
+      }
     }
 
     function initRadiusDragHandlers() {
@@ -1390,6 +1620,7 @@
       if (!ring) return;
 
       const handleStart = (e) => {
+        if (unlimitedRadarActive) return;
         isDraggingRadius = true;
         e.stopPropagation();
         e.preventDefault();
@@ -1405,7 +1636,7 @@
       };
 
       const handleMove = (e) => {
-        if (!isDraggingRadius) return;
+        if (!isDraggingRadius || unlimitedRadarActive) return;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
@@ -1437,6 +1668,7 @@
     }
 
     function matchesInterestFilter(peerInterestFilter) {
+      if (unlimitedRadarActive) return true;
       if (!userState.interestFilter || userState.interestFilter === 'none') return true;
       if (!peerInterestFilter || peerInterestFilter === 'none') return true;
       return userState.interestFilter.toLowerCase() === peerInterestFilter.toLowerCase();
@@ -1452,12 +1684,12 @@
         if (nodeElem) {
           const isEnabled = peer.enabled !== false;
           const matchesFilter = matchesInterestFilter(peer.interestFilter);
-          const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter;
+          const isWithinRadius = unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
           const isParticipated = participatedChatRoomIds.has(roomId);
           
           nodeElem.style.display = isEnabled ? 'block' : 'none';
           
-          if (isParticipated) {
+          if (isParticipated || unlimitedRadarActive) {
             nodeElem.style.opacity = '0.95';
             nodeElem.style.pointerEvents = 'auto';
           } else {
@@ -1566,7 +1798,7 @@
       if (!mapCanvas) return;
 
       const triggerRipple = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider')) {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal')) {
           return;
         }
         createBubbleRipple();
@@ -1679,8 +1911,8 @@
 
     function getRadarStyleHtml(styleType) {
       const palette = RADAR_PALETTES[userState.radarColor || 'cyan'];
-      const initialMiles = (userState.radius / METERS_PER_MILE).toFixed(1);
-      const initialPx = Math.round((userState.radius / METERS_PER_MILE) * MAP_PIXels_PER_MILE * 2);
+      const initialMiles = unlimitedRadarActive ? 'Unlimited' : (userState.radius / METERS_PER_MILE).toFixed(1);
+      const initialPx = Math.round((unlimitedRadarActive ? 30 : (userState.radius / METERS_PER_MILE)) * MAP_PIXels_PER_MILE * 2);
 
       if (styleType === 'cyberpunk') {
         return `
@@ -1982,6 +2214,7 @@
       if (!supabaseClient) return;
       await supabaseClient.auth.signOut();
       currentAuthUser = null;
+      isAdminUser = false;
       userState.profileCreated = false;
       savePersistentData();
       showToast('Logged out successfully', 'log-out');
@@ -2005,6 +2238,10 @@
         userState.hideMyName = data.hide_my_name || false;
         userState.profileCreated = true;
         
+        if (userState.alias.toLowerCase() === 'administrator') {
+          isAdminUser = true;
+        }
+
         if (data.active_topic && data.topic_created_at) {
           const tTime = new Date(data.topic_created_at).getTime();
           if (Date.now() - tTime < ONE_HOUR_MS) {
@@ -2016,6 +2253,7 @@
 
         document.getElementById('avatarNameInput').value = userState.alias;
         updateMyDisplayLabel();
+        checkAdminPrivileges();
         savePersistentData();
       }
     }
@@ -2213,6 +2451,7 @@
       });
 
       renderGlobalUsersDirectory();
+      renderAdminBotEditorList();
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
     }
 
@@ -2232,7 +2471,7 @@
       peerIds.forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
         const matchesFilter = matchesInterestFilter(peer.interestFilter);
-        const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter;
+        const isWithinRadius = unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
         const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const isBiz = peer.accountType === 'business';
@@ -2299,8 +2538,8 @@
 
         if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
           const matches = matchesInterestFilter(p.interestFilter);
-          const inRadius = userState.radius === 0 || p.distance <= userState.radius;
-          if ((matches && inRadius) || isParticipated) {
+          const inRadius = unlimitedRadarActive || (userState.radius === 0 || p.distance <= userState.radius);
+          if ((matches && inRadius) || isParticipated || unlimitedRadarActive) {
             validBubbles.push({
               name: getDisplayName(p.rawSender, p.hideMyName, p.accountType),
               question: hasValidQuestion ? p.question : '',
@@ -2457,13 +2696,13 @@
       const peerRecord = globalActiveDirectory[peerId] || {};
       const isEnabled = peerRecord.enabled !== false;
       const matchesFilter = matchesInterestFilter(interestFilter);
-      const isWithinRadius = (userState.radius === 0 || distance <= userState.radius) && matchesFilter;
+      const isWithinRadius = unlimitedRadarActive || ((userState.radius === 0 || distance <= userState.radius) && matchesFilter);
       
       let roomId = 'room-peer-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       const isParticipated = participatedChatRoomIds.has(roomId);
 
       let opacityVal = 1;
-      if (isParticipated) {
+      if (isParticipated || unlimitedRadarActive) {
         opacityVal = 0.95; 
       } else if (!matchesFilter) {
         opacityVal = 0.05;
@@ -2473,8 +2712,8 @@
       }
 
       nodeElem.style.display = isEnabled ? 'block' : 'none';
-      nodeElem.style.opacity = isWithinRadius || isParticipated ? '1' : opacityVal.toString();
-      nodeElem.style.pointerEvents = (isWithinRadius || isParticipated) ? 'auto' : 'none';
+      nodeElem.style.opacity = isWithinRadius || isParticipated || unlimitedRadarActive ? '1' : opacityVal.toString();
+      nodeElem.style.pointerEvents = (isWithinRadius || isParticipated || unlimitedRadarActive) ? 'auto' : 'none';
       
       const isBiz = accountType === 'business';
       const neonStyle = getBusinessNeonStyle(accountType, category);
@@ -2577,11 +2816,16 @@
       if (userState.type === 'business') userState.address = document.getElementById('businessAddressInput').value.trim();
       userState.profileCreated = true;
 
+      if (userState.alias.toLowerCase() === 'administrator') {
+        isAdminUser = true;
+      }
+
       updateMyDisplayLabel();
       savePersistentData();
       saveUserProfileToSupabase();
       announcePresence();
       closeProfileModal();
+      checkAdminPrivileges();
       showToast('Profile & Settings saved successfully!', 'check-circle');
     }
 
@@ -2755,7 +2999,7 @@
       const accountType = isSelf ? userState.type : globalActiveDirectory[peerId]?.accountType;
       const category = isSelf ? userState.category : globalActiveDirectory[peerId]?.category;
       
-      const isOwner = isSelf || (peerId === 'you');
+      const isOwner = isSelf || (peerId === 'you') || isAdminUser;
       const deleteBtn = document.getElementById('ownerDeleteRoomBtn');
       if (deleteBtn) {
         if (isOwner) deleteBtn.classList.remove('hidden');
