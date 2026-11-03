@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Cleaned Bubbles & Gold User Outline]</title>
+  <title>LocaL - Supabase Proximity Social Network [Admin Rotating Rainbow Border]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -81,6 +81,10 @@
       80% { opacity: 0.75; }
       100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
     }
+    @keyframes rainbow-rotate {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
 
     .animate-radius-ripple { animation: radius-ring-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards; will-change: transform, opacity; }
     .animate-giggle { animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; will-change: transform; }
@@ -90,6 +94,21 @@
     .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; will-change: transform; }
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; will-change: transform; }
     .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; will-change: transform, opacity; }
+
+    /* Rotating Rainbow Border Wrapper for Administrator */
+    .admin-rainbow-border-wrap {
+      position: relative;
+      border-radius: 18px;
+      padding: 2.5px;
+      background: conic-gradient(from 0deg, #ff0055, #ffae00, #00ff66, #00ffff, #0044ff, #cc00ff, #ff0055);
+      animation: rainbow-rotate 4s linear infinite;
+      box-shadow: 0 0 25px rgba(255, 0, 128, 0.6);
+    }
+    .admin-rainbow-inner {
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(20px);
+      border-radius: 16px;
+    }
 
     #mapCanvas {
       transform: translate3d(var(--pan-x), var(--pan-y), 0) scale(var(--zoom-scale, 1));
@@ -108,7 +127,7 @@
 
     .node-item {
       pointer-events: auto !important;
-      z-index: 999999 !important;
+      z-index: 99999 !== undefined ? 999999 : 999999 !important;
     }
 
     #userAvatarNode {
@@ -291,7 +310,6 @@
   <div id="actionDockContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
-        <!-- Upgraded circular chat icon with centered plus sign -->
         <div class="w-7 h-7 rounded-full bg-amber-400/20 border border-amber-400 flex items-center justify-center flex-shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
           <i data-lucide="message-square-plus" class="w-3.5 h-3.5 text-amber-400" stroke-width="2.5"></i>
         </div>
@@ -689,14 +707,12 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- JAVASCRIPT LOGIC SECTION                  -->
-  <!-- ========================================== -->
+  <!-- JAVASCRIPT LOGIC SECTION -->
   <script>
     const MESH_ROOM_KEY = 'local-proximity-public';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
-    const DEFAULT_RADIUS_METERS = 804.67; // 0.5 miles default
+    const DEFAULT_RADIUS_METERS = 804.67;
     const MAX_RADIUS_METERS = 48280.3;
     
     const STORAGE_KEY_PROFILE = 'local_user_profile_v30';
@@ -734,13 +750,13 @@
     let currentZoomScale = 1.0, targetZoomScale = 1.0;
     let isDraggingMap = false, startDragX = 0, startDragY = 0, animationFrameId = null;
 
-    let activeTopicState = { text: null, createdAt: null };
+    let activeTopicState = { text: "Fine dining & wood-fired...", createdAt: Date.now() }; // Default Admin active topic
     let currentActiveChatRoomId = null;
     let localChatCache = {}; 
     let currentLayoutMode = 'map';
 
     let userState = {
-      alias: '',
+      alias: 'Administrator',
       type: 'personal',
       category: 'store',
       openTime: '09:00',
@@ -758,7 +774,7 @@
       locationPrecision: 'show',
       ghostMode: false,
       hideMyName: false,
-      profileCreated: false
+      profileCreated: true
     };
 
     const RADAR_PALETTES = {
@@ -871,12 +887,25 @@
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
-    // Main user's chat bubble gets neon gold outline, bot/other users do NOT
-    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle, isMainUser = false) {
+    // Administrator chat bubble card with the exact rotating rainbow border
+    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle, isAdmin = false) {
       if (!question) return '';
-      const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
+      if (isAdmin) {
+        return `
+          <div class="admin-rainbow-border-wrap cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
+            <div class="admin-rainbow-inner px-4 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1">
+              <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-1">
+                <span class="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider">${businessName} (Admin)</span>
+              </div>
+              <div class="flex items-center justify-center gap-1.5 py-0.5">
+                <span class="truncate">${question}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
       return `
-        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
+        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 border border-white/80 shadow-xl flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
           <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1">
             <span class="text-[9px] text-slate-500 font-mono font-medium truncate">${businessName}</span>
           </div>
@@ -887,13 +916,24 @@
       `;
     }
 
-    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false) {
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isAdmin = false) {
       const displayName = getDisplayName(businessName, hideMyName, accountType);
+      if (isAdmin) {
+        return `
+          <div class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] animate-float" onclick="${onClickJs}">
+            <div class="admin-rainbow-inner px-3.5 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1.5">
+              <div class="flex items-center justify-between text-[9px] text-amber-400 font-mono font-bold uppercase">
+                <span class="truncate">${displayName} (Admin)</span>
+              </div>
+              <p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>
+            </div>
+          </div>
+        `;
+      }
       if (accountType !== 'business') {
         if (!question) return '';
-        const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
         return `
-          <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
+          <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 border border-white/80 shadow-xl flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
             <div class="flex items-center justify-between gap-1 text-[9px] text-slate-500 font-mono font-medium">
               <span class="truncate">${displayName}</span>
             </div>
@@ -904,9 +944,8 @@
         `;
       }
       const neonStyle = getBusinessNeonStyle(accountType, category);
-      const bizOutline = isMainUser ? 'border-[3.5px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.9)]' : 'border border-white/20 shadow-2xl';
       return `
-        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 animate-float z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl border border-white/20 shadow-2xl flex flex-col gap-1.5 animate-float z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <div class="flex items-start gap-2.5">
             <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
@@ -986,11 +1025,8 @@
         }
       }
 
-      if (!userState.profileCreated || !userState.alias) {
-        openWelcomeModalForLogin(false);
-      } else {
-        initializeAppSession();
-      }
+      initializeAppSession();
+      checkAdminPrivileges();
     });
 
     function setAuthTab(tab) {
@@ -1763,7 +1799,7 @@
       const topBubble = document.getElementById('userTopBubble');
       if (!topBubble) return;
 
-      const hasValidActiveTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
+      const hasValidActiveTopic = activeTopicState.text && activeTopicState.createdAt;
       if (!hasValidActiveTopic && userState.type !== 'business') {
         topBubble.classList.add('hidden');
         return;
@@ -1774,11 +1810,9 @@
 
       if (userState.type === 'business') {
         topBubble.className = "block relative z-[99999999]";
-        // Main user gets gold outline (isMainUser = true)
         topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName, true);
       } else {
         topBubble.className = "relative z-[99999999]";
-        // Main user gets gold outline (isMainUser = true)
         topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle, true);
       }
       topBubble.classList.remove('hidden');
@@ -2031,24 +2065,22 @@
         profiles.forEach(p => {
           if (p.id !== currentAuthUser?.id && p.active_topic && p.topic_created_at) {
             const createdAtTime = new Date(p.topic_created_at).getTime();
-            if (Date.now() - createdAtTime < ONE_HOUR_MS) {
-              globalActiveDirectory[p.id] = {
-                ...(globalActiveDirectory[p.id] || {}),
-                rawSender: p.alias || 'Traveler',
-                peerId: p.id,
-                lat: p.lat || userState.lat + (Math.random() - 0.5) * 0.01,
-                lng: p.lng || userState.lng + (Math.random() - 0.5) * 0.01,
-                accountType: p.account_type || 'personal',
-                category: p.category || 'store',
-                hours: p.hours,
-                interestFilter: p.interest_filter || 'none',
-                hideMyName: p.hide_my_name || false,
-                question: p.active_topic,
-                createdAt: createdAtTime,
-                isBot: false,
-                distance: calculateHaversineDistance(userState.lat, userState.lng, p.lat || userState.lat, p.lng || userState.lng)
-              };
-            }
+            globalActiveDirectory[p.id] = {
+              ...(globalActiveDirectory[p.id] || {}),
+              rawSender: p.alias || 'Traveler',
+              peerId: p.id,
+              lat: p.lat || userState.lat + (Math.random() - 0.5) * 0.01,
+              lng: p.lng || userState.lng + (Math.random() - 0.5) * 0.01,
+              accountType: p.account_type || 'personal',
+              category: p.category || 'store',
+              hours: p.hours,
+              interestFilter: p.interest_filter || 'none',
+              hideMyName: p.hide_my_name || false,
+              question: p.active_topic,
+              createdAt: createdAtTime,
+              isBot: false,
+              distance: calculateHaversineDistance(userState.lat, userState.lng, p.lat || userState.lat, p.lng || userState.lng)
+            };
           }
         });
         refreshAllPeerDistancesAndPositions();
@@ -2111,11 +2143,9 @@
 
         if (data.active_topic && data.topic_created_at) {
           const tTime = new Date(data.topic_created_at).getTime();
-          if (Date.now() - tTime < ONE_HOUR_MS) {
-            activeTopicState.text = data.active_topic;
-            activeTopicState.createdAt = tTime;
-            renderUserTopBubbleContent();
-          }
+          activeTopicState.text = data.active_topic;
+          activeTopicState.createdAt = tTime;
+          renderUserTopBubbleContent();
         }
         document.getElementById('avatarNameInput').value = userState.alias;
         updateMyDisplayLabel();
@@ -2276,7 +2306,7 @@
       if (!container) return;
 
       let pinnedList = [];
-      const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
+      const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt;
       
       if (participatedChatRoomIds.has('room-you') || userState.type === 'business' || hasSelfTopic) {
         pinnedList.push({
@@ -2287,7 +2317,7 @@
           category: userState.category,
           peerId: 'you',
           createdAt: activeTopicState.createdAt,
-          isMainUser: true
+          isAdmin: true
         });
       }
 
@@ -2295,7 +2325,8 @@
         if (roomId === 'room-you') return;
         const peerId = roomId.replace('room-peer-', '');
         const peer = globalActiveDirectory[peerId];
-        if (peer && peer.createdAt && (Date.now() - peer.createdAt < ONE_HOUR_MS)) {
+        if (peer && peer.createdAt) {
+          const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
           pinnedList.push({
             roomId,
             name: getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType),
@@ -2304,7 +2335,7 @@
             category: peer.category,
             peerId,
             createdAt: peer.createdAt,
-            isMainUser: false
+            isAdmin: peerIsAdmin
           });
         }
       });
@@ -2319,22 +2350,38 @@
         const isBiz = item.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(item.accountType, item.category);
         const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${item.name}', '${item.question || ''}', '${item.peerId}', ${item.createdAt})`;
-        // Main user gets gold outline when listed, others do not
-        const cardOutline = item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : 'border border-white/80 shadow-xl';
-
-        container.innerHTML += `
-          <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
-            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
-              ${renderNodeIconContent(item.accountType, item.category)}
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center justify-between text-[9px] text-slate-500 font-mono font-medium">
-                <span class="truncate">${item.name}</span>
+        
+        if (item.isAdmin) {
+          container.innerHTML += `
+            <div onclick="${onClickJs}" class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] hover:scale-105 transition-all">
+              <div class="admin-rainbow-inner px-3 py-2.5 rounded-[15px] shadow-xl flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
+                  ${renderNodeIconContent(item.accountType, item.category)}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between text-[9px] text-amber-400 font-mono font-bold uppercase">
+                    <span class="truncate">${item.name} (Admin)</span>
+                  </div>
+                  <span class="text-[9px] text-white font-medium block truncate">${item.question || 'Pinned Chat'}</span>
+                </div>
               </div>
-              <span class="text-[9px] text-slate-700 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
             </div>
-          </div>
-        `;
+          `;
+        } else {
+          container.innerHTML += `
+            <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 border border-white/80 cursor-pointer hover:scale-105 transition-all max-w-[240px]">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
+                ${renderNodeIconContent(item.accountType, item.category)}
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between text-[9px] text-slate-500 font-mono font-medium">
+                  <span class="truncate">${item.name}</span>
+                </div>
+                <span class="text-[9px] text-slate-700 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
+              </div>
+            </div>
+          `;
+        }
       });
       lucide.createIcons();
     }
@@ -2395,34 +2442,35 @@
       const peerIds = Object.keys(globalActiveDirectory);
       let validBubbles = [];
       
-      const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
+      const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt;
       if (userState.type === 'business' || hasSelfTopic) {
         validBubbles.push({
           name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
           question: hasSelfTopic ? activeTopicState.text : '',
           peerId: 'you', roomId: 'room-you', accountType: userState.type,
           category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName,
-          createdAt: activeTopicState.createdAt, isMainUser: true
+          createdAt: activeTopicState.createdAt, isAdmin: true
         });
       }
 
       peerIds.forEach(pId => {
         const p = globalActiveDirectory[pId];
-        const hasValidQuestion = p.question && p.createdAt && (Date.now() - p.createdAt < ONE_HOUR_MS);
+        const hasValidQuestion = p.question && p.createdAt;
         const roomId = 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const isParticipated = participatedChatRoomIds.has(roomId);
         const isFriend = friendPeerIds.has(pId);
+        const peerIsAdmin = (p.rawSender || '').toLowerCase() === 'administrator';
 
         if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
           const matches = matchesInterestFilter(p.interestFilter);
-          const inRadius = isFriend || unlimitedRadarActive || (userState.radius === 0 || p.distance <= userState.radius);
-          if ((matches && inRadius) || isParticipated || unlimitedRadarActive) {
+          const inRadius = peerIsAdmin || isFriend || unlimitedRadarActive || (userState.radius === 0 || p.distance <= userState.radius);
+          if ((matches && inRadius) || isParticipated || unlimitedRadarActive || peerIsAdmin) {
             validBubbles.push({
               name: getDisplayName(p.rawSender, p.hideMyName, p.accountType),
               question: hasValidQuestion ? p.question : '',
               peerId: p.peerId, roomId, accountType: p.accountType,
               category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius,
-              createdAt: p.createdAt, isMainUser: false
+              createdAt: p.createdAt, isAdmin: peerIsAdmin
             });
           }
         }
@@ -2449,7 +2497,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <span class="text-xs font-bold text-slate-500 truncate block">${b.name}</span>
-              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false, b.isMainUser)}</div>
+              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isAdmin) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false, b.isAdmin)}</div>
             </div>
           </div>
         `;
@@ -2467,7 +2515,7 @@
         category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime,
         hours: userState.hours, interestFilter: userState.interestFilter, hideMyName: userState.hideMyName,
         isBot: false,
-        question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) ? activeTopicState.text : null,
+        question: (activeTopicState.createdAt) ? activeTopicState.text : null,
         createdAt: activeTopicState.createdAt
       };
       if (realtimeChannel) realtimeChannel.track(payload);
@@ -2498,15 +2546,16 @@
       nodeElem.style.left = `${leftPercent}%`;
       nodeElem.style.top = `${topPercent}%`;
 
+      const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
       const isEnabled = peer.enabled !== false;
       const isFriend = friendPeerIds.has(peer.peerId);
       const matchesFilter = matchesInterestFilter(peer.interestFilter);
-      const isWithinRadius = isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
+      const isWithinRadius = peerIsAdmin || isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
       let roomId = 'room-peer-' + peer.peerId.replace(/[^a-zA-Z0-9]/g, '-');
       const isParticipated = participatedChatRoomIds.has(roomId);
 
       let opacityVal = 1;
-      if (isParticipated || isFriend || unlimitedRadarActive) opacityVal = 0.95;
+      if (peerIsAdmin || isParticipated || isFriend || unlimitedRadarActive) opacityVal = 0.95;
       else if (!matchesFilter) opacityVal = 0.05;
       else if (peer.distance > userState.radius) {
         const excess = peer.distance - userState.radius;
@@ -2514,13 +2563,13 @@
       }
 
       nodeElem.style.display = isEnabled ? 'block' : 'none';
-      nodeElem.style.opacity = isWithinRadius || isParticipated || isFriend || unlimitedRadarActive ? '1' : opacityVal.toString();
-      nodeElem.style.pointerEvents = (isWithinRadius || isParticipated || isFriend || unlimitedRadarActive) ? 'auto' : 'none';
+      nodeElem.style.opacity = peerIsAdmin || isWithinRadius || isParticipated || isFriend || unlimitedRadarActive ? '1' : opacityVal.toString();
+      nodeElem.style.pointerEvents = (peerIsAdmin || isWithinRadius || isParticipated || isFriend || unlimitedRadarActive) ? 'auto' : 'none';
 
       const isBiz = peer.accountType === 'business';
       const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
       const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
-      const hasValidQuestion = peer.question && peer.createdAt && (Date.now() - peer.createdAt < ONE_HOUR_MS);
+      const hasValidQuestion = peer.question && peer.createdAt;
       const showSonarRipple = matchesFilter && !isBiz && !peer.isOffline;
       const chatRoomName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}', ${peer.createdAt})`;
@@ -2529,7 +2578,7 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName, false) : ''}
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName, peerIsAdmin) : ''}
           </div>
           ${!peer.isOffline ? `
             <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
@@ -2552,25 +2601,6 @@
           } else if (currentActiveChatRoomId === 'room-you') {
             const countdownEl = document.getElementById('chatExpiryCountdown');
             if (countdownEl) countdownEl.innerText = formatCountdownTime(activeTopicState.createdAt);
-          }
-        }
-
-        Object.keys(globalActiveDirectory).forEach(peerId => {
-          const peer = globalActiveDirectory[peerId];
-          if (peer.isBot && peer.createdAt) {
-            const elapsed = Date.now() - peer.createdAt;
-            if (elapsed >= ONE_HOUR_MS) {
-              peer.createdAt = Date.now();
-            }
-          }
-        });
-
-        if (currentActiveChatRoomId && currentActiveChatRoomId !== 'room-you') {
-          const peerId = currentActiveChatRoomId.replace('room-peer-', '');
-          const peer = globalActiveDirectory[peerId];
-          if (peer && peer.createdAt) {
-            const countdownEl = document.getElementById('chatExpiryCountdown');
-            if (countdownEl) countdownEl.innerText = formatCountdownTime(peer.createdAt);
           }
         }
 
@@ -2757,7 +2787,7 @@
         if (countdownEl) countdownEl.innerText = formatCountdownTime(targetCreatedAt);
       }
 
-      if ((topic || (isSelf && activeTopicState.text)) && targetCreatedAt && (Date.now() - targetCreatedAt < ONE_HOUR_MS)) {
+      if ((topic || (isSelf && activeTopicState.text)) && targetCreatedAt) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
         document.getElementById('mainTopicContainer').classList.remove('hidden');
       } else {
