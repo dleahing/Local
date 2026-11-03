@@ -3125,24 +3125,35 @@
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const senderDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
+      
+      // Append reply directly into the active chat drawer's conversation container
       appendMessage(senderDisplayName, text, timeStr, true);
-      input.value = ''; input.style.height = '26px';
+      input.value = ''; 
+      input.style.height = '26px';
 
       const payloadMsg = {
-        room_id: currentActiveChatRoomId, sender_id: currentAuthUser ? currentAuthUser.id : myPeerId,
-        sender_alias: senderDisplayName, message: text, created_at: new Date().toISOString()
+        room_id: currentActiveChatRoomId, 
+        sender_id: currentAuthUser ? currentAuthUser.id : myPeerId,
+        sender_alias: senderDisplayName, 
+        message: text, 
+        created_at: new Date().toISOString()
       };
 
+      // Send reply payload through Supabase realtime / fallback channels
       if (realtimeChannel) realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
       if (supabaseClient) {
         await supabaseClient.from('chat_messages').insert({
-          room_id: currentActiveChatRoomId, sender_id: currentAuthUser ? currentAuthUser.id : null,
-          sender_alias: senderDisplayName, message: text
+          room_id: currentActiveChatRoomId, 
+          sender_id: currentAuthUser ? currentAuthUser.id : null,
+          sender_alias: senderDisplayName, 
+          message: text
         });
       } else {
         if (!localChatCache[currentActiveChatRoomId]) localChatCache[currentActiveChatRoomId] = [];
         localChatCache[currentActiveChatRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
       }
+
+      // Re-render side list pinned items to keep unread status up-to-date
       renderPinnedChats();
     }
 
