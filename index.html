@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Matching Round Bubble Illustration & Person Icons]</title>
+  <title>LocaL - Supabase Proximity Social Network [Friends List & Sorted Sidebar Hierarchy]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -102,7 +102,7 @@
       padding: 2.5px;
       background: conic-gradient(from 0deg, #ff0055, #ffd700, #ffae00, #00ff66, #ffdf00, #00ffff, #ffc107, #cc00ff, #ff0055);
       animation: rainbow-rotate 4s linear infinite;
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.75);
+      box-shadow: 0 0 35px rgba(255, 215, 0, 0.85);
     }
     .admin-rainbow-inner {
       background: rgba(15, 23, 42, 0.92);
@@ -313,7 +313,6 @@
   <div id="actionDockContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
-        <!-- Matching round chat bubble illustration used across the chat bubbles -->
         <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(56,189,248,0.7)] relative overflow-hidden">
           <div class="bubble-glare"></div>
           <i data-lucide="message-square" class="w-3.5 h-3.5 text-white drop-shadow-sm z-10" stroke-width="2.5"></i>
@@ -548,6 +547,17 @@
           <input type="text" id="avatarNameInput" placeholder="Enter your username..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none shadow-inner">
         </div>
 
+        <!-- Friends List Section under Profile -->
+        <div class="pt-2 border-t border-slate-200/60 space-y-2">
+          <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="users" class="w-4 h-4 text-sky-600"></i> Friends List (<span id="profileFriendsCount">0</span>)
+          </label>
+          <p class="text-[10px] text-slate-500 font-light">Friends' chat bubbles always pin to the top of your side lists (right after Admin & Main User).</p>
+          <div id="profileFriendsListContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+            <div class="p-2.5 rounded-xl bg-white/50 border border-slate-200 text-center text-xs text-slate-500">No friends added yet. Connect with peers to add them as friends!</div>
+          </div>
+        </div>
+
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Map Background Style</label>
           <select id="bgModeSelect" onchange="updateBackgroundStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
@@ -727,6 +737,7 @@
     const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v5';
     const STORAGE_KEY_FRIENDS = 'local_friends_list_v4';
     const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v1';
+    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v1';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -747,6 +758,7 @@
     let participatedChatRoomIds = new Set();
     let friendPeerIds = new Set();
     let customBotDefinitions = [];
+    let offlineTopicsCache = {};
     let wakeLock = null;
     let broadcastChannel = null;
     let backgroundAudioOscillator = null;
@@ -794,9 +806,67 @@
 
     function initBackgroundKeepAlive() {
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden) startBackgroundAudioKeepAlive();
-        else stopBackgroundAudioKeepAlive();
+        if (document.hidden) {
+          startBackgroundAudioKeepAlive();
+        } else {
+          stopBackgroundAudioKeepAlive();
+          captureOfflineTopicsSnapshot();
+        }
       });
+      window.addEventListener('beforeunload', () => {
+        captureOfflineTopicsSnapshot();
+      });
+    }
+
+    function captureOfflineTopicsSnapshot() {
+      try {
+        const snapshot = {};
+        Object.keys(globalActiveDirectory).forEach(id => {
+          const peer = globalActiveDirectory[id];
+          if (peer.question && peer.createdAt) {
+            snapshot[id] = { question: peer.question, createdAt: peer.createdAt };
+          }
+        });
+        localStorage.setItem(STORAGE_KEY_OFFLINE_TOPICS_STATE, JSON.stringify(snapshot));
+      } catch(e) {}
+    }
+
+    function checkOfflineGeneratedTopicsUponLogon() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_OFFLINE_TOPICS_STATE);
+        if (saved) {
+          const snapshot = JSON.parse(saved);
+          Object.keys(snapshot).forEach(id => {
+            const cachedData = snapshot[id];
+            if (globalActiveDirectory[id]) {
+              if (!globalActiveDirectory[id].question || globalActiveDirectory[id].createdAt < cachedData.createdAt) {
+                globalActiveDirectory[id].question = cachedData.question;
+                globalActiveDirectory[id].createdAt = cachedData.createdAt;
+              }
+            } else {
+              // Re-hydrate peer if created while offline
+              const isPeerAdmin = id.includes('admin') || cachedData.question.toLowerCase().includes('admin');
+              const isPeerFriend = friendPeerIds.has(id);
+              globalActiveDirectory[id] = {
+                peerId: id,
+                rawSender: isPeerAdmin ? 'Administrator' : (isPeerFriend ? 'Friend Peer' : 'Offline Peer'),
+                lat: userState.lat + (Math.random() - 0.5) * 0.01,
+                lng: userState.lng + (Math.random() - 0.5) * 0.01,
+                distance: 200,
+                accountType: 'personal',
+                category: 'store',
+                interestFilter: 'none',
+                hideMyName: false,
+                question: cachedData.question,
+                createdAt: cachedData.createdAt,
+                isBot: true
+              };
+            }
+            participatedChatRoomIds.add('room-peer-' + id.replace(/[^a-zA-Z0-9]/g, '-'));
+          });
+          savePersistentData();
+        }
+      } catch(e) {}
     }
 
     function startBackgroundAudioKeepAlive() {
@@ -1356,6 +1426,7 @@
       initSupabaseNetwork();
       requestScreenWakeLock();
       spawnDefaultSimulatedUsers();
+      checkOfflineGeneratedTopicsUponLogon();
       await fetchProfilesAndTopicsFromSupabase();
       checkChatExpiryLoop();
       restoreActiveChatRoom();
@@ -1391,6 +1462,7 @@
       setLocationPrecision(userState.locationPrecision || 'show');
       applyBackgroundMode(userState.bgMode || 'aurora');
       applyRadarColorCSS(userState.radarColor || 'cyan');
+      renderProfileFriendsList();
     }
 
     async function requestScreenWakeLock() {
@@ -1428,6 +1500,7 @@
         localStorage.setItem(STORAGE_KEY_PARTICIPATED_ROOMS, JSON.stringify(Array.from(participatedChatRoomIds)));
         localStorage.setItem(STORAGE_KEY_FRIENDS, JSON.stringify(Array.from(friendPeerIds)));
         localStorage.setItem(STORAGE_KEY_CUSTOM_BOTS, JSON.stringify(customBotDefinitions));
+        captureOfflineTopicsSnapshot();
         if (currentActiveChatRoomId) localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
         else localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
       } catch (e) {}
@@ -2312,11 +2385,12 @@
         showToast('Removed from Friends.', 'user-minus');
       } else {
         friendPeerIds.add(peerId);
-        showToast('Added to Friends! Always visible on radar.', 'user-check');
+        showToast('Added to Friends! Pinned to top of side lists.', 'user-check');
       }
       savePersistentData();
       refreshAllNodeVisibilities();
       renderGlobalUsersDirectory();
+      renderProfileFriendsList();
       
       const btnText = document.getElementById('friendBtnText');
       if (btnText) {
@@ -2331,12 +2405,45 @@
       toggleFriendStatus(peerId);
     }
 
+    function renderProfileFriendsList() {
+      const container = document.getElementById('profileFriendsListContainer');
+      const countElem = document.getElementById('profileFriendsCount');
+      if (!container) return;
+      if (countElem) countElem.innerText = friendPeerIds.size;
+
+      if (friendPeerIds.size === 0) {
+        container.innerHTML = `<div class="p-2.5 rounded-xl bg-white/50 border border-slate-200 text-center text-xs text-slate-500">No friends added yet. Connect with peers to add them as friends!</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      friendPeerIds.forEach(peerId => {
+        const peer = globalActiveDirectory[peerId] || { rawSender: 'Friend Peer (' + peerId.substring(0,6) + ')', accountType: 'personal' };
+        const displayName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
+        container.innerHTML += `
+          <div class="p-2.5 rounded-2xl bg-white/80 border border-slate-200 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full bg-sky-500 text-white font-bold text-xs flex items-center justify-center">${displayName.charAt(0).toUpperCase()}</div>
+              <div>
+                <span class="text-xs font-bold text-slate-900 block">${displayName}</span>
+                <span class="text-[9px] text-emerald-600 font-semibold">Friend • Pinned in Side Lists</span>
+              </div>
+            </div>
+            <button onclick="toggleFriendStatus('${peerId}')" class="px-2 py-1 rounded-lg bg-red-500/15 text-red-700 hover:bg-red-500/25 text-[10px] font-bold">Remove</button>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
     function renderPinnedChats() {
       const container = document.getElementById('pinnedChatsContainer');
       if (!container) return;
 
       let adminList = [];
-      let regularList = [];
+      let mainUserList = [];
+      let friendList = [];
+      let otherList = [];
       
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt;
       const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
@@ -2351,10 +2458,11 @@
           peerId: 'you',
           createdAt: activeTopicState.createdAt,
           isAdmin: isUserAdmin,
-          isMainUser: !isUserAdmin
+          isMainUser: !isUserAdmin,
+          isFriend: false
         };
         if (isUserAdmin) adminList.push(item);
-        else regularList.push(item);
+        else mainUserList.push(item);
       }
 
       participatedChatRoomIds.forEach(roomId => {
@@ -2363,6 +2471,7 @@
         const peer = globalActiveDirectory[peerId];
         if (peer && peer.createdAt) {
           const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
+          const isFriend = friendPeerIds.has(peerId);
           const item = {
             roomId,
             name: getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType),
@@ -2372,14 +2481,17 @@
             peerId,
             createdAt: peer.createdAt,
             isAdmin: peerIsAdmin,
-            isMainUser: false
+            isMainUser: false,
+            isFriend
           };
           if (peerIsAdmin) adminList.push(item);
-          else regularList.push(item);
+          else if (isFriend) friendList.push(item);
+          else otherList.push(item);
         }
       });
 
-      const pinnedList = [...adminList, ...regularList];
+      // Strict Hierarchy Order: Admin, Main User, Friends, Other/Businesses
+      const pinnedList = [...adminList, ...mainUserList, ...friendList, ...otherList];
 
       if (pinnedList.length === 0) {
         container.innerHTML = '';
@@ -2409,13 +2521,16 @@
             </div>
           `;
         } else {
-          const cardOutline = item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : 'border border-white/80 shadow-xl';
+          const cardOutline = item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (item.isFriend ? 'border-[2px] border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.6)]' : 'border border-white/80 shadow-xl');
           container.innerHTML += `
             <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
               <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
                 ${renderNodeIconContent(item.accountType, item.category)}
               </div>
               <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[9px] text-slate-500 font-bold uppercase">${item.isFriend ? 'Friend' : 'Chat'}</span>
+                </div>
                 <span class="text-[9px] text-slate-700 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
               </div>
             </div>
@@ -2479,8 +2594,11 @@
       const container = document.getElementById('rightSidebarBubblesContainer');
       if (!container) return;
       const peerIds = Object.keys(globalActiveDirectory);
+      
       let adminBubbles = [];
-      let regularBubbles = [];
+      let mainUserBubbles = [];
+      let friendBubbles = [];
+      let otherBubbles = [];
       
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt;
       const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
@@ -2491,10 +2609,10 @@
           question: hasSelfTopic ? activeTopicState.text : '',
           peerId: 'you', roomId: 'room-you', accountType: userState.type,
           category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName,
-          createdAt: activeTopicState.createdAt, isAdmin: isUserAdmin, isMainUser: !isUserAdmin
+          createdAt: activeTopicState.createdAt, isAdmin: isUserAdmin, isMainUser: !isUserAdmin, isFriend: false
         };
         if (isUserAdmin) adminBubbles.push(item);
-        else regularBubbles.push(item);
+        else mainUserBubbles.push(item);
       }
 
       peerIds.forEach(pId => {
@@ -2508,21 +2626,23 @@
         if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
           const matches = matchesInterestFilter(p.interestFilter);
           const inRadius = peerIsAdmin || isFriend || unlimitedRadarActive || (userState.radius === 0 || p.distance <= userState.radius);
-          if ((matches && inRadius) || isParticipated || unlimitedRadarActive || peerIsAdmin) {
+          if ((matches && inRadius) || isParticipated || unlimitedRadarActive || peerIsAdmin || isFriend) {
             const item = {
               name: getDisplayName(p.rawSender, p.hideMyName, p.accountType),
               question: hasValidQuestion ? p.question : '',
               peerId: p.peerId, roomId, accountType: p.accountType,
               category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius,
-              createdAt: p.createdAt, isAdmin: peerIsAdmin, isMainUser: false
+              createdAt: p.createdAt, isAdmin: peerIsAdmin, isMainUser: false, isFriend
             };
             if (peerIsAdmin) adminBubbles.push(item);
-            else regularBubbles.push(item);
+            else if (isFriend) friendBubbles.push(item);
+            else otherBubbles.push(item);
           }
         }
       });
 
-      const validBubbles = [...adminBubbles, ...regularBubbles];
+      // Strict Sidebar Hierarchy: Admin, Main User, Friends, Other/Businesses
+      const validBubbles = [...adminBubbles, ...mainUserBubbles, ...friendBubbles, ...otherBubbles];
 
       const countElem = document.getElementById('rightSidebarCount');
       if (countElem) countElem.innerText = validBubbles.length;
