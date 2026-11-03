@@ -274,7 +274,7 @@
     <div id="nodesContainer" class="absolute inset-0 z-50 pointer-events-auto"></div>
   </div>
 
-  <!-- Right-Side Chat Bubbles Sidebar (Unified Visuals) -->
+  <!-- Right-Side Chat Bubbles Sidebar -->
   <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-36 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
@@ -341,20 +341,27 @@
     </div>
   </div>
 
-  <!-- STREAMLINED WELCOME / LOGIN & SIGN-UP WALL MODAL -->
+  <!-- STREAMLINED LOGIN / SIGN-UP MODAL -->
   <div id="welcomeProfileModal" class="hidden fixed inset-0 z-[99999999] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4 pointer-events-auto">
     <div class="dark-biz-bubble w-full max-w-sm rounded-[32px] p-6 border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] max-h-[90vh] overflow-y-auto pointer-events-auto relative z-[99999999]">
       
       <div class="text-center mb-5">
         <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white font-bold text-2xl mx-auto mb-2 shadow-[0_0_20px_rgba(52,211,153,0.5)]">L</div>
         <h3 class="text-xl font-extrabold text-white tracking-tight" id="welcomeModalTitle">Welcome to LocaL</h3>
-        <p class="text-xs text-slate-400 mt-1" id="welcomeModalSubtitle">Enter your credentials to join the proximity network.</p>
+        <p class="text-xs text-slate-400 mt-1" id="welcomeModalSubtitle">Sign in or create your account below.</p>
       </div>
       
       <div class="space-y-4">
-        <div id="welcomeUsernameFieldContainer">
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Username / Display Name</label>
-          <input type="text" id="welcomeUsernameInput" placeholder="Choose a username..." class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
+        <!-- Tab Selector: Sign In vs Sign Up -->
+        <div class="flex rounded-2xl bg-slate-900/90 p-1 border border-slate-800">
+          <button type="button" onclick="setAuthTab('signin')" id="tabSignInBtn" class="flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md">Sign In</button>
+          <button type="button" onclick="setAuthTab('signup')" id="tabSignUpBtn" class="flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all">Create Account</button>
+        </div>
+
+        <!-- Username Field (Only shown during Sign Up) -->
+        <div id="signupUsernameContainer" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Username / Display Alias</label>
+          <input type="text" id="welcomeUsernameInput" placeholder="e.g. CaptainJax" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
         </div>
 
         <div>
@@ -367,11 +374,8 @@
           <input type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
         </div>
 
-        <div class="flex gap-2 pt-3">
-          <button type="button" onclick="registerOrSignInAccount('signup')" id="welcomeSignUpBtn" class="flex-1 py-3.5 rounded-2xl bg-slate-800 text-white font-bold text-xs shadow-lg active:scale-98 transition-all cursor-pointer pointer-events-auto border border-white/10 hover:bg-slate-700">
-            Sign Up
-          </button>
-          <button type="button" onclick="registerOrSignInAccount('signin')" class="flex-1 py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500">
+        <div class="pt-2">
+          <button type="button" onclick="submitAuthForm()" id="authSubmitBtn" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500">
             Sign In
           </button>
         </div>
@@ -445,6 +449,20 @@
         </div>
 
         <div>
+          <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all">
+              <i data-lucide="user" class="w-4 h-4 text-emerald-800"></i>
+              <span class="text-[11px] font-semibold text-emerald-950">Personal (GPS)</span>
+            </button>
+            <button onclick="playAudioEffect('click'); selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
+              <i data-lucide="store" class="w-4 h-4 text-slate-700"></i>
+              <span class="text-[11px] font-semibold text-slate-800">Business (Fixed)</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1">Username / Display Alias</label>
           <input type="text" id="avatarNameInput" placeholder="Enter your username..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
         </div>
@@ -494,6 +512,43 @@
           </select>
         </div>
 
+        <div id="businessFields" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-800 mb-1">Business Category & Flat Icon</label>
+            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+              <option value="store">General Retail Store</option>
+              <option value="coffee">Coffee & Bakery</option>
+              <option value="utensils">Restaurant & Dining</option>
+              <option value="pill">Pharmacy & Health</option>
+              <option value="home">Real Estate & Housing</option>
+              <option value="wrench">Dumpster & Services</option>
+              <option value="glass-water">Bar & Lounge</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-800 mb-1">Store Operating Hours</label>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <span class="text-[10px] text-slate-500 font-medium">Opening Time</span>
+                <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 font-medium">Closing Time</span>
+                <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+              </div>
+            </div>
+            <div class="mt-1.5 flex items-center justify-between">
+              <span class="text-[10px] text-slate-500 font-medium">Status display text:</span>
+              <span id="businessHoursPreview" class="text-[10px] font-semibold text-emerald-800">Open 9:00 AM • Closes 9:00 PM</span>
+            </div>
+            <input type="hidden" id="businessHoursInput" value="Open 9:00 AM • Closes 9:00 PM">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-800 mb-1">Store Street Address (Fixed)</label>
+            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          </div>
+        </div>
+
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
@@ -517,21 +572,18 @@
     </div>
   </div>
 
-  <!-- Chat Drawer Overlay & Container (Unified Header matching Chat Bubble styling) -->
+  <!-- Chat Drawer Overlay & Container -->
   <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-[9999998] bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
   <div id="chatDrawer" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-[99999999] w-full max-w-lg glass-drawer-top p-5 rounded-3xl flex flex-col transition-all max-h-[82vh] border border-white/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] pointer-events-auto">
     
     <div class="flex items-center justify-between pb-3.5 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-3">
-        <!-- Unified Chat Bubble Header Container -->
-        <div id="chatTargetBubbleReplica" class="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-white/95 backdrop-blur-xl border border-white/90 shadow-lg">
-          <div id="chatTargetAvatar" class="w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden flex-shrink-0">
-            <div class="bubble-glare"></div>
-          </div>
-          <div class="flex flex-col min-w-0">
-            <span id="chatTargetCategoryLabel" class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block truncate">Local Peer</span>
-            <h4 id="chatTargetName" class="font-bold text-slate-900 text-xs tracking-tight truncate">Supabase Channel</h4>
-          </div>
+        <div id="chatTargetAvatar" class="w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden">
+          <div class="bubble-glare"></div>
+        </div>
+        <div>
+          <h4 id="chatTargetName" class="font-bold text-slate-900 text-sm tracking-tight drop-shadow-sm">Supabase Realtime Channel</h4>
+          <p id="chatTargetStatus" class="text-[10px] text-emerald-800 font-semibold uppercase tracking-wider">Database Sync Active</p>
         </div>
       </div>
       
@@ -597,6 +649,7 @@
     let supabaseClient = null;
     let realtimeChannel = null;
     let dbMessagesChannel = null;
+    let currentAuthTab = 'signin';
     
     let supabaseConfig = { 
       url: 'https://tqwrlcgrhhfxkpwrzoza.supabase.co', 
@@ -661,6 +714,36 @@
     };
 
     const SOLID_FLAT_BUSINESS_BG = '#1e1b2e';
+
+    function formatTime12h(timeStr) {
+      if (!timeStr) return '';
+      const [hStr, mStr] = timeStr.split(':');
+      let hours = parseInt(hStr, 10);
+      if (isNaN(hours)) return timeStr;
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return `${hours}:${mStr} ${ampm}`;
+    }
+
+    function computeBusinessHoursStatus(openTime, closeTime) {
+      if (!openTime || !closeTime) return 'Open 9:00 AM • Closes 9:00 PM';
+      const openFormatted = formatTime12h(openTime);
+      const closeFormatted = formatTime12h(closeTime);
+      return `Open ${openFormatted} • Closes ${closeFormatted}`;
+    }
+
+    function updateBusinessHoursFromTimes() {
+      const openTime = document.getElementById('businessOpenTimeInput').value;
+      const closeTime = document.getElementById('businessCloseTimeInput').value;
+      userState.openTime = openTime;
+      userState.closeTime = closeTime;
+      const statusText = computeBusinessHoursStatus(openTime, closeTime);
+      userState.hours = statusText;
+      document.getElementById('businessHoursInput').value = statusText;
+      const preview = document.getElementById('businessHoursPreview');
+      if (preview) preview.innerText = statusText;
+    }
 
     function getDisplayName(rawSender, hideMyName, accountType) {
       if (accountType === 'business') return rawSender || 'Business Store';
@@ -872,39 +955,47 @@
       }
     });
 
-    function openWelcomeModalForLogin(isReturningLogin = false) {
-      const modal = document.getElementById('welcomeProfileModal');
-      const usernameContainer = document.getElementById('welcomeUsernameFieldContainer');
-      const titleElem = document.getElementById('welcomeModalTitle');
+    function setAuthTab(tab) {
+      currentAuthTab = tab;
+      const btnSignIn = document.getElementById('tabSignInBtn');
+      const btnSignUp = document.getElementById('tabSignUpBtn');
+      const usernameContainer = document.getElementById('signupUsernameContainer');
+      const submitBtn = document.getElementById('authSubmitBtn');
       const subtitleElem = document.getElementById('welcomeModalSubtitle');
 
-      if (isReturningLogin && userState.profileCreated) {
-        if (usernameContainer) usernameContainer.classList.add('hidden');
-        if (titleElem) titleElem.innerText = 'Welcome Back to LocaL';
-        if (subtitleElem) subtitleElem.innerText = `Logging in as ${getDisplayName(userState.alias, userState.hideMyName, userState.type)}`;
+      if (tab === 'signin') {
+        btnSignIn.className = 'flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md';
+        btnSignUp.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
+        usernameContainer.classList.add('hidden');
+        submitBtn.innerText = 'Sign In';
+        subtitleElem.innerText = 'Sign in with your email and password.';
       } else {
-        if (usernameContainer) usernameContainer.classList.remove('hidden');
-        if (titleElem) titleElem.innerText = 'Welcome to LocaL';
-        if (subtitleElem) subtitleElem.innerText = 'Enter your username and email to get started.';
+        btnSignUp.className = 'flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md';
+        btnSignIn.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
+        usernameContainer.classList.remove('hidden');
+        submitBtn.innerText = 'Create Account';
+        subtitleElem.innerText = 'Choose a username, email, and password.';
       }
-
-      modal.classList.remove('hidden');
     }
 
-    async function registerOrSignInAccount(actionType) {
+    function openWelcomeModalForLogin(isReturningLogin = false) {
+      const modal = document.getElementById('welcomeProfileModal');
+      modal.classList.remove('hidden');
+      setAuthTab('signin');
+    }
+
+    async function submitAuthForm() {
       const email = document.getElementById('welcomeEmailInput').value.trim();
       const password = document.getElementById('welcomePasswordInput').value.trim();
+      const usernameInput = document.getElementById('welcomeUsernameInput').value.trim();
 
       if (!email || !password) {
-        showToast('Please enter email and password', 'alert-circle');
+        showToast('Please enter your email and password', 'alert-circle');
         return;
       }
 
-      const usernameInputElem = document.getElementById('welcomeUsernameInput');
-      let username = usernameInputElem ? usernameInputElem.value.trim() : '';
-
-      if (actionType === 'signup' && !username) {
-        showToast('Please choose a username', 'alert-circle');
+      if (currentAuthTab === 'signup' && !usernameInput) {
+        showToast('Please create a username for your account', 'alert-circle');
         return;
       }
 
@@ -913,11 +1004,11 @@
           supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
           
           let authResult;
-          if (actionType === 'signup') {
+          if (currentAuthTab === 'signup') {
             authResult = await supabaseClient.auth.signUp({
               email,
               password,
-              options: { data: { full_name: username } }
+              options: { data: { full_name: usernameInput } }
             });
           } else {
             authResult = await supabaseClient.auth.signInWithPassword({
@@ -934,33 +1025,38 @@
           if (authResult.data?.user || authResult.data?.session?.user) {
             currentAuthUser = authResult.data.user || authResult.data.session.user;
             
-            if (actionType === 'signup' && username) {
-              userState.alias = username;
+            if (currentAuthTab === 'signup' && usernameInput) {
               await supabaseClient.from('profiles').upsert({
                 id: currentAuthUser.id,
-                alias: username,
-                account_type: userState.type,
-                interest_filter: userState.interestFilter,
+                alias: usernameInput,
+                account_type: 'personal',
+                interest_filter: 'none',
                 updated_at: new Date()
               });
+              userState.alias = usernameInput;
             } else {
               const { data: profileData } = await supabaseClient.from('profiles').select('*').eq('id', currentAuthUser.id).single();
               if (profileData && profileData.alias) {
                 userState.alias = profileData.alias;
                 userState.type = profileData.account_type || userState.type;
                 userState.interestFilter = profileData.interest_filter || userState.interestFilter;
+              } else if (currentAuthUser.user_metadata?.full_name) {
+                userState.alias = currentAuthUser.user_metadata.full_name;
+              } else {
+                userState.alias = email.split('@')[0];
               }
             }
           }
         }
       } catch(e) {}
 
-      if (actionType === 'signup' && username) {
-        userState.alias = username;
+      if (currentAuthTab === 'signup' && usernameInput) {
+        userState.alias = usernameInput;
+      } else if (!userState.alias) {
+        userState.alias = email.split('@')[0];
       }
 
       userState.profileCreated = true;
-
       savePersistentData();
       document.getElementById('welcomeProfileModal').classList.add('hidden');
       initializeAppSession();
@@ -997,6 +1093,11 @@
       startSmoothAnimationLoop();
 
       document.getElementById('avatarNameInput').value = userState.alias || '';
+      document.getElementById('businessAddressInput').value = userState.address || '';
+      document.getElementById('businessOpenTimeInput').value = userState.openTime || '09:00';
+      document.getElementById('businessCloseTimeInput').value = userState.closeTime || '21:00';
+      document.getElementById('businessHoursInput').value = userState.hours || 'Open 9:00 AM • Closes 9:00 PM';
+      document.getElementById('businessCategorySelect').value = userState.category || 'store';
       document.getElementById('userInterestFilterSelect').value = userState.interestFilter || 'none';
       document.getElementById('radarStyleSelect').value = userState.radarStyle || 'futuristic';
       document.getElementById('radarColorSelect').value = userState.radarColor || 'cyan';
@@ -1004,6 +1105,7 @@
       document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
       document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
       document.getElementById('privacyMakeNamePublic').checked = !!userState.hideMyName;
+      selectAccountType(userState.type || 'personal', true);
       applyBackgroundMode(userState.bgMode || 'aurora');
       applyRadarColorCSS(userState.radarColor || 'cyan');
     }
@@ -2104,6 +2206,7 @@
                   <h4 class="font-bold text-slate-900 text-xs">${displayLabel} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
                 </div>
                 <p class="text-[10px] text-emerald-900 font-semibold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
+                ${isBiz && peer.hours ? `<div class="mt-0.5 flex items-center justify-between"><span class="text-[9px] text-slate-400">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${peer.hours}</span></div>` : ''}
               </div>
             </div>
             <div class="flex items-center gap-2">
@@ -2369,6 +2472,14 @@
       }, 1000);
     }
 
+    function selectAccountType(type, skipSave = false) {
+      userState.type = type;
+      document.getElementById('personalTypeBtn').className = type === 'personal' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
+      document.getElementById('businessTypeBtn').className = type === 'business' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
+      document.getElementById('businessFields').classList.toggle('hidden', type !== 'business');
+      if (!skipSave) savePersistentData();
+    }
+
     function saveProfile() {
       const newAlias = document.getElementById('avatarNameInput').value.trim();
       if (!newAlias) {
@@ -2377,6 +2488,10 @@
       }
 
       userState.alias = newAlias;
+      userState.category = document.getElementById('businessCategorySelect').value;
+      userState.openTime = document.getElementById('businessOpenTimeInput').value;
+      userState.closeTime = document.getElementById('businessCloseTimeInput').value;
+      userState.hours = computeBusinessHoursStatus(userState.openTime, userState.closeTime);
       userState.interestFilter = document.getElementById('userInterestFilterSelect').value;
       userState.radarStyle = document.getElementById('radarStyleSelect').value;
       userState.radarColor = document.getElementById('radarColorSelect').value;
@@ -2384,6 +2499,7 @@
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
       userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
       userState.hideMyName = document.getElementById('privacyMakeNamePublic').checked;
+      if (userState.type === 'business') userState.address = document.getElementById('businessAddressInput').value.trim();
       userState.profileCreated = true;
 
       updateMyDisplayLabel();
@@ -2537,10 +2653,11 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
-    // UNIFIED CHAT DRAWER HEADER MATCHING THE CHAT BUBBLE STYLING
     async function openChatDrawer(roomId, roomName, topic, peerId, isRestoring = false) {
       currentActiveChatRoomId = roomId;
       savePersistentData();
+      
+      document.getElementById('chatTargetName').innerText = roomName;
       
       const isSelf = roomId === 'room-you';
       const isBiz = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business');
@@ -2557,13 +2674,8 @@
       const neonStyle = getBusinessNeonStyle(accountType, category);
       const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
 
-      // Populate chat header replica to match the chat bubble styling exactly
-      document.getElementById('chatTargetName').innerText = roomName;
-      document.getElementById('chatTargetCategoryLabel').innerText = isBiz ? (category || 'Store') : 'Local Peer';
-      document.getElementById('chatTargetName').className = `font-bold text-xs tracking-tight truncate ${isBiz ? neonStyle.glowText : 'text-slate-900'}`;
-
       const avatarEl = document.getElementById('chatTargetAvatar');
-      avatarEl.className = `w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden flex-shrink-0 ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
+      avatarEl.className = `w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
       avatarEl.style.background = circleBg;
       if (isBiz) avatarEl.style.cssText += neonStyle.shadowStyle;
       avatarEl.innerHTML = renderNodeIconContent(accountType, category);
