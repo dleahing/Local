@@ -3,27 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Admin & Distributed Mesh]</title>
+  <title>LocaL - Supabase Proximity Social Network [Pinned Chats & Friends]</title>
   
-  <!-- Mobile & PWA Configuration -->
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LocaL">
 
-  <!-- Inter Premium Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS, Lucide Icons & Supabase JS Client -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
-  <!-- ========================================== -->
-  <!-- 1. STYLES & BACKGROUND EFFECTS SECTION      -->
-  <!-- ========================================== -->
   <style>
     :root {
       --zoom-scale: 1;
@@ -44,8 +38,6 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       letter-spacing: -0.011em;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      text-rendering: optimizeLegibility;
       touch-action: none;
     }
 
@@ -84,7 +76,6 @@
       80% { transform: scale(1.04) rotate(-3deg); }
       100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
-
     @keyframes radius-ring-pulse {
       0% { transform: translate(-50%, -50%) scale(0.01); opacity: 1; }
       80% { opacity: 0.7; }
@@ -136,11 +127,8 @@
       text-transform: uppercase;
       color: rgba(125, 211, 252, 0.95);
       background: transparent;
-      padding: 0;
-      border: none;
-      box-shadow: none;
-      white-space: nowrap;
-      pointer-events: none;
+      padding: 0; border: none; box-shadow: none;
+      white-space: nowrap; pointer-events: none;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
     }
 
@@ -167,13 +155,11 @@
 
     .map-grid-pattern {
       background-image: radial-gradient(rgba(0,0,0,0.15) 1.2px, transparent 1.2px);
-      background-size: 40px 40px;
-      background-repeat: repeat;
+      background-size: 40px 40px; background-repeat: repeat;
     }
     .map-grid-pattern-dark {
       background-image: radial-gradient(rgba(255,255,255,0.12) 1.2px, transparent 1.2px);
-      background-size: 40px 40px;
-      background-repeat: repeat;
+      background-size: 40px 40px; background-repeat: repeat;
     }
 
     .glass-panel {
@@ -207,21 +193,12 @@
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
     }
     .bubble-node {
-      position: relative;
-      outline: none;
-      border: none;
-      pointer-events: auto !important;
+      position: relative; outline: none; border: none; pointer-events: auto !important;
     }
     .bubble-glare {
-      position: absolute;
-      top: 8%;
-      left: 14%;
-      width: 55%;
-      height: 32%;
+      position: absolute; top: 8%; left: 14%; width: 55%; height: 32%;
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 100%);
-      border-radius: 50% 50% 0 0;
-      transform: rotate(-25deg);
-      pointer-events: none;
+      border-radius: 50% 50% 0 0; transform: rotate(-25deg); pointer-events: none;
     }
     .glass-drawer-top {
       background: rgba(255, 255, 255, 0.65);
@@ -248,18 +225,21 @@
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern pointer-events-none"></div>
     
-    <!-- World Boundary Ring -->
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring z-0" style="width: 5625px; height: 5625px;">
       <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
     </div>
 
-    <!-- Static Radar Center -->
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center z-0">
       <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_20px_rgba(56,189,248,0.2)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
       <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_15px_rgba(56,189,248,0.15)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
     </div>
 
     <div id="nodesContainer" class="absolute inset-0 z-50 pointer-events-auto"></div>
+  </div>
+
+  <!-- TOP-LEFT PINNED CHATS CONTAINER -->
+  <div id="pinnedChatsContainer" class="fixed top-20 left-4 z-40 flex flex-col gap-2.5 max-w-xs pointer-events-auto">
+    <!-- Dynamically populated pinned chats user is a part of -->
   </div>
 
   <!-- Right-Side Chat Bubbles Sidebar -->
@@ -272,9 +252,7 @@
       <button onclick="playAudioEffect('click'); setLayoutMode('map')" class="text-slate-500 hover:text-slate-800 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div id="rightSidebarBubblesContainer" class="flex-1 overflow-y-auto space-y-4 pr-1">
-      <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">
-        No active chat bubbles in range.
-      </div>
+      <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No active chat bubbles in range.</div>
     </div>
   </div>
 
@@ -327,8 +305,8 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[7px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="1609.34" max="48280.3" step="500" value="1609.34" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
-        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">1.0 Mi</span>
+        <input type="range" id="radarRangeSlider" min="804.67" max="48280.3" step="500" value="804.67" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
+        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.5 Mi</span>
       </div>
     </div>
   </div>
@@ -341,7 +319,7 @@
           <i data-lucide="shield-check" class="w-6 h-6 text-amber-400"></i>
           <div>
             <h3 class="text-lg font-extrabold text-white tracking-tight">Administrator Control Center</h3>
-            <p class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider">Manage Bots & Remove Radar Distance Limits</p>
+            <p class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider">Manage Bots & Remove Radar Limits</p>
           </div>
         </div>
         <button onclick="playAudioEffect('click'); closeAdminModal()" class="text-slate-400 hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -366,11 +344,11 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[10px] font-semibold text-slate-300 mb-1">Bot Name / Alias</label>
-              <input type="text" id="newBotNameInput" placeholder="e.g. Marina Patrol Bot" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+              <input type="text" id="newBotNameInput" placeholder="e.g. Marina Patrol Bot" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none">
             </div>
             <div>
               <label class="block text-[10px] font-semibold text-slate-300 mb-1">Interest Filter</label>
-              <select id="newBotInterestInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+              <select id="newBotInterestInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
                 <option value="none">None (All)</option>
                 <option value="Life">Life</option>
                 <option value="Cars">Cars</option>
@@ -384,12 +362,12 @@
           </div>
           <div>
             <label class="block text-[10px] font-semibold text-slate-300 mb-1">Initial Chat Bubble Question / Message</label>
-            <input type="text" id="newBotQuestionInput" placeholder="e.g. Live music at the pavilion tonight!" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            <input type="text" id="newBotQuestionInput" placeholder="e.g. Live music at the pavilion tonight!" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[10px] font-semibold text-slate-300 mb-1">Distance (Miles)</label>
-              <input type="number" id="newBotMilesInput" value="1.5" step="0.1" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none">
+              <input type="number" id="newBotMilesInput" value="0.4" step="0.1" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
             </div>
             <div>
               <label class="block text-[10px] font-semibold text-slate-300 mb-1">Bot Account Type</label>
@@ -399,9 +377,7 @@
               </select>
             </div>
           </div>
-          <button onclick="createNewCustomBot()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">
-            Deploy Bot to Map
-          </button>
+          <button onclick="createNewCustomBot()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">Deploy Bot to Map</button>
         </div>
 
         <div>
@@ -429,17 +405,17 @@
 
         <div id="signupUsernameContainer" class="hidden">
           <label class="block text-xs font-semibold text-slate-300 mb-1">Username / Display Alias</label>
-          <input type="text" id="welcomeUsernameInput" placeholder="e.g. Administrator" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <input type="text" id="welcomeUsernameInput" placeholder="e.g. Administrator" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Email / Username Alias</label>
-          <input type="text" id="welcomeEmailInput" placeholder="Administrator or your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <input type="text" id="welcomeEmailInput" placeholder="Administrator or your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
-          <input type="password" id="welcomePasswordInput" placeholder="4464" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <input type="password" id="welcomePasswordInput" placeholder="4464" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
         </div>
 
         <div class="pt-2">
@@ -528,12 +504,12 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1">Username / Display Alias</label>
-          <input type="text" id="avatarNameInput" placeholder="Enter your username..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <input type="text" id="avatarNameInput" placeholder="Enter your username..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none shadow-inner">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Map Background Style</label>
-          <select id="bgModeSelect" onchange="updateBackgroundStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <select id="bgModeSelect" onchange="updateBackgroundStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
             <option value="aurora">Gradient Aurora (Vibrant)</option>
             <option value="cyber">Cyber Grid Dark (Tactical)</option>
             <option value="minimal">Clean Minimalist Light (Paper)</option>
@@ -543,7 +519,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Radar Style / Type</label>
-          <select id="radarStyleSelect" onchange="updateRadarStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <select id="radarStyleSelect" onchange="updateRadarStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
             <option value="futuristic">Futuristic Neon Rings</option>
             <option value="cyberpunk">Cyberpunk Grid & Sweep</option>
             <option value="minimal">Clean Minimalist Pulse</option>
@@ -553,7 +529,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Radar Line Color</label>
-          <select id="radarColorSelect" onchange="updateRadarColor(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <select id="radarColorSelect" onchange="updateRadarColor(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
             <option value="cyan">Neon Cyan / Sky</option>
             <option value="emerald">Military Emerald Green</option>
             <option value="pink">Cyberpunk Hot Pink</option>
@@ -564,7 +540,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter</label>
-          <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+          <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
             <option value="none">No Filter At All</option>
             <option value="Life">Life</option>
             <option value="Cars">Cars</option>
@@ -576,10 +552,20 @@
           </select>
         </div>
 
+        <div class="pt-2 border-t border-slate-200/60 space-y-2">
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Location Precision Mode</label>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button type="button" onclick="setLocationPrecision('show')" id="locShowBtn" class="py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm">Show (Exact)</button>
+            <button type="button" onclick="setLocationPrecision('fizz')" id="locFizzBtn" class="py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm">Fizz (~500m)</button>
+            <button type="button" onclick="setLocationPrecision('hide')" id="locHideBtn" class="py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm">Hide (Random)</button>
+          </div>
+          <p class="text-[10px] text-slate-500 font-light mt-1" id="locPrecisionDesc">Showing exact distance to nearby peers.</p>
+        </div>
+
         <div id="businessFields" class="hidden space-y-3">
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Business Category & Flat Icon</label>
-            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
               <option value="store">General Retail Store</option>
               <option value="coffee">Coffee & Bakery</option>
               <option value="utensils">Restaurant & Dining</option>
@@ -594,18 +580,18 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <span class="text-[10px] text-slate-500 font-medium">Opening Time</span>
-                <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+                <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light">
               </div>
               <div>
                 <span class="text-[10px] text-slate-500 font-medium">Closing Time</span>
-                <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+                <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light">
               </div>
             </div>
             <input type="hidden" id="businessHoursInput" value="Open 9:00 AM • Closes 9:00 PM">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Store Street Address (Fixed)</label>
-            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
+            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light">
           </div>
         </div>
 
@@ -618,10 +604,6 @@
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
             <span>Ghost Mode (Invisible on map)</span>
             <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
-          </label>
-          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
-            <span>Fuzz Location (~500m jitter)</span>
-            <input type="checkbox" id="privacyFuzzLocation" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
         </div>
 
@@ -646,10 +628,13 @@
       </div>
       
       <div class="flex items-center gap-2">
-        <button id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all">
-          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Room
+        <button id="addFriendFromChatBtn" onclick="toggleFriendStatusFromChat()" title="Add / Remove Friend" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-900 text-[10px] font-bold flex items-center gap-1 transition-all">
+          <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> <span id="friendBtnText">Add Friend</span>
         </button>
-        <button onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 hover:text-slate-900 transition-all shadow-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <button id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+        </button>
+        <button onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 transition-all shadow-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
     </div>
 
@@ -691,18 +676,18 @@
   <!-- ========================================== -->
   <script>
     const MESH_ROOM_KEY = 'local-proximity-public';
-
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
-    const MIN_RADIUS_METERS = 1609.34;
+    const DEFAULT_RADIUS_METERS = 804.67; // 0.5 miles default
     const MAX_RADIUS_METERS = 48280.3;
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v25';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v34';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v24';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v24';
-    const STORAGE_KEY_SUPABASE_CONFIG = 'local_supabase_config_v1';
-    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v1';
+    
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v26';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v35';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v25';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v25';
+    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v2';
+    const STORAGE_KEY_FRIENDS = 'local_friends_list_v1';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -721,21 +706,14 @@
     let globalActiveDirectory = {};
     let processedMsgIds = new Set();
     let participatedChatRoomIds = new Set();
+    let friendPeerIds = new Set();
     let wakeLock = null;
     let broadcastChannel = null;
     let backgroundAudioOscillator = null;
 
-    let panX = 0;
-    let panY = 0;
-    let targetPanX = 0;
-    let targetPanY = 0;
-    let currentZoomScale = 1.0;
-    let targetZoomScale = 1.0;
-
-    let isDraggingMap = false;
-    let startDragX = 0;
-    let startDragY = 0;
-    let animationFrameId = null;
+    let panX = 0, panY = 0, targetPanX = 0, targetPanY = 0;
+    let currentZoomScale = 1.0, targetZoomScale = 1.0;
+    let isDraggingMap = false, startDragX = 0, startDragY = 0, animationFrameId = null;
 
     let activeTopicState = { text: null, createdAt: null };
     let currentActiveChatRoomId = null;
@@ -751,15 +729,15 @@
       hours: 'Open 9:00 AM • Closes 9:00 PM',
       address: '',
       interestFilter: 'none',
-      radius: MIN_RADIUS_METERS,
+      radius: DEFAULT_RADIUS_METERS,
       lat: 27.2730,
       lng: -80.3582,
       bubbleColor: 'blue',
       radarStyle: 'futuristic',
       radarColor: 'cyan',
       bgMode: 'aurora',
+      locationPrecision: 'show', // 'show', 'fizz', 'hide'
       ghostMode: false,
-      fuzzLocation: false,
       hideMyName: false,
       profileCreated: false
     };
@@ -775,29 +753,23 @@
     const SOLID_FLAT_BUSINESS_BG = '#1e1b2e';
 
     /* ============================================================ */
-    /* BACKGROUND KEEP-ALIVE SERVICE WORKER & AUDIO LOCK            */
+    /* BACKGROUND KEEP-ALIVE AUDIO LOCK                             */
     /* ============================================================ */
 
     function initBackgroundKeepAlive() {
-      // Keep audio context alive so mobile OS does not throttle timer intervals in background
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          startBackgroundAudioKeepAlive();
-        } else {
-          stopBackgroundAudioKeepAlive();
-        }
+        if (document.hidden) startBackgroundAudioKeepAlive();
+        else stopBackgroundAudioKeepAlive();
       });
     }
 
     function startBackgroundAudioKeepAlive() {
       try {
         initAudioContext();
-        if (!audioCtx) return;
-        if (backgroundAudioOscillator) return;
-
+        if (!audioCtx || backgroundAudioOscillator) return;
         backgroundAudioOscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
-        gainNode.gain.value = 0.0001; // Silent audio lock to keep thread awake
+        gainNode.gain.value = 0.0001;
         backgroundAudioOscillator.type = 'sine';
         backgroundAudioOscillator.frequency.value = 20;
         backgroundAudioOscillator.connect(gainNode);
@@ -852,19 +824,26 @@
       savePersistentData();
     }
 
+    function setLocationPrecision(mode) {
+      userState.locationPrecision = mode;
+      document.getElementById('locShowBtn').className = mode === 'show' ? 'py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm' : 'py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm';
+      document.getElementById('locFizzBtn').className = mode === 'fizz' ? 'py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm' : 'py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm';
+      document.getElementById('locHideBtn').className = mode === 'hide' ? 'py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm' : 'py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm';
+      
+      const desc = document.getElementById('locPrecisionDesc');
+      if (mode === 'show') desc.innerText = 'Showing exact distance to nearby peers.';
+      else if (mode === 'fizz') desc.innerText = 'Fuzzing location with ~500m random jitter.';
+      else desc.innerText = 'Hiding true location (randomized position).';
+      savePersistentData();
+      announcePresence();
+    }
+
     function getBusinessNeonStyle(accountType, category) {
-      if (accountType !== 'business') {
-        return { bg: 'transparent', borderClass: 'border border-white/40', shadowStyle: 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);', iconColor: 'text-white', glowText: 'text-yellow-400', lucideIcon: 'user' };
-      }
-      if (category === 'utensils') {
-        return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-amber-400', shadowStyle: 'box-shadow: 0 0 25px rgba(251, 191, 36, 0.8);', iconColor: 'text-amber-400', glowText: 'text-amber-400', lucideIcon: 'utensils' };
-      } else if (category === 'glass-water') {
-        return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-pink-500', shadowStyle: 'box-shadow: 0 0 25px rgba(236, 72, 153, 0.8);', iconColor: 'text-pink-400', glowText: 'text-pink-400', lucideIcon: 'glass-water' };
-      } else if (category === 'pill') {
-        return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-emerald-400', shadowStyle: 'box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);', iconColor: 'text-emerald-300', glowText: 'text-emerald-400', lucideIcon: 'pill' };
-      } else {
-        return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-purple-400', shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);', iconColor: 'text-purple-300', glowText: 'text-purple-300', lucideIcon: category || 'store' };
-      }
+      if (accountType !== 'business') return { bg: 'transparent', borderClass: 'border border-white/40', shadowStyle: 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);', iconColor: 'text-white', glowText: 'text-yellow-400', lucideIcon: 'user' };
+      if (category === 'utensils') return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-amber-400', shadowStyle: 'box-shadow: 0 0 25px rgba(251, 191, 36, 0.8);', iconColor: 'text-amber-400', glowText: 'text-amber-400', lucideIcon: 'utensils' };
+      else if (category === 'glass-water') return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-pink-500', shadowStyle: 'box-shadow: 0 0 25px rgba(236, 72, 153, 0.8);', iconColor: 'text-pink-400', glowText: 'text-pink-400', lucideIcon: 'glass-water' };
+      else if (category === 'pill') return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-emerald-400', shadowStyle: 'box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);', iconColor: 'text-emerald-300', glowText: 'text-emerald-400', lucideIcon: 'pill' };
+      else return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-purple-400', shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);', iconColor: 'text-purple-300', glowText: 'text-purple-300', lucideIcon: category || 'store' };
     }
 
     function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle) {
@@ -908,7 +887,7 @@
 
     let touchTimer = null;
     let isDraggingRadius = false;
-    let dragStartRadiusMeters = MIN_RADIUS_METERS;
+    let dragStartRadiusMeters = DEFAULT_RADIUS_METERS;
     let dragStartDistancePx = 175;
     let audioCtx = null;
 
@@ -1089,8 +1068,8 @@
         userState.radius = 999999;
         showToast('Radar limits removed! All active users visible.', 'shield-alert');
       } else {
-        userState.radius = MIN_RADIUS_METERS;
-        showToast('Radar limits re-applied (1.0 Mi).', 'radar');
+        userState.radius = DEFAULT_RADIUS_METERS;
+        showToast('Radar limits re-applied (0.5 Mi).', 'radar');
       }
       refreshAllNodeVisibilities();
     }
@@ -1098,7 +1077,7 @@
     function createNewCustomBot() {
       const name = document.getElementById('newBotNameInput').value.trim() || 'Custom Bot';
       const question = document.getElementById('newBotQuestionInput').value.trim() || 'Hello from custom bot!';
-      const miles = parseFloat(document.getElementById('newBotMilesInput').value) || 1.0;
+      const miles = parseFloat(document.getElementById('newBotMilesInput').value) || 0.4;
       const interest = document.getElementById('newBotInterestInput').value;
       const accountType = document.getElementById('newBotTypeInput').value;
       
@@ -1182,7 +1161,7 @@
     }
 
     async function initializeAppSession() {
-      userState.radius = MIN_RADIUS_METERS;
+      userState.radius = DEFAULT_RADIUS_METERS;
       initGPSLocation();
       initUserNode();
       initSupabaseNetwork();
@@ -1194,7 +1173,7 @@
       checkAdminPrivileges();
       
       const slider = document.getElementById('radarRangeSlider');
-      if (slider) { slider.min = MIN_RADIUS_METERS; slider.max = MAX_RADIUS_METERS; slider.value = MIN_RADIUS_METERS; }
+      if (slider) { slider.min = DEFAULT_RADIUS_METERS; slider.max = MAX_RADIUS_METERS; slider.value = DEFAULT_RADIUS_METERS; }
 
       updateRadius(userState.radius);
 
@@ -1218,9 +1197,9 @@
       document.getElementById('radarColorSelect').value = userState.radarColor || 'cyan';
       document.getElementById('bgModeSelect').value = userState.bgMode || 'aurora';
       document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
-      document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
       document.getElementById('privacyMakeNamePublic').checked = !!userState.hideMyName;
       selectAccountType(userState.type || 'personal', true);
+      setLocationPrecision(userState.locationPrecision || 'show');
       applyBackgroundMode(userState.bgMode || 'aurora');
       applyRadarColorCSS(userState.radarColor || 'cyan');
     }
@@ -1245,6 +1224,8 @@
         if (savedTopicState) activeTopicState = JSON.parse(savedTopicState);
         const savedRooms = localStorage.getItem(STORAGE_KEY_PARTICIPATED_ROOMS);
         if (savedRooms) participatedChatRoomIds = new Set(JSON.parse(savedRooms));
+        const savedFriends = localStorage.getItem(STORAGE_KEY_FRIENDS);
+        if (savedFriends) friendPeerIds = new Set(JSON.parse(savedFriends));
       } catch (e) {}
     }
 
@@ -1254,6 +1235,7 @@
         localStorage.setItem(STORAGE_KEY_TOPIC_STATE, JSON.stringify(activeTopicState));
         localStorage.setItem(STORAGE_KEY_SUPABASE_CONFIG, JSON.stringify(supabaseConfig));
         localStorage.setItem(STORAGE_KEY_PARTICIPATED_ROOMS, JSON.stringify(Array.from(participatedChatRoomIds)));
+        localStorage.setItem(STORAGE_KEY_FRIENDS, JSON.stringify(Array.from(friendPeerIds)));
         if (currentActiveChatRoomId) localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
         else localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
       } catch (e) {}
@@ -1267,7 +1249,7 @@
           const peerData = globalActiveDirectory[peerIdMatch];
           const roomName = savedRoomId === 'room-you' ? getDisplayName(userState.alias, userState.hideMyName, userState.type) : (peerData ? getDisplayName(peerData.rawSender, peerData.hideMyName, peerData.accountType) : 'Active Session');
           const topic = savedRoomId === 'room-you' ? activeTopicState.text : (peerData ? peerData.question : null);
-          openChatDrawer(savedRoomId, roomName, topic, peerIdMatch, true);
+          openChatDrawer(savedRoomId, roomName, topic, peerIdMatch);
         }
       } catch (e) {}
     }
@@ -1308,7 +1290,7 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal')) return;
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsContainer')) return;
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
         isDraggingMap = true;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -1344,7 +1326,6 @@
     function initPinchZoomHandlers() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
-
       mapCanvas.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
           isDraggingMap = false;
@@ -1371,7 +1352,7 @@
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
       mapCanvas.addEventListener('wheel', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal')) return;
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal, #pinnedChatsContainer')) return;
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
         targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
@@ -1391,17 +1372,13 @@
         }
         lastTapTime = currentTime;
       });
-      mapCanvas.addEventListener('dblclick', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal')) return;
-        recenterAndResetZoom();
-      });
     }
 
     function recenterAndResetZoom() {
       targetPanX = 0; targetPanY = 0; targetZoomScale = 1.0;
-      updateRadius(MIN_RADIUS_METERS);
+      updateRadius(DEFAULT_RADIUS_METERS);
       playAudioEffect('chime');
-      showToast('Map recentered & radar reset to 1.0 Mi', 'navigation');
+      showToast('Map recentered & radar reset to 0.5 Mi', 'navigation');
     }
 
     function startSmoothAnimationLoop() {
@@ -1424,7 +1401,7 @@
     const MAP_PIXELS_PER_MILE = 187.5;
 
     function updateRadius(val) {
-      const meters = unlimitedRadarActive ? 999999 : Math.max(MIN_RADIUS_METERS, Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val))));
+      const meters = unlimitedRadarActive ? 999999 : Math.max(804.67, Math.max(804.67, Math.min(MAX_RADIUS_METERS, Number(val))));
       userState.radius = meters;
 
       const ring = document.getElementById('radarBoundaryRing');
@@ -1485,7 +1462,7 @@
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
         const deltaPx = currentDistPx - dragStartDistancePx;
         const metersPerPx = METERS_PER_MILE / MAP_PIXELS_PER_MILE;
-        const newMeters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
+        const newMeters = Math.max(804.67, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
         updateRadius(newMeters);
       };
 
@@ -1515,12 +1492,13 @@
 
         if (nodeElem) {
           const isEnabled = peer.enabled !== false;
+          const isFriend = friendPeerIds.has(peerId);
           const matchesFilter = matchesInterestFilter(peer.interestFilter);
-          const isWithinRadius = unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
+          const isWithinRadius = isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
           const isParticipated = participatedChatRoomIds.has(roomId);
           
           nodeElem.style.display = isEnabled ? 'block' : 'none';
-          if (isParticipated || unlimitedRadarActive) {
+          if (isParticipated || isFriend || unlimitedRadarActive) {
             nodeElem.style.opacity = '0.95';
             nodeElem.style.pointerEvents = 'auto';
           } else {
@@ -1530,17 +1508,26 @@
         }
       });
       renderGlobalUsersDirectory();
+      renderPinnedChats();
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
     }
 
     function getBroadcastCoordinates() {
       if (userState.type === 'business') return { lat: userState.lat, lng: userState.lng };
       if (!userState.lat || !userState.lng) return { lat: 27.2730, lng: -80.3582 };
-      if (!userState.fuzzLocation) return { lat: userState.lat, lng: userState.lng };
-      return {
-        lat: userState.lat + ((Math.random() - 0.5) * 0.005),
-        lng: userState.lng + ((Math.random() - 0.5) * 0.005)
-      };
+      
+      if (userState.locationPrecision === 'hide') {
+        return {
+          lat: userState.lat + ((Math.random() - 0.5) * 0.08),
+          lng: userState.lng + ((Math.random() - 0.5) * 0.08)
+        };
+      } else if (userState.locationPrecision === 'fizz') {
+        return {
+          lat: userState.lat + ((Math.random() - 0.5) * 0.005),
+          lng: userState.lng + ((Math.random() - 0.5) * 0.005)
+        };
+      }
+      return { lat: userState.lat, lng: userState.lng };
     }
 
     function initGPSLocation() {
@@ -1570,10 +1557,6 @@
       return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))));
     }
 
-    /* ============================================================ */
-    /* HASH-BASED DETERMINISTIC 360° POLAR SPREAD & COLLISION AVOIDANCE */
-    /* ============================================================ */
-
     function getDeterministicBearing(peerId, rawSender) {
       const seedString = (peerId || '') + (rawSender || '');
       let hash = 0;
@@ -1581,8 +1564,7 @@
         hash = ((hash << 5) - hash) + seedString.charCodeAt(i);
         hash |= 0;
       }
-      const normalized = Math.abs(hash) % 360;
-      return normalized * (Math.PI / 180);
+      return (Math.abs(hash) % 360) * (Math.PI / 180);
     }
 
     function refreshAllPeerDistancesAndPositions() {
@@ -1593,29 +1575,22 @@
         const peer = globalActiveDirectory[peerId];
         if (peer.lat && peer.lng) {
           peer.distance = calculateHaversineDistance(userState.lat, userState.lng, peer.lat, peer.lng);
-          
-          // Compute true 360° polar offset angle from ID hash to avoid linear stacking
           let bearingRad = getDeterministicBearing(peer.peerId, peer.rawSender);
           let pixelDistanceFromCenter = (peer.distance / METERS_PER_MILE) * MAP_PIXELS_PER_MILE;
 
-          // Collision Avoidance separation check against already placed nodes
           let attempts = 0;
           while (attempts < 5) {
             let collision = false;
             for (let other of placedNodes) {
               let dPx = Math.hypot(other.pixelDist - pixelDistanceFromCenter, (other.bearing - bearingRad) * 100);
-              if (dPx < 65) {
-                collision = true;
-                break;
-              }
+              if (dPx < 65) { collision = true; break; }
             }
             if (!collision) break;
-            bearingRad += 0.35; // Shift angle slightly to resolve collision
+            bearingRad += 0.35;
             attempts++;
           }
 
           placedNodes.push({ pixelDist: pixelDistanceFromCenter, bearing: bearingRad });
-
           const mapCanvasWidth = 5625;
           let leftPercent = 50 + ((Math.sin(bearingRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
           let topPercent = 50 - ((Math.cos(bearingRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
@@ -1647,7 +1622,7 @@
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
       mapCanvas.addEventListener('click', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal')) return;
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsContainer')) return;
         createBubbleRipple();
       });
     }
@@ -1747,37 +1722,17 @@
       const initialMiles = unlimitedRadarActive ? 'Unlimited' : (userState.radius / METERS_PER_MILE).toFixed(1);
       const initialPx = Math.round((unlimitedRadarActive ? 30 : (userState.radius / METERS_PER_MILE)) * MAP_PIXELS_PER_MILE * 2);
 
-      if (styleType === 'cyberpunk') {
-        return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
-            <div class="absolute inset-0 rounded-full animate-spin hairline-ring pointer-events-none z-0" style="animation-duration: 25s; transform-origin: center center; border-style: dashed; border-color: ${palette.line};"></div>
-            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none z-0">
-              <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
-            </div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
+      return `
+        <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-2xl pointer-events-auto backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
+          <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none z-0">
+            <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
           </div>
-        `;
-      } else if (styleType === 'minimal') {
-        return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
-          </div>
-        `;
-      } else {
-        return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-2xl pointer-events-auto backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
-            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none z-0">
-              <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
-            </div>
-            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
-            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
-          </div>
-        `;
-      }
+          <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
+          <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
+          <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
+          <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
+        </div>
+      `;
     }
 
     function initUserNode() {
@@ -1828,7 +1783,7 @@
     }
 
     /* ============================================================ */
-    /* SUPABASE DATABASE & REALTIME INSTANT SYNC                   */
+    /* SUPABASE REALTIME & PINNED CHATS (TOP LEFT)                   */
     /* ============================================================ */
 
     function initSupabaseNetwork() {
@@ -1892,7 +1847,7 @@
           const newMsg = payload.new;
           if (newMsg) {
             const timeStr = new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
+            const isMe = currentAuthUser ? (newMsg.sender_id === newMsg.id) : (newMsg.sender_alias === userState.alias);
             participatedChatRoomIds.add(newMsg.room_id);
             savePersistentData();
             refreshAllNodeVisibilities();
@@ -1924,7 +1879,7 @@
       if (!error && data && data.length > 0) {
         data.forEach(msg => {
           const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const isMe = currentAuthUser ? (msg.sender_id === currentAuthUser.id) : (msg.sender_alias === userState.alias);
+          const isMe = currentAuthUser ? (msg.sender_id === msg.sender_id) : (msg.sender_alias === userState.alias);
           appendMessage(msg.sender_alias, msg.message, timeStr, isMe);
         });
       } else if (localChatCache[roomId]) {
@@ -2109,20 +2064,15 @@
 
       updateMeshUI();
       refreshAllPeerDistancesAndPositions();
-
-      if (data.type === 'DELETE_ROOM' && data.roomId && currentActiveChatRoomId === data.roomId) {
-        closeChatDrawer();
-        showToast('The owner deleted this chat room.', 'trash-2');
-      }
     }
 
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
-        { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
-        { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.3, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
+        { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.4, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 0.8, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.2, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 1.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
@@ -2153,6 +2103,96 @@
       renderAdminBotEditorList();
     }
 
+    /* ============================================================ */
+    /* FRIENDS SYSTEM & TOP-LEFT PINNED CHATS                      */
+    /* ============================================================ */
+
+    function toggleFriendStatus(peerId) {
+      if (friendPeerIds.has(peerId)) {
+        friendPeerIds.delete(peerId);
+        showToast('Removed from Friends.', 'user-minus');
+      } else {
+        friendPeerIds.add(peerId);
+        showToast('Added to Friends! Always visible on radar.', 'user-check');
+      }
+      savePersistentData();
+      refreshAllNodeVisibilities();
+      renderGlobalUsersDirectory();
+      
+      // Update chat button state if open
+      const btnText = document.getElementById('friendBtnText');
+      if (btnText) {
+        const isF = friendPeerIds.has(currentActiveChatRoomId?.replace('room-peer-', ''));
+        btnText.innerText = isF ? 'Friends ✓' : 'Add Friend';
+      }
+    }
+
+    function toggleFriendStatusFromChat() {
+      if (!currentActiveChatRoomId || currentActiveChatRoomId === 'room-you') return;
+      const peerId = currentActiveChatRoomId.replace('room-peer-', '');
+      toggleFriendStatus(peerId);
+    }
+
+    function renderPinnedChats() {
+      const container = document.getElementById('pinnedChatsContainer');
+      if (!container) return;
+
+      let pinnedList = [];
+      const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
+      
+      if (participatedChatRoomIds.has('room-you') || userState.type === 'business' || hasSelfTopic) {
+        pinnedList.push({
+          roomId: 'room-you',
+          name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
+          question: hasSelfTopic ? activeTopicState.text : 'Your Broadcast',
+          accountType: userState.type,
+          category: userState.category,
+          peerId: 'you'
+        });
+      }
+
+      participatedChatRoomIds.forEach(roomId => {
+        if (roomId === 'room-you') return;
+        const peerId = roomId.replace('room-peer-', '');
+        const peer = globalActiveDirectory[peerId];
+        if (peer) {
+          pinnedList.push({
+            roomId,
+            name: getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType),
+            question: peer.question || 'Active Chat',
+            accountType: peer.accountType,
+            category: peer.category,
+            peerId
+          });
+        }
+      });
+
+      if (pinnedList.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = '';
+      pinnedList.forEach(item => {
+        const isBiz = item.accountType === 'business';
+        const neonStyle = getBusinessNeonStyle(item.accountType, item.category);
+        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${item.name}', '${item.question || ''}', '${item.peerId}')`;
+
+        container.innerHTML += `
+          <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 border border-white/80 cursor-pointer hover:scale-105 transition-all max-w-[240px]">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
+              ${renderNodeIconContent(item.accountType, item.category)}
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="text-[10px] font-bold text-slate-900 block truncate">${item.name}</span>
+              <span class="text-[9px] text-emerald-800 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
+            </div>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
     function renderGlobalUsersDirectory() {
       const container = document.getElementById('globalUsersDirectory');
       if (!container) return;
@@ -2168,31 +2208,33 @@
       container.innerHTML = '';
       peerIds.forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
+        const isFriend = friendPeerIds.has(peerId);
         const matchesFilter = matchesInterestFilter(peer.interestFilter);
-        const isWithinRadius = unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
+        const isWithinRadius = isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
         const distStr = peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + 'mi' : Math.max(peer.distance, 10) + 'm';
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const isBiz = peer.accountType === 'business';
-        const isEnabled = peer.enabled !== false;
         const displayLabel = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
         const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
 
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
                 ${renderNodeIconContent(peer.accountType, peer.category)}
               </div>
               <div>
-                <div class="flex items-center gap-1.5"><h4 class="font-bold text-slate-900 text-xs">${displayLabel}</h4></div>
-                <p class="text-[10px] text-emerald-900 font-semibold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
+                <div class="flex items-center gap-1.5">
+                  <h4 class="font-bold text-slate-900 text-xs">${displayLabel}</h4>
+                  ${isFriend ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold">Friend</span>' : ''}
+                </div>
+                <p class="text-[10px] text-emerald-900 font-semibold">Distance: ${distStr}</p>
               </div>
             </div>
-            <div class="flex items-center gap-2">
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleIndividualBot('${peerId}', this.checked)" class="sr-only peer">
-                <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
-              </label>
+            <div class="flex items-center gap-1.5">
+              <button onclick="toggleFriendStatus('${peerId}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
+                <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
+              </button>
               <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
           </div>
@@ -2222,10 +2264,11 @@
         const hasValidQuestion = p.question && p.createdAt && (Date.now() - p.createdAt < ONE_HOUR_MS);
         const roomId = 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const isParticipated = participatedChatRoomIds.has(roomId);
+        const isFriend = friendPeerIds.has(pId);
 
         if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
           const matches = matchesInterestFilter(p.interestFilter);
-          const inRadius = unlimitedRadarActive || (userState.radius === 0 || p.distance <= userState.radius);
+          const inRadius = isFriend || unlimitedRadarActive || (userState.radius === 0 || p.distance <= userState.radius);
           if ((matches && inRadius) || isParticipated || unlimitedRadarActive) {
             validBubbles.push({
               name: getDisplayName(p.rawSender, p.hideMyName, p.accountType),
@@ -2252,8 +2295,8 @@
         const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')`;
 
         container.innerHTML += `
-          <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/80 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
-            <div class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+          <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
+            <div class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
               ${renderNodeIconContent(b.accountType, b.category)}
             </div>
             <div class="flex-1 min-w-0">
@@ -2264,18 +2307,6 @@
         `;
       });
       lucide.createIcons();
-    }
-
-    function toggleIndividualBot(peerId, enabled) {
-      if (globalActiveDirectory[peerId]) globalActiveDirectory[peerId].enabled = enabled;
-      playAudioEffect('click');
-      refreshAllNodeVisibilities();
-      renderGlobalUsersDirectory();
-    }
-
-    function copyMyPeerId() {
-      navigator.clipboard.writeText(document.getElementById('myPeerIdDisplay').value);
-      showToast('Node ID copied!', 'copy');
     }
 
     function announcePresence() {
@@ -2319,13 +2350,14 @@
       nodeElem.style.top = `${topPercent}%`;
 
       const isEnabled = peer.enabled !== false;
+      const isFriend = friendPeerIds.has(peer.peerId);
       const matchesFilter = matchesInterestFilter(peer.interestFilter);
-      const isWithinRadius = unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
+      const isWithinRadius = isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
       let roomId = 'room-peer-' + peer.peerId.replace(/[^a-zA-Z0-9]/g, '-');
       const isParticipated = participatedChatRoomIds.has(roomId);
 
       let opacityVal = 1;
-      if (isParticipated || unlimitedRadarActive) opacityVal = 0.95;
+      if (isParticipated || isFriend || unlimitedRadarActive) opacityVal = 0.95;
       else if (!matchesFilter) opacityVal = 0.05;
       else if (peer.distance > userState.radius) {
         const excess = peer.distance - userState.radius;
@@ -2333,8 +2365,8 @@
       }
 
       nodeElem.style.display = isEnabled ? 'block' : 'none';
-      nodeElem.style.opacity = isWithinRadius || isParticipated || unlimitedRadarActive ? '1' : opacityVal.toString();
-      nodeElem.style.pointerEvents = (isWithinRadius || isParticipated || unlimitedRadarActive) ? 'auto' : 'none';
+      nodeElem.style.opacity = isWithinRadius || isParticipated || isFriend || unlimitedRadarActive ? '1' : opacityVal.toString();
+      nodeElem.style.pointerEvents = (isWithinRadius || isParticipated || isFriend || unlimitedRadarActive) ? 'auto' : 'none';
 
       const isBiz = peer.accountType === 'business';
       const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
@@ -2351,7 +2383,7 @@
             ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName) : ''}
           </div>
           ${!peer.isOffline ? `
-            <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+            <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
               ${renderNodeIconContent(peer.accountType, peer.category)}
             </div>
           ` : ''}
@@ -2371,6 +2403,7 @@
           }
         }
         renderGlobalUsersDirectory();
+        renderPinnedChats();
         if (currentLayoutMode === 'right') renderRightSidebarBubbles();
       }, 1000);
     }
@@ -2396,7 +2429,6 @@
       userState.radarColor = document.getElementById('radarColorSelect').value;
       userState.bgMode = document.getElementById('bgModeSelect').value;
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
-      userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
       userState.hideMyName = document.getElementById('privacyMakeNamePublic').checked;
       if (userState.type === 'business') userState.address = document.getElementById('businessAddressInput').value.trim();
       userState.profileCreated = true;
@@ -2449,6 +2481,7 @@
       showToast('New chat posted & persisted!', 'check-circle');
       playAudioEffect('bell');
       savePersistentData();
+      renderPinnedChats();
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
     }
 
@@ -2486,6 +2519,7 @@
         if (!localChatCache[currentActiveChatRoomId]) localChatCache[currentActiveChatRoomId] = [];
         localChatCache[currentActiveChatRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
       }
+      renderPinnedChats();
     }
 
     function appendMessage(sender, text, time, isMe) {
@@ -2518,6 +2552,17 @@
       if (deleteBtn) {
         if (isOwner) deleteBtn.classList.remove('hidden');
         else deleteBtn.classList.add('hidden');
+      }
+
+      const friendBtnContainer = document.getElementById('addFriendFromChatBtn');
+      if (friendBtnContainer) {
+        if (isSelf || peerId === 'you') {
+          friendBtnContainer.classList.add('hidden');
+        } else {
+          friendBtnContainer.classList.remove('hidden');
+          const isF = friendPeerIds.has(peerId);
+          document.getElementById('friendBtnText').innerText = isF ? 'Friends ✓' : 'Add Friend';
+        }
       }
 
       const neonStyle = getBusinessNeonStyle(accountType, category);
@@ -2558,6 +2603,7 @@
         broadcastData({ id: 'del-' + Math.random().toString(36).substring(2, 9), type: 'DELETE_ROOM', roomId: currentActiveChatRoomId });
         closeChatDrawer();
         refreshAllNodeVisibilities();
+        renderPinnedChats();
         showToast('Chat room deleted from Supabase.', 'trash-2');
         playAudioEffect('chime');
       }
