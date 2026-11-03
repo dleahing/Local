@@ -260,11 +260,12 @@
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern pointer-events-none"></div>
     
-    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring" style="width: 5625px; height: 5625px;">
+    <!-- BACKGROUND RADAR ELEMENTS (Layered in Background z-0) -->
+    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring z-0" style="width: 5625px; height: 5625px;">
       <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
     </div>
 
-    <!-- Static Radar Center -->
+    <!-- Static Radar Center (z-0 background) -->
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center z-0">
       <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_20px_rgba(56,189,248,0.2)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
       <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_15px_rgba(56,189,248,0.15)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
@@ -607,8 +608,8 @@
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
-            <span>Show My Business Name on Map</span>
-            <input type="checkbox" id="privacyMakeNamePublic" checked class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
+            <span>Hide My Display Name (Show Anonymous)</span>
+            <input type="checkbox" id="privacyMakeNamePublic" onchange="toggleNameVisibility(this.checked)" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
             <span>Ghost Mode (Invisible on map)</span>
@@ -694,11 +695,12 @@
     const METERS_PER_MILE = 1609.34;
     const MIN_RADIUS_METERS = 1609.34;
     const MAX_RADIUS_METERS = 48280.3;
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v22';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v31';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v21';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v21';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v23';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v32';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v22';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v22';
     const STORAGE_KEY_SUPABASE_CONFIG = 'local_supabase_config_v1';
+    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v1';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -714,6 +716,7 @@
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
     let globalActiveDirectory = {};
     let processedMsgIds = new Set();
+    let participatedChatRoomIds = new Set();
     let wakeLock = null;
     let broadcastChannel = null;
 
@@ -753,7 +756,7 @@
       bgMode: 'aurora',
       ghostMode: false,
       fuzzLocation: false,
-      makeNamePublic: true,
+      hideMyName: false,
       profileCreated: false
     };
 
@@ -795,6 +798,17 @@
       document.getElementById('businessHoursInput').value = statusText;
       const preview = document.getElementById('businessHoursPreview');
       if (preview) preview.innerText = statusText;
+    }
+
+    function getDisplayName(rawSender, hideMyName, accountType) {
+      if (accountType === 'business') return rawSender || 'Business Store';
+      if (hideMyName) return 'Anonymous Local';
+      return rawSender || 'Local Peer';
+    }
+
+    function toggleNameVisibility(hide) {
+      userState.hideMyName = hide;
+      savePersistentData();
     }
 
     function getBusinessNeonStyle(accountType, category) {
@@ -858,13 +872,18 @@
       `;
     }
 
-    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours) {
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName) {
+      const displayName = getDisplayName(businessName, hideMyName, accountType);
+      
       if (accountType !== 'business') {
         if (!question) return '';
         return `
-          <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex items-center gap-1.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-center pointer-events-auto" onclick="${onClickJs}">
-            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
-            <span class="truncate">${question}</span>
+          <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
+            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block truncate">${displayName}</span>
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
+              <span class="truncate">${question}</span>
+            </div>
           </div>
         `;
       }
@@ -876,7 +895,7 @@
           <div class="flex items-start gap-2.5">
             <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
-              <span class="text-xs font-bold ${neonStyle.glowText} block truncate mb-0.5">${businessName || 'Business'}</span>
+              <span class="text-xs font-bold ${neonStyle.glowText} block truncate mb-0.5">${displayName}</span>
               ${question ? `<p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>` : ''}
             </div>
           </div>
@@ -1006,7 +1025,7 @@
         if (interestContainer) interestContainer.classList.add('hidden');
         if (signUpBtn) signUpBtn.classList.add('hidden');
         if (titleElem) titleElem.innerText = 'Welcome Back to LocaL';
-        if (subtitleElem) subtitleElem.innerText = `Logging in as ${userState.alias || 'User'}`;
+        if (subtitleElem) subtitleElem.innerText = `Logging in as ${getDisplayName(userState.alias, userState.hideMyName, userState.type)}`;
       } else {
         if (accountTypeContainer) accountTypeContainer.classList.remove('hidden');
         if (aliasContainer) aliasContainer.classList.remove('hidden');
@@ -1176,7 +1195,7 @@
       document.getElementById('bgModeSelect').value = userState.bgMode || 'aurora';
       document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
       document.getElementById('privacyFuzzLocation').checked = !!userState.fuzzLocation;
-      document.getElementById('privacyMakeNamePublic').checked = userState.makeNamePublic !== false;
+      document.getElementById('privacyMakeNamePublic').checked = !!userState.hideMyName;
       selectAccountType(userState.type || 'personal', true);
       applyBackgroundMode(userState.bgMode || 'aurora');
       applyRadarColorCSS(userState.radarColor || 'cyan');
@@ -1204,6 +1223,11 @@
         if (savedTopicState) {
           activeTopicState = JSON.parse(savedTopicState);
         }
+
+        const savedRooms = localStorage.getItem(STORAGE_KEY_PARTICIPATED_ROOMS);
+        if (savedRooms) {
+          participatedChatRoomIds = new Set(JSON.parse(savedRooms));
+        }
       } catch (e) {}
     }
 
@@ -1212,6 +1236,7 @@
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_TOPIC_STATE, JSON.stringify(activeTopicState));
         localStorage.setItem(STORAGE_KEY_SUPABASE_CONFIG, JSON.stringify(supabaseConfig));
+        localStorage.setItem(STORAGE_KEY_PARTICIPATED_ROOMS, JSON.stringify(Array.from(participatedChatRoomIds)));
         if (currentActiveChatRoomId) {
           localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
         } else {
@@ -1226,7 +1251,7 @@
         if (savedRoomId) {
           const peerIdMatch = savedRoomId.replace('room-peer-', '');
           const peerData = globalActiveDirectory[peerIdMatch];
-          const roomName = savedRoomId === 'room-you' ? (userState.type === 'business' ? userState.alias : 'Traveler') : (peerData ? peerData.rawSender : 'Active Session');
+          const roomName = savedRoomId === 'room-you' ? getDisplayName(userState.alias, userState.hideMyName, userState.type) : (peerData ? getDisplayName(peerData.rawSender, peerData.hideMyName, peerData.accountType) : 'Active Session');
           const topic = savedRoomId === 'room-you' ? activeTopicState.text : (peerData ? peerData.question : null);
           openChatDrawer(savedRoomId, roomName, topic, peerIdMatch, true);
         }
@@ -1333,7 +1358,6 @@
           );
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
-            // CLAMP ZOOM SCALE STRICTLY ABOVE 0.20 TO PREVENT CRASH
             targetZoomScale = Math.max(0.20, Math.min(4.0, initialPinchScale * factor));
           }
         }
@@ -1356,7 +1380,6 @@
         }
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-        // CLAMP ZOOM SCALE STRICTLY ABOVE 0.20 TO PREVENT CRASH
         targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
       }, { passive: false });
     }
@@ -1515,15 +1538,24 @@
         const peer = globalActiveDirectory[peerId];
         let peerKey = 'node-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         let nodeElem = document.getElementById(peerKey);
+        let roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
 
         if (nodeElem) {
           const isEnabled = peer.enabled !== false;
           const matchesFilter = matchesInterestFilter(peer.interestFilter);
           const isWithinRadius = (userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter;
+          const isParticipated = participatedChatRoomIds.has(roomId);
           
           nodeElem.style.display = isEnabled ? 'block' : 'none';
-          nodeElem.style.opacity = isWithinRadius ? '1' : '0.15';
-          nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
+          
+          // KEEP PARTICIPATED CHATS VISIBLE EVEN OUT OF RANGE
+          if (isParticipated) {
+            nodeElem.style.opacity = '0.95';
+            nodeElem.style.pointerEvents = 'auto';
+          } else {
+            nodeElem.style.opacity = isWithinRadius ? '1' : '0.15';
+            nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
+          }
 
           const sonarRing = nodeElem.querySelector('.peer-sonar-ring');
           if (sonarRing) {
@@ -1594,7 +1626,7 @@
           updatePeerNodeOnMap(
             peer.rawSender, peer.distance, peer.distance + 'm', peer.lat, peer.lng, 
             peer.question, peer.createdAt, peer.peerId, peer.bubbleColor, 
-            peer.accountType, peer.category, peer.hours, peer.interestFilter, peer.isBot
+            peer.accountType, peer.category, peer.hours, peer.interestFilter, peer.isBot, peer.hideMyName
           );
         }
       });
@@ -1650,14 +1682,15 @@
         return;
       }
 
-      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${userState.type === 'business' ? userState.alias : 'Traveler'}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you')`;
+      const myDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you')`;
 
       if (userState.type === 'business') {
         topBubble.className = "block relative z-[99999999]";
-        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours);
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName);
       } else {
         topBubble.className = "relative z-[99999999]";
-        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, userState.alias, onClickJs, isGiggle);
+        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle);
       }
       topBubble.classList.remove('hidden');
       lucide.createIcons();
@@ -1736,6 +1769,7 @@
       showToast(`Radar color theme updated to ${colorName}!`, 'palette');
     }
 
+    // MOVED RADAR ELEMENTS TO BACKGROUND Z-0 LAYER
     function getRadarStyleHtml(styleType) {
       const palette = RADAR_PALETTES[userState.radarColor || 'cyan'];
       const initialMiles = (userState.radius / METERS_PER_MILE).toFixed(1);
@@ -1744,43 +1778,43 @@
       if (styleType === 'cyberpunk') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
-            <div class="absolute inset-0 rounded-full animate-spin hairline-ring pointer-events-none" style="animation-duration: 25s; transform-origin: center center; border-style: dashed; border-color: ${palette.line};"></div>
-            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+            <div class="absolute inset-0 rounded-full animate-spin hairline-ring pointer-events-none z-0" style="animation-duration: 25s; transform-origin: center center; border-style: dashed; border-color: ${palette.line};"></div>
+            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none z-0">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
           </div>
         `;
       } else if (styleType === 'minimal') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
           </div>
         `;
       } else if (styleType === 'sonar') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-950/30 cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
-            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none z-0">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
-            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
+            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
           </div>
         `;
       } else {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-0 shadow-2xl pointer-events-auto backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
-            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none z-0">
               <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
             </div>
-            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
-            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-50">${initialMiles} Mi</div>
+            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
+            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
+            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
+            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
           </div>
         `;
       }
@@ -1845,7 +1879,7 @@
     }
 
     /* ============================================================ */
-    /* SUPABASE DATABASE & REALTIME SYNC IMPLEMENTATION             */
+    /* SUPABASE DATABASE & REALTIME INSTANT SYNC IMPLEMENTATION     */
     /* ============================================================ */
 
     function initSupabaseNetwork() {
@@ -1901,6 +1935,7 @@
       setupLocalBroadcastFallback();
     }
 
+    // INSTANT REALTIME STREAMING OF INCOMING REPLIES
     function subscribeToDbChatMessages() {
       if (!supabaseClient) return;
       if (dbMessagesChannel) dbMessagesChannel.unsubscribe();
@@ -1913,11 +1948,16 @@
             const timeStr = new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
             
+            // Mark chat room as participated so bubble stays visible
+            participatedChatRoomIds.add(newMsg.room_id);
+            savePersistentData();
+            refreshAllNodeVisibilities();
+
             if (currentActiveChatRoomId === newMsg.room_id) {
               appendMessage(newMsg.sender_alias, newMsg.message, timeStr, isMe);
             } else if (!isMe) {
               playAudioEffect('bell');
-              showToast(`New database message from ${newMsg.sender_alias}`, 'message-square');
+              showToast(`New reply from ${newMsg.sender_alias}`, 'message-square');
             }
           }
         })
@@ -1973,6 +2013,7 @@
                 category: p.category || 'store',
                 hours: p.hours,
                 interestFilter: p.interest_filter || 'none',
+                hideMyName: p.hide_my_name || false,
                 question: p.active_topic,
                 createdAt: createdAtTime,
                 distance: calculateHaversineDistance(userState.lat, userState.lng, p.lat || userState.lat, p.lng || userState.lng)
@@ -2038,6 +2079,7 @@
         userState.type = data.account_type || userState.type;
         userState.category = data.category || userState.category;
         userState.interestFilter = data.interest_filter || userState.interestFilter;
+        userState.hideMyName = data.hide_my_name || false;
         userState.profileCreated = true;
         
         if (data.active_topic && data.topic_created_at) {
@@ -2063,6 +2105,7 @@
         account_type: userState.type,
         category: userState.category,
         interest_filter: userState.interestFilter,
+        hide_my_name: userState.hideMyName,
         updated_at: new Date()
       });
     }
@@ -2142,6 +2185,7 @@
         closeTime: data.closeTime || '21:00',
         hours: calculatedHours,
         interestFilter: data.interestFilter || 'none',
+        hideMyName: data.hideMyName || false,
         lastSeen: Date.now(),
         question: data.text || data.question,
         createdAt: data.createdAt
@@ -2155,7 +2199,7 @@
         updatePeerNodeOnMap(
           data.sender, distance, distance + 'm', data.lat, data.lng, 
           data.text || data.question, data.createdAt, data.peerId, 
-          data.bubbleColor, data.accountType, data.category, calculatedHours, data.interestFilter, false
+          data.bubbleColor, data.accountType, data.category, calculatedHours, data.interestFilter, false, data.hideMyName
         );
       } else if (data.type === 'DELETE_ROOM') {
         const targetRoomId = data.roomId;
@@ -2169,7 +2213,7 @@
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
         { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
-        { name: 'Pickleball Club', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
         { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, angleDeg: 220, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, angleDeg: 170, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
@@ -2206,13 +2250,14 @@
           closeTime: u.closeTime,
           hours: computedHours,
           interestFilter: u.interestFilter,
+          hideMyName: false,
           lastSeen: Date.now(),
           question: u.question,
           createdAt: Date.now() - (i * 300000),
           isBot: true
         };
 
-        updatePeerNodeOnMap(u.name, dist, dist + 'm', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true);
+        updatePeerNodeOnMap(u.name, dist, dist + 'm', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true, false);
       });
 
       renderGlobalUsersDirectory();
@@ -2240,7 +2285,7 @@
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const isBiz = peer.accountType === 'business';
         const isEnabled = peer.enabled !== false;
-        const displayLabel = peer.rawSender;
+        const displayLabel = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
 
         const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
         const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
@@ -2253,7 +2298,7 @@
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
-                  <h4 class="font-bold text-slate-900 text-xs">${peer.rawSender} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
+                  <h4 class="font-bold text-slate-900 text-xs">${displayLabel} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
                 </div>
                 <p class="text-[10px] text-emerald-900 font-semibold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
                 ${isBiz && peer.hours ? `<div class="mt-0.5 flex items-center justify-between"><span class="text-[9px] text-slate-400">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${peer.hours}</span></div>` : ''}
@@ -2282,33 +2327,39 @@
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
       if (userState.type === 'business' || hasSelfTopic) {
         validBubbles.push({
-          name: userState.type === 'business' ? userState.alias : 'You',
+          name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
           question: hasSelfTopic ? activeTopicState.text : '',
           bubbleColor: userState.bubbleColor,
           peerId: 'you',
           roomId: 'room-you',
           accountType: userState.type,
           category: userState.category,
-          hours: userState.hours
+          hours: userState.hours,
+          hideMyName: userState.hideMyName
         });
       }
 
       peerIds.forEach(pId => {
         const p = globalActiveDirectory[pId];
         const hasValidQuestion = p.question && p.createdAt && (Date.now() - p.createdAt < ONE_HOUR_MS);
+        const roomId = 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-');
+        const isParticipated = participatedChatRoomIds.has(roomId);
+
+        // PERSIST IN SIDEBAR IF IN-RANGE OR PARTICIPATED
         if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
           const matches = matchesInterestFilter(p.interestFilter);
           const inRadius = userState.radius === 0 || p.distance <= userState.radius;
-          if (matches && inRadius) {
+          if ((matches && inRadius) || isParticipated) {
             validBubbles.push({
-              name: p.rawSender,
+              name: getDisplayName(p.rawSender, p.hideMyName, p.accountType),
               question: hasValidQuestion ? p.question : '',
               bubbleColor: p.bubbleColor,
               peerId: p.peerId,
-              roomId: 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-'),
+              roomId: roomId,
               accountType: p.accountType,
               category: p.category,
-              hours: p.hours
+              hours: p.hours,
+              isParticipated: isParticipated && !inRadius
             });
           }
         }
@@ -2330,13 +2381,13 @@
 
         if (isBiz) {
           container.innerHTML += `
-            <div onclick="playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="dark-biz-bubble p-3.5 rounded-2xl shadow-xl hover:scale-[1.02] transition-all cursor-pointer flex flex-col gap-2">
+            <div onclick="playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="dark-biz-bubble p-3.5 rounded-2xl shadow-xl hover:scale-[1.02] transition-all cursor-pointer flex flex-col gap-2 ${b.isParticipated ? 'opacity-70' : ''}">
               <div class="flex items-start gap-3">
                 <div class="w-9 h-9 rounded-full flex-shrink-0 bubble-node flex items-center justify-center shadow-md overflow-hidden ${neonStyle.borderClass}" style="background: ${circleBg}; ${neonStyle.shadowStyle}; border-radius: 50%;">
                   <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <span class="text-xs font-bold ${neonStyle.glowText} block truncate mb-0.5">${b.name}</span>
+                  <span class="text-xs font-bold ${neonStyle.glowText} block truncate mb-0.5">${b.name} ${b.isParticipated ? '(Out of range)' : ''}</span>
                   ${b.question ? `<p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${b.question}</p>` : ''}
                 </div>
               </div>
@@ -2350,14 +2401,14 @@
           `;
         } else {
           container.innerHTML += `
-            <div onclick="playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-white/90 shadow-lg hover:bg-white transition-all cursor-pointer flex flex-col gap-2">
+            <div onclick="playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')" class="p-3.5 rounded-2xl bg-white/85 backdrop-blur-md border border-white/90 shadow-lg hover:bg-white transition-all cursor-pointer flex flex-col gap-2 ${b.isParticipated ? 'opacity-70' : ''}">
               <div class="flex items-start gap-3">
                 <div class="w-9 h-9 rounded-full flex-shrink-0 bubble-node flex items-center justify-center shadow-md overflow-hidden ${UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
                   <div class="bubble-glare"></div>
                   <i data-lucide="user" class="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <span class="text-xs font-bold text-slate-900 block truncate mb-0.5">${b.name}</span>
+                  <span class="text-xs font-bold text-slate-900 block truncate mb-0.5">${b.name} ${b.isParticipated ? '(Out of range)' : ''}</span>
                   ${b.question ? `
                     <div class="px-3 py-1.5 rounded-xl bg-white/90 backdrop-blur-md text-xs font-semibold text-slate-900 shadow-md border-[2px] border-amber-400 flex items-center gap-1.5 mt-1">
                       <i data-lucide="message-circle" class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" stroke-width="2.5"></i>
@@ -2407,9 +2458,9 @@
         closeTime: userState.closeTime,
         hours: userState.hours,
         interestFilter: userState.interestFilter,
+        hideMyName: userState.hideMyName,
         question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) ? activeTopicState.text : null,
-        createdAt: activeTopicState.createdAt,
-        makeNamePublic: userState.makeNamePublic
+        createdAt: activeTopicState.createdAt
       };
 
       if (realtimeChannel) {
@@ -2432,7 +2483,7 @@
       payload.closeTime = userState.closeTime;
       payload.hours = userState.hours;
       payload.interestFilter = userState.interestFilter;
-      payload.makeNamePublic = userState.makeNamePublic;
+      payload.hideMyName = userState.hideMyName;
 
       if (realtimeChannel) {
         realtimeChannel.send({
@@ -2451,7 +2502,7 @@
       } catch(e) {}
     }
 
-    function updatePeerNodeOnMap(rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, hours, interestFilter, isBot) {
+    function updatePeerNodeOnMap(rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, hours, interestFilter, isBot, hideMyName) {
       const container = document.getElementById('nodesContainer');
       let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
@@ -2480,8 +2531,13 @@
       const matchesFilter = matchesInterestFilter(interestFilter);
       const isWithinRadius = (userState.radius === 0 || distance <= userState.radius) && matchesFilter;
       
+      let roomId = 'room-peer-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
+      const isParticipated = participatedChatRoomIds.has(roomId);
+
       let opacityVal = 1;
-      if (!matchesFilter) {
+      if (isParticipated) {
+        opacityVal = 0.95; // VISIBLE EVEN WHEN OUT OF RANGE
+      } else if (!matchesFilter) {
         opacityVal = 0.05;
       } else if (distance > userState.radius) {
         const excess = distance - userState.radius;
@@ -2489,18 +2545,16 @@
       }
 
       nodeElem.style.display = isEnabled ? 'block' : 'none';
-      nodeElem.style.opacity = isWithinRadius ? '1' : opacityVal.toString();
-      nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
+      nodeElem.style.opacity = isWithinRadius || isParticipated ? '1' : opacityVal.toString();
+      nodeElem.style.pointerEvents = (isWithinRadius || isParticipated) ? 'auto' : 'none';
       
       const isBiz = accountType === 'business';
       const neonStyle = getBusinessNeonStyle(accountType, category);
       const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
       
       let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
-      let roomId = 'room-peer-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
-      
       const showSonarRipple = matchesFilter && !isBiz;
-      const chatRoomName = isBiz ? rawSender : 'Traveler';
+      const chatRoomName = getDisplayName(rawSender, hideMyName, accountType);
 
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')`;
 
@@ -2509,7 +2563,7 @@
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'}; border-width: 1px;"></div>
           
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs, hours) : ''}
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs, hours, hideMyName) : ''}
           </div>
 
           <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
@@ -2563,7 +2617,7 @@
       userState.bgMode = document.getElementById('bgModeSelect').value;
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
       userState.fuzzLocation = document.getElementById('privacyFuzzLocation').checked;
-      userState.makeNamePublic = document.getElementById('privacyMakeNamePublic').checked;
+      userState.hideMyName = document.getElementById('privacyMakeNamePublic').checked;
       if (userState.type === 'business') userState.address = document.getElementById('businessAddressInput').value.trim();
       userState.profileCreated = true;
 
@@ -2572,7 +2626,7 @@
       saveUserProfileToSupabase();
       announcePresence();
       closeProfileModal();
-      showToast('Profile & Alias saved successfully!', 'check-circle');
+      showToast('Profile & Settings saved successfully!', 'check-circle');
     }
 
     function updateMeshUI() {
@@ -2589,14 +2643,14 @@
       
       closeChatDrawer();
 
-      // OPTIMISTIC INSTANT UI UPDATE
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
       
       renderUserTopBubbleContent(true);
       document.getElementById('mainTopicText').innerText = text;
 
-      // PERSIST TO SUPABASE PROFILES SO IT STAYS ACTIVE EVEN IF APP CLOSES
+      participatedChatRoomIds.add('room-you');
+
       const coords = getBroadcastCoordinates();
       if (supabaseClient && currentAuthUser) {
         await supabaseClient.from('profiles').upsert({
@@ -2608,6 +2662,7 @@
           topic_created_at: new Date(activeTopicState.createdAt).toISOString(),
           lat: coords.lat,
           lng: coords.lng,
+          hide_my_name: userState.hideMyName,
           updated_at: new Date()
         });
       }
@@ -2628,6 +2683,7 @@
         category: userState.category, 
         hours: userState.hours, 
         interestFilter: userState.interestFilter, 
+        hideMyName: userState.hideMyName,
         createdAt: activeTopicState.createdAt 
       });
       
@@ -2667,10 +2723,16 @@
       
       if (!text) return;
 
+      // TRACK PARTICIPATED ROOM TO STAY VISIBLE ON MAP
+      participatedChatRoomIds.add(currentActiveChatRoomId);
+      savePersistentData();
+      refreshAllNodeVisibilities();
+
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const senderDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
       
-      // OPTIMISTIC INSTANT MESSAGE RENDERING
-      appendMessage('You', text, timeStr, true);
+      // OPTIMISTIC INSTANT RENDER ON SENDER SCREEN
+      appendMessage(senderDisplayName, text, timeStr, true);
       input.value = ''; 
       input.style.height = '26px';
 
@@ -2678,19 +2740,19 @@
         await supabaseClient.from('chat_messages').insert({
           room_id: currentActiveChatRoomId,
           sender_id: currentAuthUser ? currentAuthUser.id : null,
-          sender_alias: userState.alias,
+          sender_alias: senderDisplayName,
           message: text
         });
       } else {
         if (!localChatCache[currentActiveChatRoomId]) localChatCache[currentActiveChatRoomId] = [];
-        localChatCache[currentActiveChatRoomId].push({ sender: 'You', text, time: timeStr, isMe: true });
+        localChatCache[currentActiveChatRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
       }
 
       if (currentActiveChatRoomId === 'room-peer-sim-peer-tutorial-bot') {
         setTimeout(() => {
           let botReply = "Welcome to LocaL! Tap your bubble anytime to edit your post or review details.";
           const botTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          appendMessage('LocaL Guide', botReply, botTimeStr, false);
+          appendMessage('LocaL Guide Bot', botReply, botTimeStr, false);
           playAudioEffect('bell');
         }, 800);
       }
@@ -2768,6 +2830,7 @@
           }
         }
         delete localChatCache[currentActiveChatRoomId];
+        participatedChatRoomIds.delete(currentActiveChatRoomId);
         
         if (currentActiveChatRoomId === 'room-you') {
           activeTopicState.text = null;
@@ -2784,6 +2847,7 @@
         });
 
         closeChatDrawer();
+        refreshAllNodeVisibilities();
         showToast('Chat room deleted from Supabase.', 'trash-2');
         playAudioEffect('chime');
       }
