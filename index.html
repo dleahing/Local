@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Auto-Respawning Bots & Admin Fixes]</title>
+  <title>LocaL - Supabase Proximity Social Network [Timer in Drawer & Gold Ripples]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -51,19 +51,19 @@
       100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
     }
     @keyframes bubble-subtle {
-      0%, 100% { transform: scale(1); border-radius: 50%; }
-      50% { transform: scale(1.02, 0.98); border-radius: 49% 51% 50% 50%; }
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); border-radius: 50%; }
+      50% { transform: translate3d(0, 0, 0) scale(1.02, 0.98); border-radius: 49% 51% 50% 50%; }
     }
     @keyframes bubble-bounce-press {
-      0% { transform: scale(1); }
-      30% { transform: scale(1.25, 0.75) translateY(4px); }
-      50% { transform: scale(0.85, 1.15) translateY(-8px); }
-      75% { transform: scale(1.1, 0.9) translateY(-3px); }
-      100% { transform: scale(1) translateY(0); }
+      0% { transform: translate3d(0, 0, 0) scale(1); }
+      30% { transform: translate3d(0, 0, 0) scale(1.25, 0.75) translateY(4px); }
+      50% { transform: translate3d(0, 0, 0) scale(0.85, 1.15) translateY(-8px); }
+      75% { transform: translate3d(0, 0, 0) scale(1.1, 0.9) translateY(-3px); }
+      100% { transform: translate3d(0, 0, 0) scale(1) translateY(0); }
     }
     @keyframes float-gentle {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-5px); }
+      0%, 100% { transform: translate3d(0, 0px, 0); }
+      50% { transform: translate3d(0, -6px, 0); }
     }
     @keyframes pulse-glow {
       0%, 100% { opacity: 0.6; transform: scale(1); }
@@ -78,18 +78,18 @@
     }
     @keyframes radius-ring-pulse {
       0% { transform: translate(-50%, -50%) scale(0.01); opacity: 1; }
-      80% { opacity: 0.7; }
+      80% { opacity: 0.75; }
       100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
     }
 
-    .animate-radius-ripple { animation: radius-ring-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards; }
-    .animate-giggle { animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
-    .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; }
-    .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; }
-    .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
-    .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; }
-    .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; }
-    .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; }
+    .animate-radius-ripple { animation: radius-ring-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards; will-change: transform, opacity; }
+    .animate-giggle { animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; will-change: transform; }
+    .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; will-change: transform; }
+    .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; will-change: transform, opacity; }
+    .animate-float { animation: float-gentle 3.8s ease-in-out infinite; will-change: transform; }
+    .animate-bubble-subtle { animation: bubble-subtle 6s ease-in-out infinite; will-change: transform; }
+    .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; will-change: transform; }
+    .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; will-change: transform, opacity; }
 
     #mapCanvas {
       transform: translate3d(var(--pan-x), var(--pan-y), 0) scale(var(--zoom-scale, 1));
@@ -97,7 +97,7 @@
       will-change: transform;
       cursor: grab;
       touch-action: none;
-      transition: transform 0.2s cubic-bezier(0.15, 0.85, 0.35, 1);
+      transition: transform 0.15s cubic-bezier(0.15, 0.85, 0.35, 1);
     }
     #mapCanvas:active { cursor: grabbing; }
 
@@ -109,7 +109,6 @@
     .node-item {
       pointer-events: auto !important;
       z-index: 999999 !important;
-      transition: all 0.4s cubic-bezier(0.15, 0.85, 0.35, 1);
     }
 
     #userAvatarNode {
@@ -660,7 +659,7 @@
     <div id="chatExpiryTimerBar" class="my-2 px-3.5 py-2 rounded-2xl bg-white/60 backdrop-blur-md border border-amber-400/40 text-amber-950 text-xs font-semibold flex items-center justify-between flex-shrink-0 shadow-sm">
       <div class="flex items-center gap-2">
         <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
-        <span>Bubble expires in:</span>
+        <span>Chat bubble expires in:</span>
       </div>
       <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900 px-2 py-0.5 rounded-lg bg-amber-400/20 border border-amber-400/40">60m 00s</span>
     </div>
@@ -872,13 +871,12 @@
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
-    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle, createdAt) {
+    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle) {
       if (!question) return '';
-      const timerStr = formatCountdownTime(createdAt);
       return `
-        <div class="px-4 py-2 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 shadow-2xl border-[3px] border-amber-400 flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" style="box-shadow: 0 0 35px rgba(251, 191, 36, 0.8);" onclick="${onClickJs}">
+        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 shadow-2xl border-[3px] border-amber-400 flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" style="box-shadow: 0 0 35px rgba(251, 191, 36, 0.8);" onclick="${onClickJs}">
           <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1">
-            <span class="text-[9px] text-amber-700 font-mono font-extrabold flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${timerStr}</span>
+            <span class="text-[9px] text-amber-700 font-mono font-extrabold uppercase">Active Chat</span>
             <span class="text-[9px] text-slate-500 truncate">${businessName}</span>
           </div>
           <div class="flex items-center gap-1.5 py-0.5">
@@ -889,15 +887,14 @@
       `;
     }
 
-    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, createdAt) {
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName) {
       const displayName = getDisplayName(businessName, hideMyName, accountType);
       if (accountType !== 'business') {
         if (!question) return '';
-        const timerStr = formatCountdownTime(createdAt);
         return `
-          <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
+          <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
             <div class="flex items-center justify-between gap-1 text-[9px] text-purple-700 font-mono font-bold">
-              <span><i data-lucide="clock" class="w-3 h-3 inline"></i> ${timerStr}</span>
+              <span>Active Chat</span>
               <span class="truncate">${displayName}</span>
             </div>
             <div class="flex items-center gap-1.5">
@@ -915,7 +912,7 @@
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between mb-0.5">
                 <span class="text-xs font-bold ${neonStyle.glowText} truncate">${displayName}</span>
-                <span class="text-[9px] font-mono text-amber-300 font-bold px-1.5 py-0.2 rounded bg-amber-500/20">${formatCountdownTime(createdAt)}</span>
+                <span class="text-[9px] font-mono text-amber-300 font-bold px-1.5 py-0.2 rounded bg-amber-500/20">Store</span>
               </div>
               ${question ? `<p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>` : ''}
             </div>
@@ -1256,7 +1253,6 @@
         globalActiveDirectory[id].question = newQ;
         globalActiveDirectory[id].createdAt = Date.now();
         
-        // Also update in customBotDefinitions to ensure persistence
         const customIdx = customBotDefinitions.findIndex(b => b.peerId === id);
         if (customIdx !== -1) {
           customBotDefinitions[customIdx].rawSender = newName;
@@ -1382,7 +1378,8 @@
           const peerData = globalActiveDirectory[peerIdMatch];
           const roomName = savedRoomId === 'room-you' ? getDisplayName(userState.alias, userState.hideMyName, userState.type) : (peerData ? getDisplayName(peerData.rawSender, peerData.hideMyName, peerData.accountType) : 'Active Session');
           const topic = savedRoomId === 'room-you' ? activeTopicState.text : (peerData ? peerData.question : null);
-          openChatDrawer(savedRoomId, roomName, topic, peerIdMatch);
+          const createdAtVal = savedRoomId === 'room-you' ? activeTopicState.createdAt : (peerData ? peerData.createdAt : null);
+          openChatDrawer(savedRoomId, roomName, topic, peerIdMatch, createdAtVal);
         }
       } catch (e) {}
     }
@@ -1518,9 +1515,9 @@
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
       const renderLoop = () => {
-        panX += (targetPanX - panX) * 0.22;
-        panY += (targetPanY - panY) * 0.22;
-        currentZoomScale += (targetZoomScale - currentZoomScale) * 0.18;
+        panX += (targetPanX - panX) * 0.25;
+        panY += (targetPanY - panY) * 0.25;
+        currentZoomScale += (targetZoomScale - currentZoomScale) * 0.20;
         if (currentZoomScale < 0.20) currentZoomScale = 0.20;
 
         mapCanvas.style.setProperty('--pan-x', `${panX}px`);
@@ -1744,7 +1741,8 @@
 
       const sizePx = targetRing.offsetWidth || 375;
       const ripple = document.createElement('div');
-      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-emerald-400/85 bg-emerald-400/28 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(52,211,153,0.56)] hairline-ring';
+      // Updated ripple color to vibrant Gold (rgba(251, 191, 36, ...))
+      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-amber-400/90 bg-amber-400/30 pointer-events-none animate-radius-ripple shadow-[0_0_25px_rgba(251,191,36,0.7)] hairline-ring';
       ripple.style.width = `${sizePx}px`;
       ripple.style.height = `${sizePx}px`;
       ringContainer.appendChild(ripple);
@@ -1773,14 +1771,14 @@
       }
 
       const myDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
-      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you')`;
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you', ${activeTopicState.createdAt})`;
 
       if (userState.type === 'business') {
         topBubble.className = "block relative z-[99999999]";
-        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName, activeTopicState.createdAt);
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName);
       } else {
         topBubble.className = "relative z-[99999999]";
-        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle, activeTopicState.createdAt);
+        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle);
       }
       topBubble.classList.remove('hidden');
       lucide.createIcons();
@@ -2218,7 +2216,6 @@
         { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 1.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
-      // Merge saved custom bots with defaults if not already present
       const allBotsMap = {};
       [...defaultBots, ...customBotDefinitions].forEach(b => {
         allBotsMap[b.peerId] = b;
@@ -2322,8 +2319,7 @@
       pinnedList.forEach(item => {
         const isBiz = item.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(item.accountType, item.category);
-        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${item.name}', '${item.question || ''}', '${item.peerId}')`;
-        const timerStr = formatCountdownTime(item.createdAt);
+        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${item.name}', '${item.question || ''}', '${item.peerId}', ${item.createdAt})`;
 
         container.innerHTML += `
           <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 border border-white/80 cursor-pointer hover:scale-105 transition-all max-w-[240px]">
@@ -2333,7 +2329,7 @@
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between text-[9px] text-amber-900 font-mono font-bold">
                 <span class="truncate">${item.name}</span>
-                <span>${timerStr}</span>
+                <span class="text-[8px] text-emerald-800 uppercase">Active</span>
               </div>
               <span class="text-[9px] text-emerald-800 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
             </div>
@@ -2385,7 +2381,7 @@
               <button onclick="toggleFriendStatus('${peerId}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
                 <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
               </button>
-              <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}')" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
+              <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}', ${peer.createdAt})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
           </div>
         `;
@@ -2444,7 +2440,7 @@
       validBubbles.forEach(b => {
         const isBiz = b.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
-        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')`;
+        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}', ${b.createdAt})`;
 
         container.innerHTML += `
           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
@@ -2453,7 +2449,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <span class="text-xs font-bold text-slate-900 truncate block">${b.name}</span>
-              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.createdAt) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false, b.createdAt)}</div>
+              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false)}</div>
             </div>
           </div>
         `;
@@ -2495,7 +2491,7 @@
       if (!nodeElem) {
         nodeElem = document.createElement('div');
         nodeElem.id = peerKey;
-        nodeElem.className = 'absolute z-[99999999] cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item pointer-events-auto';
+        nodeElem.className = 'absolute z-[99999999] cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-300 node-item pointer-events-auto';
         container.appendChild(nodeElem);
       }
 
@@ -2527,13 +2523,13 @@
       const hasValidQuestion = peer.question && peer.createdAt && (Date.now() - peer.createdAt < ONE_HOUR_MS);
       const showSonarRipple = matchesFilter && !isBiz && !peer.isOffline;
       const chatRoomName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
-      const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}')`;
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}', ${peer.createdAt})`;
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName, peer.createdAt) : ''}
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName) : ''}
           </div>
           ${!peer.isOffline ? `
             <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
@@ -2547,11 +2543,9 @@
 
     function checkChatExpiryLoop() {
       setInterval(() => {
-        // User active topic expiry check & auto-respawn if needed (or let user chat wipe handle it)
         if (activeTopicState.createdAt) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
-            // Auto respawn user chat bubble if active topic expires
             activeTopicState.createdAt = Date.now();
             renderUserTopBubbleContent();
             savePersistentData();
@@ -2567,11 +2561,20 @@
           if (peer.isBot && peer.createdAt) {
             const elapsed = Date.now() - peer.createdAt;
             if (elapsed >= ONE_HOUR_MS) {
-              // Immediately create the same chat bubble with fresh timer
               peer.createdAt = Date.now();
             }
           }
         });
+
+        // Update active drawer timer if a peer chat room is open
+        if (currentActiveChatRoomId && currentActiveChatRoomId !== 'room-you') {
+          const peerId = currentActiveChatRoomId.replace('room-peer-', '');
+          const peer = globalActiveDirectory[peerId];
+          if (peer && peer.createdAt) {
+            const countdownEl = document.getElementById('chatExpiryCountdown');
+            if (countdownEl) countdownEl.innerText = formatCountdownTime(peer.createdAt);
+          }
+        }
 
         renderGlobalUsersDirectory();
         renderPinnedChats();
@@ -2625,7 +2628,6 @@
       if (!text) return;
       closeChatDrawer();
 
-      // Wipe previous chat room messages & topic completely when creating a new chat
       const oldRoomId = 'room-you';
       if (supabaseClient) {
         await supabaseClient.from('chat_messages').delete().eq('room_id', oldRoomId);
@@ -2633,7 +2635,6 @@
       delete localChatCache[oldRoomId];
       participatedChatRoomIds.delete(oldRoomId);
 
-      // Set new active chat topic and reset creation timestamp
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
       renderUserTopBubbleContent(true);
@@ -2718,7 +2719,7 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
-    async function openChatDrawer(roomId, roomName, topic, peerId) {
+    async function openChatDrawer(roomId, roomName, topic, peerId, createdAtVal) {
       currentActiveChatRoomId = roomId;
       savePersistentData();
       document.getElementById('chatTargetName').innerText = roomName;
@@ -2752,7 +2753,7 @@
       avatarEl.style.background = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
       avatarEl.innerHTML = renderNodeIconContent(accountType, category);
 
-      const targetCreatedAt = isSelf ? activeTopicState.createdAt : globalActiveDirectory[peerId]?.createdAt;
+      const targetCreatedAt = createdAtVal || (isSelf ? activeTopicState.createdAt : globalActiveDirectory[peerId]?.createdAt);
       if (targetCreatedAt) {
         const countdownEl = document.getElementById('chatExpiryCountdown');
         if (countdownEl) countdownEl.innerText = formatCountdownTime(targetCreatedAt);
