@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Admin Rotating Rainbow Border]</title>
+  <title>LocaL - Supabase Proximity Social Network [Gold User / Rainbow Admin / Dock Icon]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -127,7 +127,7 @@
 
     .node-item {
       pointer-events: auto !important;
-      z-index: 99999 !== undefined ? 999999 : 999999 !important;
+      z-index: 999999 !important;
     }
 
     #userAvatarNode {
@@ -310,7 +310,8 @@
   <div id="actionDockContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
-        <div class="w-7 h-7 rounded-full bg-amber-400/20 border border-amber-400 flex items-center justify-center flex-shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
+        <!-- Exact rounded-square chat box with plus icon matching the reference image -->
+        <div class="w-7 h-7 rounded-xl bg-amber-400/20 border border-amber-400 flex items-center justify-center flex-shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">
           <i data-lucide="message-square-plus" class="w-3.5 h-3.5 text-amber-400" stroke-width="2.5"></i>
         </div>
         <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
@@ -750,13 +751,13 @@
     let currentZoomScale = 1.0, targetZoomScale = 1.0;
     let isDraggingMap = false, startDragX = 0, startDragY = 0, animationFrameId = null;
 
-    let activeTopicState = { text: "Fine dining & wood-fired...", createdAt: Date.now() }; // Default Admin active topic
+    let activeTopicState = { text: "Anyone here?", createdAt: Date.now() }; 
     let currentActiveChatRoomId = null;
     let localChatCache = {}; 
     let currentLayoutMode = 'map';
 
     let userState = {
-      alias: 'Administrator',
+      alias: 'Shane',
       type: 'personal',
       category: 'store',
       openTime: '09:00',
@@ -887,15 +888,15 @@
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
-    // Administrator chat bubble card with the exact rotating rainbow border
-    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle, isAdmin = false) {
+    // Main user's chat bubble gets neon gold outline. Administrator gets rotating rainbow border with neon gold name.
+    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle, isMainUser = false, isAdmin = false) {
       if (!question) return '';
       if (isAdmin) {
         return `
           <div class="admin-rainbow-border-wrap cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-4 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1">
               <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-1">
-                <span class="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider">${businessName} (Admin)</span>
+                <span class="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider">${businessName}</span>
               </div>
               <div class="flex items-center justify-center gap-1.5 py-0.5">
                 <span class="truncate">${question}</span>
@@ -904,8 +905,9 @@
           </div>
         `;
       }
+      const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
       return `
-        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 border border-white/80 shadow-xl flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
+        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
           <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1">
             <span class="text-[9px] text-slate-500 font-mono font-medium truncate">${businessName}</span>
           </div>
@@ -916,14 +918,14 @@
       `;
     }
 
-    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isAdmin = false) {
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false) {
       const displayName = getDisplayName(businessName, hideMyName, accountType);
       if (isAdmin) {
         return `
           <div class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] animate-float" onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-3.5 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1.5">
               <div class="flex items-center justify-between text-[9px] text-amber-400 font-mono font-bold uppercase">
-                <span class="truncate">${displayName} (Admin)</span>
+                <span class="truncate">${displayName}</span>
               </div>
               <p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>
             </div>
@@ -932,8 +934,9 @@
       }
       if (accountType !== 'business') {
         if (!question) return '';
+        const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
         return `
-          <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 border border-white/80 shadow-xl flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
+          <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
             <div class="flex items-center justify-between gap-1 text-[9px] text-slate-500 font-mono font-medium">
               <span class="truncate">${displayName}</span>
             </div>
@@ -944,8 +947,9 @@
         `;
       }
       const neonStyle = getBusinessNeonStyle(accountType, category);
+      const bizOutline = isMainUser ? 'border-[3.5px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.9)]' : 'border border-white/20 shadow-2xl';
       return `
-        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl border border-white/20 shadow-2xl flex flex-col gap-1.5 animate-float z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 animate-float z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <div class="flex items-start gap-2.5">
             <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
@@ -1242,7 +1246,7 @@
       let html = `
         <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
           <div>
-            <span class="text-xs font-bold text-white">${userState.alias} (You - Admin)</span>
+            <span class="text-xs font-bold text-white">${userState.alias} (You)</span>
             <span class="text-[10px] text-emerald-400 block font-mono">ID: ${myPeerId}</span>
           </div>
           <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">Active Session</span>
@@ -1657,14 +1661,15 @@
         let roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
 
         if (nodeElem) {
+          const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
           const isEnabled = peer.enabled !== false;
           const isFriend = friendPeerIds.has(peerId);
           const matchesFilter = matchesInterestFilter(peer.interestFilter);
-          const isWithinRadius = isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
+          const isWithinRadius = peerIsAdmin || isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
           const isParticipated = participatedChatRoomIds.has(roomId);
           
           nodeElem.style.display = isEnabled ? 'block' : 'none';
-          if (isParticipated || isFriend || unlimitedRadarActive) {
+          if (peerIsAdmin || isParticipated || isFriend || unlimitedRadarActive) {
             nodeElem.style.opacity = '0.95';
             nodeElem.style.pointerEvents = 'auto';
           } else {
@@ -1808,12 +1813,14 @@
       const myDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you', ${activeTopicState.createdAt})`;
 
+      const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
+
       if (userState.type === 'business') {
         topBubble.className = "block relative z-[99999999]";
-        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName, true);
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName, !isUserAdmin, isUserAdmin);
       } else {
         topBubble.className = "relative z-[99999999]";
-        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle, true);
+        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle, !isUserAdmin, isUserAdmin);
       }
       topBubble.classList.remove('hidden');
       lucide.createIcons();
@@ -2307,6 +2314,7 @@
 
       let pinnedList = [];
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt;
+      const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
       
       if (participatedChatRoomIds.has('room-you') || userState.type === 'business' || hasSelfTopic) {
         pinnedList.push({
@@ -2317,7 +2325,8 @@
           category: userState.category,
           peerId: 'you',
           createdAt: activeTopicState.createdAt,
-          isAdmin: true
+          isAdmin: isUserAdmin,
+          isMainUser: !isUserAdmin
         });
       }
 
@@ -2335,7 +2344,8 @@
             category: peer.category,
             peerId,
             createdAt: peer.createdAt,
-            isAdmin: peerIsAdmin
+            isAdmin: peerIsAdmin,
+            isMainUser: false
           });
         }
       });
@@ -2360,7 +2370,7 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center justify-between text-[9px] text-amber-400 font-mono font-bold uppercase">
-                    <span class="truncate">${item.name} (Admin)</span>
+                    <span class="truncate">${item.name}</span>
                   </div>
                   <span class="text-[9px] text-white font-medium block truncate">${item.question || 'Pinned Chat'}</span>
                 </div>
@@ -2368,8 +2378,9 @@
             </div>
           `;
         } else {
+          const cardOutline = item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : 'border border-white/80 shadow-xl';
           container.innerHTML += `
-            <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 border border-white/80 cursor-pointer hover:scale-105 transition-all max-w-[240px]">
+            <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
               <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
                 ${renderNodeIconContent(item.accountType, item.category)}
               </div>
@@ -2443,13 +2454,15 @@
       let validBubbles = [];
       
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt;
+      const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
+
       if (userState.type === 'business' || hasSelfTopic) {
         validBubbles.push({
           name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
           question: hasSelfTopic ? activeTopicState.text : '',
           peerId: 'you', roomId: 'room-you', accountType: userState.type,
           category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName,
-          createdAt: activeTopicState.createdAt, isAdmin: true
+          createdAt: activeTopicState.createdAt, isAdmin: isUserAdmin, isMainUser: !isUserAdmin
         });
       }
 
@@ -2470,7 +2483,7 @@
               question: hasValidQuestion ? p.question : '',
               peerId: p.peerId, roomId, accountType: p.accountType,
               category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius,
-              createdAt: p.createdAt, isAdmin: peerIsAdmin
+              createdAt: p.createdAt, isAdmin: peerIsAdmin, isMainUser: false
             });
           }
         }
@@ -2497,7 +2510,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <span class="text-xs font-bold text-slate-500 truncate block">${b.name}</span>
-              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isAdmin) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false, b.isAdmin)}</div>
+              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false, b.isMainUser, b.isAdmin)}</div>
             </div>
           </div>
         `;
@@ -2578,7 +2591,7 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName, peerIsAdmin) : ''}
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin) : ''}
           </div>
           ${!peer.isOffline ? `
             <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
