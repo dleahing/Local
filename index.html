@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Fixed Realtime & Chat Rooms]</title>
+  <title>LocaL - Supabase Proximity Social Network [Single Active Chat & Live Timers]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -639,16 +639,16 @@
     <div id="chatExpiryTimerBar" class="my-2 px-3.5 py-2 rounded-2xl bg-white/60 backdrop-blur-md border border-amber-400/40 text-amber-950 text-xs font-semibold flex items-center justify-between flex-shrink-0 shadow-sm">
       <div class="flex items-center gap-2">
         <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
-        <span>Auto-deletes if inactive:</span>
+        <span>Bubble expires in:</span>
       </div>
-      <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900 px-2 py-0.5 rounded-lg bg-amber-400/20 border border-amber-400/40">24h 00m</span>
+      <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900 px-2 py-0.5 rounded-lg bg-amber-400/20 border border-amber-400/40">60m 00s</span>
     </div>
 
     <div id="mainTopicContainer" class="hidden my-2 p-3 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-md flex items-start gap-2.5 flex-shrink-0">
       <i data-lucide="pin" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
       <div>
         <p id="mainTopicText" class="text-xs font-normal text-slate-900 leading-snug"></p>
-        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-emerald-700 mt-0.5 block">Visible for 60m 00s</span>
+        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-emerald-700 mt-0.5 block">Active Chat Topic</span>
       </div>
     </div>
 
@@ -675,17 +675,16 @@
   <script>
     const MESH_ROOM_KEY = 'local-proximity-public';
     const ONE_HOUR_MS = 60 * 60 * 1000;
-    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const DEFAULT_RADIUS_METERS = 804.67; // 0.5 miles default
     const MAX_RADIUS_METERS = 48280.3;
     
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v27';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v36';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v26';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v26';
-    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v3';
-    const STORAGE_KEY_FRIENDS = 'local_friends_list_v2';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v28';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v37';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v27';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v27';
+    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v4';
+    const STORAGE_KEY_FRIENDS = 'local_friends_list_v3';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -840,23 +839,44 @@
       else return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-purple-400', shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);', iconColor: 'text-purple-300', glowText: 'text-purple-300', lucideIcon: category || 'store' };
     }
 
-    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle) {
+    function formatCountdownTime(createdAt) {
+      if (!createdAt) return '60m 00s';
+      const elapsed = Date.now() - createdAt;
+      const remaining = ONE_HOUR_MS - elapsed;
+      if (remaining <= 0) return 'Expired';
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
+    }
+
+    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle, createdAt) {
       if (!question) return '';
+      const timerStr = formatCountdownTime(createdAt);
       return `
-        <div class="px-4 py-2 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 shadow-2xl border-[3px] border-amber-400 flex items-center gap-2 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" style="box-shadow: 0 0 35px rgba(251, 191, 36, 0.8);" onclick="${onClickJs}">
-          <i data-lucide="message-circle" class="w-4 h-4 text-amber-500 flex-shrink-0" stroke-width="2.5"></i>
-          <span class="truncate">${question}</span>
+        <div class="px-4 py-2 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 shadow-2xl border-[3px] border-amber-400 flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" style="box-shadow: 0 0 35px rgba(251, 191, 36, 0.8);" onclick="${onClickJs}">
+          <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1">
+            <span class="text-[9px] text-amber-700 font-mono font-extrabold flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${timerStr}</span>
+            <span class="text-[9px] text-slate-500 truncate">${businessName}</span>
+          </div>
+          <div class="flex items-center gap-1.5 py-0.5">
+            <i data-lucide="message-circle" class="w-4 h-4 text-amber-500 flex-shrink-0" stroke-width="2.5"></i>
+            <span class="truncate">${question}</span>
+          </div>
         </div>
       `;
     }
 
-    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName) {
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, createdAt) {
       const displayName = getDisplayName(businessName, hideMyName, accountType);
       if (accountType !== 'business') {
         if (!question) return '';
+        const timerStr = formatCountdownTime(createdAt);
         return `
           <div class="px-3.5 py-1.5 rounded-2xl glass-card text-xs font-semibold text-slate-900 shadow-xl border border-white/80 flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
-            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block truncate">${displayName}</span>
+            <div class="flex items-center justify-between gap-1 text-[9px] text-purple-700 font-mono font-bold">
+              <span><i data-lucide="clock" class="w-3 h-3 inline"></i> ${timerStr}</span>
+              <span class="truncate">${displayName}</span>
+            </div>
             <div class="flex items-center gap-1.5">
               <i data-lucide="message-circle" class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" stroke-width="2"></i>
               <span class="truncate">${question}</span>
@@ -870,7 +890,10 @@
           <div class="flex items-start gap-2.5">
             <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
-              <span class="text-xs font-bold ${neonStyle.glowText} block truncate mb-0.5">${displayName}</span>
+              <div class="flex items-center justify-between mb-0.5">
+                <span class="text-xs font-bold ${neonStyle.glowText} truncate">${displayName}</span>
+                <span class="text-[9px] font-mono text-amber-300 font-bold px-1.5 py-0.2 rounded bg-amber-500/20">${formatCountdownTime(createdAt)}</span>
+              </div>
               ${question ? `<p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>` : ''}
             </div>
           </div>
@@ -1640,10 +1663,10 @@
 
       if (userState.type === 'business') {
         topBubble.className = "block relative z-[99999999]";
-        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName);
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName, activeTopicState.createdAt);
       } else {
         topBubble.className = "relative z-[99999999]";
-        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle);
+        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle, activeTopicState.createdAt);
       }
       topBubble.classList.remove('hidden');
       lucide.createIcons();
@@ -2013,7 +2036,7 @@
 
     function setupLocalBroadcastFallback() {
       if ('BroadcastChannel' in window && !broadcastChannel) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v30');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v31');
         broadcastChannel.onmessage = (event) => { handleIncomingNetworkPayload(event.data); };
       }
       window.addEventListener('storage', (event) => {
@@ -2148,7 +2171,8 @@
           question: hasSelfTopic ? activeTopicState.text : 'Your Broadcast',
           accountType: userState.type,
           category: userState.category,
-          peerId: 'you'
+          peerId: 'you',
+          createdAt: activeTopicState.createdAt
         });
       }
 
@@ -2156,14 +2180,15 @@
         if (roomId === 'room-you') return;
         const peerId = roomId.replace('room-peer-', '');
         const peer = globalActiveDirectory[peerId];
-        if (peer) {
+        if (peer && peer.createdAt && (Date.now() - peer.createdAt < ONE_HOUR_MS)) {
           pinnedList.push({
             roomId,
             name: getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType),
             question: peer.question || 'Active Chat',
             accountType: peer.accountType,
             category: peer.category,
-            peerId
+            peerId,
+            createdAt: peer.createdAt
           });
         }
       });
@@ -2178,6 +2203,7 @@
         const isBiz = item.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(item.accountType, item.category);
         const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${item.name}', '${item.question || ''}', '${item.peerId}')`;
+        const timerStr = formatCountdownTime(item.createdAt);
 
         container.innerHTML += `
           <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 border border-white/80 cursor-pointer hover:scale-105 transition-all max-w-[240px]">
@@ -2185,7 +2211,10 @@
               ${renderNodeIconContent(item.accountType, item.category)}
             </div>
             <div class="min-w-0 flex-1">
-              <span class="text-[10px] font-bold text-slate-900 block truncate">${item.name}</span>
+              <div class="flex items-center justify-between text-[9px] text-amber-900 font-mono font-bold">
+                <span class="truncate">${item.name}</span>
+                <span>${timerStr}</span>
+              </div>
               <span class="text-[9px] text-emerald-800 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
             </div>
           </div>
@@ -2256,7 +2285,8 @@
           name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
           question: hasSelfTopic ? activeTopicState.text : '',
           peerId: 'you', roomId: 'room-you', accountType: userState.type,
-          category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName
+          category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName,
+          createdAt: activeTopicState.createdAt
         });
       }
 
@@ -2275,7 +2305,8 @@
               name: getDisplayName(p.rawSender, p.hideMyName, p.accountType),
               question: hasValidQuestion ? p.question : '',
               peerId: p.peerId, roomId, accountType: p.accountType,
-              category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius
+              category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius,
+              createdAt: p.createdAt
             });
           }
         }
@@ -2302,7 +2333,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <span class="text-xs font-bold text-slate-900 truncate block">${b.name}</span>
-              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false)}</div>
+              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.createdAt) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false, b.createdAt)}</div>
             </div>
           </div>
         `;
@@ -2382,7 +2413,7 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'}; border-width: 1px;"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName) : ''}
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName, peer.createdAt) : ''}
           </div>
           ${!peer.isOffline ? `
             <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
@@ -2402,6 +2433,9 @@
             activeTopicState.text = null; activeTopicState.createdAt = null;
             renderUserTopBubbleContent();
             savePersistentData();
+          } else if (currentActiveChatRoomId === 'room-you') {
+            const countdownEl = document.getElementById('chatExpiryCountdown');
+            if (countdownEl) countdownEl.innerText = formatCountdownTime(activeTopicState.createdAt);
           }
         }
         renderGlobalUsersDirectory();
@@ -2456,10 +2490,20 @@
       if (!text) return;
       closeChatDrawer();
 
-      activeTopicState.text = text; activeTopicState.createdAt = Date.now();
+      // Wipe previous chat room messages & topic completely when creating a new chat
+      const oldRoomId = 'room-you';
+      if (supabaseClient) {
+        await supabaseClient.from('chat_messages').delete().eq('room_id', oldRoomId);
+      }
+      delete localChatCache[oldRoomId];
+      participatedChatRoomIds.delete(oldRoomId);
+
+      // Set new active chat topic and reset creation timestamp
+      activeTopicState.text = text; 
+      activeTopicState.createdAt = Date.now();
       renderUserTopBubbleContent(true);
       document.getElementById('mainTopicText').innerText = text;
-      participatedChatRoomIds.add('room-you');
+      participatedChatRoomIds.add(oldRoomId);
 
       const coords = getBroadcastCoordinates();
       if (supabaseClient && currentAuthUser) {
@@ -2480,7 +2524,7 @@
       });
 
       input.value = '';
-      showToast('New chat posted & persisted!', 'check-circle');
+      showToast('Previous chat wiped. New chat posted!', 'check-circle');
       playAudioEffect('bell');
       savePersistentData();
       renderPinnedChats();
@@ -2573,7 +2617,13 @@
       avatarEl.style.background = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
       avatarEl.innerHTML = renderNodeIconContent(accountType, category);
 
-      if ((topic || (isSelf && activeTopicState.text)) && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
+      const targetCreatedAt = isSelf ? activeTopicState.createdAt : globalActiveDirectory[peerId]?.createdAt;
+      if (targetCreatedAt) {
+        const countdownEl = document.getElementById('chatExpiryCountdown');
+        if (countdownEl) countdownEl.innerText = formatCountdownTime(targetCreatedAt);
+      }
+
+      if ((topic || (isSelf && activeTopicState.text)) && targetCreatedAt && (Date.now() - targetCreatedAt < ONE_HOUR_MS)) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
         document.getElementById('mainTopicContainer').classList.remove('hidden');
       } else {
