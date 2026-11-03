@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Admin Enabled]</title>
+  <title>LocaL - Supabase Proximity Social Network [Admin & Distributed Mesh]</title>
   
   <!-- Mobile & PWA Configuration -->
   <meta name="theme-color" content="#fbcfe8">
@@ -91,13 +91,8 @@
       100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
     }
 
-    .animate-radius-ripple {
-      animation: radius-ring-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
-    }
-    .animate-giggle {
-      animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-    }
-
+    .animate-radius-ripple { animation: radius-ring-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards; }
+    .animate-giggle { animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
     .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; }
     .animate-float { animation: float-gentle 3.8s ease-in-out infinite; }
@@ -113,9 +108,7 @@
       touch-action: none;
       transition: transform 0.2s cubic-bezier(0.15, 0.85, 0.35, 1);
     }
-    #mapCanvas:active {
-      cursor: grabbing;
-    }
+    #mapCanvas:active { cursor: grabbing; }
 
     .scale-compensator {
       transform: scale(calc(1 / max(0.20, var(--zoom-scale, 1))));
@@ -125,6 +118,7 @@
     .node-item {
       pointer-events: auto !important;
       z-index: 999999 !important;
+      transition: all 0.4s cubic-bezier(0.15, 0.85, 0.35, 1);
     }
 
     #userAvatarNode {
@@ -132,9 +126,7 @@
       pointer-events: auto !important;
     }
 
-    .hairline-ring {
-      border-width: calc(1px / max(0.20, var(--zoom-scale, 1))) !important;
-    }
+    .hairline-ring { border-width: calc(1px / max(0.20, var(--zoom-scale, 1))) !important; }
 
     .radar-distance-label {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -165,10 +157,6 @@
       pointer-events: auto !important;
       width: max-content;
       max-width: 280px;
-      z-index: 99999999 !important;
-    }
-    .node-content-stack > * {
-      pointer-events: auto !important;
       z-index: 99999999 !important;
     }
 
@@ -260,12 +248,12 @@
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern pointer-events-none"></div>
     
-    <!-- BACKGROUND RADAR ELEMENTS (Layered in Background z-0) -->
+    <!-- World Boundary Ring -->
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring z-0" style="width: 5625px; height: 5625px;">
       <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
     </div>
 
-    <!-- Static Radar Center (z-0 background) -->
+    <!-- Static Radar Center -->
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center z-0">
       <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_20px_rgba(56,189,248,0.2)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
       <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_15px_rgba(56,189,248,0.15)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
@@ -290,7 +278,7 @@
     </div>
   </div>
 
-  <!-- Top Translucent Glass Header Bar -->
+  <!-- Header Bar -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
     <div class="glass-header-transparent px-3 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-102 transition-all" onclick="playAudioEffect('click'); toggleP2PModal()" title="View Network Mesh">
       <div class="relative flex items-center justify-center">
@@ -305,7 +293,6 @@
     </div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
-      <!-- Admin Quick Button -->
       <button id="adminPortalHeaderBtn" onclick="playAudioEffect('click'); openAdminModal()" title="Admin Control Panel" class="hidden liquid-glass-icon px-3 py-2 rounded-2xl bg-amber-500/30 border border-amber-400 text-amber-950 font-bold text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 transition-all">
         <i data-lucide="shield-alert" class="w-4 h-4 text-amber-700"></i> Admin Panel
       </button>
@@ -325,7 +312,7 @@
 
   <div id="toastContainer" class="absolute top-20 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2 items-center"></div>
 
-  <!-- Unified Bottom Action Dock Bubble (Main Chat Bar) -->
+  <!-- Bottom Action Dock Bubble -->
   <div id="actionDockContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
@@ -361,7 +348,6 @@
       </div>
 
       <div class="space-y-5">
-        <!-- Radar Limits Toggle -->
         <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
           <div>
             <h4 class="text-xs font-bold text-white uppercase tracking-wider">Remove Radar Limits</h4>
@@ -373,7 +359,6 @@
           </label>
         </div>
 
-        <!-- Add New Bot Section -->
         <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
           <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
             <i data-lucide="user-plus" class="w-4 h-4"></i> Add New Bot to Mesh
@@ -419,21 +404,17 @@
           </button>
         </div>
 
-        <!-- Bot Directory & Editor List -->
         <div>
           <h4 class="text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">Active Bot Profiles & Editor</h4>
-          <div id="adminBotEditorList" class="space-y-2 max-h-56 overflow-y-auto pr-1">
-            <!-- Dynamically populated -->
-          </div>
+          <div id="adminBotEditorList" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- STREAMLINED LOGIN / SIGN-UP MODAL -->
+  <!-- LOGIN / SIGN-UP MODAL -->
   <div id="welcomeProfileModal" class="hidden fixed inset-0 z-[99999999] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4 pointer-events-auto">
     <div class="dark-biz-bubble w-full max-w-sm rounded-[32px] p-6 border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] max-h-[90vh] overflow-y-auto pointer-events-auto relative z-[99999999]">
-      
       <div class="text-center mb-5">
         <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white font-bold text-2xl mx-auto mb-2 shadow-[0_0_20px_rgba(52,211,153,0.5)]">L</div>
         <h3 class="text-xl font-extrabold text-white tracking-tight" id="welcomeModalTitle">Welcome to LocaL</h3>
@@ -441,38 +422,34 @@
       </div>
       
       <div class="space-y-4">
-        <!-- Tab Selector: Sign In vs Sign Up -->
         <div class="flex rounded-2xl bg-slate-900/90 p-1 border border-slate-800">
           <button type="button" onclick="setAuthTab('signin')" id="tabSignInBtn" class="flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md">Sign In</button>
           <button type="button" onclick="setAuthTab('signup')" id="tabSignUpBtn" class="flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all">Create Account</button>
         </div>
 
-        <!-- Username Field (Only shown during Sign Up) -->
         <div id="signupUsernameContainer" class="hidden">
           <label class="block text-xs font-semibold text-slate-300 mb-1">Username / Display Alias</label>
-          <input type="text" id="welcomeUsernameInput" placeholder="e.g. Administrator" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
+          <input type="text" id="welcomeUsernameInput" placeholder="e.g. Administrator" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Email / Username Alias</label>
-          <input type="text" id="welcomeEmailInput" placeholder="Administrator or your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
+          <input type="text" id="welcomeEmailInput" placeholder="Administrator or your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
-          <input type="password" id="welcomePasswordInput" placeholder="4464" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner pointer-events-auto">
+          <input type="password" id="welcomePasswordInput" placeholder="4464" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
         </div>
 
         <div class="pt-2">
-          <button type="button" onclick="submitAuthForm()" id="authSubmitBtn" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500">
-            Sign In
-          </button>
+          <button type="button" onclick="submitAuthForm()" id="authSubmitBtn" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500">Sign In</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Supabase Realtime Network & Directory Modal -->
+  <!-- P2P Modal -->
   <div id="p2pModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-4 flex-shrink-0">
@@ -485,7 +462,7 @@
       
       <div class="space-y-4 overflow-y-auto flex-1 pr-1">
         <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Supabase Realtime Connection Status</label>
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Supabase Connection Status</label>
           <div class="flex items-center justify-between px-3 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 text-xs font-semibold">
             <div class="flex items-center gap-2">
               <span id="peerServerDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
@@ -500,9 +477,7 @@
             <label class="block text-xs font-semibold text-slate-800 uppercase tracking-wider">Discovered Peers & Bots (<span id="modalActiveCount">1</span>)</label>
           </div>
           <div id="globalUsersDirectory" class="space-y-2 max-h-48 overflow-y-auto pr-1">
-            <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">
-              Searching network mesh for peers...
-            </div>
+            <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">Searching network mesh for peers...</div>
           </div>
         </div>
 
@@ -519,7 +494,7 @@
     </div>
   </div>
 
-  <!-- Profile Customization & Auth Modal -->
+  <!-- Profile Modal -->
   <div id="profileModal" class="hidden fixed inset-0 z-50 glass-panel bg-slate-900/30 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
@@ -588,7 +563,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter (Chat Matching)</label>
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter</label>
           <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
             <option value="none">No Filter At All</option>
             <option value="Life">Life</option>
@@ -626,10 +601,6 @@
                 <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner">
               </div>
             </div>
-            <div class="mt-1.5 flex items-center justify-between">
-              <span class="text-[10px] text-slate-500 font-medium">Status display text:</span>
-              <span id="businessHoursPreview" class="text-[10px] font-semibold text-emerald-800">Open 9:00 AM • Closes 9:00 PM</span>
-            </div>
             <input type="hidden" id="businessHoursInput" value="Open 9:00 AM • Closes 9:00 PM">
           </div>
           <div>
@@ -654,14 +625,12 @@
           </label>
         </div>
 
-        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all">
-          Save Profile & Broadcast
-        </button>
+        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all">Save Profile & Broadcast</button>
       </div>
     </div>
   </div>
 
-  <!-- Chat Drawer Overlay & Container -->
+  <!-- Chat Drawer Overlay -->
   <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-[9999998] bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
   <div id="chatDrawer" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-[99999999] w-full max-w-lg glass-drawer-top p-5 rounded-3xl flex flex-col transition-all max-h-[82vh] border border-white/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] pointer-events-auto">
     
@@ -748,19 +717,18 @@
     };
 
     let currentAuthUser = null;
-
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
     let globalActiveDirectory = {};
     let processedMsgIds = new Set();
     let participatedChatRoomIds = new Set();
     let wakeLock = null;
     let broadcastChannel = null;
+    let backgroundAudioOscillator = null;
 
     let panX = 0;
     let panY = 0;
     let targetPanX = 0;
     let targetPanY = 0;
-    
     let currentZoomScale = 1.0;
     let targetZoomScale = 1.0;
 
@@ -806,6 +774,48 @@
 
     const SOLID_FLAT_BUSINESS_BG = '#1e1b2e';
 
+    /* ============================================================ */
+    /* BACKGROUND KEEP-ALIVE SERVICE WORKER & AUDIO LOCK            */
+    /* ============================================================ */
+
+    function initBackgroundKeepAlive() {
+      // Keep audio context alive so mobile OS does not throttle timer intervals in background
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          startBackgroundAudioKeepAlive();
+        } else {
+          stopBackgroundAudioKeepAlive();
+        }
+      });
+    }
+
+    function startBackgroundAudioKeepAlive() {
+      try {
+        initAudioContext();
+        if (!audioCtx) return;
+        if (backgroundAudioOscillator) return;
+
+        backgroundAudioOscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0.0001; // Silent audio lock to keep thread awake
+        backgroundAudioOscillator.type = 'sine';
+        backgroundAudioOscillator.frequency.value = 20;
+        backgroundAudioOscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        backgroundAudioOscillator.start();
+      } catch(e) {}
+    }
+
+    function stopBackgroundAudioKeepAlive() {
+      try {
+        if (backgroundAudioOscillator) {
+          backgroundAudioOscillator.stop();
+          backgroundAudioOscillator.disconnect();
+          backgroundAudioOscillator = null;
+        }
+      } catch(e) {}
+    }
+
     function formatTime12h(timeStr) {
       if (!timeStr) return '';
       const [hStr, mStr] = timeStr.split(':');
@@ -819,9 +829,7 @@
 
     function computeBusinessHoursStatus(openTime, closeTime) {
       if (!openTime || !closeTime) return 'Open 9:00 AM • Closes 9:00 PM';
-      const openFormatted = formatTime12h(openTime);
-      const closeFormatted = formatTime12h(closeTime);
-      return `Open ${openFormatted} • Closes ${closeFormatted}`;
+      return `Open ${formatTime12h(openTime)} • Closes ${formatTime12h(closeTime)}`;
     }
 
     function updateBusinessHoursFromTimes() {
@@ -829,11 +837,8 @@
       const closeTime = document.getElementById('businessCloseTimeInput').value;
       userState.openTime = openTime;
       userState.closeTime = closeTime;
-      const statusText = computeBusinessHoursStatus(openTime, closeTime);
-      userState.hours = statusText;
-      document.getElementById('businessHoursInput').value = statusText;
-      const preview = document.getElementById('businessHoursPreview');
-      if (preview) preview.innerText = statusText;
+      userState.hours = computeBusinessHoursStatus(openTime, closeTime);
+      document.getElementById('businessHoursInput').value = userState.hours;
     }
 
     function getDisplayName(rawSender, hideMyName, accountType) {
@@ -849,52 +854,16 @@
 
     function getBusinessNeonStyle(accountType, category) {
       if (accountType !== 'business') {
-        return {
-          bg: 'transparent',
-          borderClass: 'border border-white/40',
-          shadowStyle: 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);',
-          iconColor: 'text-white',
-          glowText: 'text-yellow-400',
-          lucideIcon: 'user'
-        };
+        return { bg: 'transparent', borderClass: 'border border-white/40', shadowStyle: 'box-shadow: 0 4px 15px rgba(0,0,0,0.06);', iconColor: 'text-white', glowText: 'text-yellow-400', lucideIcon: 'user' };
       }
-      
       if (category === 'utensils') {
-        return {
-          bg: SOLID_FLAT_BUSINESS_BG,
-          borderClass: 'border-[3.5px] border-amber-400',
-          shadowStyle: 'box-shadow: 0 0 25px rgba(251, 191, 36, 0.8);',
-          iconColor: 'text-amber-400',
-          glowText: 'text-amber-400',
-          lucideIcon: 'utensils'
-        };
+        return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-amber-400', shadowStyle: 'box-shadow: 0 0 25px rgba(251, 191, 36, 0.8);', iconColor: 'text-amber-400', glowText: 'text-amber-400', lucideIcon: 'utensils' };
       } else if (category === 'glass-water') {
-        return {
-          bg: SOLID_FLAT_BUSINESS_BG,
-          borderClass: 'border-[3.5px] border-pink-500',
-          shadowStyle: 'box-shadow: 0 0 25px rgba(236, 72, 153, 0.8);',
-          iconColor: 'text-pink-400',
-          glowText: 'text-pink-400',
-          lucideIcon: 'glass-water'
-        };
+        return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-pink-500', shadowStyle: 'box-shadow: 0 0 25px rgba(236, 72, 153, 0.8);', iconColor: 'text-pink-400', glowText: 'text-pink-400', lucideIcon: 'glass-water' };
       } else if (category === 'pill') {
-        return {
-          bg: SOLID_FLAT_BUSINESS_BG,
-          borderClass: 'border-[3.5px] border-emerald-400',
-          shadowStyle: 'box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);',
-          iconColor: 'text-emerald-300',
-          glowText: 'text-emerald-400',
-          lucideIcon: 'pill'
-        };
+        return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-emerald-400', shadowStyle: 'box-shadow: 0 0 25px rgba(52, 211, 153, 0.8);', iconColor: 'text-emerald-300', glowText: 'text-emerald-400', lucideIcon: 'pill' };
       } else {
-        return {
-          bg: SOLID_FLAT_BUSINESS_BG,
-          borderClass: 'border-[3.5px] border-purple-400',
-          shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);',
-          iconColor: 'text-purple-300',
-          glowText: 'text-purple-300',
-          lucideIcon: category || 'store'
-        };
+        return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-purple-400', shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);', iconColor: 'text-purple-300', glowText: 'text-purple-300', lucideIcon: category || 'store' };
       }
     }
 
@@ -910,7 +879,6 @@
 
     function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName) {
       const displayName = getDisplayName(businessName, hideMyName, accountType);
-      
       if (accountType !== 'business') {
         if (!question) return '';
         return `
@@ -923,11 +891,9 @@
           </div>
         `;
       }
-
       const neonStyle = getBusinessNeonStyle(accountType, category);
-
       return `
-        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-1.5 animate-float z-[99999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl shadow-2xl flex flex-col gap-1.5 animate-float z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <div class="flex items-start gap-2.5">
             <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
@@ -935,12 +901,7 @@
               ${question ? `<p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>` : ''}
             </div>
           </div>
-          ${hours ? `
-            <div class="pt-1.5 mt-0.5 border-t border-white/10 flex items-center justify-between">
-              <span class="text-[10px] text-slate-400 font-medium">Open</span>
-              <span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${hours}</span>
-            </div>
-          ` : ''}
+          ${hours ? `<div class="pt-1.5 mt-0.5 border-t border-white/10 flex items-center justify-between"><span class="text-[10px] text-slate-400 font-medium">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${hours}</span></div>` : ''}
         </div>
       `;
     }
@@ -949,19 +910,14 @@
     let isDraggingRadius = false;
     let dragStartRadiusMeters = MIN_RADIUS_METERS;
     let dragStartDistancePx = 175;
-
     let audioCtx = null;
 
     function initAudioContext() {
       if (!audioCtx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-          audioCtx = new AudioContextClass();
-        }
+        if (AudioContextClass) audioCtx = new AudioContextClass();
       }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     }
 
     function playAudioEffect(type = 'click') {
@@ -981,33 +937,7 @@
           gain.connect(audioCtx.destination);
           osc.start(now);
           osc.stop(now + 0.04);
-        } else if (type === 'bubble') {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(320, now);
-          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
-          gain.gain.setValueAtTime(0.25, now);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now);
-          osc.stop(now + 0.08);
-        } else if (type === 'bell') {
-          [880, 1320, 1760].forEach((freq, idx) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            const t = now + (idx * 0.04);
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, t);
-            gain.gain.setValueAtTime(0.2, t);
-            gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(t);
-            osc.stop(t + 0.8);
-          });
-        } else if (type === 'chime') {
+        } else if (type === 'bell' || type === 'chime') {
           [523.25, 659.25, 783.99].forEach((freq, idx) => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
@@ -1028,11 +958,11 @@
     window.addEventListener('DOMContentLoaded', async () => {
       loadPersistentData();
       lucide.createIcons();
+      initBackgroundKeepAlive();
 
       if (window.supabase) {
         supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
         const { data: { session } } = await supabaseClient.auth.getSession();
-        
         if (session && session.user) {
           currentAuthUser = session.user;
           await fetchUserProfile(session.user.id);
@@ -1070,8 +1000,7 @@
     }
 
     function openWelcomeModalForLogin(isReturningLogin = false) {
-      const modal = document.getElementById('welcomeProfileModal');
-      modal.classList.remove('hidden');
+      document.getElementById('welcomeProfileModal').classList.remove('hidden');
       setAuthTab('signin');
     }
 
@@ -1080,7 +1009,6 @@
       const password = document.getElementById('welcomePasswordInput').value.trim();
       const usernameInput = document.getElementById('welcomeUsernameInput').value.trim();
 
-      // Check Administrator credentials bypass
       if ((emailInput.toLowerCase() === 'administrator' || emailInput === 'admin') && password === '4464') {
         isAdminUser = true;
         userState.alias = 'Administrator';
@@ -1106,7 +1034,6 @@
       try {
         if (window.supabase) {
           supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
-          
           let authResult;
           if (currentAuthTab === 'signup') {
             authResult = await supabaseClient.auth.signUp({
@@ -1120,32 +1047,16 @@
               password
             });
           }
-
-          if (authResult.error) {
-            // Fallback for custom local login if Supabase auth fails
-            if (emailInput.toLowerCase() === 'administrator' && password === '4464') {
-              isAdminUser = true;
-              userState.alias = 'Administrator';
-            } else {
-              userState.alias = usernameInput || emailInput;
-            }
-          } else if (authResult.data?.user || authResult.data?.session?.user) {
+          if (authResult.data?.user || authResult.data?.session?.user) {
             currentAuthUser = authResult.data.user || authResult.data.session.user;
             const { data: profileData } = await supabaseClient.from('profiles').select('*').eq('id', currentAuthUser.id).single();
-            if (profileData && profileData.alias) {
-              userState.alias = profileData.alias;
-            } else if (currentAuthUser.user_metadata?.full_name) {
-              userState.alias = currentAuthUser.user_metadata.full_name;
-            } else {
-              userState.alias = emailInput;
-            }
+            if (profileData && profileData.alias) userState.alias = profileData.alias;
+            else userState.alias = emailInput;
           }
         }
       } catch(e) {}
 
-      if (userState.alias.toLowerCase() === 'administrator') {
-        isAdminUser = true;
-      }
+      if (userState.alias.toLowerCase() === 'administrator') isAdminUser = true;
 
       userState.profileCreated = true;
       savePersistentData();
@@ -1170,9 +1081,7 @@
       renderAdminBotEditorList();
     }
 
-    function closeAdminModal() {
-      document.getElementById('adminManagementModal').classList.add('hidden');
-    }
+    function closeAdminModal() { document.getElementById('adminManagementModal').classList.add('hidden'); }
 
     function toggleUnlimitedRadar(enabled) {
       unlimitedRadarActive = enabled;
@@ -1203,24 +1112,13 @@
       const lng = userState.lng + lngOffset;
 
       globalActiveDirectory[botId] = {
-        rawSender: name,
-        peerId: botId,
-        lat,
-        lng,
-        distance: distMeters,
-        bubbleColor: 'purple',
-        accountType: accountType,
-        category: 'store',
-        hours: 'Open 9:00 AM • Closes 9:00 PM',
-        interestFilter: interest,
-        hideMyName: false,
-        lastSeen: Date.now(),
-        question: question,
-        createdAt: Date.now(),
-        isBot: true
+        rawSender: name, peerId: botId, lat, lng, distance: distMeters,
+        bubbleColor: 'purple', accountType, category: 'store',
+        hours: 'Open 9:00 AM • Closes 9:00 PM', interestFilter: interest,
+        hideMyName: false, lastSeen: Date.now(), question, createdAt: Date.now(), isBot: true
       };
 
-      updatePeerNodeOnMap(name, distMeters, distMeters+'m', lat, lng, question, Date.now(), botId, 'purple', accountType, 'store', 'Open 9:00 AM', interest, true, false, false);
+      refreshAllPeerDistancesAndPositions();
       renderGlobalUsersDirectory();
       renderAdminBotEditorList();
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
@@ -1233,13 +1131,11 @@
     function renderAdminBotEditorList() {
       const container = document.getElementById('adminBotEditorList');
       if (!container) return;
-
       const peerIds = Object.keys(globalActiveDirectory);
       if (peerIds.length === 0) {
         container.innerHTML = `<div class="p-3 rounded-xl bg-slate-950 text-center text-xs text-slate-400">No active bots found.</div>`;
         return;
       }
-
       container.innerHTML = '';
       peerIds.forEach(id => {
         const peer = globalActiveDirectory[id];
@@ -1247,9 +1143,7 @@
           <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-white">${peer.rawSender} (${peer.accountType})</span>
-              <div class="flex items-center gap-1.5">
-                <button onclick="deleteBotProfile('${id}')" class="px-2 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Remove</button>
-              </div>
+              <button onclick="deleteBotProfile('${id}')" class="px-2 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Remove</button>
             </div>
             <div class="space-y-1">
               <input type="text" id="edit-name-${id}" value="${peer.rawSender}" class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
@@ -1300,11 +1194,7 @@
       checkAdminPrivileges();
       
       const slider = document.getElementById('radarRangeSlider');
-      if (slider) {
-        slider.min = MIN_RADIUS_METERS;
-        slider.max = MAX_RADIUS_METERS;
-        slider.value = MIN_RADIUS_METERS;
-      }
+      if (slider) { slider.min = MIN_RADIUS_METERS; slider.max = MAX_RADIUS_METERS; slider.value = MIN_RADIUS_METERS; }
 
       updateRadius(userState.radius);
 
@@ -1336,9 +1226,7 @@
     }
 
     async function requestScreenWakeLock() {
-      if ('wakeLock' in navigator) {
-        try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
-      }
+      if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
     }
 
     function triggerHapticFeedback(pattern = 40) {
@@ -1351,20 +1239,12 @@
         if (savedProfile) {
           const parsed = JSON.parse(savedProfile);
           userState = { ...userState, ...parsed };
-          if (userState.alias && userState.alias.toLowerCase() === 'administrator') {
-            isAdminUser = true;
-          }
+          if (userState.alias && userState.alias.toLowerCase() === 'administrator') isAdminUser = true;
         }
-
         const savedTopicState = localStorage.getItem(STORAGE_KEY_TOPIC_STATE);
-        if (savedTopicState) {
-          activeTopicState = JSON.parse(savedTopicState);
-        }
-
+        if (savedTopicState) activeTopicState = JSON.parse(savedTopicState);
         const savedRooms = localStorage.getItem(STORAGE_KEY_PARTICIPATED_ROOMS);
-        if (savedRooms) {
-          participatedChatRoomIds = new Set(JSON.parse(savedRooms));
-        }
+        if (savedRooms) participatedChatRoomIds = new Set(JSON.parse(savedRooms));
       } catch (e) {}
     }
 
@@ -1374,11 +1254,8 @@
         localStorage.setItem(STORAGE_KEY_TOPIC_STATE, JSON.stringify(activeTopicState));
         localStorage.setItem(STORAGE_KEY_SUPABASE_CONFIG, JSON.stringify(supabaseConfig));
         localStorage.setItem(STORAGE_KEY_PARTICIPATED_ROOMS, JSON.stringify(Array.from(participatedChatRoomIds)));
-        if (currentActiveChatRoomId) {
-          localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
-        } else {
-          localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
-        }
+        if (currentActiveChatRoomId) localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
+        else localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
       } catch (e) {}
     }
 
@@ -1431,9 +1308,7 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal')) {
-          return;
-        }
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal')) return;
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
         isDraggingMap = true;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -1446,23 +1321,18 @@
         if (!isDraggingMap || (e.touches && e.touches.length > 1)) return;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        
         let newX = clientX - startDragX;
         let newY = clientY - startDragY;
-
         const maxLimit = getPanBounds();
         targetPanX = Math.max(-maxLimit, Math.min(maxLimit, newX));
         targetPanY = Math.max(-maxLimit, Math.min(maxLimit, newY));
       };
 
-      const handlePanEnd = () => {
-        isDraggingMap = false;
-      };
+      const handlePanEnd = () => { isDraggingMap = false; };
 
       mapCanvas.addEventListener('mousedown', handlePanStart);
       window.addEventListener('mousemove', handlePanMove);
       window.addEventListener('mouseup', handlePanEnd);
-
       mapCanvas.addEventListener('touchstart', handlePanStart, { passive: true });
       window.addEventListener('touchmove', handlePanMove, { passive: true });
       window.addEventListener('touchend', handlePanEnd);
@@ -1478,10 +1348,7 @@
       mapCanvas.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
           isDraggingMap = false;
-          initialPinchDistance = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-          );
+          initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
           if (initialPinchDistance < 1) initialPinchDistance = 1;
           initialPinchScale = targetZoomScale;
         }
@@ -1489,10 +1356,7 @@
 
       mapCanvas.addEventListener('touchmove', (e) => {
         if (e.touches.length === 2 && initialPinchDistance && initialPinchDistance > 0) {
-          const currentDistance = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-          );
+          const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
             targetZoomScale = Math.max(0.20, Math.min(4.0, initialPinchScale * factor));
@@ -1500,21 +1364,14 @@
         }
       }, { passive: true });
 
-      mapCanvas.addEventListener('touchend', (e) => {
-        if (e.touches.length < 2) {
-          initialPinchDistance = null;
-        }
-      });
+      mapCanvas.addEventListener('touchend', (e) => { if (e.touches.length < 2) initialPinchDistance = null; });
     }
 
     function initWheelZoomHandler() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
-
       mapCanvas.addEventListener('wheel', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal')) {
-          return;
-        }
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal')) return;
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
         targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
@@ -1525,7 +1382,6 @@
     function initDoubleTapHandler() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
-
       mapCanvas.addEventListener('touchend', (e) => {
         const currentTime = new Date().getTime();
         const tapLength = currentTime - lastTapTime;
@@ -1535,19 +1391,14 @@
         }
         lastTapTime = currentTime;
       });
-
       mapCanvas.addEventListener('dblclick', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal')) {
-          return;
-        }
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal')) return;
         recenterAndResetZoom();
       });
     }
 
     function recenterAndResetZoom() {
-      targetPanX = 0;
-      targetPanY = 0;
-      targetZoomScale = 1.0;
+      targetPanX = 0; targetPanY = 0; targetZoomScale = 1.0;
       updateRadius(MIN_RADIUS_METERS);
       playAudioEffect('chime');
       showToast('Map recentered & radar reset to 1.0 Mi', 'navigation');
@@ -1556,24 +1407,21 @@
     function startSmoothAnimationLoop() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
-
       const renderLoop = () => {
         panX += (targetPanX - panX) * 0.22;
         panY += (targetPanY - panY) * 0.22;
-
         currentZoomScale += (targetZoomScale - currentZoomScale) * 0.18;
         if (currentZoomScale < 0.20) currentZoomScale = 0.20;
 
         mapCanvas.style.setProperty('--pan-x', `${panX}px`);
         mapCanvas.style.setProperty('--pan-y', `${panY}px`);
         mapCanvas.style.setProperty('--zoom-scale', Math.max(0.20, currentZoomScale).toFixed(4));
-
         animationFrameId = requestAnimationFrame(renderLoop);
       };
       animationFrameId = requestAnimationFrame(renderLoop);
     }
 
-    const MAP_PIXels_PER_MILE = 187.5;
+    const MAP_PIXELS_PER_MILE = 187.5;
 
     function updateRadius(val) {
       const meters = unlimitedRadarActive ? 999999 : Math.max(MIN_RADIUS_METERS, Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number(val))));
@@ -1593,10 +1441,9 @@
 
       if (ring) {
         const milesVal = unlimitedRadarActive ? 30 : (meters / METERS_PER_MILE);
-        const pixelDiameter = Math.round(milesVal * MAP_PIXels_PER_MILE * 2);
+        const pixelDiameter = Math.round(milesVal * MAP_PIXELS_PER_MILE * 2);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
-
         if (leftBadge) leftBadge.innerText = labelText;
         if (rightBadge) rightBadge.innerText = labelText;
 
@@ -1610,9 +1457,7 @@
     }
 
     function updateRadiusFromSlider(val) {
-      if (!unlimitedRadarActive) {
-        updateRadius(val);
-      }
+      if (!unlimitedRadarActive) updateRadius(val);
     }
 
     function initRadiusDragHandlers() {
@@ -1622,14 +1467,10 @@
       const handleStart = (e) => {
         if (unlimitedRadarActive) return;
         isDraggingRadius = true;
-        e.stopPropagation();
-        e.preventDefault();
-
+        e.stopPropagation(); e.preventDefault();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-        
+        const centerX = window.innerWidth / 2, centerY = window.innerHeight / 2;
         const safeScale = Math.max(0.20, currentZoomScale);
         dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
         dragStartRadiusMeters = userState.radius;
@@ -1639,29 +1480,20 @@
         if (!isDraggingRadius || unlimitedRadarActive) return;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-        
+        const centerX = window.innerWidth / 2, centerY = window.innerHeight / 2;
         const safeScale = Math.max(0.20, currentZoomScale);
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
-
         const deltaPx = currentDistPx - dragStartDistancePx;
-        const metersPerPx = METERS_PER_MILE / MAP_PIXels_PER_MILE;
-        
+        const metersPerPx = METERS_PER_MILE / MAP_PIXELS_PER_MILE;
         const newMeters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
-
         updateRadius(newMeters);
       };
 
-      const handleEnd = () => {
-        isDraggingRadius = false;
-      };
+      const handleEnd = () => { isDraggingRadius = false; };
 
       ring.addEventListener('mousedown', handleStart);
       window.addEventListener('mousemove', handleMove);
       window.addEventListener('mouseup', handleEnd);
-
       ring.addEventListener('touchstart', handleStart, { passive: false });
       window.addEventListener('touchmove', handleMove, { passive: false });
       window.addEventListener('touchend', handleEnd);
@@ -1688,19 +1520,12 @@
           const isParticipated = participatedChatRoomIds.has(roomId);
           
           nodeElem.style.display = isEnabled ? 'block' : 'none';
-          
           if (isParticipated || unlimitedRadarActive) {
             nodeElem.style.opacity = '0.95';
             nodeElem.style.pointerEvents = 'auto';
           } else {
             nodeElem.style.opacity = isWithinRadius ? '1' : '0.15';
             nodeElem.style.pointerEvents = isWithinRadius ? 'auto' : 'none';
-          }
-
-          const sonarRing = nodeElem.querySelector('.peer-sonar-ring');
-          if (sonarRing) {
-            const shouldRipple = matchesFilter && peer.accountType !== 'business';
-            sonarRing.style.display = shouldRipple ? 'block' : 'none';
           }
         }
       });
@@ -1709,10 +1534,9 @@
     }
 
     function getBroadcastCoordinates() {
-      if (userState.type === 'business') { return { lat: userState.lat, lng: userState.lng }; }
+      if (userState.type === 'business') return { lat: userState.lat, lng: userState.lng };
       if (!userState.lat || !userState.lng) return { lat: 27.2730, lng: -80.3582 };
       if (!userState.fuzzLocation) return { lat: userState.lat, lng: userState.lng };
-
       return {
         lat: userState.lat + ((Math.random() - 0.5) * 0.005),
         lng: userState.lng + ((Math.random() - 0.5) * 0.005)
@@ -1726,10 +1550,7 @@
           userState.lng = pos.coords.longitude;
           announcePresence();
           refreshAllPeerDistancesAndPositions();
-          showToast('GPS Location acquired!', 'navigation');
-        }, (err) => {
-          showToast('GPS unavailable. Using default coordinates.', 'alert-triangle');
-        }, { enableHighAccuracy: true, timeout: 10000 });
+        }, (err) => {}, { enableHighAccuracy: true, timeout: 10000 });
 
         navigator.geolocation.watchPosition((pos) => {
           userState.lat = pos.coords.latitude;
@@ -1749,25 +1570,57 @@
       return Math.round(R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))));
     }
 
-    function calculateBearing(lat1, lon1, lat2, lon2) {
-      const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
-      const Δλ = (lon2 - lon1) * Math.PI / 180;
-      const y = Math.sin(Δλ) * Math.cos(φ2);
-      const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.sin(Δλ);
-      let brng = Math.atan2(y, x) * 180 / Math.PI;
-      return (brng + 360) % 360;
+    /* ============================================================ */
+    /* HASH-BASED DETERMINISTIC 360° POLAR SPREAD & COLLISION AVOIDANCE */
+    /* ============================================================ */
+
+    function getDeterministicBearing(peerId, rawSender) {
+      const seedString = (peerId || '') + (rawSender || '');
+      let hash = 0;
+      for (let i = 0; i < seedString.length; i++) {
+        hash = ((hash << 5) - hash) + seedString.charCodeAt(i);
+        hash |= 0;
+      }
+      const normalized = Math.abs(hash) % 360;
+      return normalized * (Math.PI / 180);
     }
 
     function refreshAllPeerDistancesAndPositions() {
-      Object.keys(globalActiveDirectory).forEach(peerId => {
+      const peerIds = Object.keys(globalActiveDirectory);
+      const placedNodes = [];
+
+      peerIds.forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
         if (peer.lat && peer.lng) {
           peer.distance = calculateHaversineDistance(userState.lat, userState.lng, peer.lat, peer.lng);
-          updatePeerNodeOnMap(
-            peer.rawSender, peer.distance, peer.distance + 'm', peer.lat, peer.lng, 
-            peer.question, peer.createdAt, peer.peerId, peer.bubbleColor, 
-            peer.accountType, peer.category, peer.hours, peer.interestFilter, peer.isBot, peer.hideMyName, peer.isOffline
-          );
+          
+          // Compute true 360° polar offset angle from ID hash to avoid linear stacking
+          let bearingRad = getDeterministicBearing(peer.peerId, peer.rawSender);
+          let pixelDistanceFromCenter = (peer.distance / METERS_PER_MILE) * MAP_PIXELS_PER_MILE;
+
+          // Collision Avoidance separation check against already placed nodes
+          let attempts = 0;
+          while (attempts < 5) {
+            let collision = false;
+            for (let other of placedNodes) {
+              let dPx = Math.hypot(other.pixelDist - pixelDistanceFromCenter, (other.bearing - bearingRad) * 100);
+              if (dPx < 65) {
+                collision = true;
+                break;
+              }
+            }
+            if (!collision) break;
+            bearingRad += 0.35; // Shift angle slightly to resolve collision
+            attempts++;
+          }
+
+          placedNodes.push({ pixelDist: pixelDistanceFromCenter, bearing: bearingRad });
+
+          const mapCanvasWidth = 5625;
+          let leftPercent = 50 + ((Math.sin(bearingRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
+          let topPercent = 50 - ((Math.cos(bearingRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
+
+          updatePeerNodeOnMapObject(peer, leftPercent, topPercent);
         }
       });
       refreshAllNodeVisibilities();
@@ -1775,7 +1628,6 @@
 
     function createBubbleRipple() {
       if (userState.type === 'business') return;
-
       playAudioEffect('bubble');
       triggerHapticFeedback(50);
       const ringContainer = document.getElementById('radiusRippleContainer');
@@ -1784,11 +1636,9 @@
 
       const sizePx = targetRing.offsetWidth || 375;
       const ripple = document.createElement('div');
-      
-      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-emerald-400/80 bg-emerald-400/28 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(52,211,153,0.56)] hairline-ring';
+      ripple.className = 'absolute top-1/2 left-1/2 rounded-full border border-emerald-400/85 bg-emerald-400/28 pointer-events-none animate-radius-ripple shadow-[0_0_20px_rgba(52,211,153,0.56)] hairline-ring';
       ripple.style.width = `${sizePx}px`;
       ripple.style.height = `${sizePx}px`;
-
       ringContainer.appendChild(ripple);
       setTimeout(() => ripple.remove(), 2200);
     }
@@ -1796,27 +1646,19 @@
     function initTapRippleHandler() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
-
-      const triggerRipple = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #questionModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal')) {
-          return;
-        }
+      mapCanvas.addEventListener('click', (e) => {
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal')) return;
         createBubbleRipple();
-      };
-
-      mapCanvas.addEventListener('click', triggerRipple);
+      });
     }
 
-    function updateMyDisplayLabel() {
-      renderUserTopBubbleContent(false);
-    }
+    function updateMyDisplayLabel() { renderUserTopBubbleContent(false); }
 
     function renderUserTopBubbleContent(isGiggle = false) {
       const topBubble = document.getElementById('userTopBubble');
       if (!topBubble) return;
 
       const hasValidActiveTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
-      
       if (!hasValidActiveTopic && userState.type !== 'business') {
         topBubble.classList.add('hidden');
         return;
@@ -1857,10 +1699,7 @@
 
     function renderNodeIconContent(accountType, category) {
       const isBiz = accountType === 'business';
-      if (!isBiz) {
-        return `<div class="bubble-glare"></div><i data-lucide="user" class="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
-      }
-      
+      if (!isBiz) return `<div class="bubble-glare"></div><i data-lucide="user" class="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
       const neonStyle = getBusinessNeonStyle(accountType, category);
       return `<i data-lucide="${neonStyle.lucideIcon}" class="w-5 h-5 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>`;
     }
@@ -1870,14 +1709,9 @@
       const mapCanvas = document.getElementById('mapCanvas');
       const gridOverlay = document.getElementById('mapGridOverlay');
       if (!mapCanvas) return;
-
       mapCanvas.className = `absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-${mode}`;
       if (gridOverlay) {
-        if (mode === 'cyber' || mode === 'midnight') {
-          gridOverlay.className = 'absolute inset-0 opacity-20 map-grid-pattern-dark pointer-events-none';
-        } else {
-          gridOverlay.className = 'absolute inset-0 opacity-20 map-grid-pattern pointer-events-none';
-        }
+        gridOverlay.className = (mode === 'cyber' || mode === 'midnight') ? 'absolute inset-0 opacity-20 map-grid-pattern-dark pointer-events-none' : 'absolute inset-0 opacity-20 map-grid-pattern pointer-events-none';
       }
     }
 
@@ -1901,8 +1735,7 @@
       savePersistentData();
       const existingRing = document.getElementById('radarBoundaryRing');
       if (existingRing) {
-        const currentStyle = userState.radarStyle || 'futuristic';
-        existingRing.outerHTML = getRadarStyleHtml(currentStyle);
+        existingRing.outerHTML = getRadarStyleHtml(userState.radarStyle || 'futuristic');
         initRadiusDragHandlers();
         updateRadius(userState.radius);
       }
@@ -1912,7 +1745,7 @@
     function getRadarStyleHtml(styleType) {
       const palette = RADAR_PALETTES[userState.radarColor || 'cyan'];
       const initialMiles = unlimitedRadarActive ? 'Unlimited' : (userState.radius / METERS_PER_MILE).toFixed(1);
-      const initialPx = Math.round((unlimitedRadarActive ? 30 : (userState.radius / METERS_PER_MILE)) * MAP_PIXels_PER_MILE * 2);
+      const initialPx = Math.round((unlimitedRadarActive ? 30 : (userState.radius / METERS_PER_MILE)) * MAP_PIXELS_PER_MILE * 2);
 
       if (styleType === 'cyberpunk') {
         return `
@@ -1928,18 +1761,6 @@
       } else if (styleType === 'minimal') {
         return `
           <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 cursor-pointer transition-all duration-75 z-0 shadow-md pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
-            <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
-            <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
-          </div>
-        `;
-      } else if (styleType === 'sonar') {
-        return `
-          <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-950/30 cursor-pointer transition-all duration-75 z-0 shadow-xl pointer-events-auto hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; overflow: visible;" title="Click & drag to scale boundary">
-            <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none z-0">
-              <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
-            </div>
-            <div class="absolute inset-3 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.6;"></div>
-            <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
             <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
             <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-10 -translate-y-1/2 z-10">${initialMiles} Mi</div>
           </div>
@@ -1967,7 +1788,6 @@
       
       const isBiz = userState.type === 'business';
       const neonStyle = getBusinessNeonStyle(userState.type, userState.category);
-
       const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
       const borderClass = isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER;
       const shadowStyle = isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW;
@@ -1975,16 +1795,12 @@
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group pointer-events-auto">
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
-
           ${getRadarStyleHtml(userState.radarStyle || 'futuristic')}
-
           <div class="scale-compensator flex flex-col items-center relative z-[99999999] pointer-events-auto">
             <div class="node-content-stack z-[99999999] pointer-events-auto">
               <div id="userTopBubble" class="hidden z-[99999999] pointer-events-auto"></div>
             </div>
-
-            <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-emerald-400/40 blur-lg animate-pulse-glow pointer-events-none" style="border-radius: 50%;"></div>
-
+            <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-emerald-400/40 blur-lg animate-pulse-glow pointer-events-none"></div>
             <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[58px] h-[58px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[99999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
               ${renderNodeIconContent(userState.type, userState.category)}
             </div>
@@ -1992,18 +1808,16 @@
         </div>
       `;
       container.appendChild(userDiv);
-
       renderUserTopBubbleContent(false);
 
       const circle = document.getElementById('userAvatarCircle');
-      circle.addEventListener('mousedown', () => { handlePressStart(); });
+      circle.addEventListener('mousedown', () => { touchTimer = setTimeout(() => { openProfileModal(); }, 600); });
       circle.addEventListener('mouseup', () => clearTimeout(touchTimer));
     }
 
     function updateRadarStyle(styleName) {
       userState.radarStyle = styleName;
       savePersistentData();
-      
       const existingRing = document.getElementById('radarBoundaryRing');
       if (existingRing) {
         existingRing.outerHTML = getRadarStyleHtml(styleName);
@@ -2013,19 +1827,14 @@
       showToast(`Radar style updated to ${styleName}!`, 'radar');
     }
 
-    function handlePressStart() {
-      touchTimer = setTimeout(() => { openProfileModal(); }, 600);
-    }
-
     /* ============================================================ */
-    /* SUPABASE DATABASE & REALTIME INSTANT SYNC IMPLEMENTATION     */
+    /* SUPABASE DATABASE & REALTIME INSTANT SYNC                   */
     /* ============================================================ */
 
     function initSupabaseNetwork() {
       document.getElementById('myPeerIdDisplay').value = myPeerId;
-
       if (!supabaseConfig.url || !supabaseConfig.key) {
-        updatePeerServerStatus(false, "Supabase Offline (Configure URL & Key)");
+        updatePeerServerStatus(false, "Supabase Offline");
         setupLocalBroadcastFallback();
         return;
       }
@@ -2033,33 +1842,21 @@
       try {
         if (window.supabase) {
           supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
-          
           initAuthListener();
           subscribeToDbChatMessages();
 
           realtimeChannel = supabaseClient.channel(MESH_ROOM_KEY, {
-            config: {
-              broadcast: { self: false },
-              presence: { key: myPeerId }
-            }
+            config: { broadcast: { self: false }, presence: { key: myPeerId } }
           });
 
           realtimeChannel
-            .on('presence', { event: 'sync' }, () => {
-              const state = realtimeChannel.presenceState();
-              handleSupabasePresenceSync(state);
-            })
-            .on('broadcast', { event: 'local_mesh_broadcast' }, (data) => {
-              if (data && data.payload) {
-                handleIncomingNetworkPayload(data.payload);
-              }
-            })
+            .on('presence', { event: 'sync' }, () => { handleSupabasePresenceSync(realtimeChannel.presenceState()); })
+            .on('broadcast', { event: 'local_mesh_broadcast' }, (data) => { if (data && data.payload) handleIncomingNetworkPayload(data.payload); })
             .on('broadcast', { event: 'chat_reply' }, (data) => {
               if (data && data.payload) {
                 const payload = data.payload;
                 const timeStr = new Date(payload.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const isMe = currentAuthUser ? (payload.sender_id === currentAuthUser.id) : (payload.sender_alias === userState.alias);
-                
                 participatedChatRoomIds.add(payload.room_id);
                 savePersistentData();
                 refreshAllNodeVisibilities();
@@ -2080,15 +1877,8 @@
                 updatePeerServerStatus(false, "Status: " + status);
               }
             });
-        } else {
-          updatePeerServerStatus(false, "Supabase JS SDK Missing");
-          setupLocalBroadcastFallback();
         }
-      } catch(e) {
-        updatePeerServerStatus(false, "Supabase Connection Error");
-        setupLocalBroadcastFallback();
-      }
-
+      } catch(e) {}
       setupLocalBroadcastFallback();
     }
 
@@ -2103,7 +1893,6 @@
           if (newMsg) {
             const timeStr = new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
-            
             participatedChatRoomIds.add(newMsg.room_id);
             savePersistentData();
             refreshAllNodeVisibilities();
@@ -2122,22 +1911,15 @@
     async function loadDbChatHistory(roomId) {
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
-      msgBox.innerHTML = '<div class="text-center text-xs text-slate-500 py-4">Syncing history from Supabase...</div>';
+      msgBox.innerHTML = '<div class="text-center text-xs text-slate-500 py-4">Syncing history...</div>';
 
       if (!supabaseClient) {
         msgBox.innerHTML = '';
-        if (localChatCache[roomId]) {
-          localChatCache[roomId].forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe));
-        }
+        if (localChatCache[roomId]) localChatCache[roomId].forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe));
         return;
       }
 
-      const { data, error } = await supabaseClient
-        .from('chat_messages')
-        .select('*')
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: true });
-
+      const { data, error } = await supabaseClient.from('chat_messages').select('*').eq('room_id', roomId).order('created_at', { ascending: true });
       msgBox.innerHTML = '';
       if (!error && data && data.length > 0) {
         data.forEach(msg => {
@@ -2176,7 +1958,7 @@
             }
           }
         });
-        refreshAllNodeVisibilities();
+        refreshAllPeerDistancesAndPositions();
       }
     }
 
@@ -2184,13 +1966,9 @@
       if (!supabaseClient) return;
       const { data: { session } } = await supabaseClient.auth.getSession();
       updateAuthUI(session?.user || null);
-
       supabaseClient.auth.onAuthStateChange(async (event, session) => {
         updateAuthUI(session?.user || null);
-        if (session?.user) {
-          currentAuthUser = session.user;
-          await fetchUserProfile(session.user.id);
-        }
+        if (session?.user) { currentAuthUser = session.user; await fetchUserProfile(session.user.id); }
       });
     }
 
@@ -2198,7 +1976,6 @@
       currentAuthUser = user;
       const statusBanner = document.getElementById('authStatusBanner');
       const signOutBtn = document.getElementById('signOutBtn');
-
       if (user) {
         statusBanner.innerText = `Logged in as: ${user.email}`;
         statusBanner.className = 'text-[11px] text-emerald-700 font-semibold';
@@ -2237,10 +2014,7 @@
         userState.interestFilter = data.interest_filter || userState.interestFilter;
         userState.hideMyName = data.hide_my_name || false;
         userState.profileCreated = true;
-        
-        if (userState.alias.toLowerCase() === 'administrator') {
-          isAdminUser = true;
-        }
+        if (userState.alias.toLowerCase() === 'administrator') isAdminUser = true;
 
         if (data.active_topic && data.topic_created_at) {
           const tTime = new Date(data.topic_created_at).getTime();
@@ -2250,7 +2024,6 @@
             renderUserTopBubbleContent();
           }
         }
-
         document.getElementById('avatarNameInput').value = userState.alias;
         updateMyDisplayLabel();
         checkAdminPrivileges();
@@ -2280,16 +2053,11 @@
     function setupLocalBroadcastFallback() {
       if ('BroadcastChannel' in window && !broadcastChannel) {
         broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v29');
-        broadcastChannel.onmessage = (event) => {
-          handleIncomingNetworkPayload(event.data);
-        };
+        broadcastChannel.onmessage = (event) => { handleIncomingNetworkPayload(event.data); };
       }
-
       window.addEventListener('storage', (event) => {
         if (event.key === STORAGE_BEACON_KEY && event.newValue) {
-          try {
-            handleIncomingNetworkPayload(JSON.parse(event.newValue));
-          } catch(e) {}
+          try { handleIncomingNetworkPayload(JSON.parse(event.newValue)); } catch(e) {}
         }
       });
     }
@@ -2302,37 +2070,11 @@
           const peerData = presenceList[0];
           if (peerData && peerData.peerId) {
             activePresentPeerIds.add(peerData.peerId);
-            if (peerData.peerId !== myPeerId) {
-              handleIncomingNetworkPayload(peerData);
-            }
+            if (peerData.peerId !== myPeerId) handleIncomingNetworkPayload(peerData);
           }
         }
       });
-
-      Object.keys(globalActiveDirectory).forEach(peerId => {
-        const peer = globalActiveDirectory[peerId];
-        if (!peer.isBot && peerId !== myPeerId) {
-          const isCurrentlyOnline = activePresentPeerIds.has(peerId);
-          peer.isOffline = !isCurrentlyOnline;
-          
-          const hasValidTopic = peer.question && peer.createdAt && (Date.now() - peer.createdAt < ONE_HOUR_MS);
-          
-          if (!isCurrentlyOnline && !hasValidTopic) {
-            let peerKey = 'node-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
-            let nodeElem = document.getElementById(peerKey);
-            if (nodeElem) nodeElem.remove();
-            delete globalActiveDirectory[peerId];
-          } else {
-            updatePeerNodeOnMap(
-              peer.rawSender, peer.distance, peer.distance + 'm', peer.lat, peer.lng, 
-              peer.question, peer.createdAt, peer.peerId, peer.bubbleColor, 
-              peer.accountType, peer.category, peer.hours, peer.interestFilter, peer.isBot, peer.hideMyName, peer.isOffline
-            );
-          }
-        }
-      });
-      renderGlobalUsersDirectory();
-      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+      refreshAllPeerDistancesAndPositions();
     }
 
     function updatePeerServerStatus(connected, customStatusText) {
@@ -2352,107 +2094,63 @@
       if (data.id) processedMsgIds.add(data.id);
 
       const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
+      if (!globalActiveDirectory[data.peerId]) globalActiveDirectory[data.peerId] = { enabled: true };
 
-      if (!globalActiveDirectory[data.peerId]) {
-        globalActiveDirectory[data.peerId] = { enabled: true };
-      }
-
-      const calculatedHours = (data.accountType === 'business' && data.openTime && data.closeTime) 
-        ? computeBusinessHoursStatus(data.openTime, data.closeTime) 
-        : (data.hours || 'Open 9:00 AM • Closes 9:00 PM');
+      const calculatedHours = (data.accountType === 'business' && data.openTime && data.closeTime) ? computeBusinessHoursStatus(data.openTime, data.closeTime) : (data.hours || 'Open 9:00 AM • Closes 9:00 PM');
 
       globalActiveDirectory[data.peerId] = {
         ...globalActiveDirectory[data.peerId],
-        rawSender: data.sender,
-        peerId: data.peerId,
-        lat: data.lat,
-        lng: data.lng,
-        distance: distance,
-        bubbleColor: data.bubbleColor || 'violet',
-        accountType: data.accountType || 'personal',
-        category: data.category || 'store',
-        openTime: data.openTime || '09:00',
-        closeTime: data.closeTime || '21:00',
-        hours: calculatedHours,
-        interestFilter: data.interestFilter || 'none',
-        hideMyName: data.hideMyName || false,
-        lastSeen: Date.now(),
-        question: data.text || data.question,
-        createdAt: data.createdAt
+        rawSender: data.sender, peerId: data.peerId, lat: data.lat, lng: data.lng,
+        distance, bubbleColor: data.bubbleColor || 'violet', accountType: data.accountType || 'personal',
+        category: data.category || 'store', openTime: data.openTime || '09:00', closeTime: data.closeTime || '21:00',
+        hours: calculatedHours, interestFilter: data.interestFilter || 'none', hideMyName: data.hideMyName || false,
+        lastSeen: Date.now(), question: data.text || data.question, createdAt: data.createdAt
       };
 
       updateMeshUI();
-      renderGlobalUsersDirectory();
-      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+      refreshAllPeerDistancesAndPositions();
 
-      if (data.type === 'PEER_PRESENCE' || data.type === 'NEW_QUESTION') {
-        updatePeerNodeOnMap(
-          data.sender, distance, distance + 'm', data.lat, data.lng, 
-          data.text || data.question, data.createdAt, data.peerId, 
-          data.bubbleColor, data.accountType, data.category, calculatedHours, data.interestFilter, false, data.hideMyName, false
-        );
-      } else if (data.type === 'DELETE_ROOM') {
-        const targetRoomId = data.roomId;
-        if (targetRoomId && currentActiveChatRoomId === targetRoomId) {
-          closeChatDrawer();
-          showToast('The owner deleted this chat room.', 'trash-2');
-        }
+      if (data.type === 'DELETE_ROOM' && data.roomId && currentActiveChatRoomId === data.roomId) {
+        closeChatDrawer();
+        showToast('The owner deleted this chat room.', 'trash-2');
       }
     }
 
     function spawnDefaultSimulatedUsers() {
       const sampleUsers = [
-        { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, angleDeg: 45, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true, isTutorial: true },
-        { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, angleDeg: 135, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, angleDeg: 220, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, angleDeg: 300, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, angleDeg: 170, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.8, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
+        { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.5, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 1.2, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.4, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '12:00', closeTime: '23:00', hours: 'Open 12:00 PM • Closes 11:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 2.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       sampleUsers.forEach((u, i) => {
         const distMeters = u.targetMiles * METERS_PER_MILE;
-        const angleRad = u.angleDeg * (Math.PI / 180);
+        const bearingRad = getDeterministicBearing(u.peerId, u.name);
         
-        const latOffset = (Math.sin(angleRad) * distMeters) / 111320;
-        const lngOffset = (Math.cos(angleRad) * distMeters) / (111320 * Math.cos(userState.lat * Math.PI / 180));
+        const latOffset = (Math.cos(bearingRad) * distMeters) / 111320;
+        const lngOffset = (Math.sin(bearingRad) * distMeters) / (111320 * Math.cos(userState.lat * Math.PI / 180));
 
         const lat = userState.lat + latOffset;
         const lng = userState.lng + lngOffset;
         const dist = calculateHaversineDistance(userState.lat, userState.lng, lat, lng);
         
-        if (!globalActiveDirectory[u.peerId]) {
-          globalActiveDirectory[u.peerId] = { enabled: true };
-        }
-
+        if (!globalActiveDirectory[u.peerId]) globalActiveDirectory[u.peerId] = { enabled: true };
         const computedHours = u.accountType === 'business' ? computeBusinessHoursStatus(u.openTime, u.closeTime) : u.hours;
 
         globalActiveDirectory[u.peerId] = {
           ...globalActiveDirectory[u.peerId],
-          rawSender: u.name,
-          peerId: u.peerId,
-          lat,
-          lng,
-          distance: dist,
-          bubbleColor: u.color,
-          accountType: u.accountType,
-          category: u.category,
-          openTime: u.openTime,
-          closeTime: u.closeTime,
-          hours: computedHours,
-          interestFilter: u.interestFilter,
-          hideMyName: false,
-          lastSeen: Date.now(),
-          question: u.question,
-          createdAt: Date.now() - (i * 300000),
-          isBot: true
+          rawSender: u.name, peerId: u.peerId, lat, lng, distance: dist,
+          bubbleColor: u.color, accountType: u.accountType, category: u.category,
+          openTime: u.openTime, closeTime: u.closeTime, hours: computedHours,
+          interestFilter: u.interestFilter, hideMyName: false, lastSeen: Date.now(),
+          question: u.question, createdAt: Date.now() - (i * 300000), isBot: true
         };
-
-        updatePeerNodeOnMap(u.name, dist, dist + 'm', lat, lng, u.question, Date.now() - (i * 300000), u.peerId, u.color, u.accountType, u.category, computedHours, u.interestFilter, true, false, false);
       });
 
-      renderGlobalUsersDirectory();
+      refreshAllPeerDistancesAndPositions();
       renderAdminBotEditorList();
-      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
     }
 
     function renderGlobalUsersDirectory() {
@@ -2477,26 +2175,21 @@
         const isBiz = peer.accountType === 'business';
         const isEnabled = peer.enabled !== false;
         const displayLabel = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
-
         const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
-        const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
 
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
                 ${renderNodeIconContent(peer.accountType, peer.category)}
               </div>
               <div>
-                <div class="flex items-center gap-1.5">
-                  <h4 class="font-bold text-slate-900 text-xs">${displayLabel} ${isWithinRadius ? '' : '(Filtered / Out of Range)'}</h4>
-                </div>
+                <div class="flex items-center gap-1.5"><h4 class="font-bold text-slate-900 text-xs">${displayLabel}</h4></div>
                 <p class="text-[10px] text-emerald-900 font-semibold">Distance: ${distStr} ${peer.interestFilter && peer.interestFilter !== 'none' ? '• ' + peer.interestFilter : ''}</p>
-                ${isBiz && peer.hours ? `<div class="mt-0.5 flex items-center justify-between"><span class="text-[9px] text-slate-400">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-800 text-[9px] font-semibold border border-emerald-500/30">${peer.hours}</span></div>` : ''}
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <label class="relative inline-flex items-center cursor-pointer" title="Turn off individual bot">
+              <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleIndividualBot('${peerId}', this.checked)" class="sr-only peer">
                 <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
               </label>
@@ -2512,7 +2205,6 @@
       const container = document.getElementById('rightSidebarBubblesContainer');
       if (!container) return;
       const peerIds = Object.keys(globalActiveDirectory);
-      
       let validBubbles = [];
       
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS);
@@ -2520,13 +2212,8 @@
         validBubbles.push({
           name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
           question: hasSelfTopic ? activeTopicState.text : '',
-          bubbleColor: userState.bubbleColor,
-          peerId: 'you',
-          roomId: 'room-you',
-          accountType: userState.type,
-          category: userState.category,
-          hours: userState.hours,
-          hideMyName: userState.hideMyName
+          peerId: 'you', roomId: 'room-you', accountType: userState.type,
+          category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName
         });
       }
 
@@ -2543,13 +2230,8 @@
             validBubbles.push({
               name: getDisplayName(p.rawSender, p.hideMyName, p.accountType),
               question: hasValidQuestion ? p.question : '',
-              bubbleColor: p.bubbleColor,
-              peerId: p.peerId,
-              roomId: roomId,
-              accountType: p.accountType,
-              category: p.category,
-              hours: p.hours,
-              isParticipated: isParticipated && !inRadius
+              peerId: p.peerId, roomId, accountType: p.accountType,
+              category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius
             });
           }
         }
@@ -2567,23 +2249,16 @@
       validBubbles.forEach(b => {
         const isBiz = b.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
-        const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
-        const borderClass = isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER;
-        const shadowStyle = isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW;
         const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}')`;
 
         container.innerHTML += `
           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/80 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
-            <div class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;">
+            <div class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
               ${renderNodeIconContent(b.accountType, b.category)}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-900 truncate">${b.name} ${b.isParticipated ? '(Out of range)' : ''}</span>
-              </div>
-              <div class="mt-1">
-                ${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false)}
-              </div>
+              <span class="text-xs font-bold text-slate-900 truncate block">${b.name}</span>
+              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false)}</div>
             </div>
           </div>
         `;
@@ -2592,14 +2267,10 @@
     }
 
     function toggleIndividualBot(peerId, enabled) {
-      if (globalActiveDirectory[peerId]) {
-        globalActiveDirectory[peerId].enabled = enabled;
-      }
+      if (globalActiveDirectory[peerId]) globalActiveDirectory[peerId].enabled = enabled;
       playAudioEffect('click');
       refreshAllNodeVisibilities();
       renderGlobalUsersDirectory();
-      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
-      showToast(enabled ? 'Bot enabled' : 'Bot turned off', 'bot');
     }
 
     function copyMyPeerId() {
@@ -2610,132 +2281,78 @@
     function announcePresence() {
       if (userState.ghostMode && userState.type !== 'business') return;
       const coords = getBroadcastCoordinates();
-      
       const payload = {
         id: 'ping-' + Math.random().toString(36).substring(2, 9),
-        type: 'PEER_PRESENCE',
-        sender: userState.alias,
-        bubbleColor: userState.bubbleColor,
-        peerId: myPeerId,
-        lat: coords.lat,
-        lng: coords.lng,
-        accountType: userState.type,
-        category: userState.category,
-        openTime: userState.openTime,
-        closeTime: userState.closeTime,
-        hours: userState.hours,
-        interestFilter: userState.interestFilter,
-        hideMyName: userState.hideMyName,
+        type: 'PEER_PRESENCE', sender: userState.alias, bubbleColor: userState.bubbleColor,
+        peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type,
+        category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime,
+        hours: userState.hours, interestFilter: userState.interestFilter, hideMyName: userState.hideMyName,
         question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) ? activeTopicState.text : null,
         createdAt: activeTopicState.createdAt
       };
-
-      if (realtimeChannel) {
-        realtimeChannel.track(payload);
-      }
+      if (realtimeChannel) realtimeChannel.track(payload);
       broadcastData(payload);
     }
 
     function broadcastData(payload) {
       if (userState.ghostMode && userState.type !== 'business') return;
       const coords = getBroadcastCoordinates();
-      payload.lat = payload.lat || coords.lat; 
-      payload.lng = payload.lng || coords.lng;
-      payload.sender = payload.sender || userState.alias; 
-      payload.peerId = payload.peerId || myPeerId;
-      payload.bubbleColor = payload.bubbleColor || userState.bubbleColor; 
-      payload.accountType = userState.type;
-      payload.category = userState.category; 
-      payload.openTime = userState.openTime;
-      payload.closeTime = userState.closeTime;
-      payload.hours = userState.hours;
-      payload.interestFilter = userState.interestFilter;
-      payload.hideMyName = userState.hideMyName;
-
-      if (realtimeChannel) {
-        realtimeChannel.send({
-          type: 'broadcast',
-          event: 'local_mesh_broadcast',
-          payload: payload
-        });
-      }
-
-      if (broadcastChannel) {
-        try { broadcastChannel.postMessage(payload); } catch(e) {}
-      }
-
-      try {
-        localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload));
-      } catch(e) {}
+      payload.lat = payload.lat || coords.lat; payload.lng = payload.lng || coords.lng;
+      if (realtimeChannel) realtimeChannel.send({ type: 'broadcast', event: 'local_mesh_broadcast', payload });
+      if (broadcastChannel) { try { broadcastChannel.postMessage(payload); } catch(e) {} }
+      try { localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload)); } catch(e) {}
     }
 
-    function updatePeerNodeOnMap(rawSender, distance, distanceFormatted, lat, lng, question, createdAt, peerId, bubbleColor, accountType, category, hours, interestFilter, isBot, hideMyName, isOffline = false) {
+    function updatePeerNodeOnMapObject(peer, leftPercent, topPercent) {
       const container = document.getElementById('nodesContainer');
-      let peerKey = 'node-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
+      let peerKey = 'node-' + peer.peerId.replace(/[^a-zA-Z0-9]/g, '-');
       let nodeElem = document.getElementById(peerKey);
-
-      const bearingDeg = calculateBearing(userState.lat, userState.lng, lat, lng);
-      const bearingRad = bearingDeg * (Math.PI / 180);
-      
-      const pixelDistanceFromCenter = (distance / METERS_PER_MILE) * MAP_PIXels_PER_MILE;
-
-      const mapCanvasWidth = 5625;
-      let leftPercent = 50 + ((Math.sin(bearingRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
-      let topPercent = 50 - ((Math.cos(bearingRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
 
       if (!nodeElem) {
         nodeElem = document.createElement('div');
         nodeElem.id = peerKey;
-        nodeElem.className = `absolute z-[99999999] cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item pointer-events-auto ${isBot ? 'bot-node-elem' : ''}`;
+        nodeElem.className = 'absolute z-[99999999] cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-500 node-item pointer-events-auto';
         container.appendChild(nodeElem);
       }
 
       nodeElem.style.left = `${leftPercent}%`;
       nodeElem.style.top = `${topPercent}%`;
 
-      const peerRecord = globalActiveDirectory[peerId] || {};
-      const isEnabled = peerRecord.enabled !== false;
-      const matchesFilter = matchesInterestFilter(interestFilter);
-      const isWithinRadius = unlimitedRadarActive || ((userState.radius === 0 || distance <= userState.radius) && matchesFilter);
-      
-      let roomId = 'room-peer-' + (peerId || rawSender).replace(/[^a-zA-Z0-9]/g, '-');
+      const isEnabled = peer.enabled !== false;
+      const matchesFilter = matchesInterestFilter(peer.interestFilter);
+      const isWithinRadius = unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
+      let roomId = 'room-peer-' + peer.peerId.replace(/[^a-zA-Z0-9]/g, '-');
       const isParticipated = participatedChatRoomIds.has(roomId);
 
       let opacityVal = 1;
-      if (isParticipated || unlimitedRadarActive) {
-        opacityVal = 0.95; 
-      } else if (!matchesFilter) {
-        opacityVal = 0.05;
-      } else if (distance > userState.radius) {
-        const excess = distance - userState.radius;
+      if (isParticipated || unlimitedRadarActive) opacityVal = 0.95;
+      else if (!matchesFilter) opacityVal = 0.05;
+      else if (peer.distance > userState.radius) {
+        const excess = peer.distance - userState.radius;
         opacityVal = Math.max(0.05, 1 - (excess / (userState.radius * 0.75)));
       }
 
       nodeElem.style.display = isEnabled ? 'block' : 'none';
       nodeElem.style.opacity = isWithinRadius || isParticipated || unlimitedRadarActive ? '1' : opacityVal.toString();
       nodeElem.style.pointerEvents = (isWithinRadius || isParticipated || unlimitedRadarActive) ? 'auto' : 'none';
-      
-      const isBiz = accountType === 'business';
-      const neonStyle = getBusinessNeonStyle(accountType, category);
-      const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
-      
-      let hasValidQuestion = question && createdAt && (Date.now() - createdAt < ONE_HOUR_MS);
-      const showSonarRipple = matchesFilter && !isBiz && !isOffline;
-      const chatRoomName = getDisplayName(rawSender, hideMyName, accountType);
 
-      const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${question || ''}', '${peerId}')`;
+      const isBiz = peer.accountType === 'business';
+      const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
+      const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
+      const hasValidQuestion = peer.question && peer.createdAt && (Date.now() - peer.createdAt < ONE_HOUR_MS);
+      const showSonarRipple = matchesFilter && !isBiz && !peer.isOffline;
+      const chatRoomName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}')`;
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; display: ${showSonarRipple ? 'block' : 'none'}; border-width: 1px;"></div>
-          
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(accountType, category, hasValidQuestion ? question : '', rawSender, onClickJs, hours, hideMyName) : ''}
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName) : ''}
           </div>
-
-          ${!isOffline ? `
-            <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
-              ${renderNodeIconContent(accountType, category)}
+          ${!peer.isOffline ? `
+            <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; ${isBiz ? neonStyle.shadowStyle : UPGRADED_PERSONAL_ICON_SHADOW}; border-radius: 50%;">
+              ${renderNodeIconContent(peer.accountType, peer.category)}
             </div>
           ` : ''}
         </div>
@@ -2748,39 +2365,11 @@
         if (activeTopicState.createdAt) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
-            activeTopicState.text = null; 
-            activeTopicState.createdAt = null;
+            activeTopicState.text = null; activeTopicState.createdAt = null;
             renderUserTopBubbleContent();
             savePersistentData();
-          } else {
-            const badge = document.getElementById('topicExpiryBadge');
-            if (badge) badge.innerText = `Visible for ${Math.floor(remainingMs / 60000)}m`;
           }
         }
-
-        Object.keys(globalActiveDirectory).forEach(peerId => {
-          const peer = globalActiveDirectory[peerId];
-          if (peer.createdAt) {
-            const rem = ONE_HOUR_MS - (Date.now() - peer.createdAt);
-            if (rem <= 0) {
-              peer.question = null;
-              peer.createdAt = null;
-              if (peer.isOffline) {
-                let peerKey = 'node-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
-                let nodeElem = document.getElementById(peerKey);
-                if (nodeElem) nodeElem.remove();
-                delete globalActiveDirectory[peerId];
-              } else {
-                updatePeerNodeOnMap(
-                  peer.rawSender, peer.distance, peer.distance + 'm', peer.lat, peer.lng, 
-                  null, null, peer.peerId, peer.bubbleColor, 
-                  peer.accountType, peer.category, peer.hours, peer.interestFilter, peer.isBot, peer.hideMyName, false
-                );
-              }
-            }
-          }
-        });
-
         renderGlobalUsersDirectory();
         if (currentLayoutMode === 'right') renderRightSidebarBubbles();
       }, 1000);
@@ -2796,11 +2385,7 @@
 
     function saveProfile() {
       const newAlias = document.getElementById('avatarNameInput').value.trim();
-      if (!newAlias) {
-        showToast('Please enter a valid username', 'alert-circle');
-        return;
-      }
-
+      if (!newAlias) { showToast('Please enter a valid username', 'alert-circle'); return; }
       userState.alias = newAlias;
       userState.category = document.getElementById('businessCategorySelect').value;
       userState.openTime = document.getElementById('businessOpenTimeInput').value;
@@ -2815,10 +2400,7 @@
       userState.hideMyName = document.getElementById('privacyMakeNamePublic').checked;
       if (userState.type === 'business') userState.address = document.getElementById('businessAddressInput').value.trim();
       userState.profileCreated = true;
-
-      if (userState.alias.toLowerCase() === 'administrator') {
-        isAdminUser = true;
-      }
+      if (userState.alias.toLowerCase() === 'administrator') isAdminUser = true;
 
       updateMyDisplayLabel();
       savePersistentData();
@@ -2826,101 +2408,58 @@
       announcePresence();
       closeProfileModal();
       checkAdminPrivileges();
-      showToast('Profile & Settings saved successfully!', 'check-circle');
+      showToast('Profile saved successfully!', 'check-circle');
     }
 
     function updateMeshUI() {
       const countElem = document.getElementById('activeUserCount');
-      if (countElem) {
-        countElem.innerText = `${Object.keys(globalActiveDirectory).length + 1} Active Peer`;
-      }
+      if (countElem) countElem.innerText = `${Object.keys(globalActiveDirectory).length + 1} Active Peer`;
     }
 
     async function quickPostFromDock() {
       const input = document.getElementById('quickPostInput');
       const text = input ? input.value.trim() : '';
       if (!text) return;
-      
       closeChatDrawer();
 
-      activeTopicState.text = text; 
-      activeTopicState.createdAt = Date.now();
-      
+      activeTopicState.text = text; activeTopicState.createdAt = Date.now();
       renderUserTopBubbleContent(true);
       document.getElementById('mainTopicText').innerText = text;
-
       participatedChatRoomIds.add('room-you');
 
       const coords = getBroadcastCoordinates();
       if (supabaseClient && currentAuthUser) {
         await supabaseClient.from('profiles').upsert({
-          id: currentAuthUser.id,
-          alias: userState.alias,
-          account_type: userState.type,
-          category: userState.category,
-          active_topic: text,
-          topic_created_at: new Date(activeTopicState.createdAt).toISOString(),
-          lat: coords.lat,
-          lng: coords.lng,
-          hide_my_name: userState.hideMyName,
-          updated_at: new Date()
+          id: currentAuthUser.id, alias: userState.alias, account_type: userState.type,
+          category: userState.category, active_topic: text, topic_created_at: new Date(activeTopicState.createdAt).toISOString(),
+          lat: coords.lat, lng: coords.lng, hide_my_name: userState.hideMyName, updated_at: new Date()
         });
       }
 
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
-      
-      broadcastData({ 
-        id: msgId, 
-        type: 'NEW_QUESTION', 
-        text, 
-        sender: userState.alias, 
-        bubbleColor: userState.bubbleColor, 
-        peerId: myPeerId, 
-        lat: coords.lat, 
-        lng: coords.lng, 
-        accountType: userState.type, 
-        category: userState.category, 
-        hours: userState.hours, 
-        interestFilter: userState.interestFilter, 
-        hideMyName: userState.hideMyName,
-        createdAt: activeTopicState.createdAt 
+      broadcastData({
+        id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias,
+        bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng,
+        accountType: userState.type, category: userState.category, hours: userState.hours,
+        interestFilter: userState.interestFilter, hideMyName: userState.hideMyName, createdAt: activeTopicState.createdAt
       });
-      
+
       input.value = '';
       showToast('New chat posted & persisted!', 'check-circle');
       playAudioEffect('bell');
       savePersistentData();
-
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
     }
 
     function autoResizeTextArea(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; }
-
-    function handleDockFocus(e) {
-      if (e) e.stopPropagation();
-      window.scrollTo(0, 0);
-      document.body.scrollTop = 0;
-    }
-
-    function handleDockBlur(e) {
-      if (e) e.stopPropagation();
-      window.scrollTo(0, 0);
-      document.body.scrollTop = 0;
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-      }, 50);
-    }
+    function handleDockFocus(e) { if (e) e.stopPropagation(); window.scrollTo(0, 0); document.body.scrollTop = 0; }
+    function handleDockBlur(e) { if (e) e.stopPropagation(); window.scrollTo(0, 0); document.body.scrollTop = 0; }
 
     async function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input ? input.value.trim() : '';
-      
-      if (!currentActiveChatRoomId) {
-        currentActiveChatRoomId = 'room-you';
-      }
-      
+      if (!currentActiveChatRoomId) currentActiveChatRoomId = 'room-you';
       if (!text) return;
 
       participatedChatRoomIds.add(currentActiveChatRoomId);
@@ -2929,53 +2468,29 @@
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const senderDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
-      
       appendMessage(senderDisplayName, text, timeStr, true);
-      input.value = ''; 
-      input.style.height = '26px';
+      input.value = ''; input.style.height = '26px';
 
       const payloadMsg = {
-        room_id: currentActiveChatRoomId,
-        sender_id: currentAuthUser ? currentAuthUser.id : null,
-        sender_alias: senderDisplayName,
-        message: text,
-        created_at: new Date().toISOString()
+        room_id: currentActiveChatRoomId, sender_id: currentAuthUser ? currentAuthUser.id : null,
+        sender_alias: senderDisplayName, message: text, created_at: new Date().toISOString()
       };
 
-      if (realtimeChannel) {
-        realtimeChannel.send({
-          type: 'broadcast',
-          event: 'chat_reply',
-          payload: payloadMsg
-        });
-      }
-
+      if (realtimeChannel) realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
       if (supabaseClient) {
         await supabaseClient.from('chat_messages').insert({
-          room_id: currentActiveChatRoomId,
-          sender_id: currentAuthUser ? currentAuthUser.id : null,
-          sender_alias: senderDisplayName,
-          message: text
+          room_id: currentActiveChatRoomId, sender_id: currentAuthUser ? currentAuthUser.id : null,
+          sender_alias: senderDisplayName, message: text
         });
       } else {
         if (!localChatCache[currentActiveChatRoomId]) localChatCache[currentActiveChatRoomId] = [];
         localChatCache[currentActiveChatRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
-      }
-
-      if (currentActiveChatRoomId === 'room-peer-sim-peer-tutorial-bot') {
-        setTimeout(() => {
-          let botReply = "Welcome to LocaL! Tap your bubble anytime to edit your post or review details.";
-          const botTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          appendMessage('LocaL Guide Bot', botReply, botTimeStr, false);
-          playAudioEffect('bell');
-        }, 800);
       }
     }
 
     function appendMessage(sender, text, time, isMe) {
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
-      
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full">
           <div class="flex items-center gap-1.5 px-1.5 mb-0.5">
@@ -2988,18 +2503,17 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
 
-    async function openChatDrawer(roomId, roomName, topic, peerId, isRestoring = false) {
+    async function openChatDrawer(roomId, roomName, topic, peerId) {
       currentActiveChatRoomId = roomId;
       savePersistentData();
-      
       document.getElementById('chatTargetName').innerText = roomName;
       
       const isSelf = roomId === 'room-you';
       const isBiz = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business');
       const accountType = isSelf ? userState.type : globalActiveDirectory[peerId]?.accountType;
       const category = isSelf ? userState.category : globalActiveDirectory[peerId]?.category;
-      
       const isOwner = isSelf || (peerId === 'you') || isAdminUser;
+      
       const deleteBtn = document.getElementById('ownerDeleteRoomBtn');
       if (deleteBtn) {
         if (isOwner) deleteBtn.classList.remove('hidden');
@@ -3007,12 +2521,9 @@
       }
 
       const neonStyle = getBusinessNeonStyle(accountType, category);
-      const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
-
       const avatarEl = document.getElementById('chatTargetAvatar');
       avatarEl.className = `w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
-      avatarEl.style.background = circleBg;
-      if (isBiz) avatarEl.style.cssText += neonStyle.shadowStyle;
+      avatarEl.style.background = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
       avatarEl.innerHTML = renderNodeIconContent(accountType, category);
 
       if ((topic || (isSelf && activeTopicState.text)) && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt < ONE_HOUR_MS)) {
@@ -3022,12 +2533,9 @@
         document.getElementById('mainTopicContainer').classList.add('hidden');
       }
 
-      const actionDock = document.getElementById('actionDockContainer');
-      if (actionDock) actionDock.classList.add('hidden');
-
+      document.getElementById('actionDockContainer').classList.add('hidden');
       document.getElementById('chatDrawer').classList.remove('hidden');
       document.getElementById('chatBackdrop').classList.remove('hidden');
-
       await loadDbChatHistory(roomId);
     }
 
@@ -3037,29 +2545,17 @@
         if (supabaseClient) {
           await supabaseClient.from('chat_messages').delete().eq('room_id', currentActiveChatRoomId);
           if (currentActiveChatRoomId === 'room-you' && currentAuthUser) {
-            await supabaseClient.from('profiles').update({
-              active_topic: null,
-              topic_created_at: null
-            }).eq('id', currentAuthUser.id);
+            await supabaseClient.from('profiles').update({ active_topic: null, topic_created_at: null }).eq('id', currentAuthUser.id);
           }
         }
         delete localChatCache[currentActiveChatRoomId];
         participatedChatRoomIds.delete(currentActiveChatRoomId);
-        
         if (currentActiveChatRoomId === 'room-you') {
-          activeTopicState.text = null;
-          activeTopicState.createdAt = null;
+          activeTopicState.text = null; activeTopicState.createdAt = null;
           renderUserTopBubbleContent();
         }
-
         savePersistentData();
-        
-        broadcastData({
-          id: 'del-' + Math.random().toString(36).substring(2, 9),
-          type: 'DELETE_ROOM',
-          roomId: currentActiveChatRoomId
-        });
-
+        broadcastData({ id: 'del-' + Math.random().toString(36).substring(2, 9), type: 'DELETE_ROOM', roomId: currentActiveChatRoomId });
         closeChatDrawer();
         refreshAllNodeVisibilities();
         showToast('Chat room deleted from Supabase.', 'trash-2');
@@ -3070,19 +2566,13 @@
     function closeChatDrawer() {
       document.getElementById('chatDrawer').classList.add('hidden');
       document.getElementById('chatBackdrop').classList.add('hidden');
-      
-      const actionDock = document.getElementById('actionDockContainer');
-      if (actionDock) actionDock.classList.remove('hidden');
-
+      document.getElementById('actionDockContainer').classList.remove('hidden');
       currentActiveChatRoomId = null;
       savePersistentData();
     }
 
     function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { 
-      const modal = document.getElementById('profileModal');
-      if (modal) modal.classList.add('hidden'); 
-    }
+    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
     function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
     function recalculateNodePositions() {}
   </script>
