@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Custom Aesthetics & Dynamic Styling]</title>
+  <title>LocaL - Supabase Proximity Social Network [Refined Side List & Chat Bubbles]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -78,21 +78,20 @@
       100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
     
-    /* UPDATED: Screen Tap Shockwave Waveform Animation */
-    @keyframes screen-tap-pulse {
+    @keyframes tap-ripple-wave {
       0% {
-        transform: translate(-50%, -50%) scale(0.05);
-        opacity: 0.95;
-        box-shadow: 0 0 20px rgba(56, 189, 248, 0.8), inset 0 0 15px rgba(168, 85, 247, 0.6);
+        transform: translate(-50%, -50%) scale(0.1);
+        opacity: 0.9;
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.7), inset 0 0 10px rgba(168, 85, 247, 0.5);
       }
       50% {
-        opacity: 0.7;
-        box-shadow: 0 0 45px rgba(56, 189, 248, 0.6), inset 0 0 30px rgba(236, 72, 153, 0.5);
+        opacity: 0.6;
+        box-shadow: 0 0 35px rgba(56, 189, 248, 0.5), inset 0 0 20px rgba(236, 72, 153, 0.4);
       }
       100% {
-        transform: translate(-50%, -50%) scale(2.2);
+        transform: translate(-50%, -50%) scale(2.5);
         opacity: 0;
-        box-shadow: 0 0 70px rgba(56, 189, 248, 0), inset 0 0 40px rgba(168, 85, 247, 0);
+        box-shadow: 0 0 50px rgba(56, 189, 248, 0), inset 0 0 30px rgba(168, 85, 247, 0);
       }
     }
     
@@ -101,7 +100,7 @@
       100% { filter: hue-rotate(360deg); }
     }
 
-    .animate-screen-tap { animation: screen-tap-pulse 1.4s cubic-bezier(0.1, 0.8, 0.2, 1) forwards; will-change: transform, opacity; }
+    .animate-screen-tap { animation: tap-ripple-wave 1.2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards; will-change: transform, opacity; }
     .animate-giggle { animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; will-change: transform; }
     .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; will-change: transform; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; will-change: transform, opacity; }
@@ -152,7 +151,6 @@
 
     .hairline-ring { border-width: calc(1px / max(0.20, var(--zoom-scale, 1))) !important; }
 
-    /* UPDATED: Radar Distance Label - Pure Futuristic Typography with NO Borders, Outlines, or Background Boxes */
     .radar-distance-label {
       font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 11px !important;
@@ -277,14 +275,21 @@
     <div id="nodesContainer" class="absolute inset-0 z-50 pointer-events-auto"></div>
   </div>
 
-  <!-- TOP-LEFT PINNED CHATS CONTAINER -->
-  <div id="pinnedChatsContainer" class="fixed top-20 left-4 z-40 flex flex-col gap-2.5 max-w-xs pointer-events-auto"></div>
+  <!-- TOP-LEFT PINNED CHATS CONTAINER WITH HIDE/SHOW TOGGLE -->
+  <div id="pinnedChatsWrapper" class="fixed top-20 left-4 z-40 flex flex-col gap-2 max-w-xs pointer-events-auto">
+    <div class="flex items-center justify-between px-1">
+      <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider drop-shadow-sm">Pinned Chats</span>
+      <button onclick="playAudioEffect('click'); toggleLeftChatList()" id="leftListToggleBtn" class="liquid-glass-icon px-2 py-1 rounded-xl text-slate-800 text-[10px] font-bold flex items-center gap-1 shadow-sm hover:scale-105 transition-all">
+        <i data-lucide="eye-off" class="w-3.5 h-3.5"></i> <span id="leftListToggleText">Hide</span>
+      </button>
+    </div>
+    <div id="pinnedChatsContainer" class="flex flex-col gap-2.5 transition-all duration-300"></div>
+  </div>
 
   <!-- Right-Side Chat Bubbles Sidebar -->
   <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-36 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
-        <!-- SVG Chat Bubble Icon -->
         <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
           <div class="bubble-glare"></div>
           <svg class="w-3.5 h-3.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
@@ -772,6 +777,7 @@
     let currentAuthTab = 'signin';
     let isAdminUser = false;
     let unlimitedRadarActive = false;
+    let leftChatListHidden = false; // State for hide/show left chat list
     
     let supabaseConfig = { 
       url: 'https://tqwrlcgrhhfxkpwrzoza.supabase.co', 
@@ -831,7 +837,6 @@
 
     const SOLID_FLAT_BUSINESS_BG = '#1e1b2e';
 
-    /* UPDATED: Dynamic Business Category Text Colors matching type */
     function getBusinessCategoryTextColorClass(category) {
       switch (category) {
         case 'utensils': return 'text-amber-400 font-extrabold';
@@ -1003,15 +1008,14 @@
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
-    /* UPDATED: Chat Bubble Cards with SVG Vector Graphic Icon */
-    function renderUserBubbleCardHtml(question, businessName, onClickJs, isGiggle, isMainUser = false, isAdmin = false) {
+    function renderUserBubbleCardHtml(question, senderName, onClickJs, routerIsAdmin = false, isGiggle = false, isMainUser = false, isAdmin = false) {
       if (!question) return '';
       if (isAdmin) {
         return `
           <div class="admin-rainbow-border-wrap cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-4 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1">
               <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-1">
-                <span class="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider">${businessName}</span>
+                <span class="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider">${senderName}</span>
               </div>
               <div class="flex items-center justify-center gap-1.5 py-0.5">
                 <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
@@ -1029,6 +1033,9 @@
       const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
       return `
         <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${isGiggle ? 'animate-giggle' : 'animate-float'}" onclick="${onClickJs}">
+          <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5">
+            <span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span>
+          </div>
           <div class="flex items-center justify-center gap-1.5 py-0.5">
             <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
               <div class="bubble-glare"></div>
@@ -1042,7 +1049,6 @@
       `;
     }
 
-    /* UPDATED: Business Bubble Cards with Dynamic Color Matching Category Type */
     function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false) {
       const displayName = getDisplayName(businessName, hideMyName, accountType);
       const nameColorClass = getBusinessCategoryTextColorClass(category);
@@ -1072,6 +1078,9 @@
         const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
         return `
           <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 animate-float z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
+            <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5">
+              <span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${displayName}</span>
+            </div>
             <div class="flex items-center gap-1.5 py-0.5">
               <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                 <div class="bubble-glare"></div>
@@ -1585,6 +1594,34 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
+    /* Left Chat List Toggle Function & Auto-hide Integration */
+    function toggleLeftChatList() {
+      leftChatListHidden = !leftChatListHidden;
+      applyLeftChatListVisibility();
+    }
+
+    function applyLeftChatListVisibility() {
+      const container = document.getElementById('pinnedChatsContainer');
+      const toggleText = document.getElementById('leftListToggleText');
+      const toggleBtn = document.getElementById('leftListToggleBtn');
+      if (!container) return;
+
+      if (leftChatListHidden) {
+        container.classList.add('hidden');
+        if (toggleText) toggleText.innerText = 'Show';
+        if (toggleBtn) {
+          toggleBtn.innerHTML = `<i data-lucide="eye" class="w-3.5 h-3.5"></i> <span id="leftListToggleText">Show</span>`;
+        }
+      } else {
+        container.classList.remove('hidden');
+        if (toggleText) toggleText.innerText = 'Hide';
+        if (toggleBtn) {
+          toggleBtn.innerHTML = `<i data-lucide="eye-off" class="w-3.5 h-3.5"></i> <span id="leftListToggleText">Hide</span>`;
+        }
+      }
+      lucide.createIcons();
+    }
+
     function setLayoutMode(mode) {
       currentLayoutMode = mode;
       document.getElementById('layoutModeSelect').value = mode;
@@ -1592,6 +1629,9 @@
       if (mode === 'right') {
         sidebar.classList.remove('hidden');
         renderRightSidebarBubbles();
+        // REQUIREMENT: Hide the left list when showing the right list
+        leftChatListHidden = true;
+        applyLeftChatListVisibility();
         showToast('Switched to Right-Side Bubbles List', 'list');
       } else {
         sidebar.classList.add('hidden');
@@ -1611,9 +1651,14 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsContainer')) return;
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper')) return;
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
         isDraggingMap = true;
+        // REQUIREMENT: Hide the left list when user interacts with the map
+        if (!leftChatListHidden) {
+          leftChatListHidden = true;
+          applyLeftChatListVisibility();
+        }
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         startDragX = clientX - targetPanX;
@@ -1650,6 +1695,11 @@
       mapCanvas.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
           isDraggingMap = false;
+          // REQUIREMENT: Hide left list on map touch/pinch interaction
+          if (!leftChatListHidden) {
+            leftChatListHidden = true;
+            applyLeftChatListVisibility();
+          }
           initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
           if (initialPinchDistance < 1) initialPinchDistance = 1;
           initialPinchScale = targetZoomScale;
@@ -1673,8 +1723,13 @@
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
       mapCanvas.addEventListener('wheel', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal, #pinnedChatsContainer')) return;
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal, #pinnedChatsWrapper')) return;
         e.preventDefault();
+        // REQUIREMENT: Hide left list on wheel zoom
+        if (!leftChatListHidden) {
+          leftChatListHidden = true;
+          applyLeftChatListVisibility();
+        }
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
         targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
       }, { passive: false });
@@ -1765,6 +1820,11 @@
       const handleStart = (e) => {
         if (unlimitedRadarActive) return;
         isDraggingRadius = true;
+        // REQUIREMENT: Hide left list when interacting with radar boundary
+        if (!leftChatListHidden) {
+          leftChatListHidden = true;
+          applyLeftChatListVisibility();
+        }
         e.stopPropagation(); e.preventDefault();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1923,7 +1983,6 @@
       refreshAllNodeVisibilities();
     }
 
-    /* UPDATED: Screen Tap Pulse Waveform Effect Trigger */
     function createScreenTapPulseAt(clientX, clientY) {
       playAudioEffect('click');
       triggerHapticFeedback(35);
@@ -1934,16 +1993,21 @@
       wave.className = 'absolute rounded-full border-2 border-sky-400/90 pointer-events-none animate-screen-tap backdrop-blur-xs';
       wave.style.left = `${clientX}px`;
       wave.style.top = `${clientY}px`;
-      wave.style.width = '160px';
-      wave.style.height = '160px';
+      wave.style.width = '140px';
+      wave.style.height = '140px';
 
       container.appendChild(wave);
-      setTimeout(() => wave.remove(), 1400);
+      setTimeout(() => wave.remove(), 1200);
     }
 
     function initTapRippleHandler() {
       window.addEventListener('click', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsContainer')) return;
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper')) return;
+        // REQUIREMENT: Hide left list when tapping on the map
+        if (!leftChatListHidden) {
+          leftChatListHidden = true;
+          applyLeftChatListVisibility();
+        }
         createScreenTapPulseAt(e.clientX, e.clientY);
       });
     }
@@ -1970,7 +2034,7 @@
         topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName, !isUserAdmin, isUserAdmin);
       } else {
         topBubble.className = "relative z-[99999999]";
-        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isGiggle, !isUserAdmin, isUserAdmin);
+        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isUserAdmin, isGiggle, !isUserAdmin, isUserAdmin);
       }
       topBubble.classList.remove('hidden');
       lucide.createIcons();
@@ -2040,7 +2104,6 @@
       showToast(`Radar color theme updated to ${colorName}!`, 'palette');
     }
 
-    /* UPDATED: Radar HTML Structure with Clean Typography Text Labels (NO Borders/Outlines/Background Boxes) */
     function getRadarStyleHtml(styleType) {
       const palette = RADAR_PALETTES[userState.radarColor || 'cyan'];
       const initialMiles = unlimitedRadarActive ? 'Unlimited' : (userState.radius / METERS_PER_MILE).toFixed(1);
@@ -2491,7 +2554,6 @@
       lucide.createIcons();
     }
 
-    /* UPDATED: Pinned Side List Cards with Colored Business Names */
     function renderPinnedChats() {
       const container = document.getElementById('pinnedChatsContainer');
       if (!container) return;
@@ -2499,7 +2561,7 @@
       let adminList = [];
       let mainUserList = [];
       let friendList = [];
-      let otherList = [];
+      let participantList = [];
       
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt;
       const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
@@ -2528,6 +2590,12 @@
         if (peer && peer.createdAt) {
           const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
           const isFriend = friendPeerIds.has(peerId);
+          const isBiz = peer.accountType === 'business';
+          const isBot = peer.isBot;
+
+          if (!peerIsAdmin && !isFriend && isBiz) return;
+          if (!peerIsAdmin && !isFriend && isBot && !participatedChatRoomIds.has(roomId)) return;
+
           const item = {
             roomId,
             name: getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType),
@@ -2540,13 +2608,14 @@
             isMainUser: false,
             isFriend
           };
+
           if (peerIsAdmin) adminList.push(item);
           else if (isFriend) friendList.push(item);
-          else otherList.push(item);
+          else participantList.push(item);
         }
       });
 
-      const pinnedList = [...adminList, ...mainUserList, ...friendList, ...otherList];
+      const pinnedList = [...adminList, ...mainUserList, ...friendList, ...participantList];
 
       if (pinnedList.length === 0) {
         container.innerHTML = '';
@@ -2720,7 +2789,7 @@
               ${renderNodeIconContent(b.accountType, b.category)}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, false, b.isMainUser, b.isAdmin)}</div>
+              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, b.isAdmin, false, b.isMainUser, b.isAdmin)}</div>
             </div>
           </div>
         `;
@@ -2801,7 +2870,7 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', peer.rawSender, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin) : ''}
+            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin) : ''}
           </div>
           ${!peer.isOffline ? `
             <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
