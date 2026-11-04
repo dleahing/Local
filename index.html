@@ -2244,71 +2244,23 @@
 
       try {
         if (window.supabase) {
-          supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
+          supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key, {
+            realtime: {
+              // Disable WebSockets to prevent Canvas SecurityError restrictions
+              transport: null
+            }
+          });
           initAuthListener();
-          subscribeToDbChatMessages();
-
-          try {
-            realtimeChannel = supabaseClient.channel(MESH_ROOM_KEY, {
-              config: { broadcast: { self: false }, presence: { key: myPeerId } }
-            });
-
-            realtimeChannel
-              .on('presence', { event: 'sync' }, () => { handleSupabasePresenceSync(realtimeChannel.presenceState()); })
-              .on('broadcast', { event: 'local_mesh_broadcast' }, (data) => { if (data && data.payload) handleIncomingNetworkPayload(data.payload); })
-              .on('broadcast', { event: 'chat_reply' }, (data) => {
-                if (data && data.payload) {
-                  const payload = data.payload;
-                  const timeStr = new Date(payload.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  const isMe = currentAuthUser ? (payload.sender_id === currentAuthUser.id) : (payload.sender_alias === userState.alias);
-                  
-                  // Cache message locally for room
-                  if (!localChatCache[payload.room_id]) localChatCache[payload.room_id] = [];
-                  localChatCache[payload.room_id].push({
-                    sender: payload.sender_alias,
-                    text: payload.message,
-                    time: timeStr,
-                    isMe: isMe
-                  });
-
-                  participatedChatRoomIds.add(payload.room_id);
-
-                  if (currentActiveChatRoomId === payload.room_id) {
-                    appendMessage(payload.sender_alias, payload.message, timeStr, isMe);
-                  } else if (!isMe) {
-                    unreadRoomIds.add(payload.room_id);
-                    playAudioEffect('bell');
-                    showToast(`New reply from @${payload.sender_alias}`, 'message-square');
-                  }
-                  savePersistentData();
-                  refreshAllNodeVisibilities();
-                }
-              })
-              .subscribe(async (status, err) => {
-                if (status === 'SUBSCRIBED') {
-                  updatePeerServerStatus(true, "Connected to Supabase Realtime");
-                  try {
-                    await realtimeChannel.track({
-                      peerId: myPeerId,
-                      sender: userState.alias,
-                      accountType: userState.type,
-                      isBot: false,
-                      lat: userState.lat,
-                      lng: userState.lng,
-                      online_at: new Date().toISOString()
-                    });
-                  } catch(e) {}
-                  announcePresence();
-                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-                  updatePeerServerStatus(false, "Mesh Fallback (Local & DB)");
-                } else {
-                  updatePeerServerStatus(false, "Status: " + status);
-                }
-              });
-          } catch (wsError) {
-            console.warn("Realtime WebSocket connection restricted by environment. Using local mesh & database fallback.");
-            updatePeerServerStatus(false, "Mesh Fallback (Local & DB)");
-          }
+          
+          // Poll DB every 3 seconds for messages & active topics instead of WebSocket subscriptions
+          setInterval(() => {
+            if (currentActiveChatRoomId) {
+              loadDbChatHistory(currentActiveChatRoomId);
+            }
+            fetchProfilesAndTopicsFromSupabase();
+          }, 3000);
+          
+          updatePeerServerStatus(true, "Connected via Supabase REST & Local Mesh");
         }
       } catch(e) {
         updatePeerServerStatus(false, "Mesh Fallback (Local & DB)");
@@ -2317,50 +2269,7 @@
     }
 
     function subscribeToDbChatMessages() {
-      if (!supabaseClient) return;
-      if (dbMessagesChannel) {
-        try { dbMessagesChannel.unsubscribe(); } catch(e) {}
-      }
-
-      try {
-        dbMessagesChannel = supabaseClient
-          .channel('public:chat_messages')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
-            const newMsg = payload.new;
-            if (newMsg) {
-              const timeStr = new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
-
-              // Cache message locally for room
-              if (!localChatCache[newMsg.room_id]) localChatCache[newMsg.room_id] = [];
-              localChatCache[newMsg.room_id].push({
-                sender: newMsg.sender_alias,
-                text: newMsg.message,
-                time: timeStr,
-                isMe: isMe
-              });
-
-              participatedChatRoomIds.add(newMsg.room_id);
-
-              if (currentActiveChatRoomId === newMsg.room_id) {
-                appendMessage(newMsg.sender_alias, newMsg.message, timeStr, isMe);
-              } else if (!isMe) {
-                unreadRoomIds.add(newMsg.room_id);
-                playAudioEffect('bell');
-                showToast(`New reply from @${newMsg.sender_alias}`, 'message-square');
-              }
-              savePersistentData();
-              refreshAllNodeVisibilities();
-            }
-          })
-          .subscribe((status) => {
-            if (status !== 'SUBSCRIBED') {
-              console.warn("Postgres changes realtime channel fallback mode active.");
-            }
-          });
-      } catch(e) {
-        console.warn("WebSocket subscription bypassed for local preview.");
-      }
+      // Bypassed WebSocket subscription in Canvas environment
     }
 
     async function fetchProfilesAndTopicsFromSupabase() {
