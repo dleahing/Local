@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Refined Side List & Chat Bubbles]</title>
+  <title>LocaL - Supabase Proximity Social Network [Unique Alias Auth]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -77,8 +77,6 @@
       80% { transform: scale(1.04) rotate(-3deg); }
       100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
-
-    /* Continuous Unread Reply Jiggle Animation */
     @keyframes jiggle-continuous {
       0% { transform: translate3d(0, 0, 0) rotate(0deg); }
       20% { transform: translate3d(-1.5px, 1px, 0) rotate(-2.5deg) scale(1.02); }
@@ -87,7 +85,6 @@
       80% { transform: translate3d(1px, 1px, 0) rotate(1.5deg) scale(1.01); }
       100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
     }
-    
     @keyframes tap-ripple-wave {
       0% {
         transform: translate(-50%, -50%) scale(0.1);
@@ -104,7 +101,6 @@
         box-shadow: 0 0 50px rgba(56, 189, 248, 0), inset 0 0 30px rgba(168, 85, 247, 0);
       }
     }
-    
     @keyframes rainbow-rotate {
       0% { filter: hue-rotate(0deg); }
       100% { filter: hue-rotate(360deg); }
@@ -120,7 +116,6 @@
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; will-change: transform; }
     .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; will-change: transform, opacity; }
 
-    /* Admin Rainbow Wrapper */
     .admin-rainbow-border-wrap {
       position: relative;
       border-radius: 18px;
@@ -370,8 +365,8 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[7px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="804.67" max="48280.3" step="500" value="804.67" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
-        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.5 Mi</span>
+        <input type="range" id="radarRangeSlider" min="402.33" max="24140.15" step="250" value="402.33" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
+        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.25 Mi</span>
       </div>
     </div>
   </div>
@@ -384,7 +379,7 @@
           <i data-lucide="shield-check" class="w-6 h-6 text-amber-400"></i>
           <div>
             <h3 class="text-lg font-extrabold text-white tracking-tight">Administrator Control Center</h3>
-            <p class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider">Manage Bots & Network Users Separately</p>
+            <p class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider">Manage Bots & Unique Alias Network Users</p>
           </div>
         </div>
         <button onclick="playAudioEffect('click'); closeAdminModal()" class="text-slate-400 hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -393,7 +388,7 @@
       <div class="space-y-5">
         <div class="flex rounded-2xl bg-slate-900 p-1 border border-slate-800">
           <button type="button" onclick="setAdminTab('bots')" id="adminTabBotsBtn" class="flex-1 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md">Active Bots Editor</button>
-          <button type="button" onclick="setAdminTab('users')" id="adminTabUsersBtn" class="flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all">Network Users Editor</button>
+          <button type="button" onclick="setAdminTab('users')" id="adminTabUsersBtn" class="flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all">Network Users Directory</button>
         </div>
 
         <div id="adminTabBotsContent" class="space-y-4">
@@ -460,9 +455,9 @@
         <div id="adminTabUsersContent" class="hidden space-y-4">
           <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
             <h4 class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-              <i data-lucide="users" class="w-4 h-4"></i> Connected Network Users Directory
+              <i data-lucide="users" class="w-4 h-4"></i> Connected Network Users & Unique Aliases
             </h4>
-            <p class="text-[11px] text-slate-400">View and manage all real users connected to your local proximity mesh.</p>
+            <p class="text-[11px] text-slate-400">View and manage all authenticated users tied to unique aliases in your proximity mesh.</p>
             <div id="adminUsersEditorList" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
           </div>
         </div>
@@ -471,13 +466,13 @@
     </div>
   </div>
 
-  <!-- LOGIN / SIGN-UP MODAL (Supabase Auth & Unique Alias) -->
+  <!-- LOGIN / SIGN-UP MODAL (SUPABASE AUTH WITH UNIQUE ALIAS) -->
   <div id="welcomeProfileModal" class="hidden fixed inset-0 z-[99999999] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4 pointer-events-auto">
     <div class="dark-biz-bubble w-full max-w-sm rounded-[32px] p-6 border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] max-h-[90vh] overflow-y-auto pointer-events-auto relative z-[99999999]">
       <div class="text-center mb-5">
         <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white font-bold text-2xl mx-auto mb-2 shadow-[0_0_20px_rgba(52,211,153,0.5)]">L</div>
         <h3 class="text-xl font-extrabold text-white tracking-tight" id="welcomeModalTitle">Welcome to LocaL</h3>
-        <p class="text-xs text-slate-400 mt-1" id="welcomeModalSubtitle">Sign in or create your account below. (Hint: Administrator / 4464)</p>
+        <p class="text-xs text-slate-400 mt-1" id="welcomeModalSubtitle">Sign in or create your Supabase account with a unique alias.</p>
       </div>
       
       <div class="space-y-4">
@@ -487,13 +482,14 @@
         </div>
 
         <div id="signupUsernameContainer" class="hidden">
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Unique User Alias / Display Name</label>
-          <input type="text" id="welcomeUsernameInput" placeholder="e.g. Shane" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Unique Alias (Handle)</label>
+          <input type="text" id="welcomeUsernameInput" placeholder="e.g. OceanExplorer" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none">
+          <p class="text-[10px] text-slate-400 mt-0.5">This unique alias is tied permanently to your Supabase account.</p>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Username / Email</label>
-          <input type="text" id="welcomeEmailInput" placeholder="Administrator or your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+          <input type="email" id="welcomeEmailInput" placeholder="your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
         </div>
 
         <div>
@@ -541,7 +537,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Your Node ID</label>
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Your Account Unique ID & Alias</label>
           <div class="flex items-center gap-2">
             <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-medium focus:outline-none shadow-inner" value="Initializing Node ID...">
             <button onclick="playAudioEffect('click'); copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-emerald-600 text-white font-semibold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
@@ -586,8 +582,9 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1">Unique User Alias / Display Name</label>
-          <input type="text" id="avatarNameInput" placeholder="Enter your username..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none shadow-inner">
+          <label class="block text-xs font-semibold text-slate-800 mb-1">Unique Account Alias (Handle)</label>
+          <input type="text" id="avatarNameInput" placeholder="Your unique alias..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none shadow-inner">
+          <p class="text-[10px] text-slate-500 mt-1">Your alias is tied securely to your Supabase profile and must be unique across the mesh.</p>
         </div>
 
         <!-- Friends List Section under Profile -->
@@ -595,7 +592,7 @@
           <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
             <i data-lucide="users" class="w-4 h-4 text-sky-600"></i> Friends List (<span id="profileFriendsCount">0</span>)
           </label>
-          <p class="text-[10px] text-slate-500 font-light">Friends' chat bubbles always pin to the top of your side lists (right after Admin & Main User).</p>
+          <p class="text-[10px] text-slate-500 font-light">Friends' chat bubbles always pin to the top of your side lists.</p>
           <div id="profileFriendsListContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1">
             <div class="p-2.5 rounded-xl bg-white/50 border border-slate-200 text-center text-xs text-slate-500">No friends added yet. Connect with peers to add them as friends!</div>
           </div>
@@ -692,7 +689,7 @@
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
-            <span>Hide My Username (Show Anonymous)</span>
+            <span>Hide My Alias (Show Anonymous)</span>
             <input type="checkbox" id="privacyMakeNamePublic" onchange="toggleNameVisibility(this.checked)" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
           <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
@@ -770,19 +767,18 @@
     const MESH_ROOM_KEY = 'local-proximity-public';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
-    const DEFAULT_RADIUS_METERS = 804.67;
-    const MAX_RADIUS_METERS = 48280.3;
+    const DEFAULT_RADIUS_METERS = 402.33;
+    const MAX_RADIUS_METERS = 48280.20; // Exact 30-mile maximum boundary limit
     
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v30';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v39';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v29';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v29';
-    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v5';
-    const STORAGE_KEY_FRIENDS = 'local_friends_list_v4';
-    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v1';
-    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v1';
-    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v1';
-    const STORAGE_KEY_SUPABASE_CONFIG = 'local_supabase_config_v1';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v35';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v35';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v35';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v35';
+    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v35';
+    const STORAGE_KEY_FRIENDS = 'local_friends_list_v35';
+    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v35';
+    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v35';
+    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v35';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -838,8 +834,10 @@
       locationPrecision: 'show',
       ghostMode: false,
       hideMyName: false,
-      profileCreated: true
+      profileCreated: false
     };
+
+    let activeBubbleBySender = {};
 
     const RADAR_PALETTES = {
       cyan: { line: 'rgba(56, 189, 248, 0.35)', sweep: 'rgba(56, 189, 248, 0.50)', bg: 'rgba(56, 189, 248, 0.07)' },
@@ -917,7 +915,8 @@
                 hideMyName: false,
                 question: cachedData.question,
                 createdAt: cachedData.createdAt,
-                isBot: true
+                isBot: true,
+                isOffline: true
               };
             }
             participatedChatRoomIds.add('room-peer-' + id.replace(/[^a-zA-Z0-9]/g, '-'));
@@ -1022,7 +1021,6 @@
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
-    /* RENDER CARDS WITH MAIN USER NAME REMOVAL & CONTINUOUS UNREAD JIGGLE */
     function renderUserBubbleCardHtml(question, senderName, onClickJs, routerIsAdmin = false, isGiggle = false, isMainUser = false, isAdmin = false, hasUnread = false) {
       if (!question) return '';
       const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float');
@@ -1194,13 +1192,14 @@
           currentAuthUser = session.user;
           myPeerId = session.user.id;
           await fetchUserProfile(session.user.id);
-        } else {
-          // If no active session, show login/signup modal
-          openWelcomeModalForLogin();
         }
       }
 
-      initializeAppSession();
+      if (!userState.profileCreated) {
+        openWelcomeModalForLogin(false);
+      } else {
+        initializeAppSession();
+      }
       checkAdminPrivileges();
     });
 
@@ -1217,7 +1216,7 @@
         btnSignUp.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
         usernameContainer.classList.add('hidden');
         submitBtn.innerText = 'Sign In';
-        subtitleElem.innerText = 'Sign in with your username/email and password.';
+        subtitleElem.innerText = 'Sign in with your email and password.';
       } else {
         btnSignUp.className = 'flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md';
         btnSignIn.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
@@ -1229,7 +1228,7 @@
 
     function openWelcomeModalForLogin(isReturningLogin = false) {
       document.getElementById('welcomeProfileModal').classList.remove('hidden');
-      setAuthTab('signin');
+      setAuthTab(isReturningLogin ? 'signin' : 'signup');
     }
 
     async function submitAuthForm() {
@@ -1237,7 +1236,6 @@
       const password = document.getElementById('welcomePasswordInput').value.trim();
       const usernameInput = document.getElementById('welcomeUsernameInput').value.trim();
 
-      // Quick admin backdoor
       if ((emailInput.toLowerCase() === 'administrator' || emailInput === 'admin') && password === '4464') {
         isAdminUser = true;
         userState.alias = 'Administrator';
@@ -1251,62 +1249,81 @@
       }
 
       if (!emailInput || !password) {
-        showToast('Please enter username/email and password', 'alert-circle');
+        showToast('Please enter email and password', 'alert-circle');
         return;
       }
 
       if (currentAuthTab === 'signup' && !usernameInput) {
-        showToast('Please provide a unique alias for your account', 'alert-circle');
+        showToast('Please create a unique alias for your account', 'alert-circle');
         return;
       }
 
       try {
         if (window.supabase) {
           supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
-          let authResult;
-          const authEmail = emailInput.includes('@') ? emailInput : `${emailInput.toLowerCase().replace(/[^a-z0-9]/g, '')}@local.net`;
-
+          
           if (currentAuthTab === 'signup') {
-            authResult = await supabaseClient.auth.signUp({
-              email: authEmail,
+            const { data: existingProfiles, error: checkErr } = await supabaseClient
+              .from('profiles')
+              .select('id')
+              .eq('alias', usernameInput);
+            
+            if (existingProfiles && existingProfiles.length > 0) {
+              showToast('That unique alias is already taken. Please choose another.', 'alert-circle');
+              return;
+            }
+
+            const authResult = await supabaseClient.auth.signUp({
+              email: emailInput,
               password,
               options: { data: { alias: usernameInput } }
             });
+
             if (authResult.error) {
               showToast(authResult.error.message, 'alert-circle');
               return;
             }
+
             if (authResult.data?.user || authResult.data?.session?.user) {
               currentAuthUser = authResult.data.user || authResult.data.session.user;
               myPeerId = currentAuthUser.id;
               userState.alias = usernameInput;
-              await saveUserProfileToSupabase();
-            }
-          } else {
-            authResult = await supabaseClient.auth.signInWithPassword({
-              email: authEmail,
-              password
-            });
-            if (authResult.error) {
-              // Fallback try signing in directly with raw string if email lookup fails
-              authResult = await supabaseClient.auth.signInWithPassword({
-                email: emailInput,
-                password
+              
+              await supabaseClient.from('profiles').upsert({
+                id: currentAuthUser.id,
+                alias: usernameInput,
+                account_type: userState.type,
+                category: userState.category,
+                interest_filter: userState.interestFilter,
+                hide_my_name: userState.hideMyName,
+                updated_at: new Date()
               });
             }
+          } else {
+            const authResult = await supabaseClient.auth.signInWithPassword({
+              email: emailInput,
+              password
+            });
+
             if (authResult.error) {
               showToast(authResult.error.message, 'alert-circle');
               return;
             }
+
             if (authResult.data?.user || authResult.data?.session?.user) {
               currentAuthUser = authResult.data.user || authResult.data.session.user;
               myPeerId = currentAuthUser.id;
-              await fetchUserProfile(currentAuthUser.id);
+              const { data: profileData } = await supabaseClient.from('profiles').select('*').eq('id', currentAuthUser.id).single();
+              if (profileData && profileData.alias) {
+                userState.alias = profileData.alias;
+              } else {
+                userState.alias = emailInput.split('@')[0];
+              }
             }
           }
         }
       } catch(e) {
-        showToast('Authentication error occurred', 'alert-circle');
+        showToast('Authentication error: ' + (e.message || e), 'alert-circle');
         return;
       }
 
@@ -1317,7 +1334,7 @@
       document.getElementById('welcomeProfileModal').classList.add('hidden');
       initializeAppSession();
       checkAdminPrivileges();
-      showToast('Successfully logged in & connected!', 'check-circle');
+      showToast(`Welcome, @${userState.alias}! Connected to mesh.`, 'check-circle');
     }
 
     function checkAdminPrivileges() {
@@ -1365,7 +1382,7 @@
         showToast('Radar limits removed! All active users visible.', 'shield-alert');
       } else {
         userState.radius = DEFAULT_RADIUS_METERS;
-        showToast('Radar limits re-applied (0.5 Mi).', 'radar');
+        showToast('Radar limits re-applied (0.25 Mi).', 'radar');
       }
       refreshAllNodeVisibilities();
     }
@@ -1390,7 +1407,7 @@
         peerId: botId, rawSender: name, lat, lng, distance: distMeters,
         bubbleColor: 'purple', accountType, category: 'store',
         hours: 'Open 9:00 AM • Closes 9:00 PM', interestFilter: interest,
-        hideMyName: false, lastSeen: Date.now(), question, createdAt: Date.now(), isBot: true
+        hideMyName: false, lastSeen: Date.now(), question, createdAt: Date.now(), isBot: true, isOffline: false
       };
 
       globalActiveDirectory[botId] = newBot;
@@ -1442,10 +1459,10 @@
       let html = `
         <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
           <div>
-            <span class="text-xs font-bold text-white">${userState.alias} (You)</span>
+            <span class="text-xs font-bold text-white">@${userState.alias} (You)</span>
             <span class="text-[10px] text-emerald-400 block font-mono">ID: ${myPeerId}</span>
           </div>
-          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">Active Session</span>
+          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">Authenticated</span>
         </div>
       `;
 
@@ -1459,7 +1476,7 @@
         html += `
           <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between mt-2">
             <div>
-              <span class="text-xs font-bold text-white">${peer.rawSender} (${peer.accountType})</span>
+              <span class="text-xs font-bold text-white">@${peer.rawSender} (${peer.accountType})</span>
               <span class="text-[10px] text-sky-400 block font-mono">Distance: ${peer.distance}m</span>
             </div>
             <button onclick="kickNetworkUser('${id}')" class="px-2.5 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Disconnect</button>
@@ -1488,6 +1505,7 @@
         globalActiveDirectory[id].rawSender = newName;
         globalActiveDirectory[id].question = newQ;
         globalActiveDirectory[id].createdAt = Date.now();
+        globalActiveDirectory[id].isOffline = false;
         
         const customIdx = customBotDefinitions.findIndex(b => b.peerId === id);
         if (customIdx !== -1) {
@@ -1536,7 +1554,12 @@
       checkAdminPrivileges();
       
       const slider = document.getElementById('radarRangeSlider');
-      if (slider) { slider.min = DEFAULT_RADIUS_METERS; slider.max = MAX_RADIUS_METERS; slider.value = DEFAULT_RADIUS_METERS; }
+      if (slider) { 
+        slider.min = DEFAULT_RADIUS_METERS; 
+        slider.max = MAX_RADIUS_METERS; 
+        slider.step = "250";
+        slider.value = DEFAULT_RADIUS_METERS; 
+      }
 
       updateRadius(userState.radius);
 
@@ -1601,7 +1624,6 @@
       try {
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_TOPIC_STATE, JSON.stringify(activeTopicState));
-        localStorage.setItem(STORAGE_KEY_SUPABASE_CONFIG, JSON.stringify(supabaseConfig));
         localStorage.setItem(STORAGE_KEY_PARTICIPATED_ROOMS, JSON.stringify(Array.from(participatedChatRoomIds)));
         localStorage.setItem(STORAGE_KEY_FRIENDS, JSON.stringify(Array.from(friendPeerIds)));
         localStorage.setItem(STORAGE_KEY_CUSTOM_BOTS, JSON.stringify(customBotDefinitions));
@@ -1636,7 +1658,6 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    /* Left Chat List Toggle Function & Auto-hide Integration */
     function toggleLeftChatList() {
       leftChatListHidden = !leftChatListHidden;
       applyLeftChatListVisibility();
@@ -1773,7 +1794,6 @@
       }, { passive: false });
     }
 
-    /* DOUBLE TAP HANDLER - TOGGLES SHOW/HIDE BUTTON */
     let lastTapTime = 0;
     function initDoubleTapHandler() {
       const mapCanvas = document.getElementById('mapCanvas');
@@ -1825,7 +1845,7 @@
     const MAP_PIXELS_PER_MILE = 187.5;
 
     function updateRadius(val) {
-      const meters = unlimitedRadarActive ? 999999 : Math.max(804.67, Math.max(804.67, Math.min(MAX_RADIUS_METERS, Number(val))));
+      const meters = unlimitedRadarActive ? 999999 : Math.max(402.33, Math.min(MAX_RADIUS_METERS, Number(val)));
       userState.radius = meters;
 
       const ring = document.getElementById('radarBoundaryRing');
@@ -1834,14 +1854,15 @@
       const slider = document.getElementById('radarRangeSlider');
       const sliderLabel = document.getElementById('sliderRangeLabel');
       
-      const miles = unlimitedRadarActive ? 'Unlimited' : (meters / METERS_PER_MILE).toFixed(1);
+      const currentMilesVal = (meters / METERS_PER_MILE);
+      const miles = unlimitedRadarActive ? 'Unlimited' : currentMilesVal.toFixed(2);
       const labelText = unlimitedRadarActive ? 'Unlimited' : `${miles} Mi`;
 
       if (slider) slider.value = meters;
       if (sliderLabel) sliderLabel.innerText = labelText;
 
       if (ring) {
-        const milesVal = unlimitedRadarActive ? 30 : (meters / METERS_PER_MILE);
+        const milesVal = unlimitedRadarActive ? 30 : Math.min(30, currentMilesVal);
         const pixelDiameter = Math.round(milesVal * MAP_PIXELS_PER_MILE * 2);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
@@ -1849,8 +1870,8 @@
         if (rightBadge) rightBadge.innerText = labelText;
 
         const viewportMin = Math.min(window.innerWidth, window.innerHeight);
-        const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
-        targetZoomScale = Math.max(0.20, Math.min(3.5, targetScaleFactor));
+        const targetScaleFactor = (viewportMin * 0.65) / Math.max(100, pixelDiameter);
+        targetZoomScale = Math.max(0.35, Math.min(2.5, targetScaleFactor));
       }
 
       refreshAllNodeVisibilities();
@@ -1858,7 +1879,7 @@
     }
 
     function updateRadiusFromSlider(val) {
-      if (!unlimitedRadarActive) updateRadius(val);
+      updateRadius(val);
     }
 
     function initRadiusDragHandlers() {
@@ -1890,7 +1911,7 @@
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
         const deltaPx = currentDistPx - dragStartDistancePx;
         const metersPerPx = METERS_PER_MILE / MAP_PIXELS_PER_MILE;
-        const newMeters = Math.max(804.67, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
+        const newMeters = Math.max(402.33, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
         updateRadius(newMeters);
       };
 
@@ -2028,6 +2049,10 @@
         }
       });
       refreshAllNodeVisibilities();
+    }
+
+    function recalculateNodePositions() {
+      refreshAllPeerDistancesAndPositions();
     }
 
     function createScreenTapPulseAt(clientX, clientY) {
@@ -2217,7 +2242,7 @@
     }
 
     function initSupabaseNetwork() {
-      document.getElementById('myPeerIdDisplay').value = myPeerId;
+      document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
       if (!supabaseConfig.url || !supabaseConfig.key) {
         updatePeerServerStatus(false, "Supabase Offline");
         setupLocalBroadcastFallback();
@@ -2226,115 +2251,47 @@
 
       try {
         if (window.supabase) {
-          supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
-          initAuthListener();
-          subscribeToDbChatMessages();
-
-          realtimeChannel = supabaseClient.channel(MESH_ROOM_KEY, {
-            config: { broadcast: { self: false }, presence: { key: myPeerId } }
+          supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key, {
+            realtime: { transport: null }
           });
-
-          realtimeChannel
-            .on('presence', { event: 'sync' }, () => { handleSupabasePresenceSync(realtimeChannel.presenceState()); })
-            .on('broadcast', { event: 'local_mesh_broadcast' }, (data) => { if (data && data.payload) handleIncomingNetworkPayload(data.payload); })
-            .on('broadcast', { event: 'chat_reply' }, (data) => {
-              if (data && data.payload) {
-                const payload = data.payload;
-                const timeStr = new Date(payload.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const isMe = currentAuthUser ? (payload.sender_id === currentAuthUser.id) : (payload.sender_alias === userState.alias);
-                participatedChatRoomIds.add(payload.room_id);
-
-                if (currentActiveChatRoomId === payload.room_id) {
-                  appendMessage(payload.sender_alias, payload.message, timeStr, isMe);
-                } else if (!isMe) {
-                  unreadRoomIds.add(payload.room_id);
-                  playAudioEffect('bell');
-                  showToast(`New reply from ${payload.sender_alias}`, 'message-square');
-                }
-                savePersistentData();
-                refreshAllNodeVisibilities();
-              }
-            })
-            .subscribe(async (status) => {
-              if (status === 'SUBSCRIBED') {
-                updatePeerServerStatus(true, "Connected to Supabase Realtime");
-                await realtimeChannel.track({
-                  peerId: myPeerId,
-                  sender: userState.alias,
-                  accountType: userState.type,
-                  isBot: false,
-                  lat: userState.lat,
-                  lng: userState.lng,
-                  online_at: new Date().toISOString()
-                });
-                announcePresence();
-              } else {
-                updatePeerServerStatus(false, "Status: " + status);
-              }
-            });
-        }
-      } catch(e) {}
-      setupLocalBroadcastFallback();
-    }
-
-    function subscribeToDbChatMessages() {
-      if (!supabaseClient) return;
-      if (dbMessagesChannel) dbMessagesChannel.unsubscribe();
-
-      dbMessagesChannel = supabaseClient
-        .channel('public:chat_messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
-          const newMsg = payload.new;
-          if (newMsg) {
-            const timeStr = new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
-            participatedChatRoomIds.add(newMsg.room_id);
-
-            if (currentActiveChatRoomId === newMsg.room_id) {
-              appendMessage(newMsg.sender_alias, newMsg.message, timeStr, isMe);
-            } else if (!isMe) {
-              unreadRoomIds.add(newMsg.room_id);
-              playAudioEffect('bell');
-              showToast(`New reply from ${newMsg.sender_alias}`, 'message-square');
+          initAuthListener();
+          
+          setInterval(() => {
+            if (currentActiveChatRoomId) {
+              loadDbChatHistory(currentActiveChatRoomId);
             }
-            savePersistentData();
-            refreshAllNodeVisibilities();
-          }
-        })
-        .subscribe();
-    }
-
-    async function loadDbChatHistory(roomId) {
-      const msgBox = document.getElementById('chatMessages');
-      if (!msgBox) return;
-      msgBox.innerHTML = '<div class="text-center text-xs text-slate-500 py-4">Syncing history...</div>';
-
-      if (!supabaseClient) {
-        msgBox.innerHTML = '';
-        if (localChatCache[roomId]) localChatCache[roomId].forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe));
-        return;
+            fetchProfilesAndTopicsFromSupabase();
+          }, 3000);
+          
+          updatePeerServerStatus(true, "Connected via Supabase REST & Local Mesh");
+        }
+      } catch(e) {
+        updatePeerServerStatus(false, "Mesh Fallback (Local & DB)");
       }
-
-      const { data, error } = await supabaseClient.from('chat_messages').select('*').eq('room_id', roomId).order('created_at', { ascending: true });
-      msgBox.innerHTML = '';
-      if (!error && data && data.length > 0) {
-        data.forEach(msg => {
-          const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const isMe = currentAuthUser ? (msg.sender_id === currentAuthUser.id) : (msg.sender_alias === userState.alias);
-          appendMessage(msg.sender_alias, msg.message, timeStr, isMe);
-        });
-      } else if (localChatCache[roomId]) {
-        localChatCache[roomId].forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe));
-      }
+      setupLocalBroadcastFallback();
     }
 
     async function fetchProfilesAndTopicsFromSupabase() {
       if (!supabaseClient) return;
       const { data: profiles, error } = await supabaseClient.from('profiles').select('*');
       if (!error && profiles) {
+        const activeSupabaseIds = new Set(profiles.map(p => p.id));
+
+        // Mark users who are no longer present in Supabase profiles as offline
+        Object.keys(globalActiveDirectory).forEach(peerId => {
+          if (!peerId.startsWith('custom-bot-') && !peerId.startsWith('sim-peer-')) {
+            if (!activeSupabaseIds.has(peerId)) {
+              globalActiveDirectory[peerId].isOffline = true;
+            }
+          }
+        });
+
         profiles.forEach(p => {
-          if (p.id !== currentAuthUser?.id && p.active_topic && p.topic_created_at) {
-            const createdAtTime = new Date(p.topic_created_at).getTime();
+          if (p.id !== currentAuthUser?.id) {
+            const hasValidTopic = p.active_topic && p.topic_created_at;
+            const createdAtTime = hasValidTopic ? new Date(p.topic_created_at).getTime() : null;
+            const isExpired = createdAtTime && (Date.now() - createdAtTime > ONE_HOUR_MS);
+
             globalActiveDirectory[p.id] = {
               ...(globalActiveDirectory[p.id] || {}),
               rawSender: p.alias || 'Traveler',
@@ -2346,9 +2303,10 @@
               hours: p.hours,
               interestFilter: p.interest_filter || 'none',
               hideMyName: p.hide_my_name || false,
-              question: p.active_topic,
-              createdAt: createdAtTime,
+              question: isExpired ? null : p.active_topic,
+              createdAt: isExpired ? null : createdAtTime,
               isBot: false,
+              isOffline: false,
               distance: calculateHaversineDistance(userState.lat, userState.lng, p.lat || userState.lat, p.lng || userState.lng)
             };
           }
@@ -2372,7 +2330,7 @@
       const statusBanner = document.getElementById('authStatusBanner');
       const signOutBtn = document.getElementById('signOutBtn');
       if (user) {
-        statusBanner.innerText = `Logged in as: ${user.email} (${userState.alias})`;
+        statusBanner.innerText = `Logged in: ${user.email} (@${userState.alias})`;
         statusBanner.className = 'text-[11px] text-emerald-700 font-semibold';
         if (signOutBtn) signOutBtn.classList.remove('hidden');
       } else {
@@ -2413,11 +2371,17 @@
 
         if (data.active_topic && data.topic_created_at) {
           const tTime = new Date(data.topic_created_at).getTime();
-          activeTopicState.text = data.active_topic;
-          activeTopicState.createdAt = tTime;
-          renderUserTopBubbleContent();
+          if (Date.now() - tTime <= ONE_HOUR_MS) {
+            activeTopicState.text = data.active_topic;
+            activeTopicState.createdAt = tTime;
+            renderUserTopBubbleContent();
+          } else {
+            activeTopicState.text = null;
+            activeTopicState.createdAt = null;
+          }
         }
         document.getElementById('avatarNameInput').value = userState.alias;
+        document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
         updateMyDisplayLabel();
         checkAdminPrivileges();
         savePersistentData();
@@ -2426,6 +2390,16 @@
 
     async function saveUserProfileToSupabase() {
       if (!supabaseClient || !currentAuthUser) return;
+      const { data: existing, error: err } = await supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('alias', userState.alias);
+
+      if (existing && existing.some(p => p.id !== currentAuthUser.id)) {
+        showToast('That unique alias is already taken by another user!', 'alert-circle');
+        return;
+      }
+
       await supabaseClient.from('profiles').upsert({
         id: currentAuthUser.id,
         alias: userState.alias,
@@ -2435,6 +2409,8 @@
         hide_my_name: userState.hideMyName,
         updated_at: new Date()
       });
+      document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
+      showToast('Profile and unique alias updated!', 'check-circle');
     }
 
     function reconnectSupabase() {
@@ -2445,7 +2421,7 @@
 
     function setupLocalBroadcastFallback() {
       if ('BroadcastChannel' in window && !broadcastChannel) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v31');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v35');
         broadcastChannel.onmessage = (event) => { handleIncomingNetworkPayload(event.data); };
       }
       window.addEventListener('storage', (event) => {
@@ -2453,21 +2429,6 @@
           try { handleIncomingNetworkPayload(JSON.parse(event.newValue)); } catch(e) {}
         }
       });
-    }
-
-    function handleSupabasePresenceSync(state) {
-      const activePresentPeerIds = new Set();
-      Object.keys(state).forEach(key => {
-        const presenceList = state[key];
-        if (presenceList && presenceList.length > 0) {
-          const peerData = presenceList[0];
-          if (peerData && peerData.peerId) {
-            activePresentPeerIds.add(peerData.peerId);
-            if (peerData.peerId !== myPeerId) handleIncomingNetworkPayload(peerData);
-          }
-        }
-      });
-      refreshAllPeerDistancesAndPositions();
     }
 
     function updatePeerServerStatus(connected, customStatusText) {
@@ -2483,7 +2444,18 @@
     }
 
     function handleIncomingNetworkPayload(data) {
-      if (!data || data.peerId === myPeerId || (data.id && processedMsgIds.has(data.id))) return;
+      if (!data || data.peerId === myPeerId) return;
+
+      if (data.type === 'CLEAR_PREVIOUS_BUBBLE') {
+        if (globalActiveDirectory[data.peerId]) {
+          globalActiveDirectory[data.peerId].question = null;
+          globalActiveDirectory[data.peerId].createdAt = null;
+        }
+        refreshAllPeerDistancesAndPositions();
+        return;
+      }
+
+      if (data.id && processedMsgIds.has(data.id)) return;
       if (data.id) processedMsgIds.add(data.id);
 
       const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
@@ -2491,14 +2463,23 @@
 
       const calculatedHours = (data.accountType === 'business' && data.openTime && data.closeTime) ? computeBusinessHoursStatus(data.openTime, data.closeTime) : (data.hours || 'Open 9:00 AM • Closes 9:00 PM');
 
+      const newQuestionText = data.text !== undefined ? data.text : data.question;
+      const questionCreatedAt = data.createdAt;
+
       globalActiveDirectory[data.peerId] = {
         ...globalActiveDirectory[data.peerId],
         rawSender: data.sender, peerId: data.peerId, lat: data.lat, lng: data.lng,
         distance, bubbleColor: data.bubbleColor || 'violet', accountType: data.accountType || 'personal',
         category: data.category || 'store', openTime: data.openTime || '09:00', closeTime: data.closeTime || '21:00',
         hours: calculatedHours, interestFilter: data.interestFilter || 'none', hideMyName: data.hideMyName || false,
-        lastSeen: Date.now(), question: data.text || data.question, createdAt: data.createdAt, isBot: false
+        lastSeen: Date.now(),
+        question: newQuestionText !== undefined ? newQuestionText : globalActiveDirectory[data.peerId].question,
+        createdAt: questionCreatedAt !== undefined ? questionCreatedAt : globalActiveDirectory[data.peerId].createdAt,
+        isBot: data.isBot || false,
+        isOffline: false
       };
+
+      activeBubbleBySender[data.peerId] = data.id;
 
       updateMeshUI();
       refreshAllPeerDistancesAndPositions();
@@ -2506,11 +2487,11 @@
 
     function spawnDefaultSimulatedUsers() {
       const defaultBots = [
-        { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.3, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
-        { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.4, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 0.8, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.2, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'coffee', openTime: '06:00', closeTime: '18:00', hours: 'Open 6:00 AM • Closes 6:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 1.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'JensenBeachGuide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.3, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
+        { name: 'PickleballPro', peerId: 'sim-peer-bot-05mi', targetMiles: 0.4, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'IslandGrill', peerId: 'sim-peer-restaurant-08mi', targetMiles: 0.8, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'CoastlineCafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.2, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'coffee', openTime: '06:00', closeTime: '18:00', hours: 'Open 6:00 AM • Closes 6:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'OceanRx', peerId: 'sim-peer-business-2', targetMiles: 1.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       const allBotsMap = {};
@@ -2538,7 +2519,8 @@
           bubbleColor: u.color || 'blue', accountType: u.accountType || 'personal', category: u.category || 'store',
           openTime: u.openTime || '', closeTime: u.closeTime || '', hours: computedHours || '',
           interestFilter: u.interestFilter || 'none', hideMyName: false, lastSeen: Date.now(),
-          question: u.question || 'Bot Bubble', createdAt: u.createdAt || (Date.now() - (i * 300000)), isBot: true
+          question: u.question || 'Bot Bubble', createdAt: u.createdAt || (Date.now() - (i * 300000)), isBot: true,
+          isOffline: false
         };
       });
 
@@ -2585,14 +2567,14 @@
 
       container.innerHTML = '';
       friendPeerIds.forEach(peerId => {
-        const peer = globalActiveDirectory[peerId] || { rawSender: 'Friend Peer (' + peerId.substring(0,6) + ')', accountType: 'personal' };
+        const peer = globalActiveDirectory[peerId] || { rawSender: 'Friend Peer', accountType: 'personal' };
         const displayName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
         container.innerHTML += `
           <div class="p-2.5 rounded-2xl bg-white/80 border border-slate-200 flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-2">
-              <div class="w-7 h-7 rounded-full bg-sky-500 text-white font-bold text-xs flex items-center justify-center">${displayName.charAt(0).toUpperCase()}</div>
+              <div class="w-7 h-7 rounded-full bg-sky-500 text-white font-bold text-xs flex items-center justify-center">@${displayName.charAt(0).toUpperCase()}</div>
               <div>
-                <span class="text-xs font-bold text-slate-900 block">${displayName}</span>
+                <span class="text-xs font-bold text-slate-900 block">@${displayName}</span>
                 <span class="text-[9px] text-emerald-600 font-semibold">Friend • Pinned in Side Lists</span>
               </div>
             </div>
@@ -2689,7 +2671,7 @@
                   ${renderNodeIconContent(item.accountType, item.category)}
                 </div>
                 <div class="min-w-0 flex-1">
-                  ${item.isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${isBiz ? nameColorClass : 'text-amber-400 font-bold'}">${item.name}</span></div>`}
+                  ${item.isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${isBiz ? nameColorClass : 'text-amber-400 font-bold'}">@${item.name}</span></div>`}
                   <span class="text-[9px] text-white font-medium block truncate">${item.question || 'Pinned Chat'}</span>
                 </div>
               </div>
@@ -2703,7 +2685,7 @@
                 ${renderNodeIconContent(item.accountType, item.category)}
               </div>
               <div class="min-w-0 flex-1">
-                ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">${item.name}</span></div>`}
+                ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">@${item.name}</span></div>`}
                 <span class="text-[9px] text-slate-700 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
               </div>
             </div>
@@ -2746,7 +2728,7 @@
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
-                  <h4 class="text-xs ${nameColorClass}">${displayLabel}</h4>
+                  <h4 class="text-xs ${nameColorClass}">@${displayLabel}</h4>
                   ${isFriend ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold">Friend</span>' : ''}
                 </div>
                 <p class="text-[10px] text-slate-500 font-semibold">Distance: ${distStr}</p>
@@ -2798,7 +2780,7 @@
         const isFriend = friendPeerIds.has(pId);
         const peerIsAdmin = (p.rawSender || '').toLowerCase() === 'administrator';
 
-        if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
+        if (p.enabled !== false && hasValidQuestion) {
           const matches = matchesInterestFilter(p.interestFilter);
           const inRadius = peerIsAdmin || isFriend || unlimitedRadarActive || (userState.radius === 0 || p.distance <= userState.radius);
           if ((matches && inRadius) || isParticipated || unlimitedRadarActive || peerIsAdmin || isFriend) {
@@ -2857,10 +2839,15 @@
         category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime,
         hours: userState.hours, interestFilter: userState.interestFilter, hideMyName: userState.hideMyName,
         isBot: false,
-        question: (activeTopicState.createdAt) ? activeTopicState.text : null,
-        createdAt: activeTopicState.createdAt
+        question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.text : null,
+        createdAt: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.createdAt : null
       };
-      if (realtimeChannel) realtimeChannel.track(payload);
+      
+      if (realtimeChannel && (realtimeChannel.state === 'joined' || realtimeChannel.subState === 'joined')) {
+        try {
+          realtimeChannel.track(payload);
+        } catch(e) {}
+      }
       broadcastData(payload);
     }
 
@@ -2868,7 +2855,11 @@
       if (userState.ghostMode && userState.type !== 'business') return;
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat; payload.lng = payload.lng || coords.lng;
-      if (realtimeChannel) realtimeChannel.send({ type: 'broadcast', event: 'local_mesh_broadcast', payload });
+      if (realtimeChannel && (realtimeChannel.state === 'joined' || realtimeChannel.subState === 'joined')) {
+        try {
+          realtimeChannel.send({ type: 'broadcast', event: 'local_mesh_broadcast', payload });
+        } catch(e) {}
+      }
       if (broadcastChannel) { try { broadcastChannel.postMessage(payload); } catch(e) {} }
       try { localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload)); } catch(e) {}
     }
@@ -2905,14 +2896,28 @@
         opacityVal = Math.max(0.05, 1 - (excess / (userState.radius * 0.75)));
       }
 
-      nodeElem.style.display = isEnabled ? 'block' : 'none';
+      // Check bubble expiration (1 hour)
+      const hasValidQuestion = peer.question && peer.createdAt;
+      const isExpired = hasValidQuestion && (Date.now() - peer.createdAt > ONE_HOUR_MS);
+      if (isExpired) {
+        peer.question = null;
+        peer.createdAt = null;
+        participatedChatRoomIds.delete(roomId);
+        savePersistentData();
+      }
+
+      const activeHasQuestion = peer.question && peer.createdAt;
+      // If user is offline, user icon is hidden, but chat bubble remains visible until expiration
+      const showUserIcon = !peer.isOffline;
+      const shouldDisplay = isEnabled && (activeHasQuestion || showUserIcon);
+
+      nodeElem.style.display = shouldDisplay ? 'block' : 'none';
       nodeElem.style.opacity = peerIsAdmin || isWithinRadius || isParticipated || isFriend || unlimitedRadarActive ? '1' : opacityVal.toString();
       nodeElem.style.pointerEvents = (peerIsAdmin || isWithinRadius || isParticipated || isFriend || unlimitedRadarActive) ? 'auto' : 'none';
 
       const isBiz = peer.accountType === 'business';
       const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
       const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
-      const hasValidQuestion = peer.question && peer.createdAt;
       const showSonarRipple = matchesFilter && !isBiz && !peer.isOffline;
       const chatRoomName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}', ${peer.createdAt})`;
@@ -2921,10 +2926,10 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread) : ''}
+            ${(isBiz || activeHasQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread) : ''}
           </div>
-          ${!peer.isOffline ? `
-            <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
+          ${showUserIcon ? `
+            <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
               ${renderNodeIconContent(peer.accountType, peer.category)}
             </div>
           ` : ''}
@@ -2938,14 +2943,26 @@
         if (activeTopicState.createdAt) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
-            activeTopicState.createdAt = Date.now();
+            activeTopicState.text = null;
+            activeTopicState.createdAt = null;
             renderUserTopBubbleContent();
             savePersistentData();
+            showToast('Your chat bubble has expired and was removed.', 'clock');
           } else if (currentActiveChatRoomId === 'room-you') {
             const countdownEl = document.getElementById('chatExpiryCountdown');
             if (countdownEl) countdownEl.innerText = formatCountdownTime(activeTopicState.createdAt);
           }
         }
+
+        Object.keys(globalActiveDirectory).forEach(peerId => {
+          const peer = globalActiveDirectory[peerId];
+          if (peer.createdAt && (Date.now() - peer.createdAt > ONE_HOUR_MS)) {
+            peer.question = null;
+            peer.createdAt = null;
+            participatedChatRoomIds.delete('room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-'));
+            savePersistentData();
+          }
+        });
 
         renderGlobalUsersDirectory();
         renderPinnedChats();
@@ -2963,7 +2980,7 @@
 
     function saveProfile() {
       const newAlias = document.getElementById('avatarNameInput').value.trim();
-      if (!newAlias) { showToast('Please enter a valid username', 'alert-circle'); return; }
+      if (!newAlias) { showToast('Please enter a valid unique alias', 'alert-circle'); return; }
       userState.alias = newAlias;
       userState.category = document.getElementById('businessCategorySelect').value;
       userState.openTime = document.getElementById('businessOpenTimeInput').value;
@@ -2985,7 +3002,6 @@
       announcePresence();
       closeProfileModal();
       checkAdminPrivileges();
-      showToast('Profile saved successfully!', 'check-circle');
     }
 
     function updateMeshUI() {
@@ -2998,6 +3014,13 @@
       const text = input ? input.value.trim() : '';
       if (!text) return;
       closeChatDrawer();
+
+      // Clear previous bubble broadcast to network peers
+      broadcastData({
+        type: 'CLEAR_PREVIOUS_BUBBLE',
+        peerId: myPeerId,
+        sender: userState.alias
+      });
 
       const oldRoomId = 'room-you';
       if (supabaseClient) {
@@ -3023,6 +3046,8 @@
 
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
+      activeBubbleBySender[myPeerId] = msgId;
+
       broadcastData({
         id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias,
         bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng,
@@ -3031,7 +3056,7 @@
       });
 
       input.value = '';
-      showToast('Previous chat wiped. New chat posted!', 'check-circle');
+      showToast('Previous chat replaced with new chat bubble!', 'check-circle');
       playAudioEffect('bell');
       savePersistentData();
       renderPinnedChats();
@@ -3045,33 +3070,57 @@
     async function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input ? input.value.trim() : '';
-      if (!currentActiveChatRoomId) currentActiveChatRoomId = 'room-you';
+      
+      if (!currentActiveChatRoomId) {
+        showToast('No active chat room selected', 'alert-circle');
+        return;
+      }
       if (!text) return;
 
-      participatedChatRoomIds.add(currentActiveChatRoomId);
+      const targetRoomId = currentActiveChatRoomId;
+
+      participatedChatRoomIds.add(targetRoomId);
       savePersistentData();
       refreshAllNodeVisibilities();
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const senderDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
+      
+      if (!localChatCache[targetRoomId]) localChatCache[targetRoomId] = [];
+      localChatCache[targetRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
+
       appendMessage(senderDisplayName, text, timeStr, true);
-      input.value = ''; input.style.height = '26px';
+      input.value = ''; 
+      input.style.height = '26px';
 
       const payloadMsg = {
-        room_id: currentActiveChatRoomId, sender_id: currentAuthUser ? currentAuthUser.id : myPeerId,
-        sender_alias: senderDisplayName, message: text, created_at: new Date().toISOString()
+        room_id: targetRoomId, 
+        sender_id: currentAuthUser ? currentAuthUser.id : myPeerId,
+        sender_alias: senderDisplayName, 
+        message: text, 
+        created_at: new Date().toISOString()
       };
 
-      if (realtimeChannel) realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
+      if (realtimeChannel) {
+        try {
+          realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
+        } catch(e) {}
+      }
+      if (broadcastChannel) {
+        try {
+          broadcastChannel.postMessage({ type: 'chat_reply', payload: payloadMsg });
+        } catch(e) {}
+      }
+
       if (supabaseClient) {
         await supabaseClient.from('chat_messages').insert({
-          room_id: currentActiveChatRoomId, sender_id: currentAuthUser ? currentAuthUser.id : null,
-          sender_alias: senderDisplayName, message: text
+          room_id: targetRoomId, 
+          sender_id: currentAuthUser ? currentAuthUser.id : null,
+          sender_alias: senderDisplayName, 
+          message: text
         });
-      } else {
-        if (!localChatCache[currentActiveChatRoomId]) localChatCache[currentActiveChatRoomId] = [];
-        localChatCache[currentActiveChatRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
       }
+
       renderPinnedChats();
     }
 
@@ -3081,7 +3130,7 @@
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full">
           <div class="flex items-center gap-1.5 px-1.5 mb-0.5">
-            <span class="text-[10px] text-slate-700 font-bold">${sender}</span>
+            <span class="text-[10px] text-slate-700 font-bold">@${sender}</span>
             <span class="text-[9px] text-slate-500 font-medium">${time || ''}</span>
           </div>
           <div class="px-4 py-2.5 rounded-2xl text-xs max-w-[85%] font-light leading-relaxed shadow-md ${isMe ? 'bg-emerald-600 text-white rounded-br-none shadow-emerald-500/20' : 'glass-card bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none border border-white/90 shadow-sm'}">${text.replace(/\n/g, '<br>')}</div>
@@ -3091,12 +3140,13 @@
     }
 
     async function openChatDrawer(roomId, roomName, topic, peerId, createdAtVal) {
+      if (!roomId) return;
       currentActiveChatRoomId = roomId;
       unreadRoomIds.delete(roomId);
       savePersistentData();
       refreshAllNodeVisibilities();
 
-      document.getElementById('chatTargetName').innerText = roomName;
+      document.getElementById('chatTargetName').innerText = '@' + roomName;
       
       const isSelf = roomId === 'room-you';
       const isBiz = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business');
@@ -3172,18 +3222,69 @@
       }
     }
 
+    async function loadDbChatHistory(roomId) {
+      const msgBox = document.getElementById('chatMessages');
+      if (!msgBox) return;
+      msgBox.innerHTML = '';
+
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient
+            .from('chat_messages')
+            .select('*')
+            .eq('room_id', roomId)
+            .order('created_at', { ascending: true });
+
+          if (!error && data && data.length > 0) {
+            data.forEach(msg => {
+              const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const isMe = currentAuthUser ? (msg.sender_id === currentAuthUser.id) : (msg.sender_alias === userState.alias);
+              appendMessage(msg.sender_alias, msg.message, timeStr, isMe);
+            });
+            return;
+          }
+        } catch (e) {}
+      }
+
+      const cachedMessages = localChatCache[roomId] || [];
+      cachedMessages.forEach(msg => {
+        appendMessage(msg.sender, msg.text, msg.time, msg.isMe);
+      });
+    }
+
     function closeChatDrawer() {
       document.getElementById('chatDrawer').classList.add('hidden');
       document.getElementById('chatBackdrop').classList.add('hidden');
       document.getElementById('actionDockContainer').classList.remove('hidden');
       currentActiveChatRoomId = null;
-      savePersistentData();
+      localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
     }
 
-    function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
-    function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
-    function recalculateNodePositions() {}
+    function openProfileModal() {
+      document.getElementById('profileModal').classList.remove('hidden');
+      renderProfileFriendsList();
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    function toggleP2PModal() {
+      const modal = document.getElementById('p2pModal');
+      if (modal.classList.contains('hidden')) {
+        modal.classList.remove('hidden');
+        renderGlobalUsersDirectory();
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function copyMyPeerId() {
+      const displayInput = document.getElementById('myPeerIdDisplay');
+      displayInput.select();
+      document.execCommand('copy');
+      showToast('Copied Node ID to clipboard!', 'copy');
+    }
   </script>
 </body>
 </html>
