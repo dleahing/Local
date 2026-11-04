@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Production Proximity Social Network [Supabase Realtime & PostGIS]</title>
+  <title>LocaL - Proximity Social Network [V7.1 Stable]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LocaL">
 
-  <!-- Google Fonts: Inter & Space Grotesk -->
+  <!-- Google Fonts: Inter & Space Grotesk for Radar Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -70,6 +70,13 @@
       0%, 100% { opacity: 0.6; transform: scale(1); }
       50% { opacity: 1; transform: scale(1.15); }
     }
+    @keyframes giggle-pop {
+      0% { transform: scale(0.7) rotate(0deg); opacity: 0; }
+      40% { transform: scale(1.15) rotate(-6deg); opacity: 1; }
+      60% { transform: scale(0.92) rotate(6deg); }
+      80% { transform: scale(1.04) rotate(-3deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
     @keyframes jiggle-continuous {
       0% { transform: translate3d(0, 0, 0) rotate(0deg); }
       20% { transform: translate3d(-1.5px, 1px, 0) rotate(-2.5deg) scale(1.02); }
@@ -100,6 +107,7 @@
     }
 
     .animate-screen-tap { animation: tap-ripple-wave 1.2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards; will-change: transform, opacity; }
+    .animate-giggle { animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; will-change: transform; }
     .animate-jiggle-continuous { animation: jiggle-continuous 0.38s ease-in-out infinite !important; will-change: transform; }
     .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; will-change: transform; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; will-change: transform, opacity; }
@@ -147,11 +155,11 @@
       pointer-events: auto !important;
     }
 
-    .hairline-ring { border-width: calc(1px / max(0.20, var(--zoom-scale, 1))) !important; }
+    .hairline-ring { border-width: 1px !important; }
 
     .radar-distance-label {
       font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 11px !important;
+      font-size: 5.5px !important;
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -162,7 +170,7 @@
       box-shadow: none !important;
       white-space: nowrap;
       pointer-events: none;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
     }
 
     .node-content-stack {
@@ -277,7 +285,7 @@
   <div id="pinnedChatsWrapper" class="fixed top-20 left-4 z-40 flex flex-col gap-2 max-w-xs pointer-events-auto">
     <div class="flex items-center justify-between px-1">
       <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider drop-shadow-sm">Pinned Chats</span>
-      <button aria-label="Toggle Pinned Chats List" onclick="playAudioEffect('click'); toggleLeftChatList()" id="leftListToggleBtn" class="liquid-glass-icon px-2.5 py-1.5 rounded-xl text-slate-800 text-[10px] font-bold flex items-center gap-1 shadow-sm hover:scale-105 transition-all min-h-[32px] min-w-[32px]">
+      <button onclick="playAudioEffect('click'); toggleLeftChatList()" id="leftListToggleBtn" class="liquid-glass-icon px-2 py-1 rounded-xl text-slate-800 text-[10px] font-bold flex items-center gap-1 shadow-sm hover:scale-105 transition-all">
         <i data-lucide="eye-off" class="w-3.5 h-3.5"></i> <span id="leftListToggleText">Hide</span>
       </button>
     </div>
@@ -296,7 +304,7 @@
         </div>
         <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Chat Bubbles (<span id="rightSidebarCount">0</span>)</h3>
       </div>
-      <button aria-label="Close Sidebar" onclick="playAudioEffect('click'); setLayoutMode('map')" class="text-slate-500 hover:text-slate-800 p-1 min-h-[32px] min-w-[32px] flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <button onclick="playAudioEffect('click'); setLayoutMode('map')" class="text-slate-500 hover:text-slate-800 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div id="rightSidebarBubblesContainer" class="flex-1 overflow-y-auto space-y-4 pr-1">
       <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No active chat bubbles in range.</div>
@@ -305,7 +313,7 @@
 
   <!-- Header Bar -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
-    <div class="glass-header-transparent px-3 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-102 transition-all min-h-[40px]" onclick="playAudioEffect('click'); toggleP2PModal()" title="View Network Mesh">
+    <div class="glass-header-transparent px-3 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-102 transition-all" onclick="playAudioEffect('click'); toggleP2PModal()" title="View Network Mesh">
       <div class="relative flex items-center justify-center">
         <div id="logoBadge" class="w-7 h-7 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-sm border border-white/50 shadow-sm">L</div>
         <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white animate-pulse"></div>
@@ -318,18 +326,18 @@
     </div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
-      <button aria-label="Admin Control Panel" id="adminPortalHeaderBtn" onclick="playAudioEffect('click'); openAdminModal()" title="Admin Control Panel" class="hidden liquid-glass-icon px-3 py-2 rounded-2xl bg-amber-500/30 border border-amber-400 text-amber-950 font-bold text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 transition-all min-h-[40px]">
+      <button id="adminPortalHeaderBtn" onclick="playAudioEffect('click'); openAdminModal()" title="Admin Control Panel" class="hidden liquid-glass-icon px-3 py-2 rounded-2xl bg-amber-500/30 border border-amber-400 text-amber-950 font-bold text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 transition-all">
         <i data-lucide="shield-alert" class="w-4 h-4 text-amber-700"></i> Admin Panel
       </button>
 
       <div class="relative">
-        <select aria-label="Layout Mode" id="layoutModeSelect" onchange="playAudioEffect('click'); setLayoutMode(this.value)" class="glass-panel px-3 py-2 rounded-2xl text-slate-900 text-xs font-semibold focus:outline-none shadow-lg cursor-pointer min-h-[40px]">
+        <select id="layoutModeSelect" onchange="playAudioEffect('click'); setLayoutMode(this.value)" class="glass-panel px-3 py-2 rounded-2xl text-slate-900 text-xs font-semibold focus:outline-none shadow-lg cursor-pointer">
           <option value="map">Show All on Map</option>
           <option value="right">List to Right Side</option>
         </select>
       </div>
 
-      <button aria-label="Customize Profile" onclick="playAudioEffect('click'); openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg min-h-[40px] min-w-[40px] flex items-center justify-center">
+      <button onclick="playAudioEffect('click'); openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
         <i data-lucide="user-cog" class="w-4 h-4"></i>
       </button>
     </div>
@@ -347,8 +355,8 @@
             <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
           </svg>
         </div>
-        <input aria-label="Broadcast message" type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none min-h-[36px]" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
-        <button aria-label="Send Broadcast" onclick="quickPostFromDock()" class="p-2 rounded-xl bg-emerald-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-emerald-500 transition-all min-h-[36px] min-w-[36px] flex items-center justify-center">
+        <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
+        <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-emerald-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-emerald-500 transition-all">
           <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
         </button>
       </div>
@@ -357,7 +365,7 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[7px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input aria-label="Radar Range Slider" type="range" id="radarRangeSlider" min="402.33" max="24140.15" step="250" value="402.33" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700 rounded-lg">
+        <input type="range" id="radarRangeSlider" min="402.33" max="24140.15" step="250" value="402.33" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
         <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.25 Mi</span>
       </div>
     </div>
@@ -374,13 +382,13 @@
             <p class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider">Manage Bots & Unique Alias Network Users</p>
           </div>
         </div>
-        <button aria-label="Close Admin Modal" onclick="playAudioEffect('click'); closeAdminModal()" class="text-slate-400 hover:text-white p-2 min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="playAudioEffect('click'); closeAdminModal()" class="text-slate-400 hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
 
       <div class="space-y-5">
         <div class="flex rounded-2xl bg-slate-900 p-1 border border-slate-800">
-          <button type="button" onclick="setAdminTab('bots')" id="adminTabBotsBtn" class="flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md min-h-[40px]">Active Bots Editor</button>
-          <button type="button" onclick="setAdminTab('users')" id="adminTabUsersBtn" class="flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]">Network Users Directory</button>
+          <button type="button" onclick="setAdminTab('bots')" id="adminTabBotsBtn" class="flex-1 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md">Active Bots Editor</button>
+          <button type="button" onclick="setAdminTab('users')" id="adminTabUsersBtn" class="flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all">Network Users Directory</button>
         </div>
 
         <div id="adminTabBotsContent" class="space-y-4">
@@ -390,7 +398,7 @@
               <p class="text-[11px] text-slate-300 font-light">Allow all active users & chat bubbles to be seen across the entire map regardless of distance.</p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
-              <input aria-label="Toggle Unlimited Radar" type="checkbox" id="unlimitedRadarToggle" onchange="toggleUnlimitedRadar(this.checked)" class="sr-only peer">
+              <input type="checkbox" id="unlimitedRadarToggle" onchange="toggleUnlimitedRadar(this.checked)" class="sr-only peer">
               <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
             </label>
           </div>
@@ -402,11 +410,11 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[10px] font-semibold text-slate-300 mb-1">Bot Name / Alias</label>
-                <input aria-label="Bot Name" type="text" id="newBotNameInput" placeholder="e.g. Marina Patrol Bot" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none min-h-[38px]">
+                <input type="text" id="newBotNameInput" placeholder="e.g. Marina Patrol Bot" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none">
               </div>
               <div>
                 <label class="block text-[10px] font-semibold text-slate-300 mb-1">Interest Filter</label>
-                <select aria-label="Bot Interest Filter" id="newBotInterestInput" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs min-h-[38px]">
+                <select id="newBotInterestInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
                   <option value="none">None (All)</option>
                   <option value="Life">Life</option>
                   <option value="Cars">Cars</option>
@@ -420,22 +428,22 @@
             </div>
             <div>
               <label class="block text-[10px] font-semibold text-slate-300 mb-1">Chat Bubble Question / Message</label>
-              <input aria-label="Bot Chat Message" type="text" id="newBotQuestionInput" placeholder="e.g. Live music at the pavilion tonight!" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs min-h-[38px]">
+              <input type="text" id="newBotQuestionInput" placeholder="e.g. Live music at the pavilion tonight!" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
             </div>
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[10px] font-semibold text-slate-300 mb-1">Distance (Miles)</label>
-                <input aria-label="Bot Distance Miles" type="number" id="newBotMilesInput" value="0.4" step="0.1" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs min-h-[38px]">
+                <input type="number" id="newBotMilesInput" value="0.4" step="0.1" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
               </div>
               <div>
                 <label class="block text-[10px] font-semibold text-slate-300 mb-1">Account Type</label>
-                <select aria-label="Bot Account Type" id="newBotTypeInput" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs min-h-[38px]">
+                <select id="newBotTypeInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
                   <option value="personal">Personal User Bot</option>
                   <option value="business">Business Store Bot</option>
                 </select>
               </div>
             </div>
-            <button onclick="createNewCustomBot()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all min-h-[42px]">Deploy Bot to Map</button>
+            <button onclick="createNewCustomBot()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">Deploy Bot to Map</button>
           </div>
 
           <div>
@@ -469,28 +477,28 @@
       
       <div class="space-y-4">
         <div class="flex rounded-2xl bg-slate-900/90 p-1 border border-slate-800">
-          <button type="button" onclick="setAuthTab('signin')" id="tabSignInBtn" class="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md min-h-[40px]">Sign In</button>
-          <button type="button" onclick="setAuthTab('signup')" id="tabSignUpBtn" class="flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]">Create Account</button>
+          <button type="button" onclick="setAuthTab('signin')" id="tabSignInBtn" class="flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md">Sign In</button>
+          <button type="button" onclick="setAuthTab('signup')" id="tabSignUpBtn" class="flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all">Create Account</button>
         </div>
 
         <div id="signupUsernameContainer" class="hidden">
           <label class="block text-xs font-semibold text-slate-300 mb-1">Unique Alias (Handle)</label>
-          <input aria-label="Unique Alias" type="text" id="welcomeUsernameInput" placeholder="e.g. OceanExplorer" class="w-full px-4 py-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none min-h-[42px]">
+          <input type="text" id="welcomeUsernameInput" placeholder="e.g. OceanExplorer" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none">
           <p class="text-[10px] text-slate-400 mt-0.5">This unique alias is tied permanently to your Supabase account.</p>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
-          <input aria-label="Email Address" type="email" id="welcomeEmailInput" placeholder="your@email.com" class="w-full px-4 py-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none min-h-[42px]">
+          <input type="email" id="welcomeEmailInput" placeholder="your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
-          <input aria-label="Password" type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none min-h-[42px]">
+          <input type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
         </div>
 
         <div class="pt-2">
-          <button type="button" onclick="submitAuthForm()" id="authSubmitBtn" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500 min-h-[46px]">Sign In</button>
+          <button type="button" onclick="submitAuthForm()" id="authSubmitBtn" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500">Sign In</button>
         </div>
       </div>
     </div>
@@ -504,7 +512,7 @@
           <h3 class="text-lg font-bold text-slate-900 tracking-tight">Supabase Realtime Mesh</h3>
           <p class="text-[10px] text-emerald-900 font-semibold uppercase tracking-wider">Manage Supabase settings & network peers</p>
         </div>
-        <button aria-label="Close Realtime Mesh Modal" onclick="playAudioEffect('click'); toggleP2PModal()" class="text-slate-500 hover:text-slate-800 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="playAudioEffect('click'); toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4 overflow-y-auto flex-1 pr-1">
@@ -515,7 +523,7 @@
               <span id="peerServerDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
               <span id="peerServerStatusText">Connected to Supabase Realtime</span>
             </div>
-            <button aria-label="Reconnect Supabase" onclick="playAudioEffect('click'); reconnectSupabase()" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-[10px] font-semibold shadow-sm active:scale-95 min-h-[32px]">Reconnect</button>
+            <button onclick="playAudioEffect('click'); reconnectSupabase()" class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-semibold shadow-sm active:scale-95">Reconnect</button>
           </div>
         </div>
 
@@ -531,8 +539,8 @@
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Your Account Unique ID & Alias</label>
           <div class="flex items-center gap-2">
-            <input aria-label="Account Unique ID" type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-medium focus:outline-none shadow-inner min-h-[40px]" value="Initializing Node ID...">
-            <button aria-label="Copy ID" onclick="playAudioEffect('click'); copyMyPeerId()" class="px-4 py-3 rounded-2xl bg-emerald-600 text-white font-semibold text-xs shadow-md active:scale-98 transition-all min-h-[40px] min-w-[40px] flex items-center justify-center" title="Copy ID">
+            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-medium focus:outline-none shadow-inner" value="Initializing Node ID...">
+            <button onclick="playAudioEffect('click'); copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-emerald-600 text-white font-semibold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
@@ -546,7 +554,7 @@
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-900 tracking-tight">Profile Settings</h3>
-        <button aria-label="Close Profile Settings" onclick="playAudioEffect('click'); closeProfileModal()" class="text-slate-500 hover:text-slate-800 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="playAudioEffect('click'); closeProfileModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4">
@@ -554,19 +562,19 @@
           <label class="block text-xs font-bold text-emerald-950 uppercase tracking-wider">Supabase Account Auth</label>
           <div id="authStatusBanner" class="text-[11px] text-slate-600 font-medium">Not logged in</div>
           <div class="flex items-center justify-between pt-1 gap-2">
-            <button aria-label="Sign Out" id="signOutBtn" onclick="playAudioEffect('click'); signOutUser()" type="button" class="px-3.5 py-2 rounded-xl bg-red-600 text-white font-semibold text-xs shadow-md min-h-[36px]">Sign Out</button>
-            <button aria-label="Switch Account" onclick="playAudioEffect('click'); openWelcomeModalToSwitch()" type="button" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md min-h-[36px]">Switch Account</button>
+            <button id="signOutBtn" onclick="playAudioEffect('click'); signOutUser()" type="button" class="px-3 py-1.5 rounded-xl bg-red-600 text-white font-semibold text-xs shadow-md">Sign Out</button>
+            <button onclick="playAudioEffect('click'); openWelcomeModalToSwitch()" type="button" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Switch Account</button>
           </div>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
           <div class="grid grid-cols-2 gap-2">
-            <button aria-label="Personal Account Mode" onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all min-h-[50px]">
+            <button onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all">
               <i data-lucide="user" class="w-4 h-4 text-emerald-800"></i>
               <span class="text-[11px] font-semibold text-emerald-950">Personal (GPS)</span>
             </button>
-            <button aria-label="Business Account Mode" onclick="playAudioEffect('click'); selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all min-h-[50px]">
+            <button onclick="playAudioEffect('click'); selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
               <i data-lucide="store" class="w-4 h-4 text-slate-700"></i>
               <span class="text-[11px] font-semibold text-slate-800">Business (Fixed)</span>
             </button>
@@ -575,7 +583,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1">Unique Account Alias (Handle)</label>
-          <input aria-label="Unique Account Alias" type="text" id="avatarNameInput" placeholder="Your unique alias..." class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none shadow-inner min-h-[42px]">
+          <input type="text" id="avatarNameInput" placeholder="Your unique alias..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none shadow-inner">
           <p class="text-[10px] text-slate-500 mt-1">Your alias is tied securely to your Supabase profile and must be unique across the mesh.</p>
         </div>
 
@@ -592,7 +600,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Map Background Style</label>
-          <select aria-label="Map Background Style" id="bgModeSelect" onchange="updateBackgroundStyle(this.value)" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner min-h-[42px]">
+          <select id="bgModeSelect" onchange="updateBackgroundStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
             <option value="aurora">Gradient Aurora (Vibrant)</option>
             <option value="cyber">Cyber Grid Dark (Tactical)</option>
             <option value="minimal">Clean Minimalist Light (Paper)</option>
@@ -602,7 +610,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Radar Style / Type</label>
-          <select aria-label="Radar Style" id="radarStyleSelect" onchange="updateRadarStyle(this.value)" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner min-h-[42px]">
+          <select id="radarStyleSelect" onchange="updateRadarStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
             <option value="futuristic">Futuristic Neon Rings</option>
             <option value="cyberpunk">Cyberpunk Grid & Sweep</option>
             <option value="minimal">Clean Minimalist Pulse</option>
@@ -612,7 +620,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Radar Line Color</label>
-          <select aria-label="Radar Line Color" id="radarColorSelect" onchange="updateRadarColor(this.value)" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner min-h-[42px]">
+          <select id="radarColorSelect" onchange="updateRadarColor(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
             <option value="cyan">Neon Cyan / Sky</option>
             <option value="emerald">Military Emerald Green</option>
             <option value="pink">Cyberpunk Hot Pink</option>
@@ -623,7 +631,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter</label>
-          <select aria-label="Interest Filter" id="userInterestFilterSelect" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner min-h-[42px]">
+          <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
             <option value="none">No Filter At All</option>
             <option value="Life">Life</option>
             <option value="Cars">Cars</option>
@@ -638,9 +646,9 @@
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Location Precision Mode</label>
           <div class="grid grid-cols-3 gap-1.5">
-            <button aria-label="Exact Location" type="button" onclick="setLocationPrecision('show')" id="locShowBtn" class="py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm min-h-[38px]">Show (Exact)</button>
-            <button aria-label="Fuzzed Location" type="button" onclick="setLocationPrecision('fizz')" id="locFizzBtn" class="py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm min-h-[38px]">Fizz (~500m)</button>
-            <button aria-label="Hidden Location" type="button" onclick="setLocationPrecision('hide')" id="locHideBtn" class="py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm min-h-[38px]">Hide (Random)</button>
+            <button type="button" onclick="setLocationPrecision('show')" id="locShowBtn" class="py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm">Show (Exact)</button>
+            <button type="button" onclick="setLocationPrecision('fizz')" id="locFizzBtn" class="py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm">Fizz (~500m)</button>
+            <button type="button" onclick="setLocationPrecision('hide')" id="locHideBtn" class="py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm">Hide (Random)</button>
           </div>
           <p class="text-[10px] text-slate-500 font-light mt-1" id="locPrecisionDesc">Showing exact distance to nearby peers.</p>
         </div>
@@ -648,7 +656,7 @@
         <div id="businessFields" class="hidden space-y-3">
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Business Category & Flat Icon</label>
-            <select aria-label="Business Category" id="businessCategorySelect" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner min-h-[42px]">
+            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
               <option value="store">General Retail Store</option>
               <option value="coffee">Coffee & Bakery</option>
               <option value="utensils">Restaurant & Dining</option>
@@ -663,34 +671,34 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <span class="text-[10px] text-slate-500 font-medium">Opening Time</span>
-                <input aria-label="Opening Time" type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light min-h-[38px]">
+                <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light">
               </div>
               <div>
                 <span class="text-[10px] text-slate-500 font-medium">Closing Time</span>
-                <input aria-label="Closing Time" type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light min-h-[38px]">
+                <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light">
               </div>
             </div>
             <input type="hidden" id="businessHoursInput" value="Open 9:00 AM • Closes 9:00 PM">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Store Street Address (Fixed)</label>
-            <input aria-label="Store Street Address" type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light min-h-[42px]">
+            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light">
           </div>
         </div>
 
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
-          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer py-1">
+          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
             <span>Hide My Alias (Show Anonymous)</span>
-            <input aria-label="Hide My Alias" type="checkbox" id="privacyMakeNamePublic" onchange="toggleNameVisibility(this.checked)" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
+            <input type="checkbox" id="privacyMakeNamePublic" onchange="toggleNameVisibility(this.checked)" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
-          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer py-1">
+          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
             <span>Ghost Mode (Invisible on map)</span>
-            <input aria-label="Ghost Mode" type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
+            <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
         </div>
 
-        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all min-h-[46px]">Save Profile & Broadcast</button>
+        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all">Save Profile & Broadcast</button>
       </div>
     </div>
   </div>
@@ -711,13 +719,13 @@
       </div>
       
       <div class="flex items-center gap-2">
-        <button aria-label="Toggle Friend Status" id="addFriendFromChatBtn" onclick="toggleFriendStatusFromChat()" title="Add / Remove Friend" class="px-2.5 py-2 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-900 text-[10px] font-bold flex items-center gap-1 transition-all min-h-[36px]">
+        <button id="addFriendFromChatBtn" onclick="toggleFriendStatusFromChat()" title="Add / Remove Friend" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-900 text-[10px] font-bold flex items-center gap-1 transition-all">
           <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> <span id="friendBtnText">Add Friend</span>
         </button>
-        <button aria-label="Delete Room" id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all min-h-[36px]">
+        <button id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
         </button>
-        <button aria-label="Close Chat" onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 transition-all shadow-sm min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <button onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 transition-all shadow-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
     </div>
 
@@ -741,14 +749,14 @@
 
     <div class="pt-3 pb-1 flex-shrink-0 pointer-events-auto">
       <div class="glass-card rounded-[28px] p-2 pl-4 border border-white/90 shadow-xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-emerald-400 transition-all bg-white/95 pointer-events-auto">
-        <textarea aria-label="Type message reply" id="chatInput" rows="1" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
+        <textarea id="chatInput" rows="1" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 pointer-events-auto">
           <div class="flex items-center gap-1">
-            <button aria-label="Attach File" onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-2 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></button>
-            <button aria-label="Voice Note" onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-2 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="mic" class="w-4 h-4"></i></button>
+            <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer"><i data-lucide="plus" class="w-4 h-4"></i></button>
+            <button onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer"><i data-lucide="mic" class="w-4 h-4"></i></button>
           </div>
-          <button aria-label="Send Message" onclick="sendChatMessage()" id="sendBtn" type="button" class="w-9 h-9 rounded-full bg-emerald-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-emerald-500 transition-all cursor-pointer min-h-[36px] min-w-[36px]"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+          <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-emerald-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-emerald-500 transition-all cursor-pointer"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
         </div>
       </div>
     </div>
@@ -760,19 +768,21 @@
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const DEFAULT_RADIUS_METERS = 402.33;
-    const MAX_RADIUS_METERS = 48280.20; // Exact 30-mile maximum boundary limit
+    const MAX_RADIUS_METERS = 48280.20;
     
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v36';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v36';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v36';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v36';
-    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v36';
-    const STORAGE_KEY_FRIENDS = 'local_friends_list_v36';
-    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v36';
-    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v36';
-    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v36';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v37';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v37';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v37';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v37';
+    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v37';
+    const STORAGE_KEY_FRIENDS = 'local_friends_list_v37';
+    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v37';
+    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v37';
+    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v37';
 
     let supabaseClient = null;
+    let realtimeChannel = null;
+    let dbMessagesChannel = null;
     let currentAuthTab = 'signin';
     let isAdminUser = false;
     let unlimitedRadarActive = false;
@@ -912,7 +922,7 @@
                 question: cachedData.question,
                 createdAt: cachedData.createdAt,
                 isBot: true,
-                isOffline: true
+                isOffline: false
               };
             }
             participatedChatRoomIds.add('room-peer-' + id.replace(/[^a-zA-Z0-9]/g, '-'));
@@ -985,9 +995,9 @@
 
     function setLocationPrecision(mode) {
       userState.locationPrecision = mode;
-      document.getElementById('locShowBtn').className = mode === 'show' ? 'py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm min-h-[38px]' : 'py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm min-h-[38px]';
-      document.getElementById('locFizzBtn').className = mode === 'fizz' ? 'py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm min-h-[38px]' : 'py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm min-h-[38px]';
-      document.getElementById('locHideBtn').className = mode === 'hide' ? 'py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm min-h-[38px]' : 'py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm min-h-[38px]';
+      document.getElementById('locShowBtn').className = mode === 'show' ? 'py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm' : 'py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm';
+      document.getElementById('locFizzBtn').className = mode === 'fizz' ? 'py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm' : 'py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm';
+      document.getElementById('locHideBtn').className = mode === 'hide' ? 'py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm' : 'py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm';
       
       const desc = document.getElementById('locPrecisionDesc');
       if (mode === 'show') desc.innerText = 'Showing exact distance to nearby peers.';
@@ -1019,7 +1029,7 @@
 
     function renderUserBubbleCardHtml(question, senderName, onClickJs, routerIsAdmin = false, isGiggle = false, isMainUser = false, isAdmin = false, hasUnread = false) {
       if (!question) return '';
-      const animClass = hasUnread ? 'animate-jiggle-continuous' : 'animate-float';
+      const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float');
       const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span></div>`;
 
       if (isAdmin) {
@@ -1208,14 +1218,14 @@
       const subtitleElem = document.getElementById('welcomeModalSubtitle');
 
       if (tab === 'signin') {
-        btnSignIn.className = 'flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md min-h-[40px]';
-        btnSignUp.className = 'flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]';
+        btnSignIn.className = 'flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md';
+        btnSignUp.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
         usernameContainer.classList.add('hidden');
         submitBtn.innerText = 'Sign In';
         subtitleElem.innerText = 'Sign in with your email and password.';
       } else {
-        btnSignUp.className = 'flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md min-h-[40px]';
-        btnSignIn.className = 'flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]';
+        btnSignUp.className = 'flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md';
+        btnSignIn.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
         usernameContainer.classList.remove('hidden');
         submitBtn.innerText = 'Create Account';
         subtitleElem.innerText = 'Choose a unique alias, email, and password.';
@@ -1350,14 +1360,14 @@
       const contentUsers = document.getElementById('adminTabUsersContent');
 
       if (tabName === 'bots') {
-        btnBots.className = 'flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md min-h-[40px]';
-        btnUsers.className = 'flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]';
+        btnBots.className = 'flex-1 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md';
+        btnUsers.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
         contentBots.classList.remove('hidden');
         contentUsers.classList.add('hidden');
         renderAdminBotEditorList();
       } else {
-        btnUsers.className = 'flex-1 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-bold text-xs transition-all shadow-md min-h-[40px]';
-        btnBots.className = 'flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]';
+        btnUsers.className = 'flex-1 py-2 rounded-xl bg-sky-500 text-slate-950 font-bold text-xs transition-all shadow-md';
+        btnBots.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
         contentUsers.classList.remove('hidden');
         contentBots.classList.add('hidden');
         renderAdminUsersEditorList();
@@ -1435,12 +1445,12 @@
           <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-white">${formatBotNameWithSpaces(peer.rawSender)} (${peer.accountType})</span>
-              <button aria-label="Remove Bot" onclick="deleteBotProfile('${id}')" class="px-2.5 py-1.5 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold min-h-[32px]">Remove</button>
+              <button onclick="deleteBotProfile('${id}')" class="px-2 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Remove</button>
             </div>
             <div class="space-y-1">
-              <input aria-label="Bot Name Edit" type="text" id="edit-name-${id}" value="${peer.rawSender}" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs min-h-[36px]">
-              <input aria-label="Bot Question Edit" type="text" id="edit-q-${id}" value="${peer.question || ''}" placeholder="Chat bubble message..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs min-h-[36px]">
-              <button aria-label="Save Bot Profile" onclick="saveBotProfileEdit('${id}')" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-bold min-h-[36px]">Save Changes</button>
+              <input type="text" id="edit-name-${id}" value="${peer.rawSender}" class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
+              <input type="text" id="edit-q-${id}" value="${peer.question || ''}" placeholder="Chat bubble message..." class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
+              <button onclick="saveBotProfileEdit('${id}')" class="px-3 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-bold">Save Changes</button>
             </div>
           </div>
         `;
@@ -1475,7 +1485,7 @@
               <span class="text-xs font-bold text-white">@${formatBotNameWithSpaces(peer.rawSender)} (${peer.accountType})</span>
               <span class="text-[10px] text-sky-400 block font-mono">Distance: ${peer.distance}m</span>
             </div>
-            <button aria-label="Disconnect User" onclick="kickNetworkUser('${id}')" class="px-2.5 py-1.5 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold min-h-[32px]">Disconnect</button>
+            <button onclick="kickNetworkUser('${id}')" class="px-2.5 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Disconnect</button>
           </div>
         `;
       });
@@ -1981,18 +1991,22 @@
     function initGPSLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
-          userState.lat = pos.coords.latitude;
-          userState.lng = pos.coords.longitude;
-          announcePresence();
-          refreshAllPeerDistancesAndPositions();
-        }, (err) => {}, { enableHighAccuracy: true, timeout: 10000 });
+          if (!userState.lat || Math.abs(userState.lat - pos.coords.latitude) > 0.00005 || Math.abs(userState.lng - pos.coords.longitude) > 0.00005) {
+            userState.lat = pos.coords.latitude;
+            userState.lng = pos.coords.longitude;
+            announcePresence();
+            refreshAllPeerDistancesAndPositions();
+          }
+        }, (err) => {}, { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 });
 
         navigator.geolocation.watchPosition((pos) => {
-          userState.lat = pos.coords.latitude;
-          userState.lng = pos.coords.longitude;
-          announcePresence();
-          refreshAllPeerDistancesAndPositions();
-        }, (err) => {}, { enableHighAccuracy: true });
+          if (!userState.lat || Math.abs(userState.lat - pos.coords.latitude) > 0.00005 || Math.abs(userState.lng - pos.coords.longitude) > 0.00005) {
+            userState.lat = pos.coords.latitude;
+            userState.lng = pos.coords.longitude;
+            announcePresence();
+            refreshAllPeerDistancesAndPositions();
+          }
+        }, (err) => {}, { enableHighAccuracy: true, maximumAge: 5000 });
       }
     }
 
@@ -2082,7 +2096,7 @@
       });
     }
 
-    function updateMyDisplayLabel() { renderUserTopBubbleContent(); }
+    function updateMyDisplayLabel() { renderUserTopBubbleContent(false); }
 
     function renderUserTopBubbleContent(isGiggle = false) {
       const topBubble = document.getElementById('userTopBubble');
@@ -2106,7 +2120,7 @@
         topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, displayText, userState.alias, onClickJs, userState.hours, userState.hideMyName, true, isUserAdmin, hasUnread);
       } else {
         topBubble.className = "relative z-[99999999]";
-        topBubble.innerHTML = renderUserBubbleCardHtml(displayText, myDisplayName, onClickJs, isUserAdmin, false, true, isUserAdmin, hasUnread);
+        topBubble.innerHTML = renderUserBubbleCardHtml(displayText, myDisplayName, onClickJs, isUserAdmin, isGiggle, true, isUserAdmin, hasUnread);
       }
       topBubble.classList.remove('hidden');
       lucide.createIcons();
@@ -2241,7 +2255,6 @@
       showToast(`Radar style updated to ${styleName}!`, 'radar');
     }
 
-    // ARCHITECTURAL UPGRADE: Supabase REST Sync & Local Broadcast without WebSockets (Canvas Safe)
     function initSupabaseNetwork() {
       document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
       if (!supabaseConfig.url || !supabaseConfig.key) {
@@ -2256,6 +2269,8 @@
             realtime: { transport: null }
           });
           initAuthListener();
+          
+          fetchProfilesAndTopicsFromSupabase();
           
           setInterval(() => {
             if (currentActiveChatRoomId) {
@@ -2292,12 +2307,16 @@
             const createdAtTime = hasValidTopic ? new Date(p.topic_created_at).getTime() : null;
             const isExpired = createdAtTime && (Date.now() - createdAtTime > ONE_HOUR_MS);
 
+            const existingPeer = globalActiveDirectory[p.id];
+            const pLat = p.lat !== undefined && p.lat !== null ? p.lat : (existingPeer?.lat || userState.lat + (Math.random() - 0.5) * 0.01);
+            const pLng = p.lng !== undefined && p.lng !== null ? p.lng : (existingPeer?.lng || userState.lng + (Math.random() - 0.5) * 0.01);
+
             globalActiveDirectory[p.id] = {
-              ...(globalActiveDirectory[p.id] || {}),
+              ...(existingPeer || {}),
               rawSender: p.alias || 'Traveler',
               peerId: p.id,
-              lat: p.lat || userState.lat + (Math.random() - 0.5) * 0.01,
-              lng: p.lng || userState.lng + (Math.random() - 0.5) * 0.01,
+              lat: pLat,
+              lng: pLng,
               accountType: p.account_type || 'personal',
               category: p.category || 'store',
               hours: p.hours,
@@ -2307,11 +2326,12 @@
               createdAt: isExpired ? null : createdAtTime,
               isBot: false,
               isOffline: false,
-              distance: calculateHaversineDistance(userState.lat, userState.lng, p.lat || userState.lat, p.lng || userState.lng)
+              distance: calculateHaversineDistance(userState.lat, userState.lng, pLat, pLng)
             };
           }
         });
         refreshAllPeerDistancesAndPositions();
+        updateMeshUI();
       }
     }
 
@@ -2414,12 +2434,14 @@
     }
 
     function reconnectSupabase() {
+      if (realtimeChannel) realtimeChannel.unsubscribe();
+      if (dbMessagesChannel) dbMessagesChannel.unsubscribe();
       initSupabaseNetwork();
     }
 
     function setupLocalBroadcastFallback() {
       if ('BroadcastChannel' in window && !broadcastChannel) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v36');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v37');
         broadcastChannel.onmessage = (event) => { handleIncomingNetworkPayload(event.data); };
       }
       window.addEventListener('storage', (event) => {
@@ -2433,7 +2455,7 @@
       const textElem = document.getElementById('peerServerStatusText');
       const dot = document.getElementById('peerServerDot');
       if (connected) {
-        textElem.innerText = customStatusText || 'Connected to Supabase REST Mesh';
+        textElem.innerText = customStatusText || 'Connected to Supabase Realtime Network';
         dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-ping';
       } else {
         textElem.innerText = customStatusText || 'Local Broadcast Fallback Active';
@@ -2576,7 +2598,7 @@
                 <span class="text-[9px] text-emerald-600 font-semibold">Friend • Pinned in Side Lists</span>
               </div>
             </div>
-            <button aria-label="Remove Friend" onclick="toggleFriendStatus('${peerId}')" class="px-2.5 py-1.5 rounded-lg bg-red-500/15 text-red-700 hover:bg-red-500/25 text-[10px] font-bold min-h-[32px]">Remove</button>
+            <button onclick="toggleFriendStatus('${peerId}')" class="px-2 py-1 rounded-lg bg-red-500/15 text-red-700 hover:bg-red-500/25 text-[10px] font-bold">Remove</button>
           </div>
         `;
       });
@@ -2664,7 +2686,7 @@
         if (item.isAdmin) {
           container.innerHTML += `
             <div onclick="${onClickJs}" class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] hover:scale-105 transition-all ${jiggleClass}">
-              <div class="admin-rainbow-inner px-3.5 py-3 rounded-[15px] shadow-xl flex items-center gap-2.5">
+              <div class="admin-rainbow-inner px-3 py-2.5 rounded-[15px] shadow-xl flex items-center gap-2.5">
                 <div class="w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
                   ${renderNodeIconContent(item.accountType, item.category)}
                 </div>
@@ -2678,7 +2700,7 @@
         } else {
           const cardOutline = item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (item.isFriend ? 'border-[2px] border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.6)]' : 'border border-white/80 shadow-xl');
           container.innerHTML += `
-            <div onclick="${onClickJs}" class="glass-card px-3.5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} ${jiggleClass} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
+            <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} ${jiggleClass} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
               <div class="w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
                 ${renderNodeIconContent(item.accountType, item.category)}
               </div>
@@ -2733,10 +2755,10 @@
               </div>
             </div>
             <div class="flex items-center gap-1.5">
-              <button aria-label="Toggle Friend" onclick="toggleFriendStatus('${peerId}')" class="px-2.5 py-2 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px] min-h-[36px]" title="Toggle Friend">
+              <button onclick="toggleFriendStatus('${peerId}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
                 <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
               </button>
-              <button aria-label="Connect Peer" onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}', ${peer.createdAt})" class="px-3 py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md min-h-[36px]">Connect</button>
+              <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}', ${peer.createdAt})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
           </div>
         `;
@@ -2840,6 +2862,25 @@
         question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.text : null,
         createdAt: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.createdAt : null
       };
+
+      if (supabaseClient && currentAuthUser) {
+        try {
+          supabaseClient.from('profiles').upsert({
+            id: currentAuthUser.id,
+            alias: userState.alias,
+            account_type: userState.type,
+            category: userState.category,
+            interest_filter: userState.interestFilter,
+            hide_my_name: userState.hideMyName,
+            lat: coords.lat,
+            lng: coords.lng,
+            active_topic: activeTopicState.text,
+            topic_created_at: activeTopicState.createdAt ? new Date(activeTopicState.createdAt).toISOString() : null,
+            updated_at: new Date()
+          });
+        } catch(e) {}
+      }
+
       broadcastData(payload);
     }
 
@@ -2847,6 +2888,11 @@
       if (userState.ghostMode && userState.type !== 'business') return;
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat; payload.lng = payload.lng || coords.lng;
+      if (realtimeChannel && (realtimeChannel.state === 'joined' || realtimeChannel.subState === 'joined')) {
+        try {
+          realtimeChannel.send({ type: 'broadcast', event: 'local_mesh_broadcast', payload });
+        } catch(e) {}
+      }
       if (broadcastChannel) { try { broadcastChannel.postMessage(payload); } catch(e) {} }
       try { localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload)); } catch(e) {}
     }
@@ -2966,8 +3012,8 @@
 
     function selectAccountType(type, skipSave = false) {
       userState.type = type;
-      document.getElementById('personalTypeBtn').className = type === 'personal' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all min-h-[50px]' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all min-h-[50px]';
-      document.getElementById('businessTypeBtn').className = type === 'business' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all min-h-[50px]' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all min-h-[50px]';
+      document.getElementById('personalTypeBtn').className = type === 'personal' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
+      document.getElementById('businessTypeBtn').className = type === 'business' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
       document.getElementById('businessFields').classList.toggle('hidden', type !== 'business');
       if (!skipSave) savePersistentData();
     }
@@ -3024,7 +3070,7 @@
 
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
-      renderUserTopBubbleContent(false);
+      renderUserTopBubbleContent(true);
       document.getElementById('mainTopicText').innerText = text;
       participatedChatRoomIds.add(oldRoomId);
 
@@ -3094,6 +3140,11 @@
         created_at: new Date().toISOString()
       };
 
+      if (realtimeChannel) {
+        try {
+          realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
+        } catch(e) {}
+      }
       if (broadcastChannel) {
         try {
           broadcastChannel.postMessage({ type: 'chat_reply', payload: payloadMsg });
