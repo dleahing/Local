@@ -70,13 +70,6 @@
       0%, 100% { opacity: 0.6; transform: scale(1); }
       50% { opacity: 1; transform: scale(1.15); }
     }
-    @keyframes giggle-pop {
-      0% { transform: scale(0.7) rotate(0deg); opacity: 0; }
-      40% { transform: scale(1.15) rotate(-6deg); opacity: 1; }
-      60% { transform: scale(0.92) rotate(6deg); }
-      80% { transform: scale(1.04) rotate(-3deg); }
-      100% { transform: scale(1) rotate(0deg); opacity: 1; }
-    }
     @keyframes jiggle-continuous {
       0% { transform: translate3d(0, 0, 0) rotate(0deg); }
       20% { transform: translate3d(-1.5px, 1px, 0) rotate(-2.5deg) scale(1.02); }
@@ -107,7 +100,6 @@
     }
 
     .animate-screen-tap { animation: tap-ripple-wave 1.2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards; will-change: transform, opacity; }
-    .animate-giggle { animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; will-change: transform; }
     .animate-jiggle-continuous { animation: jiggle-continuous 0.38s ease-in-out infinite !important; will-change: transform; }
     .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; will-change: transform; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; will-change: transform, opacity; }
@@ -781,8 +773,6 @@
     const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v36';
 
     let supabaseClient = null;
-    let realtimeChannel = null;
-    let dbMessagesChannel = null;
     let currentAuthTab = 'signin';
     let isAdminUser = false;
     let unlimitedRadarActive = false;
@@ -1029,7 +1019,7 @@
 
     function renderUserBubbleCardHtml(question, senderName, onClickJs, routerIsAdmin = false, isGiggle = false, isMainUser = false, isAdmin = false, hasUnread = false) {
       if (!question) return '';
-      const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float');
+      const animClass = hasUnread ? 'animate-jiggle-continuous' : 'animate-float';
       const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span></div>`;
 
       if (isAdmin) {
@@ -1550,7 +1540,7 @@
       userState.radius = DEFAULT_RADIUS_METERS;
       initGPSLocation();
       initUserNode();
-      initSupabaseRealtimeSubscriptions();
+      initSupabaseNetwork();
       requestScreenWakeLock();
       spawnDefaultSimulatedUsers();
       checkOfflineGeneratedTopicsUponLogon();
@@ -2092,30 +2082,31 @@
       });
     }
 
-    function updateMyDisplayLabel() { renderUserTopBubbleContent(false); }
+    function updateMyDisplayLabel() { renderUserTopBubbleContent(); }
 
     function renderUserTopBubbleContent(isGiggle = false) {
       const topBubble = document.getElementById('userTopBubble');
       if (!topBubble) return;
 
-      const hasValidActiveTopic = activeTopicState.text && activeTopicState.createdAt;
+      const hasValidActiveTopic = (activeTopicState.text && activeTopicState.createdAt) || participatedChatRoomIds.has('room-you');
       if (!hasValidActiveTopic && userState.type !== 'business') {
         topBubble.classList.add('hidden');
         return;
       }
 
       const myDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
-      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${userState.type === 'business' ? (activeTopicState.text || '') : activeTopicState.text}', 'you', ${activeTopicState.createdAt})`;
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${userState.type === 'business' ? (activeTopicState.text || '') : (activeTopicState.text || 'Anyone here?')}', 'you', ${activeTopicState.createdAt || Date.now()})`;
 
       const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
       const hasUnread = unreadRoomIds.has('room-you');
+      const displayText = activeTopicState.text || 'Anyone here?';
 
       if (userState.type === 'business') {
         topBubble.className = "block relative z-[99999999]";
-        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, activeTopicState.text || '', userState.alias, onClickJs, userState.hours, userState.hideMyName, true, isUserAdmin, hasUnread);
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, displayText, userState.alias, onClickJs, userState.hours, userState.hideMyName, true, isUserAdmin, hasUnread);
       } else {
         topBubble.className = "relative z-[99999999]";
-        topBubble.innerHTML = renderUserBubbleCardHtml(activeTopicState.text, myDisplayName, onClickJs, isUserAdmin, isGiggle, true, isUserAdmin, hasUnread);
+        topBubble.innerHTML = renderUserBubbleCardHtml(displayText, myDisplayName, onClickJs, isUserAdmin, false, true, isUserAdmin, hasUnread);
       }
       topBubble.classList.remove('hidden');
       lucide.createIcons();
@@ -2250,8 +2241,8 @@
       showToast(`Radar style updated to ${styleName}!`, 'radar');
     }
 
-    // ARCHITECTURAL UPGRADE: Supabase Realtime Subscriptions & PostGIS-Ready Integration
-    function initSupabaseRealtimeSubscriptions() {
+    // ARCHITECTURAL UPGRADE: Supabase REST Sync & Local Broadcast without WebSockets (Canvas Safe)
+    function initSupabaseNetwork() {
       document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
       if (!supabaseConfig.url || !supabaseConfig.key) {
         updatePeerServerStatus(false, "Supabase Offline");
@@ -2266,71 +2257,14 @@
           });
           initAuthListener();
           
-          // Subscribe to Supabase Realtime Postgres Changes for instant message delivery
-          dbMessagesChannel = supabaseClient.channel('public:chat_messages')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
-              const newMsg = payload.new;
-              if (newMsg && newMsg.room_id) {
-                const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
-                if (!isMe) {
-                  const timeStr = new Date(newMsg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  if (!localChatCache[newMsg.room_id]) localChatCache[newMsg.room_id] = [];
-                  localChatCache[newMsg.room_id].push({ sender: newMsg.sender_alias, text: newMsg.message, time: timeStr, isMe: false });
-
-                  if (currentActiveChatRoomId === newMsg.room_id) {
-                    appendMessage(newMsg.sender_alias, newMsg.message, timeStr, false);
-                  } else {
-                    unreadRoomIds.add(newMsg.room_id);
-                    savePersistentData();
-                    renderPinnedChats();
-                    if (currentLayoutMode === 'right') renderRightSidebarBubbles();
-                    playAudioEffect('click');
-                  }
-                }
-              }
-            })
-            .subscribe();
-
-          // Realtime Broadcast Channel for Live Peer Presence & Mesh Sync
-          realtimeChannel = supabaseClient.channel(MESH_ROOM_KEY, {
-            config: { broadcast: { self: false }, presence: { key: myPeerId } }
-          });
-
-          realtimeChannel
-            .on('broadcast', { event: 'local_mesh_broadcast' }, payload => {
-              handleIncomingNetworkPayload(payload.payload);
-            })
-            .on('broadcast', { event: 'chat_reply' }, payload => {
-              const msg = payload.payload;
-              if (msg && msg.room_id && msg.sender_alias !== getDisplayName(userState.alias, userState.hideMyName, userState.type)) {
-                const timeStr = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                if (!localChatCache[msg.room_id]) localChatCache[msg.room_id] = [];
-                localChatCache[msg.room_id].push({ sender: msg.sender_alias, text: msg.message, time: timeStr, isMe: false });
-                if (currentActiveChatRoomId === msg.room_id) {
-                  appendMessage(msg.sender_alias, msg.message, timeStr, false);
-                } else {
-                  unreadRoomIds.add(msg.room_id);
-                  savePersistentData();
-                  renderPinnedChats();
-                }
-              }
-            })
-            .subscribe(async (status) => {
-              if (status === 'SUBSCRIBED') {
-                updatePeerServerStatus(true, "Connected via Supabase Realtime Mesh");
-                await realtimeChannel.track({ peerId: myPeerId, alias: userState.alias, online_at: new Date() });
-                announcePresence();
-              }
-            });
-
           setInterval(() => {
             if (currentActiveChatRoomId) {
               loadDbChatHistory(currentActiveChatRoomId);
             }
             fetchProfilesAndTopicsFromSupabase();
-          }, 4000);
+          }, 2000);
           
-          updatePeerServerStatus(true, "Connected to Supabase Realtime");
+          updatePeerServerStatus(true, "Connected via Supabase REST & Local Mesh");
         }
       } catch(e) {
         updatePeerServerStatus(false, "Mesh Fallback (Local & DB)");
@@ -2480,9 +2414,7 @@
     }
 
     function reconnectSupabase() {
-      if (realtimeChannel) realtimeChannel.unsubscribe();
-      if (dbMessagesChannel) dbMessagesChannel.unsubscribe();
-      initSupabaseRealtimeSubscriptions();
+      initSupabaseNetwork();
     }
 
     function setupLocalBroadcastFallback() {
@@ -2501,7 +2433,7 @@
       const textElem = document.getElementById('peerServerStatusText');
       const dot = document.getElementById('peerServerDot');
       if (connected) {
-        textElem.innerText = customStatusText || 'Connected to Supabase Realtime Network';
+        textElem.innerText = customStatusText || 'Connected to Supabase REST Mesh';
         dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-ping';
       } else {
         textElem.innerText = customStatusText || 'Local Broadcast Fallback Active';
@@ -2908,12 +2840,6 @@
         question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.text : null,
         createdAt: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.createdAt : null
       };
-      
-      if (realtimeChannel && (realtimeChannel.state === 'joined' || realtimeChannel.subState === 'joined')) {
-        try {
-          realtimeChannel.track(payload);
-        } catch(e) {}
-      }
       broadcastData(payload);
     }
 
@@ -2921,11 +2847,6 @@
       if (userState.ghostMode && userState.type !== 'business') return;
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat; payload.lng = payload.lng || coords.lng;
-      if (realtimeChannel && (realtimeChannel.state === 'joined' || realtimeChannel.subState === 'joined')) {
-        try {
-          realtimeChannel.send({ type: 'broadcast', event: 'local_mesh_broadcast', payload });
-        } catch(e) {}
-      }
       if (broadcastChannel) { try { broadcastChannel.postMessage(payload); } catch(e) {} }
       try { localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload)); } catch(e) {}
     }
@@ -3019,16 +2940,24 @@
           }
         }
 
+        let directoryChanged = false;
         Object.keys(globalActiveDirectory).forEach(peerId => {
           const peer = globalActiveDirectory[peerId];
           if (peer.createdAt && (Date.now() - peer.createdAt > ONE_HOUR_MS)) {
-            peer.question = null;
-            peer.createdAt = null;
+            if (peer.question !== null) {
+              peer.question = null;
+              peer.createdAt = null;
+              directoryChanged = true;
+            }
             participatedChatRoomIds.delete('room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-'));
-            savePersistentData();
           }
         });
 
+        if (directoryChanged) {
+          savePersistentData();
+        }
+
+        refreshAllNodeVisibilities();
         renderGlobalUsersDirectory();
         renderPinnedChats();
         if (currentLayoutMode === 'right') renderRightSidebarBubbles();
@@ -3095,7 +3024,7 @@
 
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
-      renderUserTopBubbleContent(true);
+      renderUserTopBubbleContent(false);
       document.getElementById('mainTopicText').innerText = text;
       participatedChatRoomIds.add(oldRoomId);
 
@@ -3165,11 +3094,6 @@
         created_at: new Date().toISOString()
       };
 
-      if (realtimeChannel) {
-        try {
-          realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
-        } catch(e) {}
-      }
       if (broadcastChannel) {
         try {
           broadcastChannel.postMessage({ type: 'chat_reply', payload: payloadMsg });
