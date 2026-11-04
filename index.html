@@ -2261,6 +2261,16 @@
                   const payload = data.payload;
                   const timeStr = new Date(payload.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                   const isMe = currentAuthUser ? (payload.sender_id === currentAuthUser.id) : (payload.sender_alias === userState.alias);
+                  
+                  // Cache message locally for room
+                  if (!localChatCache[payload.room_id]) localChatCache[payload.room_id] = [];
+                  localChatCache[payload.room_id].push({
+                    sender: payload.sender_alias,
+                    text: payload.message,
+                    time: timeStr,
+                    isMe: isMe
+                  });
+
                   participatedChatRoomIds.add(payload.room_id);
 
                   if (currentActiveChatRoomId === payload.room_id) {
@@ -2320,6 +2330,16 @@
             if (newMsg) {
               const timeStr = new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
+
+              // Cache message locally for room
+              if (!localChatCache[newMsg.room_id]) localChatCache[newMsg.room_id] = [];
+              localChatCache[newMsg.room_id].push({
+                sender: newMsg.sender_alias,
+                text: newMsg.message,
+                time: timeStr,
+                isMe: isMe
+              });
+
               participatedChatRoomIds.add(newMsg.room_id);
 
               if (currentActiveChatRoomId === newMsg.room_id) {
@@ -3116,41 +3136,59 @@
     async function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input ? input.value.trim() : '';
-      if (!currentActiveChatRoomId) currentActiveChatRoomId = 'room-you';
+      
+      // Ensure we are operating in a valid room
+      if (!currentActiveChatRoomId) {
+        showToast('No active chat room selected', 'alert-circle');
+        return;
+      }
       if (!text) return;
 
-      participatedChatRoomIds.add(currentActiveChatRoomId);
+      const targetRoomId = currentActiveChatRoomId;
+
+      participatedChatRoomIds.add(targetRoomId);
       savePersistentData();
       refreshAllNodeVisibilities();
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const senderDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
       
+      // Store in local cache
+      if (!localChatCache[targetRoomId]) localChatCache[targetRoomId] = [];
+      localChatCache[targetRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
+
       // Append reply directly into the active chat drawer's conversation container
       appendMessage(senderDisplayName, text, timeStr, true);
       input.value = ''; 
       input.style.height = '26px';
 
       const payloadMsg = {
-        room_id: currentActiveChatRoomId, 
+        room_id: targetRoomId, 
         sender_id: currentAuthUser ? currentAuthUser.id : myPeerId,
         sender_alias: senderDisplayName, 
         message: text, 
         created_at: new Date().toISOString()
       };
 
-      // Send reply payload through Supabase realtime / fallback channels
-      if (realtimeChannel) realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
+      // Send reply payload through Supabase realtime & broadcast channels
+      if (realtimeChannel) {
+        try {
+          realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
+        } catch(e) {}
+      }
+      if (broadcastChannel) {
+        try {
+          broadcastChannel.postMessage({ type: 'chat_reply', payload: payloadMsg });
+        } catch(e) {}
+      }
+
       if (supabaseClient) {
         await supabaseClient.from('chat_messages').insert({
-          room_id: currentActiveChatRoomId, 
+          room_id: targetRoomId, 
           sender_id: currentAuthUser ? currentAuthUser.id : null,
           sender_alias: senderDisplayName, 
           message: text
         });
-      } else {
-        if (!localChatCache[currentActiveChatRoomId]) localChatCache[currentActiveChatRoomId] = [];
-        localChatCache[currentActiveChatRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
       }
 
       // Re-render side list pinned items to keep unread status up-to-date
@@ -3173,6 +3211,7 @@
     }
 
     async function openChatDrawer(roomId, roomName, topic, peerId, createdAtVal) {
+      if (!roomId) return;
       currentActiveChatRoomId = roomId;
       unreadRoomIds.delete(roomId);
       savePersistentData();
