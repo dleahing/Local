@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Supabase Proximity Social Network [Refined Side List & Chat Bubbles]</title>
+  <title>LocaL - Production Proximity Social Network [Supabase Realtime & PostGIS]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LocaL">
 
-  <!-- Google Fonts: Inter & Space Grotesk for Radar Typography -->
+  <!-- Google Fonts: Inter & Space Grotesk -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -77,8 +77,6 @@
       80% { transform: scale(1.04) rotate(-3deg); }
       100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
-
-    /* Continuous Unread Reply Jiggle Animation */
     @keyframes jiggle-continuous {
       0% { transform: translate3d(0, 0, 0) rotate(0deg); }
       20% { transform: translate3d(-1.5px, 1px, 0) rotate(-2.5deg) scale(1.02); }
@@ -87,7 +85,6 @@
       80% { transform: translate3d(1px, 1px, 0) rotate(1.5deg) scale(1.01); }
       100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
     }
-    
     @keyframes tap-ripple-wave {
       0% {
         transform: translate(-50%, -50%) scale(0.1);
@@ -104,7 +101,6 @@
         box-shadow: 0 0 50px rgba(56, 189, 248, 0), inset 0 0 30px rgba(168, 85, 247, 0);
       }
     }
-    
     @keyframes rainbow-rotate {
       0% { filter: hue-rotate(0deg); }
       100% { filter: hue-rotate(360deg); }
@@ -120,7 +116,6 @@
     .animate-bounce-press { animation: bubble-bounce-press 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards; will-change: transform; }
     .animate-pulse-glow { animation: pulse-glow 2.5s ease-in-out infinite; will-change: transform, opacity; }
 
-    /* Admin Rainbow Wrapper */
     .admin-rainbow-border-wrap {
       position: relative;
       border-radius: 18px;
@@ -290,7 +285,7 @@
   <div id="pinnedChatsWrapper" class="fixed top-20 left-4 z-40 flex flex-col gap-2 max-w-xs pointer-events-auto">
     <div class="flex items-center justify-between px-1">
       <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider drop-shadow-sm">Pinned Chats</span>
-      <button onclick="playAudioEffect('click'); toggleLeftChatList()" id="leftListToggleBtn" class="liquid-glass-icon px-2 py-1 rounded-xl text-slate-800 text-[10px] font-bold flex items-center gap-1 shadow-sm hover:scale-105 transition-all">
+      <button aria-label="Toggle Pinned Chats List" onclick="playAudioEffect('click'); toggleLeftChatList()" id="leftListToggleBtn" class="liquid-glass-icon px-2.5 py-1.5 rounded-xl text-slate-800 text-[10px] font-bold flex items-center gap-1 shadow-sm hover:scale-105 transition-all min-h-[32px] min-w-[32px]">
         <i data-lucide="eye-off" class="w-3.5 h-3.5"></i> <span id="leftListToggleText">Hide</span>
       </button>
     </div>
@@ -301,15 +296,15 @@
   <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-36 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
-        <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
+        <div class="w-5.5 h-5.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
           <div class="bubble-glare"></div>
-          <svg class="w-3.5 h-3.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+          <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
           </svg>
         </div>
         <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Chat Bubbles (<span id="rightSidebarCount">0</span>)</h3>
       </div>
-      <button onclick="playAudioEffect('click'); setLayoutMode('map')" class="text-slate-500 hover:text-slate-800 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <button aria-label="Close Sidebar" onclick="playAudioEffect('click'); setLayoutMode('map')" class="text-slate-500 hover:text-slate-800 p-1 min-h-[32px] min-w-[32px] flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div id="rightSidebarBubblesContainer" class="flex-1 overflow-y-auto space-y-4 pr-1">
       <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No active chat bubbles in range.</div>
@@ -318,10 +313,10 @@
 
   <!-- Header Bar -->
   <header class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
-    <div class="glass-header-transparent px-3 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-102 transition-all" onclick="playAudioEffect('click'); toggleP2PModal()" title="View Network Mesh">
+    <div class="glass-header-transparent px-3 py-2 rounded-2xl flex items-center gap-2.5 pointer-events-auto shadow-md cursor-pointer hover:scale-102 transition-all min-h-[40px]" onclick="playAudioEffect('click'); toggleP2PModal()" title="View Network Mesh">
       <div class="relative flex items-center justify-center">
-        <div id="logoBadge" class="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-base border border-white/50 shadow-sm">L</div>
-        <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white animate-pulse"></div>
+        <div id="logoBadge" class="w-7 h-7 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-sm border border-white/50 shadow-sm">L</div>
+        <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white animate-pulse"></div>
       </div>
       
       <div class="flex flex-col">
@@ -331,18 +326,18 @@
     </div>
 
     <div class="flex items-center gap-2 pointer-events-auto">
-      <button id="adminPortalHeaderBtn" onclick="playAudioEffect('click'); openAdminModal()" title="Admin Control Panel" class="hidden liquid-glass-icon px-3 py-2 rounded-2xl bg-amber-500/30 border border-amber-400 text-amber-950 font-bold text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 transition-all">
+      <button aria-label="Admin Control Panel" id="adminPortalHeaderBtn" onclick="playAudioEffect('click'); openAdminModal()" title="Admin Control Panel" class="hidden liquid-glass-icon px-3 py-2 rounded-2xl bg-amber-500/30 border border-amber-400 text-amber-950 font-bold text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 transition-all min-h-[40px]">
         <i data-lucide="shield-alert" class="w-4 h-4 text-amber-700"></i> Admin Panel
       </button>
 
       <div class="relative">
-        <select id="layoutModeSelect" onchange="playAudioEffect('click'); setLayoutMode(this.value)" class="glass-panel px-3 py-2 rounded-2xl text-slate-900 text-xs font-semibold focus:outline-none shadow-lg cursor-pointer">
+        <select aria-label="Layout Mode" id="layoutModeSelect" onchange="playAudioEffect('click'); setLayoutMode(this.value)" class="glass-panel px-3 py-2 rounded-2xl text-slate-900 text-xs font-semibold focus:outline-none shadow-lg cursor-pointer min-h-[40px]">
           <option value="map">Show All on Map</option>
           <option value="right">List to Right Side</option>
         </select>
       </div>
 
-      <button onclick="playAudioEffect('click'); openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
+      <button aria-label="Customize Profile" onclick="playAudioEffect('click'); openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg min-h-[40px] min-w-[40px] flex items-center justify-center">
         <i data-lucide="user-cog" class="w-4 h-4"></i>
       </button>
     </div>
@@ -354,14 +349,14 @@
   <div id="actionDockContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
-        <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(56,189,248,0.7)] relative overflow-hidden">
+        <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(56,189,248,0.7)] relative overflow-hidden">
           <div class="bubble-glare"></div>
-          <svg class="w-3.5 h-3.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+          <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
           </svg>
         </div>
-        <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
-        <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-emerald-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-emerald-500 transition-all">
+        <input aria-label="Broadcast message" type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none min-h-[36px]" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
+        <button aria-label="Send Broadcast" onclick="quickPostFromDock()" class="p-2 rounded-xl bg-emerald-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-emerald-500 transition-all min-h-[36px] min-w-[36px] flex items-center justify-center">
           <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
         </button>
       </div>
@@ -370,8 +365,8 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[7px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="804.67" max="48280.3" step="500" value="804.67" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
-        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.5 Mi</span>
+        <input aria-label="Radar Range Slider" type="range" id="radarRangeSlider" min="402.33" max="24140.15" step="250" value="402.33" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-2 bg-slate-700 rounded-lg">
+        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.25 Mi</span>
       </div>
     </div>
   </div>
@@ -381,19 +376,19 @@
     <div class="dark-biz-bubble w-full max-w-lg rounded-[32px] p-6 border border-amber-500/50 shadow-[0_25px_60px_-15px_rgba(251,191,36,0.3)] max-h-[90vh] overflow-y-auto pointer-events-auto relative z-[99999999]">
       <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/20">
         <div class="flex items-center gap-2">
-          <i data-lucide="shield-check" class="w-6 h-6 text-amber-400"></i>
+          <i data-lucide="shield-check" class="w-5.5 h-5.5 text-amber-400"></i>
           <div>
             <h3 class="text-lg font-extrabold text-white tracking-tight">Administrator Control Center</h3>
-            <p class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider">Manage Bots & Network Users Separately</p>
+            <p class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider">Manage Bots & Unique Alias Network Users</p>
           </div>
         </div>
-        <button onclick="playAudioEffect('click'); closeAdminModal()" class="text-slate-400 hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button aria-label="Close Admin Modal" onclick="playAudioEffect('click'); closeAdminModal()" class="text-slate-400 hover:text-white p-2 min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
 
       <div class="space-y-5">
         <div class="flex rounded-2xl bg-slate-900 p-1 border border-slate-800">
-          <button type="button" onclick="setAdminTab('bots')" id="adminTabBotsBtn" class="flex-1 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md">Active Bots Editor</button>
-          <button type="button" onclick="setAdminTab('users')" id="adminTabUsersBtn" class="flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all">Network Users Editor</button>
+          <button type="button" onclick="setAdminTab('bots')" id="adminTabBotsBtn" class="flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md min-h-[40px]">Active Bots Editor</button>
+          <button type="button" onclick="setAdminTab('users')" id="adminTabUsersBtn" class="flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]">Network Users Directory</button>
         </div>
 
         <div id="adminTabBotsContent" class="space-y-4">
@@ -403,7 +398,7 @@
               <p class="text-[11px] text-slate-300 font-light">Allow all active users & chat bubbles to be seen across the entire map regardless of distance.</p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="unlimitedRadarToggle" onchange="toggleUnlimitedRadar(this.checked)" class="sr-only peer">
+              <input aria-label="Toggle Unlimited Radar" type="checkbox" id="unlimitedRadarToggle" onchange="toggleUnlimitedRadar(this.checked)" class="sr-only peer">
               <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
             </label>
           </div>
@@ -415,11 +410,11 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[10px] font-semibold text-slate-300 mb-1">Bot Name / Alias</label>
-                <input type="text" id="newBotNameInput" placeholder="e.g. Marina Patrol Bot" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none">
+                <input aria-label="Bot Name" type="text" id="newBotNameInput" placeholder="e.g. Marina Patrol Bot" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none min-h-[38px]">
               </div>
               <div>
                 <label class="block text-[10px] font-semibold text-slate-300 mb-1">Interest Filter</label>
-                <select id="newBotInterestInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+                <select aria-label="Bot Interest Filter" id="newBotInterestInput" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs min-h-[38px]">
                   <option value="none">None (All)</option>
                   <option value="Life">Life</option>
                   <option value="Cars">Cars</option>
@@ -433,22 +428,22 @@
             </div>
             <div>
               <label class="block text-[10px] font-semibold text-slate-300 mb-1">Chat Bubble Question / Message</label>
-              <input type="text" id="newBotQuestionInput" placeholder="e.g. Live music at the pavilion tonight!" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+              <input aria-label="Bot Chat Message" type="text" id="newBotQuestionInput" placeholder="e.g. Live music at the pavilion tonight!" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs min-h-[38px]">
             </div>
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[10px] font-semibold text-slate-300 mb-1">Distance (Miles)</label>
-                <input type="number" id="newBotMilesInput" value="0.4" step="0.1" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+                <input aria-label="Bot Distance Miles" type="number" id="newBotMilesInput" value="0.4" step="0.1" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs min-h-[38px]">
               </div>
               <div>
                 <label class="block text-[10px] font-semibold text-slate-300 mb-1">Account Type</label>
-                <select id="newBotTypeInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+                <select aria-label="Bot Account Type" id="newBotTypeInput" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs min-h-[38px]">
                   <option value="personal">Personal User Bot</option>
                   <option value="business">Business Store Bot</option>
                 </select>
               </div>
             </div>
-            <button onclick="createNewCustomBot()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">Deploy Bot to Map</button>
+            <button onclick="createNewCustomBot()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all min-h-[42px]">Deploy Bot to Map</button>
           </div>
 
           <div>
@@ -460,9 +455,9 @@
         <div id="adminTabUsersContent" class="hidden space-y-4">
           <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
             <h4 class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-              <i data-lucide="users" class="w-4 h-4"></i> Connected Network Users Directory
+              <i data-lucide="users" class="w-4 h-4"></i> Connected Network Users & Unique Aliases
             </h4>
-            <p class="text-[11px] text-slate-400">View and manage all real users connected to your local proximity mesh.</p>
+            <p class="text-[11px] text-slate-400">View and manage all authenticated users tied to unique aliases in your proximity mesh.</p>
             <div id="adminUsersEditorList" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
           </div>
         </div>
@@ -471,38 +466,39 @@
     </div>
   </div>
 
-  <!-- LOGIN / SIGN-UP MODAL (Supabase Auth & Unique Alias) -->
+  <!-- LOGIN / SIGN-UP MODAL (SUPABASE AUTH WITH UNIQUE ALIAS) -->
   <div id="welcomeProfileModal" class="hidden fixed inset-0 z-[99999999] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4 pointer-events-auto">
     <div class="dark-biz-bubble w-full max-w-sm rounded-[32px] p-6 border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] max-h-[90vh] overflow-y-auto pointer-events-auto relative z-[99999999]">
       <div class="text-center mb-5">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white font-bold text-2xl mx-auto mb-2 shadow-[0_0_20px_rgba(52,211,153,0.5)]">L</div>
+        <div class="w-12.5 h-12.5 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 shadow-[0_0_20px_rgba(52,211,153,0.5)]">L</div>
         <h3 class="text-xl font-extrabold text-white tracking-tight" id="welcomeModalTitle">Welcome to LocaL</h3>
-        <p class="text-xs text-slate-400 mt-1" id="welcomeModalSubtitle">Sign in or create your account below. (Hint: Administrator / 4464)</p>
+        <p class="text-xs text-slate-400 mt-1" id="welcomeModalSubtitle">Sign in or create your Supabase account with a unique alias.</p>
       </div>
       
       <div class="space-y-4">
         <div class="flex rounded-2xl bg-slate-900/90 p-1 border border-slate-800">
-          <button type="button" onclick="setAuthTab('signin')" id="tabSignInBtn" class="flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md">Sign In</button>
-          <button type="button" onclick="setAuthTab('signup')" id="tabSignUpBtn" class="flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all">Create Account</button>
+          <button type="button" onclick="setAuthTab('signin')" id="tabSignInBtn" class="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md min-h-[40px]">Sign In</button>
+          <button type="button" onclick="setAuthTab('signup')" id="tabSignUpBtn" class="flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]">Create Account</button>
         </div>
 
         <div id="signupUsernameContainer" class="hidden">
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Unique User Alias / Display Name</label>
-          <input type="text" id="welcomeUsernameInput" placeholder="e.g. Shane" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Unique Alias (Handle)</label>
+          <input aria-label="Unique Alias" type="text" id="welcomeUsernameInput" placeholder="e.g. OceanExplorer" class="w-full px-4 py-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none min-h-[42px]">
+          <p class="text-[10px] text-slate-400 mt-0.5">This unique alias is tied permanently to your Supabase account.</p>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Username / Email</label>
-          <input type="text" id="welcomeEmailInput" placeholder="Administrator or your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+          <input aria-label="Email Address" type="email" id="welcomeEmailInput" placeholder="your@email.com" class="w-full px-4 py-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none min-h-[42px]">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
-          <input type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
+          <input aria-label="Password" type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none min-h-[42px]">
         </div>
 
         <div class="pt-2">
-          <button type="button" onclick="submitAuthForm()" id="authSubmitBtn" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500">Sign In</button>
+          <button type="button" onclick="submitAuthForm()" id="authSubmitBtn" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500 min-h-[46px]">Sign In</button>
         </div>
       </div>
     </div>
@@ -516,7 +512,7 @@
           <h3 class="text-lg font-bold text-slate-900 tracking-tight">Supabase Realtime Mesh</h3>
           <p class="text-[10px] text-emerald-900 font-semibold uppercase tracking-wider">Manage Supabase settings & network peers</p>
         </div>
-        <button onclick="playAudioEffect('click'); toggleP2PModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button aria-label="Close Realtime Mesh Modal" onclick="playAudioEffect('click'); toggleP2PModal()" class="text-slate-500 hover:text-slate-800 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4 overflow-y-auto flex-1 pr-1">
@@ -527,7 +523,7 @@
               <span id="peerServerDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
               <span id="peerServerStatusText">Connected to Supabase Realtime</span>
             </div>
-            <button onclick="playAudioEffect('click'); reconnectSupabase()" class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-semibold shadow-sm active:scale-95">Reconnect</button>
+            <button aria-label="Reconnect Supabase" onclick="playAudioEffect('click'); reconnectSupabase()" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-[10px] font-semibold shadow-sm active:scale-95 min-h-[32px]">Reconnect</button>
           </div>
         </div>
 
@@ -541,10 +537,10 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Your Node ID</label>
+          <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Your Account Unique ID & Alias</label>
           <div class="flex items-center gap-2">
-            <input type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-medium focus:outline-none shadow-inner" value="Initializing Node ID...">
-            <button onclick="playAudioEffect('click'); copyMyPeerId()" class="px-4 py-2.5 rounded-2xl bg-emerald-600 text-white font-semibold text-xs shadow-md active:scale-98 transition-all" title="Copy ID">
+            <input aria-label="Account Unique ID" type="text" id="myPeerIdDisplay" readonly class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-mono font-medium focus:outline-none shadow-inner min-h-[40px]" value="Initializing Node ID...">
+            <button aria-label="Copy ID" onclick="playAudioEffect('click'); copyMyPeerId()" class="px-4 py-3 rounded-2xl bg-emerald-600 text-white font-semibold text-xs shadow-md active:scale-98 transition-all min-h-[40px] min-w-[40px] flex items-center justify-center" title="Copy ID">
               <i data-lucide="copy" class="w-4 h-4"></i>
             </button>
           </div>
@@ -558,7 +554,7 @@
     <div class="glass-card w-full max-w-sm rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-900 tracking-tight">Profile Settings</h3>
-        <button onclick="playAudioEffect('click'); closeProfileModal()" class="text-slate-500 hover:text-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button aria-label="Close Profile Settings" onclick="playAudioEffect('click'); closeProfileModal()" class="text-slate-500 hover:text-slate-800 p-2 min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       
       <div class="space-y-4">
@@ -566,19 +562,19 @@
           <label class="block text-xs font-bold text-emerald-950 uppercase tracking-wider">Supabase Account Auth</label>
           <div id="authStatusBanner" class="text-[11px] text-slate-600 font-medium">Not logged in</div>
           <div class="flex items-center justify-between pt-1 gap-2">
-            <button id="signOutBtn" onclick="playAudioEffect('click'); signOutUser()" type="button" class="px-3 py-1.5 rounded-xl bg-red-600 text-white font-semibold text-xs shadow-md">Sign Out</button>
-            <button onclick="playAudioEffect('click'); openWelcomeModalToSwitch()" type="button" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Switch Account</button>
+            <button aria-label="Sign Out" id="signOutBtn" onclick="playAudioEffect('click'); signOutUser()" type="button" class="px-3.5 py-2 rounded-xl bg-red-600 text-white font-semibold text-xs shadow-md min-h-[36px]">Sign Out</button>
+            <button aria-label="Switch Account" onclick="playAudioEffect('click'); openWelcomeModalToSwitch()" type="button" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md min-h-[36px]">Switch Account</button>
           </div>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1.5 uppercase tracking-wider">Account Mode</label>
           <div class="grid grid-cols-2 gap-2">
-            <button onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all">
+            <button aria-label="Personal Account Mode" onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all min-h-[50px]">
               <i data-lucide="user" class="w-4 h-4 text-emerald-800"></i>
               <span class="text-[11px] font-semibold text-emerald-950">Personal (GPS)</span>
             </button>
-            <button onclick="playAudioEffect('click'); selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all">
+            <button aria-label="Business Account Mode" onclick="playAudioEffect('click'); selectAccountType('business')" id="businessTypeBtn" class="p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all min-h-[50px]">
               <i data-lucide="store" class="w-4 h-4 text-slate-700"></i>
               <span class="text-[11px] font-semibold text-slate-800">Business (Fixed)</span>
             </button>
@@ -586,8 +582,9 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-800 mb-1">Unique User Alias / Display Name</label>
-          <input type="text" id="avatarNameInput" placeholder="Enter your username..." class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light focus:outline-none shadow-inner">
+          <label class="block text-xs font-semibold text-slate-800 mb-1">Unique Account Alias (Handle)</label>
+          <input aria-label="Unique Account Alias" type="text" id="avatarNameInput" placeholder="Your unique alias..." class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium focus:outline-none shadow-inner min-h-[42px]">
+          <p class="text-[10px] text-slate-500 mt-1">Your alias is tied securely to your Supabase profile and must be unique across the mesh.</p>
         </div>
 
         <!-- Friends List Section under Profile -->
@@ -595,7 +592,7 @@
           <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
             <i data-lucide="users" class="w-4 h-4 text-sky-600"></i> Friends List (<span id="profileFriendsCount">0</span>)
           </label>
-          <p class="text-[10px] text-slate-500 font-light">Friends' chat bubbles always pin to the top of your side lists (right after Admin & Main User).</p>
+          <p class="text-[10px] text-slate-500 font-light">Friends' chat bubbles always pin to the top of your side lists.</p>
           <div id="profileFriendsListContainer" class="space-y-2 max-h-40 overflow-y-auto pr-1">
             <div class="p-2.5 rounded-xl bg-white/50 border border-slate-200 text-center text-xs text-slate-500">No friends added yet. Connect with peers to add them as friends!</div>
           </div>
@@ -603,7 +600,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Map Background Style</label>
-          <select id="bgModeSelect" onchange="updateBackgroundStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
+          <select aria-label="Map Background Style" id="bgModeSelect" onchange="updateBackgroundStyle(this.value)" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner min-h-[42px]">
             <option value="aurora">Gradient Aurora (Vibrant)</option>
             <option value="cyber">Cyber Grid Dark (Tactical)</option>
             <option value="minimal">Clean Minimalist Light (Paper)</option>
@@ -613,7 +610,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Radar Style / Type</label>
-          <select id="radarStyleSelect" onchange="updateRadarStyle(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
+          <select aria-label="Radar Style" id="radarStyleSelect" onchange="updateRadarStyle(this.value)" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner min-h-[42px]">
             <option value="futuristic">Futuristic Neon Rings</option>
             <option value="cyberpunk">Cyberpunk Grid & Sweep</option>
             <option value="minimal">Clean Minimalist Pulse</option>
@@ -623,7 +620,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Radar Line Color</label>
-          <select id="radarColorSelect" onchange="updateRadarColor(this.value)" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
+          <select aria-label="Radar Line Color" id="radarColorSelect" onchange="updateRadarColor(this.value)" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner min-h-[42px]">
             <option value="cyan">Neon Cyan / Sky</option>
             <option value="emerald">Military Emerald Green</option>
             <option value="pink">Cyberpunk Hot Pink</option>
@@ -634,7 +631,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Interest Filter</label>
-          <select id="userInterestFilterSelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
+          <select aria-label="Interest Filter" id="userInterestFilterSelect" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner min-h-[42px]">
             <option value="none">No Filter At All</option>
             <option value="Life">Life</option>
             <option value="Cars">Cars</option>
@@ -649,9 +646,9 @@
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Location Precision Mode</label>
           <div class="grid grid-cols-3 gap-1.5">
-            <button type="button" onclick="setLocationPrecision('show')" id="locShowBtn" class="py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm">Show (Exact)</button>
-            <button type="button" onclick="setLocationPrecision('fizz')" id="locFizzBtn" class="py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm">Fizz (~500m)</button>
-            <button type="button" onclick="setLocationPrecision('hide')" id="locHideBtn" class="py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm">Hide (Random)</button>
+            <button aria-label="Exact Location" type="button" onclick="setLocationPrecision('show')" id="locShowBtn" class="py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm min-h-[38px]">Show (Exact)</button>
+            <button aria-label="Fuzzed Location" type="button" onclick="setLocationPrecision('fizz')" id="locFizzBtn" class="py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm min-h-[38px]">Fizz (~500m)</button>
+            <button aria-label="Hidden Location" type="button" onclick="setLocationPrecision('hide')" id="locHideBtn" class="py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm min-h-[38px]">Hide (Random)</button>
           </div>
           <p class="text-[10px] text-slate-500 font-light mt-1" id="locPrecisionDesc">Showing exact distance to nearby peers.</p>
         </div>
@@ -659,7 +656,7 @@
         <div id="businessFields" class="hidden space-y-3">
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Business Category & Flat Icon</label>
-            <select id="businessCategorySelect" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner">
+            <select aria-label="Business Category" id="businessCategorySelect" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none shadow-inner min-h-[42px]">
               <option value="store">General Retail Store</option>
               <option value="coffee">Coffee & Bakery</option>
               <option value="utensils">Restaurant & Dining</option>
@@ -674,34 +671,34 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <span class="text-[10px] text-slate-500 font-medium">Opening Time</span>
-                <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light">
+                <input aria-label="Opening Time" type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light min-h-[38px]">
               </div>
               <div>
                 <span class="text-[10px] text-slate-500 font-medium">Closing Time</span>
-                <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light">
+                <input aria-label="Closing Time" type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="w-full px-3 py-2.5 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-xs font-light min-h-[38px]">
               </div>
             </div>
             <input type="hidden" id="businessHoursInput" value="Open 9:00 AM • Closes 9:00 PM">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-800 mb-1">Store Street Address (Fixed)</label>
-            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-2.5 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light">
+            <input aria-label="Store Street Address" type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="w-full px-4 py-3 rounded-2xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-light min-h-[42px]">
           </div>
         </div>
 
         <div class="pt-2 border-t border-slate-200/60 space-y-2">
           <label class="block text-xs font-semibold text-slate-800 mb-1 uppercase tracking-wider">Privacy & Visibility</label>
-          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
-            <span>Hide My Username (Show Anonymous)</span>
-            <input type="checkbox" id="privacyMakeNamePublic" onchange="toggleNameVisibility(this.checked)" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
+          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer py-1">
+            <span>Hide My Alias (Show Anonymous)</span>
+            <input aria-label="Hide My Alias" type="checkbox" id="privacyMakeNamePublic" onchange="toggleNameVisibility(this.checked)" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
-          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer">
+          <label class="flex items-center justify-between text-xs font-normal text-slate-800 cursor-pointer py-1">
             <span>Ghost Mode (Invisible on map)</span>
-            <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
+            <input aria-label="Ghost Mode" type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </label>
         </div>
 
-        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all">Save Profile & Broadcast</button>
+        <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-semibold text-sm shadow-lg active:scale-98 transition-all min-h-[46px]">Save Profile & Broadcast</button>
       </div>
     </div>
   </div>
@@ -712,7 +709,7 @@
     
     <div class="flex items-center justify-between pb-3.5 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-3">
-        <div id="chatTargetAvatar" class="w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden">
+        <div id="chatTargetAvatar" class="w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden">
           <div class="bubble-glare"></div>
         </div>
         <div>
@@ -722,13 +719,13 @@
       </div>
       
       <div class="flex items-center gap-2">
-        <button id="addFriendFromChatBtn" onclick="toggleFriendStatusFromChat()" title="Add / Remove Friend" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-900 text-[10px] font-bold flex items-center gap-1 transition-all">
+        <button aria-label="Toggle Friend Status" id="addFriendFromChatBtn" onclick="toggleFriendStatusFromChat()" title="Add / Remove Friend" class="px-2.5 py-2 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-900 text-[10px] font-bold flex items-center gap-1 transition-all min-h-[36px]">
           <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> <span id="friendBtnText">Add Friend</span>
         </button>
-        <button id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all">
+        <button aria-label="Delete Room" id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all min-h-[36px]">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
         </button>
-        <button onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 transition-all shadow-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <button aria-label="Close Chat" onclick="playAudioEffect('click'); closeChatDrawer()" class="p-2 rounded-full glass-card hover:bg-white/80 text-slate-700 transition-all shadow-sm min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
     </div>
 
@@ -752,14 +749,14 @@
 
     <div class="pt-3 pb-1 flex-shrink-0 pointer-events-auto">
       <div class="glass-card rounded-[28px] p-2 pl-4 border border-white/90 shadow-xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-emerald-400 transition-all bg-white/95 pointer-events-auto">
-        <textarea id="chatInput" rows="1" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
+        <textarea aria-label="Type message reply" id="chatInput" rows="1" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 pointer-events-auto">
           <div class="flex items-center gap-1">
-            <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer"><i data-lucide="plus" class="w-4 h-4"></i></button>
-            <button onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer"><i data-lucide="mic" class="w-4 h-4"></i></button>
+            <button aria-label="Attach File" onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-2 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4"></i></button>
+            <button aria-label="Voice Note" onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-2 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"><i data-lucide="mic" class="w-4 h-4"></i></button>
           </div>
-          <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-emerald-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-emerald-500 transition-all cursor-pointer"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+          <button aria-label="Send Message" onclick="sendChatMessage()" id="sendBtn" type="button" class="w-9 h-9 rounded-full bg-emerald-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-emerald-500 transition-all cursor-pointer min-h-[36px] min-w-[36px]"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
         </div>
       </div>
     </div>
@@ -770,19 +767,18 @@
     const MESH_ROOM_KEY = 'local-proximity-public';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
-    const DEFAULT_RADIUS_METERS = 804.67;
-    const MAX_RADIUS_METERS = 48280.3;
+    const DEFAULT_RADIUS_METERS = 402.33;
+    const MAX_RADIUS_METERS = 48280.20; // Exact 30-mile maximum boundary limit
     
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v30';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v39';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v29';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v29';
-    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v5';
-    const STORAGE_KEY_FRIENDS = 'local_friends_list_v4';
-    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v1';
-    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v1';
-    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v1';
-    const STORAGE_KEY_SUPABASE_CONFIG = 'local_supabase_config_v1';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v36';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v36';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v36';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v36';
+    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v36';
+    const STORAGE_KEY_FRIENDS = 'local_friends_list_v36';
+    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v36';
+    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v36';
+    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v36';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -838,8 +834,10 @@
       locationPrecision: 'show',
       ghostMode: false,
       hideMyName: false,
-      profileCreated: true
+      profileCreated: false
     };
+
+    let activeBubbleBySender = {};
 
     const RADAR_PALETTES = {
       cyan: { line: 'rgba(56, 189, 248, 0.35)', sweep: 'rgba(56, 189, 248, 0.50)', bg: 'rgba(56, 189, 248, 0.07)' },
@@ -861,6 +859,12 @@
         case 'wrench': return 'text-yellow-400 font-extrabold';
         default: return 'text-purple-300 font-extrabold';
       }
+    }
+
+    function formatBotNameWithSpaces(name) {
+      if (!name) return '';
+      let spaced = name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
+      return spaced;
     }
 
     function initBackgroundKeepAlive() {
@@ -917,7 +921,8 @@
                 hideMyName: false,
                 question: cachedData.question,
                 createdAt: cachedData.createdAt,
-                isBot: true
+                isBot: true,
+                isOffline: true
               };
             }
             participatedChatRoomIds.add('room-peer-' + id.replace(/[^a-zA-Z0-9]/g, '-'));
@@ -978,9 +983,9 @@
     }
 
     function getDisplayName(rawSender, hideMyName, accountType) {
-      if (accountType === 'business') return rawSender || 'Business Store';
+      if (accountType === 'business') return formatBotNameWithSpaces(rawSender || 'Business Store');
       if (hideMyName) return 'Anonymous Local';
-      return rawSender || 'Local Peer';
+      return formatBotNameWithSpaces(rawSender || 'Local Peer');
     }
 
     function toggleNameVisibility(hide) {
@@ -990,9 +995,9 @@
 
     function setLocationPrecision(mode) {
       userState.locationPrecision = mode;
-      document.getElementById('locShowBtn').className = mode === 'show' ? 'py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm' : 'py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm';
-      document.getElementById('locFizzBtn').className = mode === 'fizz' ? 'py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm' : 'py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm';
-      document.getElementById('locHideBtn').className = mode === 'hide' ? 'py-2 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm' : 'py-2 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm';
+      document.getElementById('locShowBtn').className = mode === 'show' ? 'py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm min-h-[38px]' : 'py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm min-h-[38px]';
+      document.getElementById('locFizzBtn').className = mode === 'fizz' ? 'py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm min-h-[38px]' : 'py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm min-h-[38px]';
+      document.getElementById('locHideBtn').className = mode === 'hide' ? 'py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-[10px] shadow-sm min-h-[38px]' : 'py-2.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-[10px] shadow-sm min-h-[38px]';
       
       const desc = document.getElementById('locPrecisionDesc');
       if (mode === 'show') desc.innerText = 'Showing exact distance to nearby peers.';
@@ -1022,7 +1027,6 @@
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
-    /* RENDER CARDS WITH MAIN USER NAME REMOVAL & CONTINUOUS UNREAD JIGGLE */
     function renderUserBubbleCardHtml(question, senderName, onClickJs, routerIsAdmin = false, isGiggle = false, isMainUser = false, isAdmin = false, hasUnread = false) {
       if (!question) return '';
       const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float');
@@ -1034,9 +1038,9 @@
             <div class="admin-rainbow-inner px-4 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1">
               ${isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-white/10 pb-1"><span class="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider">${senderName}</span></div>`}
               <div class="flex items-center justify-center gap-1.5 py-0.5">
-                <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
+                <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                   <div class="bubble-glare"></div>
-                  <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                  <svg class="w-2.5 h-2.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
                   </svg>
                 </div>
@@ -1051,9 +1055,9 @@
         <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">
           ${headerHtml}
           <div class="flex items-center justify-center gap-1.5 py-0.5">
-            <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
+            <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
               <div class="bubble-glare"></div>
-              <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+              <svg class="w-2.5 h-2.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
               </svg>
             </div>
@@ -1074,9 +1078,9 @@
             <div class="admin-rainbow-inner px-3.5 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1.5">
               ${isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${nameColorClass}">${displayName}</span></div>`}
               <div class="flex items-center gap-1.5">
-                <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
+                <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                   <div class="bubble-glare"></div>
-                  <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                  <svg class="w-2.5 h-2.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
                   </svg>
                 </div>
@@ -1094,9 +1098,9 @@
           <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 ${animClass} z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
             ${headerHtml}
             <div class="flex items-center gap-1.5 py-0.5">
-              <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
+              <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                 <div class="bubble-glare"></div>
-                <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                <svg class="w-2.5 h-2.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
                 </svg>
               </div>
@@ -1112,14 +1116,14 @@
       return `
         <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 ${animClass} z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <div class="flex items-start gap-2.5">
-            <i data-lucide="${neonStyle.lucideIcon}" class="w-4 h-4 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
+            <i data-lucide="${neonStyle.lucideIcon}" class="w-3.5 h-3.5 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
               ${bizHeaderHtml}
               ${question ? `
                 <div class="flex items-center gap-1.5 mt-1">
-                  <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
+                  <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
                     <div class="bubble-glare"></div>
-                    <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                    <svg class="w-2.5 h-2.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
                     </svg>
                   </div>
@@ -1194,13 +1198,14 @@
           currentAuthUser = session.user;
           myPeerId = session.user.id;
           await fetchUserProfile(session.user.id);
-        } else {
-          // If no active session, show login/signup modal
-          openWelcomeModalForLogin();
         }
       }
 
-      initializeAppSession();
+      if (!userState.profileCreated) {
+        openWelcomeModalForLogin(false);
+      } else {
+        initializeAppSession();
+      }
       checkAdminPrivileges();
     });
 
@@ -1213,14 +1218,14 @@
       const subtitleElem = document.getElementById('welcomeModalSubtitle');
 
       if (tab === 'signin') {
-        btnSignIn.className = 'flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md';
-        btnSignUp.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
+        btnSignIn.className = 'flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md min-h-[40px]';
+        btnSignUp.className = 'flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]';
         usernameContainer.classList.add('hidden');
         submitBtn.innerText = 'Sign In';
-        subtitleElem.innerText = 'Sign in with your username/email and password.';
+        subtitleElem.innerText = 'Sign in with your email and password.';
       } else {
-        btnSignUp.className = 'flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md';
-        btnSignIn.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
+        btnSignUp.className = 'flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md min-h-[40px]';
+        btnSignIn.className = 'flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]';
         usernameContainer.classList.remove('hidden');
         submitBtn.innerText = 'Create Account';
         subtitleElem.innerText = 'Choose a unique alias, email, and password.';
@@ -1229,7 +1234,7 @@
 
     function openWelcomeModalForLogin(isReturningLogin = false) {
       document.getElementById('welcomeProfileModal').classList.remove('hidden');
-      setAuthTab('signin');
+      setAuthTab(isReturningLogin ? 'signin' : 'signup');
     }
 
     async function submitAuthForm() {
@@ -1237,7 +1242,6 @@
       const password = document.getElementById('welcomePasswordInput').value.trim();
       const usernameInput = document.getElementById('welcomeUsernameInput').value.trim();
 
-      // Quick admin backdoor
       if ((emailInput.toLowerCase() === 'administrator' || emailInput === 'admin') && password === '4464') {
         isAdminUser = true;
         userState.alias = 'Administrator';
@@ -1251,62 +1255,81 @@
       }
 
       if (!emailInput || !password) {
-        showToast('Please enter username/email and password', 'alert-circle');
+        showToast('Please enter email and password', 'alert-circle');
         return;
       }
 
       if (currentAuthTab === 'signup' && !usernameInput) {
-        showToast('Please provide a unique alias for your account', 'alert-circle');
+        showToast('Please create a unique alias for your account', 'alert-circle');
         return;
       }
 
       try {
         if (window.supabase) {
           supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
-          let authResult;
-          const authEmail = emailInput.includes('@') ? emailInput : `${emailInput.toLowerCase().replace(/[^a-z0-9]/g, '')}@local.net`;
-
+          
           if (currentAuthTab === 'signup') {
-            authResult = await supabaseClient.auth.signUp({
-              email: authEmail,
+            const { data: existingProfiles, error: checkErr } = await supabaseClient
+              .from('profiles')
+              .select('id')
+              .eq('alias', usernameInput);
+            
+            if (existingProfiles && existingProfiles.length > 0) {
+              showToast('That unique alias is already taken. Please choose another.', 'alert-circle');
+              return;
+            }
+
+            const authResult = await supabaseClient.auth.signUp({
+              email: emailInput,
               password,
               options: { data: { alias: usernameInput } }
             });
+
             if (authResult.error) {
               showToast(authResult.error.message, 'alert-circle');
               return;
             }
+
             if (authResult.data?.user || authResult.data?.session?.user) {
               currentAuthUser = authResult.data.user || authResult.data.session.user;
               myPeerId = currentAuthUser.id;
               userState.alias = usernameInput;
-              await saveUserProfileToSupabase();
-            }
-          } else {
-            authResult = await supabaseClient.auth.signInWithPassword({
-              email: authEmail,
-              password
-            });
-            if (authResult.error) {
-              // Fallback try signing in directly with raw string if email lookup fails
-              authResult = await supabaseClient.auth.signInWithPassword({
-                email: emailInput,
-                password
+              
+              await supabaseClient.from('profiles').upsert({
+                id: currentAuthUser.id,
+                alias: usernameInput,
+                account_type: userState.type,
+                category: userState.category,
+                interest_filter: userState.interestFilter,
+                hide_my_name: userState.hideMyName,
+                updated_at: new Date()
               });
             }
+          } else {
+            const authResult = await supabaseClient.auth.signInWithPassword({
+              email: emailInput,
+              password
+            });
+
             if (authResult.error) {
               showToast(authResult.error.message, 'alert-circle');
               return;
             }
+
             if (authResult.data?.user || authResult.data?.session?.user) {
               currentAuthUser = authResult.data.user || authResult.data.session.user;
               myPeerId = currentAuthUser.id;
-              await fetchUserProfile(currentAuthUser.id);
+              const { data: profileData } = await supabaseClient.from('profiles').select('*').eq('id', currentAuthUser.id).single();
+              if (profileData && profileData.alias) {
+                userState.alias = profileData.alias;
+              } else {
+                userState.alias = emailInput.split('@')[0];
+              }
             }
           }
         }
       } catch(e) {
-        showToast('Authentication error occurred', 'alert-circle');
+        showToast('Authentication error: ' + (e.message || e), 'alert-circle');
         return;
       }
 
@@ -1317,7 +1340,7 @@
       document.getElementById('welcomeProfileModal').classList.add('hidden');
       initializeAppSession();
       checkAdminPrivileges();
-      showToast('Successfully logged in & connected!', 'check-circle');
+      showToast(`Welcome, @${userState.alias}! Connected to mesh.`, 'check-circle');
     }
 
     function checkAdminPrivileges() {
@@ -1337,14 +1360,14 @@
       const contentUsers = document.getElementById('adminTabUsersContent');
 
       if (tabName === 'bots') {
-        btnBots.className = 'flex-1 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md';
-        btnUsers.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
+        btnBots.className = 'flex-1 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition-all shadow-md min-h-[40px]';
+        btnUsers.className = 'flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]';
         contentBots.classList.remove('hidden');
         contentUsers.classList.add('hidden');
         renderAdminBotEditorList();
       } else {
-        btnUsers.className = 'flex-1 py-2 rounded-xl bg-sky-500 text-slate-950 font-bold text-xs transition-all shadow-md';
-        btnBots.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
+        btnUsers.className = 'flex-1 py-2.5 rounded-xl bg-sky-500 text-slate-950 font-bold text-xs transition-all shadow-md min-h-[40px]';
+        btnBots.className = 'flex-1 py-2.5 rounded-xl text-slate-400 font-bold text-xs transition-all min-h-[40px]';
         contentUsers.classList.remove('hidden');
         contentBots.classList.add('hidden');
         renderAdminUsersEditorList();
@@ -1365,7 +1388,7 @@
         showToast('Radar limits removed! All active users visible.', 'shield-alert');
       } else {
         userState.radius = DEFAULT_RADIUS_METERS;
-        showToast('Radar limits re-applied (0.5 Mi).', 'radar');
+        showToast('Radar limits re-applied (0.25 Mi).', 'radar');
       }
       refreshAllNodeVisibilities();
     }
@@ -1390,7 +1413,7 @@
         peerId: botId, rawSender: name, lat, lng, distance: distMeters,
         bubbleColor: 'purple', accountType, category: 'store',
         hours: 'Open 9:00 AM • Closes 9:00 PM', interestFilter: interest,
-        hideMyName: false, lastSeen: Date.now(), question, createdAt: Date.now(), isBot: true
+        hideMyName: false, lastSeen: Date.now(), question, createdAt: Date.now(), isBot: true, isOffline: false
       };
 
       globalActiveDirectory[botId] = newBot;
@@ -1421,13 +1444,13 @@
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col gap-2">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-white">${peer.rawSender} (${peer.accountType})</span>
-              <button onclick="deleteBotProfile('${id}')" class="px-2 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Remove</button>
+              <span class="text-xs font-bold text-white">${formatBotNameWithSpaces(peer.rawSender)} (${peer.accountType})</span>
+              <button aria-label="Remove Bot" onclick="deleteBotProfile('${id}')" class="px-2.5 py-1.5 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold min-h-[32px]">Remove</button>
             </div>
             <div class="space-y-1">
-              <input type="text" id="edit-name-${id}" value="${peer.rawSender}" class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
-              <input type="text" id="edit-q-${id}" value="${peer.question || ''}" placeholder="Chat bubble message..." class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
-              <button onclick="saveBotProfileEdit('${id}')" class="px-3 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-bold">Save Changes</button>
+              <input aria-label="Bot Name Edit" type="text" id="edit-name-${id}" value="${peer.rawSender}" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs min-h-[36px]">
+              <input aria-label="Bot Question Edit" type="text" id="edit-q-${id}" value="${peer.question || ''}" placeholder="Chat bubble message..." class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs min-h-[36px]">
+              <button aria-label="Save Bot Profile" onclick="saveBotProfileEdit('${id}')" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-bold min-h-[36px]">Save Changes</button>
             </div>
           </div>
         `;
@@ -1442,10 +1465,10 @@
       let html = `
         <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
           <div>
-            <span class="text-xs font-bold text-white">${userState.alias} (You)</span>
+            <span class="text-xs font-bold text-white">@${userState.alias} (You)</span>
             <span class="text-[10px] text-emerald-400 block font-mono">ID: ${myPeerId}</span>
           </div>
-          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">Active Session</span>
+          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">Authenticated</span>
         </div>
       `;
 
@@ -1459,10 +1482,10 @@
         html += `
           <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between mt-2">
             <div>
-              <span class="text-xs font-bold text-white">${peer.rawSender} (${peer.accountType})</span>
+              <span class="text-xs font-bold text-white">@${formatBotNameWithSpaces(peer.rawSender)} (${peer.accountType})</span>
               <span class="text-[10px] text-sky-400 block font-mono">Distance: ${peer.distance}m</span>
             </div>
-            <button onclick="kickNetworkUser('${id}')" class="px-2.5 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Disconnect</button>
+            <button aria-label="Disconnect User" onclick="kickNetworkUser('${id}')" class="px-2.5 py-1.5 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold min-h-[32px]">Disconnect</button>
           </div>
         `;
       });
@@ -1488,6 +1511,7 @@
         globalActiveDirectory[id].rawSender = newName;
         globalActiveDirectory[id].question = newQ;
         globalActiveDirectory[id].createdAt = Date.now();
+        globalActiveDirectory[id].isOffline = false;
         
         const customIdx = customBotDefinitions.findIndex(b => b.peerId === id);
         if (customIdx !== -1) {
@@ -1526,7 +1550,7 @@
       userState.radius = DEFAULT_RADIUS_METERS;
       initGPSLocation();
       initUserNode();
-      initSupabaseNetwork();
+      initSupabaseRealtimeSubscriptions();
       requestScreenWakeLock();
       spawnDefaultSimulatedUsers();
       checkOfflineGeneratedTopicsUponLogon();
@@ -1536,9 +1560,14 @@
       checkAdminPrivileges();
       
       const slider = document.getElementById('radarRangeSlider');
-      if (slider) { slider.min = DEFAULT_RADIUS_METERS; slider.max = MAX_RADIUS_METERS; slider.value = DEFAULT_RADIUS_METERS; }
+      if (slider) { 
+        slider.min = DEFAULT_RADIUS_METERS; 
+        slider.max = MAX_RADIUS_METERS; 
+        slider.step = "250";
+        slider.value = DEFAULT_RADIUS_METERS; 
+      }
 
-      updateRadius(userState.radius);
+      updateRadius(userState.radius, true);
 
       window.addEventListener('resize', recalculateNodePositions);
       initRadiusDragHandlers();
@@ -1601,7 +1630,6 @@
       try {
         localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(userState));
         localStorage.setItem(STORAGE_KEY_TOPIC_STATE, JSON.stringify(activeTopicState));
-        localStorage.setItem(STORAGE_KEY_SUPABASE_CONFIG, JSON.stringify(supabaseConfig));
         localStorage.setItem(STORAGE_KEY_PARTICIPATED_ROOMS, JSON.stringify(Array.from(participatedChatRoomIds)));
         localStorage.setItem(STORAGE_KEY_FRIENDS, JSON.stringify(Array.from(friendPeerIds)));
         localStorage.setItem(STORAGE_KEY_CUSTOM_BOTS, JSON.stringify(customBotDefinitions));
@@ -1636,7 +1664,6 @@
       setTimeout(() => { toast.remove(); }, 3500);
     }
 
-    /* Left Chat List Toggle Function & Auto-hide Integration */
     function toggleLeftChatList() {
       leftChatListHidden = !leftChatListHidden;
       applyLeftChatListVisibility();
@@ -1773,7 +1800,6 @@
       }, { passive: false });
     }
 
-    /* DOUBLE TAP HANDLER - TOGGLES SHOW/HIDE BUTTON */
     let lastTapTime = 0;
     function initDoubleTapHandler() {
       const mapCanvas = document.getElementById('mapCanvas');
@@ -1800,7 +1826,7 @@
 
     function recenterAndResetZoom() {
       targetPanX = 0; targetPanY = 0; targetZoomScale = 1.0;
-      updateRadius(DEFAULT_RADIUS_METERS);
+      updateRadius(DEFAULT_RADIUS_METERS, true);
       playAudioEffect('chime');
       showToast('Map recentered & list toggled', 'navigation');
     }
@@ -1824,8 +1850,8 @@
 
     const MAP_PIXELS_PER_MILE = 187.5;
 
-    function updateRadius(val) {
-      const meters = unlimitedRadarActive ? 999999 : Math.max(804.67, Math.max(804.67, Math.min(MAX_RADIUS_METERS, Number(val))));
+    function updateRadius(val, autoZoom = false) {
+      const meters = unlimitedRadarActive ? 999999 : Math.max(402.33, Math.min(MAX_RADIUS_METERS, Number(val)));
       userState.radius = meters;
 
       const ring = document.getElementById('radarBoundaryRing');
@@ -1834,23 +1860,26 @@
       const slider = document.getElementById('radarRangeSlider');
       const sliderLabel = document.getElementById('sliderRangeLabel');
       
-      const miles = unlimitedRadarActive ? 'Unlimited' : (meters / METERS_PER_MILE).toFixed(1);
+      const currentMilesVal = (meters / METERS_PER_MILE);
+      const miles = unlimitedRadarActive ? 'Unlimited' : currentMilesVal.toFixed(2);
       const labelText = unlimitedRadarActive ? 'Unlimited' : `${miles} Mi`;
 
       if (slider) slider.value = meters;
       if (sliderLabel) sliderLabel.innerText = labelText;
 
       if (ring) {
-        const milesVal = unlimitedRadarActive ? 30 : (meters / METERS_PER_MILE);
+        const milesVal = unlimitedRadarActive ? 30 : Math.min(30, currentMilesVal);
         const pixelDiameter = Math.round(milesVal * MAP_PIXELS_PER_MILE * 2);
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
         if (leftBadge) leftBadge.innerText = labelText;
         if (rightBadge) rightBadge.innerText = labelText;
 
-        const viewportMin = Math.min(window.innerWidth, window.innerHeight);
-        const targetScaleFactor = (viewportMin * 0.65) / pixelDiameter;
-        targetZoomScale = Math.max(0.20, Math.min(3.5, targetScaleFactor));
+        if (autoZoom || isDraggingRadius) {
+          const viewportMin = Math.min(window.innerWidth, window.innerHeight);
+          const targetScaleFactor = (viewportMin * 0.65) / Math.max(100, pixelDiameter);
+          targetZoomScale = Math.max(0.35, Math.min(2.5, targetScaleFactor));
+        }
       }
 
       refreshAllNodeVisibilities();
@@ -1858,7 +1887,7 @@
     }
 
     function updateRadiusFromSlider(val) {
-      if (!unlimitedRadarActive) updateRadius(val);
+      updateRadius(val, true);
     }
 
     function initRadiusDragHandlers() {
@@ -1890,8 +1919,8 @@
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
         const deltaPx = currentDistPx - dragStartDistancePx;
         const metersPerPx = METERS_PER_MILE / MAP_PIXELS_PER_MILE;
-        const newMeters = Math.max(804.67, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
-        updateRadius(newMeters);
+        const newMeters = Math.max(402.33, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
+        updateRadius(newMeters, true);
       };
 
       const handleEnd = () => { isDraggingRadius = false; };
@@ -2005,7 +2034,8 @@
         if (peer.lat && peer.lng) {
           peer.distance = calculateHaversineDistance(userState.lat, userState.lng, peer.lat, peer.lng);
           let bearingRad = getDeterministicBearing(peer.peerId, peer.rawSender);
-          let pixelDistanceFromCenter = (peer.distance / METERS_PER_MILE) * MAP_PIXELS_PER_MILE;
+          let radiusMiles = userState.radius / METERS_PER_MILE;
+          let pixelDistanceFromCenter = (peer.distance / userState.radius) * (radiusMiles * MAP_PIXELS_PER_MILE);
 
           let attempts = 0;
           while (attempts < 5) {
@@ -2028,6 +2058,10 @@
         }
       });
       refreshAllNodeVisibilities();
+    }
+
+    function recalculateNodePositions() {
+      refreshAllPeerDistancesAndPositions();
     }
 
     function createScreenTapPulseAt(clientX, clientY) {
@@ -2108,9 +2142,9 @@
 
     function renderNodeIconContent(accountType, category) {
       const isBiz = accountType === 'business';
-      if (!isBiz) return `<div class="bubble-glare"></div><i data-lucide="user" class="w-6 h-6 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
+      if (!isBiz) return `<div class="bubble-glare"></div><i data-lucide="user" class="w-5.5 h-5.5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
       const neonStyle = getBusinessNeonStyle(accountType, category);
-      return `<i data-lucide="${neonStyle.lucideIcon}" class="w-5 h-5 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>`;
+      return `<i data-lucide="${neonStyle.lucideIcon}" class="w-4.5 h-4.5 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>`;
     }
 
     function applyBackgroundMode(mode) {
@@ -2146,7 +2180,7 @@
       if (existingRing) {
         existingRing.outerHTML = getRadarStyleHtml(userState.radarStyle || 'futuristic');
         initRadiusDragHandlers();
-        updateRadius(userState.radius);
+        updateRadius(userState.radius, false);
       }
       showToast(`Radar color theme updated to ${colorName}!`, 'palette');
     }
@@ -2190,7 +2224,7 @@
               <div id="userTopBubble" class="hidden z-[99999999] pointer-events-auto"></div>
             </div>
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-emerald-400/40 blur-lg animate-pulse-glow pointer-events-none"></div>
-            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[58px] h-[58px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[99999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
+            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[52.2px] h-[52.2px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[99999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
               ${renderNodeIconContent(userState.type, userState.category)}
             </div>
           </div>
@@ -2211,13 +2245,14 @@
       if (existingRing) {
         existingRing.outerHTML = getRadarStyleHtml(styleName);
         initRadiusDragHandlers();
-        updateRadius(userState.radius);
+        updateRadius(userState.radius, false);
       }
       showToast(`Radar style updated to ${styleName}!`, 'radar');
     }
 
-    function initSupabaseNetwork() {
-      document.getElementById('myPeerIdDisplay').value = myPeerId;
+    // ARCHITECTURAL UPGRADE: Supabase Realtime Subscriptions & PostGIS-Ready Integration
+    function initSupabaseRealtimeSubscriptions() {
+      document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
       if (!supabaseConfig.url || !supabaseConfig.key) {
         updatePeerServerStatus(false, "Supabase Offline");
         setupLocalBroadcastFallback();
@@ -2226,115 +2261,103 @@
 
       try {
         if (window.supabase) {
-          supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
+          supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key, {
+            realtime: { transport: null }
+          });
           initAuthListener();
-          subscribeToDbChatMessages();
+          
+          // Subscribe to Supabase Realtime Postgres Changes for instant message delivery
+          dbMessagesChannel = supabaseClient.channel('public:chat_messages')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
+              const newMsg = payload.new;
+              if (newMsg && newMsg.room_id) {
+                const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
+                if (!isMe) {
+                  const timeStr = new Date(newMsg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  if (!localChatCache[newMsg.room_id]) localChatCache[newMsg.room_id] = [];
+                  localChatCache[newMsg.room_id].push({ sender: newMsg.sender_alias, text: newMsg.message, time: timeStr, isMe: false });
 
+                  if (currentActiveChatRoomId === newMsg.room_id) {
+                    appendMessage(newMsg.sender_alias, newMsg.message, timeStr, false);
+                  } else {
+                    unreadRoomIds.add(newMsg.room_id);
+                    savePersistentData();
+                    renderPinnedChats();
+                    if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+                    playAudioEffect('click');
+                  }
+                }
+              }
+            })
+            .subscribe();
+
+          // Realtime Broadcast Channel for Live Peer Presence & Mesh Sync
           realtimeChannel = supabaseClient.channel(MESH_ROOM_KEY, {
             config: { broadcast: { self: false }, presence: { key: myPeerId } }
           });
 
           realtimeChannel
-            .on('presence', { event: 'sync' }, () => { handleSupabasePresenceSync(realtimeChannel.presenceState()); })
-            .on('broadcast', { event: 'local_mesh_broadcast' }, (data) => { if (data && data.payload) handleIncomingNetworkPayload(data.payload); })
-            .on('broadcast', { event: 'chat_reply' }, (data) => {
-              if (data && data.payload) {
-                const payload = data.payload;
-                const timeStr = new Date(payload.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const isMe = currentAuthUser ? (payload.sender_id === currentAuthUser.id) : (payload.sender_alias === userState.alias);
-                participatedChatRoomIds.add(payload.room_id);
-
-                if (currentActiveChatRoomId === payload.room_id) {
-                  appendMessage(payload.sender_alias, payload.message, timeStr, isMe);
-                } else if (!isMe) {
-                  unreadRoomIds.add(payload.room_id);
-                  playAudioEffect('bell');
-                  showToast(`New reply from ${payload.sender_alias}`, 'message-square');
+            .on('broadcast', { event: 'local_mesh_broadcast' }, payload => {
+              handleIncomingNetworkPayload(payload.payload);
+            })
+            .on('broadcast', { event: 'chat_reply' }, payload => {
+              const msg = payload.payload;
+              if (msg && msg.room_id && msg.sender_alias !== getDisplayName(userState.alias, userState.hideMyName, userState.type)) {
+                const timeStr = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                if (!localChatCache[msg.room_id]) localChatCache[msg.room_id] = [];
+                localChatCache[msg.room_id].push({ sender: msg.sender_alias, text: msg.message, time: timeStr, isMe: false });
+                if (currentActiveChatRoomId === msg.room_id) {
+                  appendMessage(msg.sender_alias, msg.message, timeStr, false);
+                } else {
+                  unreadRoomIds.add(msg.room_id);
+                  savePersistentData();
+                  renderPinnedChats();
                 }
-                savePersistentData();
-                refreshAllNodeVisibilities();
               }
             })
             .subscribe(async (status) => {
               if (status === 'SUBSCRIBED') {
-                updatePeerServerStatus(true, "Connected to Supabase Realtime");
-                await realtimeChannel.track({
-                  peerId: myPeerId,
-                  sender: userState.alias,
-                  accountType: userState.type,
-                  isBot: false,
-                  lat: userState.lat,
-                  lng: userState.lng,
-                  online_at: new Date().toISOString()
-                });
+                updatePeerServerStatus(true, "Connected via Supabase Realtime Mesh");
+                await realtimeChannel.track({ peerId: myPeerId, alias: userState.alias, online_at: new Date() });
                 announcePresence();
-              } else {
-                updatePeerServerStatus(false, "Status: " + status);
               }
             });
-        }
-      } catch(e) {}
-      setupLocalBroadcastFallback();
-    }
 
-    function subscribeToDbChatMessages() {
-      if (!supabaseClient) return;
-      if (dbMessagesChannel) dbMessagesChannel.unsubscribe();
-
-      dbMessagesChannel = supabaseClient
-        .channel('public:chat_messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
-          const newMsg = payload.new;
-          if (newMsg) {
-            const timeStr = new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const isMe = currentAuthUser ? (newMsg.sender_id === currentAuthUser.id) : (newMsg.sender_alias === userState.alias);
-            participatedChatRoomIds.add(newMsg.room_id);
-
-            if (currentActiveChatRoomId === newMsg.room_id) {
-              appendMessage(newMsg.sender_alias, newMsg.message, timeStr, isMe);
-            } else if (!isMe) {
-              unreadRoomIds.add(newMsg.room_id);
-              playAudioEffect('bell');
-              showToast(`New reply from ${newMsg.sender_alias}`, 'message-square');
+          setInterval(() => {
+            if (currentActiveChatRoomId) {
+              loadDbChatHistory(currentActiveChatRoomId);
             }
-            savePersistentData();
-            refreshAllNodeVisibilities();
-          }
-        })
-        .subscribe();
-    }
-
-    async function loadDbChatHistory(roomId) {
-      const msgBox = document.getElementById('chatMessages');
-      if (!msgBox) return;
-      msgBox.innerHTML = '<div class="text-center text-xs text-slate-500 py-4">Syncing history...</div>';
-
-      if (!supabaseClient) {
-        msgBox.innerHTML = '';
-        if (localChatCache[roomId]) localChatCache[roomId].forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe));
-        return;
+            fetchProfilesAndTopicsFromSupabase();
+          }, 4000);
+          
+          updatePeerServerStatus(true, "Connected to Supabase Realtime");
+        }
+      } catch(e) {
+        updatePeerServerStatus(false, "Mesh Fallback (Local & DB)");
       }
-
-      const { data, error } = await supabaseClient.from('chat_messages').select('*').eq('room_id', roomId).order('created_at', { ascending: true });
-      msgBox.innerHTML = '';
-      if (!error && data && data.length > 0) {
-        data.forEach(msg => {
-          const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const isMe = currentAuthUser ? (msg.sender_id === currentAuthUser.id) : (msg.sender_alias === userState.alias);
-          appendMessage(msg.sender_alias, msg.message, timeStr, isMe);
-        });
-      } else if (localChatCache[roomId]) {
-        localChatCache[roomId].forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe));
-      }
+      setupLocalBroadcastFallback();
     }
 
     async function fetchProfilesAndTopicsFromSupabase() {
       if (!supabaseClient) return;
       const { data: profiles, error } = await supabaseClient.from('profiles').select('*');
       if (!error && profiles) {
+        const activeSupabaseIds = new Set(profiles.map(p => p.id));
+
+        Object.keys(globalActiveDirectory).forEach(peerId => {
+          if (!peerId.startsWith('custom-bot-') && !peerId.startsWith('sim-peer-')) {
+            if (!activeSupabaseIds.has(peerId)) {
+              globalActiveDirectory[peerId].isOffline = true;
+            }
+          }
+        });
+
         profiles.forEach(p => {
-          if (p.id !== currentAuthUser?.id && p.active_topic && p.topic_created_at) {
-            const createdAtTime = new Date(p.topic_created_at).getTime();
+          if (p.id !== currentAuthUser?.id) {
+            const hasValidTopic = p.active_topic && p.topic_created_at;
+            const createdAtTime = hasValidTopic ? new Date(p.topic_created_at).getTime() : null;
+            const isExpired = createdAtTime && (Date.now() - createdAtTime > ONE_HOUR_MS);
+
             globalActiveDirectory[p.id] = {
               ...(globalActiveDirectory[p.id] || {}),
               rawSender: p.alias || 'Traveler',
@@ -2346,9 +2369,10 @@
               hours: p.hours,
               interestFilter: p.interest_filter || 'none',
               hideMyName: p.hide_my_name || false,
-              question: p.active_topic,
-              createdAt: createdAtTime,
+              question: isExpired ? null : p.active_topic,
+              createdAt: isExpired ? null : createdAtTime,
               isBot: false,
+              isOffline: false,
               distance: calculateHaversineDistance(userState.lat, userState.lng, p.lat || userState.lat, p.lng || userState.lng)
             };
           }
@@ -2372,7 +2396,7 @@
       const statusBanner = document.getElementById('authStatusBanner');
       const signOutBtn = document.getElementById('signOutBtn');
       if (user) {
-        statusBanner.innerText = `Logged in as: ${user.email} (${userState.alias})`;
+        statusBanner.innerText = `Logged in: ${user.email} (@${userState.alias})`;
         statusBanner.className = 'text-[11px] text-emerald-700 font-semibold';
         if (signOutBtn) signOutBtn.classList.remove('hidden');
       } else {
@@ -2413,11 +2437,17 @@
 
         if (data.active_topic && data.topic_created_at) {
           const tTime = new Date(data.topic_created_at).getTime();
-          activeTopicState.text = data.active_topic;
-          activeTopicState.createdAt = tTime;
-          renderUserTopBubbleContent();
+          if (Date.now() - tTime <= ONE_HOUR_MS) {
+            activeTopicState.text = data.active_topic;
+            activeTopicState.createdAt = tTime;
+            renderUserTopBubbleContent();
+          } else {
+            activeTopicState.text = null;
+            activeTopicState.createdAt = null;
+          }
         }
         document.getElementById('avatarNameInput').value = userState.alias;
+        document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
         updateMyDisplayLabel();
         checkAdminPrivileges();
         savePersistentData();
@@ -2426,6 +2456,16 @@
 
     async function saveUserProfileToSupabase() {
       if (!supabaseClient || !currentAuthUser) return;
+      const { data: existing, error: err } = await supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('alias', userState.alias);
+
+      if (existing && existing.some(p => p.id !== currentAuthUser.id)) {
+        showToast('That unique alias is already taken by another user!', 'alert-circle');
+        return;
+      }
+
       await supabaseClient.from('profiles').upsert({
         id: currentAuthUser.id,
         alias: userState.alias,
@@ -2435,17 +2475,19 @@
         hide_my_name: userState.hideMyName,
         updated_at: new Date()
       });
+      document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
+      showToast('Profile and unique alias updated!', 'check-circle');
     }
 
     function reconnectSupabase() {
       if (realtimeChannel) realtimeChannel.unsubscribe();
       if (dbMessagesChannel) dbMessagesChannel.unsubscribe();
-      initSupabaseNetwork();
+      initSupabaseRealtimeSubscriptions();
     }
 
     function setupLocalBroadcastFallback() {
       if ('BroadcastChannel' in window && !broadcastChannel) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v31');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v36');
         broadcastChannel.onmessage = (event) => { handleIncomingNetworkPayload(event.data); };
       }
       window.addEventListener('storage', (event) => {
@@ -2453,21 +2495,6 @@
           try { handleIncomingNetworkPayload(JSON.parse(event.newValue)); } catch(e) {}
         }
       });
-    }
-
-    function handleSupabasePresenceSync(state) {
-      const activePresentPeerIds = new Set();
-      Object.keys(state).forEach(key => {
-        const presenceList = state[key];
-        if (presenceList && presenceList.length > 0) {
-          const peerData = presenceList[0];
-          if (peerData && peerData.peerId) {
-            activePresentPeerIds.add(peerData.peerId);
-            if (peerData.peerId !== myPeerId) handleIncomingNetworkPayload(peerData);
-          }
-        }
-      });
-      refreshAllPeerDistancesAndPositions();
     }
 
     function updatePeerServerStatus(connected, customStatusText) {
@@ -2483,7 +2510,18 @@
     }
 
     function handleIncomingNetworkPayload(data) {
-      if (!data || data.peerId === myPeerId || (data.id && processedMsgIds.has(data.id))) return;
+      if (!data || data.peerId === myPeerId) return;
+
+      if (data.type === 'CLEAR_PREVIOUS_BUBBLE') {
+        if (globalActiveDirectory[data.peerId]) {
+          globalActiveDirectory[data.peerId].question = null;
+          globalActiveDirectory[data.peerId].createdAt = null;
+        }
+        refreshAllPeerDistancesAndPositions();
+        return;
+      }
+
+      if (data.id && processedMsgIds.has(data.id)) return;
       if (data.id) processedMsgIds.add(data.id);
 
       const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
@@ -2491,14 +2529,23 @@
 
       const calculatedHours = (data.accountType === 'business' && data.openTime && data.closeTime) ? computeBusinessHoursStatus(data.openTime, data.closeTime) : (data.hours || 'Open 9:00 AM • Closes 9:00 PM');
 
+      const newQuestionText = data.text !== undefined ? data.text : data.question;
+      const questionCreatedAt = data.createdAt;
+
       globalActiveDirectory[data.peerId] = {
         ...globalActiveDirectory[data.peerId],
         rawSender: data.sender, peerId: data.peerId, lat: data.lat, lng: data.lng,
         distance, bubbleColor: data.bubbleColor || 'violet', accountType: data.accountType || 'personal',
         category: data.category || 'store', openTime: data.openTime || '09:00', closeTime: data.closeTime || '21:00',
         hours: calculatedHours, interestFilter: data.interestFilter || 'none', hideMyName: data.hideMyName || false,
-        lastSeen: Date.now(), question: data.text || data.question, createdAt: data.createdAt, isBot: false
+        lastSeen: Date.now(),
+        question: newQuestionText !== undefined ? newQuestionText : globalActiveDirectory[data.peerId].question,
+        createdAt: questionCreatedAt !== undefined ? questionCreatedAt : globalActiveDirectory[data.peerId].createdAt,
+        isBot: data.isBot || false,
+        isOffline: false
       };
+
+      activeBubbleBySender[data.peerId] = data.id;
 
       updateMeshUI();
       refreshAllPeerDistancesAndPositions();
@@ -2506,11 +2553,11 @@
 
     function spawnDefaultSimulatedUsers() {
       const defaultBots = [
-        { name: 'Jensen Beach Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.3, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
-        { name: 'Pickleball Club Bot', peerId: 'sim-peer-bot-05mi', targetMiles: 0.4, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
-        { name: 'Island Grill & Pizzeria', peerId: 'sim-peer-restaurant-08mi', targetMiles: 0.8, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Coastline Cafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.2, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'coffee', openTime: '06:00', closeTime: '18:00', hours: 'Open 6:00 AM • Closes 6:00 PM', interestFilter: 'Food', isBot: true },
-        { name: 'Ocean Rx Pharmacy', peerId: 'sim-peer-business-2', targetMiles: 1.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
+        { name: 'JensenBeachGuide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.3, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
+        { name: 'PickleballPro', peerId: 'sim-peer-bot-05mi', targetMiles: 0.4, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'IslandGrill', peerId: 'sim-peer-restaurant-08mi', targetMiles: 0.8, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'CoastlineCafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.2, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'coffee', openTime: '06:00', closeTime: '18:00', hours: 'Open 6:00 AM • Closes 6:00 PM', interestFilter: 'Food', isBot: true },
+        { name: 'OceanRx', peerId: 'sim-peer-business-2', targetMiles: 1.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
       ];
 
       const allBotsMap = {};
@@ -2538,7 +2585,8 @@
           bubbleColor: u.color || 'blue', accountType: u.accountType || 'personal', category: u.category || 'store',
           openTime: u.openTime || '', closeTime: u.closeTime || '', hours: computedHours || '',
           interestFilter: u.interestFilter || 'none', hideMyName: false, lastSeen: Date.now(),
-          question: u.question || 'Bot Bubble', createdAt: u.createdAt || (Date.now() - (i * 300000)), isBot: true
+          question: u.question || 'Bot Bubble', createdAt: u.createdAt || (Date.now() - (i * 300000)), isBot: true,
+          isOffline: false
         };
       });
 
@@ -2585,18 +2633,18 @@
 
       container.innerHTML = '';
       friendPeerIds.forEach(peerId => {
-        const peer = globalActiveDirectory[peerId] || { rawSender: 'Friend Peer (' + peerId.substring(0,6) + ')', accountType: 'personal' };
+        const peer = globalActiveDirectory[peerId] || { rawSender: 'Friend Peer', accountType: 'personal' };
         const displayName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
         container.innerHTML += `
           <div class="p-2.5 rounded-2xl bg-white/80 border border-slate-200 flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-2">
-              <div class="w-7 h-7 rounded-full bg-sky-500 text-white font-bold text-xs flex items-center justify-center">${displayName.charAt(0).toUpperCase()}</div>
+              <div class="w-6.5 h-6.5 rounded-full bg-sky-500 text-white font-bold text-xs flex items-center justify-center">@${displayName.charAt(0).toUpperCase()}</div>
               <div>
-                <span class="text-xs font-bold text-slate-900 block">${displayName}</span>
+                <span class="text-xs font-bold text-slate-900 block">@${displayName}</span>
                 <span class="text-[9px] text-emerald-600 font-semibold">Friend • Pinned in Side Lists</span>
               </div>
             </div>
-            <button onclick="toggleFriendStatus('${peerId}')" class="px-2 py-1 rounded-lg bg-red-500/15 text-red-700 hover:bg-red-500/25 text-[10px] font-bold">Remove</button>
+            <button aria-label="Remove Friend" onclick="toggleFriendStatus('${peerId}')" class="px-2.5 py-1.5 rounded-lg bg-red-500/15 text-red-700 hover:bg-red-500/25 text-[10px] font-bold min-h-[32px]">Remove</button>
           </div>
         `;
       });
@@ -2684,12 +2732,12 @@
         if (item.isAdmin) {
           container.innerHTML += `
             <div onclick="${onClickJs}" class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] hover:scale-105 transition-all ${jiggleClass}">
-              <div class="admin-rainbow-inner px-3 py-2.5 rounded-[15px] shadow-xl flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
+              <div class="admin-rainbow-inner px-3.5 py-3 rounded-[15px] shadow-xl flex items-center gap-2.5">
+                <div class="w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
                   ${renderNodeIconContent(item.accountType, item.category)}
                 </div>
                 <div class="min-w-0 flex-1">
-                  ${item.isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${isBiz ? nameColorClass : 'text-amber-400 font-bold'}">${item.name}</span></div>`}
+                  ${item.isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${isBiz ? nameColorClass : 'text-amber-400 font-bold'}">@${item.name}</span></div>`}
                   <span class="text-[9px] text-white font-medium block truncate">${item.question || 'Pinned Chat'}</span>
                 </div>
               </div>
@@ -2698,12 +2746,12 @@
         } else {
           const cardOutline = item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (item.isFriend ? 'border-[2px] border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.6)]' : 'border border-white/80 shadow-xl');
           container.innerHTML += `
-            <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} ${jiggleClass} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
+            <div onclick="${onClickJs}" class="glass-card px-3.5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} ${jiggleClass} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
+              <div class="w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
                 ${renderNodeIconContent(item.accountType, item.category)}
               </div>
               <div class="min-w-0 flex-1">
-                ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">${item.name}</span></div>`}
+                ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">@${item.name}</span></div>`}
                 <span class="text-[9px] text-slate-700 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
               </div>
             </div>
@@ -2741,22 +2789,22 @@
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
+              <div class="w-7.5 h-7.5 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
                 ${renderNodeIconContent(peer.accountType, peer.category)}
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
-                  <h4 class="text-xs ${nameColorClass}">${displayLabel}</h4>
+                  <h4 class="text-xs ${nameColorClass}">@${displayLabel}</h4>
                   ${isFriend ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold">Friend</span>' : ''}
                 </div>
                 <p class="text-[10px] text-slate-500 font-semibold">Distance: ${distStr}</p>
               </div>
             </div>
             <div class="flex items-center gap-1.5">
-              <button onclick="toggleFriendStatus('${peerId}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
+              <button aria-label="Toggle Friend" onclick="toggleFriendStatus('${peerId}')" class="px-2.5 py-2 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px] min-h-[36px]" title="Toggle Friend">
                 <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
               </button>
-              <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}', ${peer.createdAt})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
+              <button aria-label="Connect Peer" onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}', ${peer.createdAt})" class="px-3 py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md min-h-[36px]">Connect</button>
             </div>
           </div>
         `;
@@ -2798,7 +2846,7 @@
         const isFriend = friendPeerIds.has(pId);
         const peerIsAdmin = (p.rawSender || '').toLowerCase() === 'administrator';
 
-        if (p.enabled !== false && (p.accountType === 'business' || hasValidQuestion)) {
+        if (p.enabled !== false && hasValidQuestion) {
           const matches = matchesInterestFilter(p.interestFilter);
           const inRadius = peerIsAdmin || isFriend || unlimitedRadarActive || (userState.radius === 0 || p.distance <= userState.radius);
           if ((matches && inRadius) || isParticipated || unlimitedRadarActive || peerIsAdmin || isFriend) {
@@ -2835,7 +2883,7 @@
 
         container.innerHTML += `
           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
-            <div class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
+            <div class="w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
               ${renderNodeIconContent(b.accountType, b.category)}
             </div>
             <div class="flex-1 min-w-0">
@@ -2857,10 +2905,15 @@
         category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime,
         hours: userState.hours, interestFilter: userState.interestFilter, hideMyName: userState.hideMyName,
         isBot: false,
-        question: (activeTopicState.createdAt) ? activeTopicState.text : null,
-        createdAt: activeTopicState.createdAt
+        question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.text : null,
+        createdAt: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.createdAt : null
       };
-      if (realtimeChannel) realtimeChannel.track(payload);
+      
+      if (realtimeChannel && (realtimeChannel.state === 'joined' || realtimeChannel.subState === 'joined')) {
+        try {
+          realtimeChannel.track(payload);
+        } catch(e) {}
+      }
       broadcastData(payload);
     }
 
@@ -2868,7 +2921,11 @@
       if (userState.ghostMode && userState.type !== 'business') return;
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat; payload.lng = payload.lng || coords.lng;
-      if (realtimeChannel) realtimeChannel.send({ type: 'broadcast', event: 'local_mesh_broadcast', payload });
+      if (realtimeChannel && (realtimeChannel.state === 'joined' || realtimeChannel.subState === 'joined')) {
+        try {
+          realtimeChannel.send({ type: 'broadcast', event: 'local_mesh_broadcast', payload });
+        } catch(e) {}
+      }
       if (broadcastChannel) { try { broadcastChannel.postMessage(payload); } catch(e) {} }
       try { localStorage.setItem(STORAGE_BEACON_KEY, JSON.stringify(payload)); } catch(e) {}
     }
@@ -2905,26 +2962,39 @@
         opacityVal = Math.max(0.05, 1 - (excess / (userState.radius * 0.75)));
       }
 
-      nodeElem.style.display = isEnabled ? 'block' : 'none';
+      const hasValidQuestion = peer.question && peer.createdAt;
+      const isExpired = hasValidQuestion && (Date.now() - peer.createdAt > ONE_HOUR_MS);
+      if (isExpired) {
+        peer.question = null;
+        peer.createdAt = null;
+        participatedChatRoomIds.delete(roomId);
+        savePersistentData();
+      }
+
+      const activeHasQuestion = peer.question && peer.createdAt;
+      const showUserIcon = !peer.isOffline;
+      const shouldDisplay = isEnabled && (activeHasQuestion || showUserIcon);
+
+      nodeElem.style.display = shouldDisplay ? 'block' : 'none';
       nodeElem.style.opacity = peerIsAdmin || isWithinRadius || isParticipated || isFriend || unlimitedRadarActive ? '1' : opacityVal.toString();
       nodeElem.style.pointerEvents = (peerIsAdmin || isWithinRadius || isParticipated || isFriend || unlimitedRadarActive) ? 'auto' : 'none';
 
       const isBiz = peer.accountType === 'business';
       const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
       const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
-      const hasValidQuestion = peer.question && peer.createdAt;
       const showSonarRipple = matchesFilter && !isBiz && !peer.isOffline;
       const chatRoomName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}', ${peer.createdAt})`;
+      const onIconClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}', ${peer.createdAt})`;
 
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
-          <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
+          <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-10 h-10 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]">
-            ${(isBiz || hasValidQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, hasValidQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread) : ''}
+            ${(isBiz || activeHasQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread) : ''}
           </div>
-          ${!peer.isOffline ? `
-            <div onclick="${onClickJs}" class="w-11 h-11 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[9999999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;">
+          ${showUserIcon ? `
+            <div onclick="${onIconClickJs}" class="w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;" title="Click to start private chat with @${chatRoomName}">
               ${renderNodeIconContent(peer.accountType, peer.category)}
             </div>
           ` : ''}
@@ -2938,14 +3008,26 @@
         if (activeTopicState.createdAt) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
-            activeTopicState.createdAt = Date.now();
+            activeTopicState.text = null;
+            activeTopicState.createdAt = null;
             renderUserTopBubbleContent();
             savePersistentData();
+            showToast('Your chat bubble has expired and was removed.', 'clock');
           } else if (currentActiveChatRoomId === 'room-you') {
             const countdownEl = document.getElementById('chatExpiryCountdown');
             if (countdownEl) countdownEl.innerText = formatCountdownTime(activeTopicState.createdAt);
           }
         }
+
+        Object.keys(globalActiveDirectory).forEach(peerId => {
+          const peer = globalActiveDirectory[peerId];
+          if (peer.createdAt && (Date.now() - peer.createdAt > ONE_HOUR_MS)) {
+            peer.question = null;
+            peer.createdAt = null;
+            participatedChatRoomIds.delete('room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-'));
+            savePersistentData();
+          }
+        });
 
         renderGlobalUsersDirectory();
         renderPinnedChats();
@@ -2955,15 +3037,15 @@
 
     function selectAccountType(type, skipSave = false) {
       userState.type = type;
-      document.getElementById('personalTypeBtn').className = type === 'personal' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
-      document.getElementById('businessTypeBtn').className = type === 'business' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all';
+      document.getElementById('personalTypeBtn').className = type === 'personal' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all min-h-[50px]' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all min-h-[50px]';
+      document.getElementById('businessTypeBtn').className = type === 'business' ? 'p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex flex-col items-center gap-1 transition-all min-h-[50px]' : 'p-3 rounded-2xl bg-white/40 border border-slate-200 flex flex-col items-center gap-1 transition-all min-h-[50px]';
       document.getElementById('businessFields').classList.toggle('hidden', type !== 'business');
       if (!skipSave) savePersistentData();
     }
 
     function saveProfile() {
       const newAlias = document.getElementById('avatarNameInput').value.trim();
-      if (!newAlias) { showToast('Please enter a valid username', 'alert-circle'); return; }
+      if (!newAlias) { showToast('Please enter a valid unique alias', 'alert-circle'); return; }
       userState.alias = newAlias;
       userState.category = document.getElementById('businessCategorySelect').value;
       userState.openTime = document.getElementById('businessOpenTimeInput').value;
@@ -2985,7 +3067,6 @@
       announcePresence();
       closeProfileModal();
       checkAdminPrivileges();
-      showToast('Profile saved successfully!', 'check-circle');
     }
 
     function updateMeshUI() {
@@ -2998,6 +3079,12 @@
       const text = input ? input.value.trim() : '';
       if (!text) return;
       closeChatDrawer();
+
+      broadcastData({
+        type: 'CLEAR_PREVIOUS_BUBBLE',
+        peerId: myPeerId,
+        sender: userState.alias
+      });
 
       const oldRoomId = 'room-you';
       if (supabaseClient) {
@@ -3023,6 +3110,8 @@
 
       const msgId = 'msg-' + Math.random().toString(36).substring(2, 9);
       processedMsgIds.add(msgId);
+      activeBubbleBySender[myPeerId] = msgId;
+
       broadcastData({
         id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias,
         bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng,
@@ -3031,7 +3120,7 @@
       });
 
       input.value = '';
-      showToast('Previous chat wiped. New chat posted!', 'check-circle');
+      showToast('Previous chat replaced with new chat bubble!', 'check-circle');
       playAudioEffect('bell');
       savePersistentData();
       renderPinnedChats();
@@ -3045,33 +3134,57 @@
     async function sendChatMessage() {
       const input = document.getElementById('chatInput');
       const text = input ? input.value.trim() : '';
-      if (!currentActiveChatRoomId) currentActiveChatRoomId = 'room-you';
+      
+      if (!currentActiveChatRoomId) {
+        showToast('No active chat room selected', 'alert-circle');
+        return;
+      }
       if (!text) return;
 
-      participatedChatRoomIds.add(currentActiveChatRoomId);
+      const targetRoomId = currentActiveChatRoomId;
+
+      participatedChatRoomIds.add(targetRoomId);
       savePersistentData();
       refreshAllNodeVisibilities();
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const senderDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
+      
+      if (!localChatCache[targetRoomId]) localChatCache[targetRoomId] = [];
+      localChatCache[targetRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
+
       appendMessage(senderDisplayName, text, timeStr, true);
-      input.value = ''; input.style.height = '26px';
+      input.value = ''; 
+      input.style.height = '26px';
 
       const payloadMsg = {
-        room_id: currentActiveChatRoomId, sender_id: currentAuthUser ? currentAuthUser.id : myPeerId,
-        sender_alias: senderDisplayName, message: text, created_at: new Date().toISOString()
+        room_id: targetRoomId, 
+        sender_id: currentAuthUser ? currentAuthUser.id : myPeerId,
+        sender_alias: senderDisplayName, 
+        message: text, 
+        created_at: new Date().toISOString()
       };
 
-      if (realtimeChannel) realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
+      if (realtimeChannel) {
+        try {
+          realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
+        } catch(e) {}
+      }
+      if (broadcastChannel) {
+        try {
+          broadcastChannel.postMessage({ type: 'chat_reply', payload: payloadMsg });
+        } catch(e) {}
+      }
+
       if (supabaseClient) {
         await supabaseClient.from('chat_messages').insert({
-          room_id: currentActiveChatRoomId, sender_id: currentAuthUser ? currentAuthUser.id : null,
-          sender_alias: senderDisplayName, message: text
+          room_id: targetRoomId, 
+          sender_id: currentAuthUser ? currentAuthUser.id : null,
+          sender_alias: senderDisplayName, 
+          message: text
         });
-      } else {
-        if (!localChatCache[currentActiveChatRoomId]) localChatCache[currentActiveChatRoomId] = [];
-        localChatCache[currentActiveChatRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
       }
+
       renderPinnedChats();
     }
 
@@ -3081,7 +3194,7 @@
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full">
           <div class="flex items-center gap-1.5 px-1.5 mb-0.5">
-            <span class="text-[10px] text-slate-700 font-bold">${sender}</span>
+            <span class="text-[10px] text-slate-700 font-bold">@${sender}</span>
             <span class="text-[9px] text-slate-500 font-medium">${time || ''}</span>
           </div>
           <div class="px-4 py-2.5 rounded-2xl text-xs max-w-[85%] font-light leading-relaxed shadow-md ${isMe ? 'bg-emerald-600 text-white rounded-br-none shadow-emerald-500/20' : 'glass-card bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none border border-white/90 shadow-sm'}">${text.replace(/\n/g, '<br>')}</div>
@@ -3091,12 +3204,13 @@
     }
 
     async function openChatDrawer(roomId, roomName, topic, peerId, createdAtVal) {
+      if (!roomId) return;
       currentActiveChatRoomId = roomId;
       unreadRoomIds.delete(roomId);
       savePersistentData();
       refreshAllNodeVisibilities();
 
-      document.getElementById('chatTargetName').innerText = roomName;
+      document.getElementById('chatTargetName').innerText = '@' + roomName;
       
       const isSelf = roomId === 'room-you';
       const isBiz = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business');
@@ -3123,7 +3237,7 @@
 
       const neonStyle = getBusinessNeonStyle(accountType, category);
       const avatarEl = document.getElementById('chatTargetAvatar');
-      avatarEl.className = `w-10 h-10 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
+      avatarEl.className = `w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
       avatarEl.style.background = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
       avatarEl.innerHTML = renderNodeIconContent(accountType, category);
 
@@ -3172,18 +3286,69 @@
       }
     }
 
+    async function loadDbChatHistory(roomId) {
+      const msgBox = document.getElementById('chatMessages');
+      if (!msgBox) return;
+      msgBox.innerHTML = '';
+
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient
+            .from('chat_messages')
+            .select('*')
+            .eq('room_id', roomId)
+            .order('created_at', { ascending: true });
+
+          if (!error && data && data.length > 0) {
+            data.forEach(msg => {
+              const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const isMe = currentAuthUser ? (msg.sender_id === currentAuthUser.id) : (msg.sender_alias === userState.alias);
+              appendMessage(msg.sender_alias, msg.message, timeStr, isMe);
+            });
+            return;
+          }
+        } catch (e) {}
+      }
+
+      const cachedMessages = localChatCache[roomId] || [];
+      cachedMessages.forEach(msg => {
+        appendMessage(msg.sender, msg.text, msg.time, msg.isMe);
+      });
+    }
+
     function closeChatDrawer() {
       document.getElementById('chatDrawer').classList.add('hidden');
       document.getElementById('chatBackdrop').classList.add('hidden');
       document.getElementById('actionDockContainer').classList.remove('hidden');
       currentActiveChatRoomId = null;
-      savePersistentData();
+      localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
     }
 
-    function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
-    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
-    function toggleP2PModal() { document.getElementById('p2pModal').classList.toggle('hidden'); }
-    function recalculateNodePositions() {}
+    function openProfileModal() {
+      document.getElementById('profileModal').classList.remove('hidden');
+      renderProfileFriendsList();
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    function toggleP2PModal() {
+      const modal = document.getElementById('p2pModal');
+      if (modal.classList.contains('hidden')) {
+        modal.classList.remove('hidden');
+        renderGlobalUsersDirectory();
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function copyMyPeerId() {
+      const displayInput = document.getElementById('myPeerIdDisplay');
+      displayInput.select();
+      document.execCommand('copy');
+      showToast('Copied Node ID to clipboard!', 'copy');
+    }
   </script>
 </body>
 </html>
