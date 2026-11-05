@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V7 Stable]</title>
+  <title>LocaL - Proximity Social Network [V8 Fixed Radius & Countdown Sync]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -366,7 +366,7 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[7px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="402.33" max="24140.15" step="250" value="402.33" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
+        <input type="range" id="radarRangeSlider" min="402.33" max="48280.20" step="250" value="402.33" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
         <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.25 Mi</span>
       </div>
     </div>
@@ -777,15 +777,15 @@
     const DEFAULT_RADIUS_METERS = 402.33;
     const MAX_RADIUS_METERS = 48280.20; // Exact 30-mile maximum boundary limit
     
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v36';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v36';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v36';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v36';
-    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v36';
-    const STORAGE_KEY_FRIENDS = 'local_friends_list_v36';
-    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v36';
-    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v36';
-    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v36';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v38';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v38';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v38';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v38';
+    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v38';
+    const STORAGE_KEY_FRIENDS = 'local_friends_list_v38';
+    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v38';
+    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v38';
+    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v38';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -874,6 +874,9 @@
       return spaced;
     }
 
+    // Keep alive & background refresh heartbeat
+    let heartbeatInterval = null;
+
     function initBackgroundKeepAlive() {
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
@@ -881,11 +884,19 @@
         } else {
           stopBackgroundAudioKeepAlive();
           captureOfflineTopicsSnapshot();
+          announcePresence();
+          fetchProfilesAndTopicsFromSupabase();
         }
       });
       window.addEventListener('beforeunload', () => {
         captureOfflineTopicsSnapshot();
       });
+
+      // Background loop refresh every 10 seconds to state online presence
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      heartbeatInterval = setInterval(() => {
+        announcePresence();
+      }, 10000);
     }
 
     function captureOfflineTopicsSnapshot() {
@@ -908,10 +919,14 @@
           const snapshot = JSON.parse(saved);
           Object.keys(snapshot).forEach(id => {
             const cachedData = snapshot[id];
+            const parsedCreated = typeof cachedData.createdAt === 'number' ? cachedData.createdAt : new Date(cachedData.createdAt).getTime();
+
+            if (Date.now() - parsedCreated > ONE_HOUR_MS) return;
+
             if (globalActiveDirectory[id]) {
-              if (!globalActiveDirectory[id].question || globalActiveDirectory[id].createdAt < cachedData.createdAt) {
+              if (!globalActiveDirectory[id].question || globalActiveDirectory[id].createdAt < parsedCreated) {
                 globalActiveDirectory[id].question = cachedData.question;
-                globalActiveDirectory[id].createdAt = cachedData.createdAt;
+                globalActiveDirectory[id].createdAt = parsedCreated;
               }
             } else {
               const isPeerAdmin = id.includes('admin') || cachedData.question.toLowerCase().includes('admin');
@@ -927,7 +942,7 @@
                 interestFilter: 'none',
                 hideMyName: false,
                 question: cachedData.question,
-                createdAt: cachedData.createdAt,
+                createdAt: parsedCreated,
                 isBot: true,
                 isOffline: false
               };
@@ -1024,9 +1039,11 @@
       else return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-purple-400', shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);', iconColor: 'text-purple-300', glowText: 'text-purple-300', lucideIcon: category || 'store' };
     }
 
+    // Accurate UTC Countdown calculation
     function formatCountdownTime(createdAt) {
       if (!createdAt) return '60m 00s';
-      const elapsed = Date.now() - createdAt;
+      const parsedCreatedAt = typeof createdAt === 'number' ? createdAt : new Date(createdAt).getTime();
+      const elapsed = Date.now() - parsedCreatedAt;
       const remaining = ONE_HOUR_MS - elapsed;
       if (remaining <= 0) return '0m 00s';
       const mins = Math.floor(remaining / 60000);
@@ -1566,7 +1583,6 @@
       restoreActiveChatRoom();
       checkAdminPrivileges();
 
-      // Show welcome toast message upon opening the app
       setTimeout(() => {
         showToast('System Ready: Connected to LocaL Proximity Network', 'shield-check');
       }, 600);
@@ -1626,7 +1642,13 @@
           if (userState.alias && userState.alias.toLowerCase() === 'administrator') isAdminUser = true;
         }
         const savedTopicState = localStorage.getItem(STORAGE_KEY_TOPIC_STATE);
-        if (savedTopicState) activeTopicState = JSON.parse(savedTopicState);
+        if (savedTopicState) {
+          const parsedTopic = JSON.parse(savedTopicState);
+          if (parsedTopic && parsedTopic.createdAt) {
+            parsedTopic.createdAt = typeof parsedTopic.createdAt === 'number' ? parsedTopic.createdAt : new Date(parsedTopic.createdAt).getTime();
+            activeTopicState = parsedTopic;
+          }
+        }
         const savedRooms = localStorage.getItem(STORAGE_KEY_PARTICIPATED_ROOMS);
         if (savedRooms) participatedChatRoomIds = new Set(JSON.parse(savedRooms));
         const savedFriends = localStorage.getItem(STORAGE_KEY_FRIENDS);
@@ -1894,6 +1916,7 @@
         }
       }
 
+      refreshAllPeerDistancesAndPositions();
       refreshAllNodeVisibilities();
       savePersistentData();
     }
@@ -2158,6 +2181,7 @@
       createScreenTapPulseAt(window.innerWidth / 2, window.innerHeight / 2);
       triggerBubbleBounce('userAvatarCircle');
       announcePresence();
+      fetchProfilesAndTopicsFromSupabase();
       showToast('Radar refreshed! Searching for chats in area.', 'radar');
     }
 
@@ -2461,7 +2485,7 @@
 
     function setupLocalBroadcastFallback() {
       if ('BroadcastChannel' in window && !broadcastChannel) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v36');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v38');
         broadcastChannel.onmessage = (event) => { handleIncomingNetworkPayload(event.data); };
       }
       window.addEventListener('storage', (event) => {
@@ -2504,7 +2528,7 @@
       const calculatedHours = (data.accountType === 'business' && data.openTime && data.closeTime) ? computeBusinessHoursStatus(data.openTime, data.closeTime) : (data.hours || 'Open 9:00 AM • Closes 9:00 PM');
 
       const newQuestionText = data.text !== undefined ? data.text : data.question;
-      const questionCreatedAt = data.createdAt;
+      const questionCreatedAt = typeof data.createdAt === 'number' ? data.createdAt : (data.createdAt ? new Date(data.createdAt).getTime() : Date.now());
 
       globalActiveDirectory[data.peerId] = {
         ...globalActiveDirectory[data.peerId],
@@ -2552,6 +2576,7 @@
         
         if (!globalActiveDirectory[u.peerId]) globalActiveDirectory[u.peerId] = { enabled: true };
         const computedHours = u.accountType === 'business' ? computeBusinessHoursStatus(u.openTime, u.closeTime) : u.hours;
+        const botCreatedAt = typeof u.createdAt === 'number' ? u.createdAt : (u.createdAt ? new Date(u.createdAt).getTime() : (Date.now() - (i * 300000)));
 
         globalActiveDirectory[u.peerId] = {
           ...globalActiveDirectory[u.peerId],
@@ -2559,7 +2584,7 @@
           bubbleColor: u.color || 'blue', accountType: u.accountType || 'personal', category: u.category || 'store',
           openTime: u.openTime || '', closeTime: u.closeTime || '', hours: computedHours || '',
           interestFilter: u.interestFilter || 'none', hideMyName: false, lastSeen: Date.now(),
-          question: u.question || 'Bot Bubble', createdAt: u.createdAt || (Date.now() - (i * 300000)), isBot: true,
+          question: u.question || 'Bot Bubble', createdAt: botCreatedAt, isBot: true,
           isOffline: false
         };
       });
@@ -3005,6 +3030,15 @@
           } else if (currentActiveChatRoomId === 'room-you') {
             const countdownEl = document.getElementById('chatExpiryCountdown');
             if (countdownEl) countdownEl.innerText = formatCountdownTime(activeTopicState.createdAt);
+          }
+        }
+
+        if (currentActiveChatRoomId && currentActiveChatRoomId !== 'room-you') {
+          const peerId = currentActiveChatRoomId.replace('room-peer-', '');
+          const currentPeer = globalActiveDirectory[peerId];
+          if (currentPeer && currentPeer.createdAt) {
+            const countdownEl = document.getElementById('chatExpiryCountdown');
+            if (countdownEl) countdownEl.innerText = formatCountdownTime(currentPeer.createdAt);
           }
         }
 
