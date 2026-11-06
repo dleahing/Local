@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.5 Admin Pin, Giggle & Zoom]</title>
+  <title>LocaL - Proximity Social Network [V11.6 Home 0.25, Admin Rainbow, Sounds & Duplicate Fix]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -128,6 +128,17 @@
       background: rgba(15, 23, 42, 0.92);
       backdrop-filter: blur(20px);
       border-radius: 16px;
+    }
+    /* V11.6: the Administrator's user icon gets the same rainbow outline
+       as his chat bubbles (map icon, own avatar, side-list icons). */
+    .admin-rainbow-icon-wrap {
+      position: relative;
+      border-radius: 9999px;
+      padding: 3px;
+      background: conic-gradient(from 0deg, #ff0055, #ffd700, #ffae00, #00ff66, #ffdf00, #00ffff, #ffc107, #cc00ff, #ff0055);
+      animation: rainbow-rotate 4s linear infinite;
+      box-shadow: 0 0 24px rgba(255, 215, 0, 0.8);
+      flex-shrink: 0;
     }
 
     #mapCanvas {
@@ -480,7 +491,7 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[7px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="804.67" max="48280.20" step="250" value="804.67" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
+        <input type="range" id="radarRangeSlider" min="402.34" max="48280.20" step="250" value="804.67" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
         <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.50 Mi</span>
       </div>
     </div>
@@ -903,6 +914,8 @@
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
     const DEFAULT_RADIUS_METERS = 804.67; // V11.5: default radar range is 0.5 miles
+    const MIN_RADIUS_METERS = 402.34; // V11.6: smallest radar range is 0.25 miles
+    const HOME_RADIUS_METERS = 402.34; // V11.6: double-tap home view is 0.25 miles (per Shane)
     const MAX_RADIUS_METERS = 48280.20; // Exact 30-mile maximum boundary limit
     
     const STORAGE_KEY_PROFILE = 'local_user_profile_v40';
@@ -1043,13 +1056,84 @@
       }, 10000);
     }
 
+    // V11.6: one place that decides whether a directory entry is the
+    // Administrator (peers are recognised by their Administrator alias -
+    // your OWN admin status is email-based, see computeIsAdmin).
+    function isAdminName(name) {
+      return String(name || '').toLowerCase() === 'administrator';
+    }
+    function isAdminPeer(peer) {
+      return !!peer && isAdminName(peer.rawSender);
+    }
+
+    // V11.6 DUPLICATE-BUBBLE FIX: when a user went offline and came back,
+    // their bubble could appear TWICE - once with their real name (the live
+    // entry) and once as 'Offline Peer' (the entry rebuilt from the offline
+    // snapshot, under the same or a different peer id). This pass merges any
+    // two entries that carry the SAME bubble (same text + same creation
+    // time, or a ghost whose text matches a live bubble within 10s): the
+    // live, real-named entry wins, the duplicate's map node is removed, and
+    // its room participation / messages / unread flag move to the keeper.
+    function dedupeOfflineGhostPeers() {
+      try {
+        const ids = Object.keys(globalActiveDirectory);
+        const removed = new Set();
+        const rank = (p) => {
+          let s = 0;
+          if (p.isOfflineGhost) s += 10;
+          if (!p.rawSender || p.rawSender === 'Offline Peer' || p.rawSender === 'Friend Peer') s += 5;
+          if (p.isOffline) s += 2;
+          return s;
+        };
+        const mergeInto = (keepId, dupId) => {
+          const dupRoom = 'room-peer-' + String(dupId).replace(/[^a-zA-Z0-9]/g, '-');
+          const keepRoom = 'room-peer-' + String(keepId).replace(/[^a-zA-Z0-9]/g, '-');
+          if (participatedChatRoomIds.has(dupRoom)) { participatedChatRoomIds.delete(dupRoom); participatedChatRoomIds.add(keepRoom); }
+          if (localChatCache[dupRoom] && !localChatCache[keepRoom]) localChatCache[keepRoom] = localChatCache[dupRoom];
+          delete localChatCache[dupRoom];
+          if (unreadRoomIds.has(dupRoom)) { unreadRoomIds.delete(dupRoom); unreadRoomIds.add(keepRoom); }
+          const nodeEl = document.getElementById('node-' + String(dupId).replace(/[^a-zA-Z0-9]/g, '-'));
+          if (nodeEl) nodeEl.remove();
+          delete globalActiveDirectory[dupId];
+          removed.add(dupId);
+        };
+        // Exact matches: same bubble text AND same creation timestamp.
+        const byBubble = {};
+        ids.forEach(id => {
+          const p = globalActiveDirectory[id];
+          if (!p || !p.question || !p.createdAt) return;
+          const key = String(p.question) + '|' + String(p.createdAt);
+          (byBubble[key] = byBubble[key] || []).push(id);
+        });
+        Object.values(byBubble).forEach(group => {
+          if (group.length < 2) return;
+          group.sort((a, b) => rank(globalActiveDirectory[a]) - rank(globalActiveDirectory[b]));
+          for (let i = 1; i < group.length; i++) mergeInto(group[0], group[i]);
+        });
+        // Fuzzy pass for ghosts: an offline-snapshot ghost whose text
+        // matches a live entry's bubble (timestamps within 10s) is the
+        // same bubble even if its id/timestamp drifted.
+        Object.keys(globalActiveDirectory).forEach(ghostId => {
+          const ghost = globalActiveDirectory[ghostId];
+          if (!ghost || !ghost.isOfflineGhost || !ghost.question || removed.has(ghostId)) return;
+          const liveId = Object.keys(globalActiveDirectory).find(otherId => {
+            if (otherId === ghostId || removed.has(otherId)) return false;
+            const o = globalActiveDirectory[otherId];
+            return o && !o.isOfflineGhost && o.question === ghost.question && o.createdAt && Math.abs(o.createdAt - ghost.createdAt) <= 10000;
+          });
+          if (liveId) mergeInto(liveId, ghostId);
+        });
+        return removed.size;
+      } catch(e) { return 0; }
+    }
+
     function captureOfflineTopicsSnapshot() {
       try {
         const snapshot = {};
         Object.keys(globalActiveDirectory).forEach(id => {
           const peer = globalActiveDirectory[id];
           if (peer.question && peer.createdAt && (Date.now() - peer.createdAt <= ONE_HOUR_MS)) {
-            snapshot[id] = { question: peer.question, createdAt: peer.createdAt };
+            snapshot[id] = { question: peer.question, createdAt: peer.createdAt, rawSender: peer.rawSender || null, accountType: peer.accountType || 'personal', category: peer.category || 'store', lat: (typeof peer.lat === 'number' ? peer.lat : null), lng: (typeof peer.lng === 'number' ? peer.lng : null), hideMyName: !!peer.hideMyName, isBot: !!peer.isBot, hours: peer.hours || '', interestFilter: peer.interestFilter || 'none' }; // V11.6: keep the peer's identity so a restored bubble is not rebuilt as a nameless 'Offline Peer' duplicate
           }
         });
         // V11.4: never overwrite a stored snapshot with an empty one -
@@ -1076,26 +1160,41 @@
                 globalActiveDirectory[id].createdAt = parsedCreated;
               }
             } else {
-              const isPeerAdmin = id.includes('admin') || cachedData.question.toLowerCase().includes('admin');
+              // V11.6: restore the peer's REAL identity from the snapshot
+              // (older snapshots only kept question+createdAt, so the peer
+              // came back labelled 'Offline Peer' at a random spot - and
+              // once the live peer loaded too, the same bubble showed
+              // twice). Restored entries are offline ghosts: their bubble
+              // stays visible until expiry, but they get no fake live icon,
+              // and dedupeOfflineGhostPeers() removes them the moment the
+              // live peer with the same bubble appears.
+              const restoredName = cachedData.rawSender || null;
+              const isPeerAdmin = restoredName ? restoredName.toLowerCase() === 'administrator' : (id.includes('admin') || cachedData.question.toLowerCase().includes('admin'));
               const isPeerFriend = friendPeerIds.has(id);
-              globalActiveDirectory[id] = {
-                peerId: id,
-                rawSender: isPeerAdmin ? 'Administrator' : (isPeerFriend ? 'Friend Peer' : 'Offline Peer'),
-                lat: userState.lat + (Math.random() - 0.5) * 0.01,
-                lng: userState.lng + (Math.random() - 0.5) * 0.01,
-                distance: 200,
-                accountType: 'personal',
-                category: 'store',
-                interestFilter: 'none',
-                hideMyName: false,
-                question: cachedData.question,
-                createdAt: parsedCreated,
-                isBot: false,
-                isOffline: false
-              };
+              const alreadyLive = Object.keys(globalActiveDirectory).some(otherId => otherId !== id && globalActiveDirectory[otherId].question === cachedData.question && globalActiveDirectory[otherId].createdAt === parsedCreated && !globalActiveDirectory[otherId].isOfflineGhost);
+              if (!alreadyLive) {
+                globalActiveDirectory[id] = {
+                  peerId: id,
+                  rawSender: restoredName || (isPeerAdmin ? 'Administrator' : (isPeerFriend ? 'Friend Peer' : 'Offline Peer')),
+                  lat: (typeof cachedData.lat === 'number' ? cachedData.lat : userState.lat + (Math.random() - 0.5) * 0.01),
+                  lng: (typeof cachedData.lng === 'number' ? cachedData.lng : userState.lng + (Math.random() - 0.5) * 0.01),
+                  distance: 200,
+                  accountType: cachedData.accountType || 'personal',
+                  category: cachedData.category || 'store',
+                  hours: cachedData.hours || '',
+                  interestFilter: cachedData.interestFilter || 'none',
+                  hideMyName: !!cachedData.hideMyName,
+                  question: cachedData.question,
+                  createdAt: parsedCreated,
+                  isBot: !!cachedData.isBot,
+                  isOffline: true,
+                  isOfflineGhost: true
+                };
+              }
             }
             participatedChatRoomIds.add('room-peer-' + id.replace(/[^a-zA-Z0-9]/g, '-'));
           });
+          dedupeOfflineGhostPeers();
           savePersistentData();
         }
       } catch(e) {}
@@ -1460,29 +1559,59 @@
       bellRungRoomIds = new Set(unreadRoomIds);
     }
 
-    // Soft bell: sine partials with a gentle attack and a long, quiet decay -
-    // a single mellow ring instead of a repeating electronic chime.
-    // (This is the exact unread bell from LocaL V7.)
-    function playSoftBell(startTime) {
+    // V11.6: NEW unread sound (per Shane - the old V7 soft bell is gone):
+    // a bright two-step marimba-style chime, E6 then G6 then C7, triangle
+    // wave with a short, clean decay. Clearly different from the send pop
+    // below and from the old single bell ring.
+    function playUnreadChime(startTime) {
       if (!audioCtx) return;
       const t = typeof startTime === 'number' ? startTime : audioCtx.currentTime;
       const master = audioCtx.createGain();
       master.gain.setValueAtTime(0.0001, t);
-      master.gain.exponentialRampToValueAtTime(0.055, t + 0.03);
-      master.gain.exponentialRampToValueAtTime(0.0001, t + 2.4);
+      master.gain.exponentialRampToValueAtTime(0.11, t + 0.02);
+      master.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
       master.connect(audioCtx.destination);
-      [{ f: 1318.51, g: 1.0, d: 2.4 }, { f: 1318.51 * 2.02, g: 0.35, d: 1.4 }, { f: 1318.51 * 2.74, g: 0.18, d: 0.9 }, { f: 1318.51 * 3.76, g: 0.08, d: 0.55 }].forEach(partial => {
+      [{ f: 1318.51, at: 0, d: 0.5 }, { f: 1567.98, at: 0.09, d: 0.55 }, { f: 2093.00, at: 0.18, d: 0.7 }].forEach(note => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(partial.f, t);
-        gain.gain.setValueAtTime(partial.g, t);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + partial.d);
+        const nt = t + note.at;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(note.f, nt);
+        gain.gain.setValueAtTime(0.9, nt);
+        gain.gain.exponentialRampToValueAtTime(0.0001, nt + note.d);
         osc.connect(gain);
         gain.connect(master);
-        osc.start(t);
-        osc.stop(t + partial.d + 0.05);
+        osc.start(nt);
+        osc.stop(nt + note.d + 0.05);
       });
+    }
+
+    // V11.6: send sound - a quick rising "pop-whoosh" played when YOU send
+    // a chat message or create a chat bubble.
+    function playSendSound(startTime) {
+      if (!audioCtx) return;
+      const t = typeof startTime === 'number' ? startTime : audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, t);
+      osc.frequency.exponentialRampToValueAtTime(940, t + 0.13);
+      gain.gain.setValueAtTime(0.14, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.19);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.2);
+      const sparkle = audioCtx.createOscillator();
+      const sparkleGain = audioCtx.createGain();
+      sparkle.type = 'triangle';
+      sparkle.frequency.setValueAtTime(1244, t + 0.02);
+      sparkleGain.gain.setValueAtTime(0.05, t + 0.02);
+      sparkleGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      sparkle.connect(sparkleGain);
+      sparkleGain.connect(audioCtx.destination);
+      sparkle.start(t + 0.02);
+      sparkle.stop(t + 0.12);
     }
 
     function initAudioContext() {
@@ -1512,7 +1641,9 @@
           osc.start(now);
           osc.stop(now + 0.04);
         } else if (type === 'unread-chime') {
-          playSoftBell(now);
+          playUnreadChime(now);
+        } else if (type === 'send') {
+          playSendSound(now);
         } else if (type === 'bell' || type === 'chime') {
           [523.25, 659.25, 783.99].forEach((freq, idx) => {
             const osc = audioCtx.createOscillator();
@@ -1700,6 +1831,10 @@
       const badge = document.getElementById('adminBadgeTag');
       if (btn) btn.classList.toggle('hidden', !isAdminUser);
       if (badge) badge.classList.toggle('hidden', !isAdminUser);
+      // V11.6: your own avatar gets the rainbow outline while you are admin.
+      const selfWrap = document.getElementById('userAvatarRainbowWrap');
+      if (selfWrap) selfWrap.classList.toggle('admin-rainbow-icon-wrap', isAdminUser);
+      try { renderUserTopBubbleContent(false); } catch(e) {}
     }
 
     function setAdminTab(tabName) {
@@ -1939,7 +2074,7 @@
       
       const slider = document.getElementById('radarRangeSlider');
       if (slider) { 
-        slider.min = DEFAULT_RADIUS_METERS; 
+        slider.min = MIN_RADIUS_METERS; 
         slider.max = MAX_RADIUS_METERS; 
         slider.step = "250";
         slider.value = DEFAULT_RADIUS_METERS; 
@@ -2227,12 +2362,19 @@
     }
 
     function recenterAndResetZoom() {
-      // Double-tap: return to the home view - centred, radar back at the
-      // default 0.5 mi range, zoom fitted to it (V11.5, per Shane).
+      // V11.6 (per Shane): double-tap brings back the radar AND the zoom -
+      // centred, pan/zoom reset, Unlimited Radar turned OFF so the ring
+      // comes back, and the range set to the 0.25 mi home view with the
+      // zoom fitted to it.
       targetPanX = 0; targetPanY = 0; targetZoomScale = 1.0;
-      if (!unlimitedRadarActive) updateRadius(DEFAULT_RADIUS_METERS, true);
+      if (unlimitedRadarActive) {
+        unlimitedRadarActive = false;
+        const unlimitedToggle = document.getElementById('unlimitedRadarToggle');
+        if (unlimitedToggle) unlimitedToggle.checked = false;
+      }
+      updateRadius(HOME_RADIUS_METERS, true);
       playAudioEffect('chime');
-      showToast('Map recentered (0.50 Mi)', 'navigation');
+      showToast('Map recentered (0.25 Mi)', 'navigation');
     }
 
     function startSmoothAnimationLoop() {
@@ -2261,7 +2403,7 @@
 
     function updateRadius(val, autoZoom = false) {
       const parsedRadius = Number(val);
-      const meters = unlimitedRadarActive ? 999999 : Math.max(DEFAULT_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number.isFinite(parsedRadius) ? parsedRadius : DEFAULT_RADIUS_METERS));
+      const meters = unlimitedRadarActive ? 999999 : Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number.isFinite(parsedRadius) ? parsedRadius : DEFAULT_RADIUS_METERS));
       userState.radius = meters;
 
       const ring = document.getElementById('radarBoundaryRing');
@@ -2333,7 +2475,7 @@
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
         const deltaPx = currentDistPx - dragStartDistancePx;
         const metersPerPx = METERS_PER_MILE / MAP_PIXELS_PER_MILE;
-        const newMeters = Math.max(DEFAULT_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
+        const newMeters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
         updateRadius(newMeters, true);
       };
 
@@ -2732,8 +2874,10 @@
               <div id="userTopBubble" class="hidden z-[99999999] pointer-events-auto"></div>
             </div>
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-emerald-400/40 blur-lg animate-pulse-glow pointer-events-none"></div>
-            <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[52.2px] h-[52.2px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[99999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
-              ${renderNodeIconContent(userState.type, userState.category)}
+            <div id="userAvatarRainbowWrap" class="relative flex-shrink-0" style="border-radius: 50%;">
+              <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[52.2px] h-[52.2px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[99999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
+                ${renderNodeIconContent(userState.type, userState.category)}
+              </div>
             </div>
             <span id="userNameLabel" class="peer-name-label">${escapeChatHTML(getDisplayName(userState.alias, userState.hideMyName, userState.type))}</span>
           </div>
@@ -2885,7 +3029,7 @@
         Object.keys(globalActiveDirectory).forEach(peerId => {
           if (!peerId.startsWith('custom-bot-') && !peerId.startsWith('sim-peer-')) {
             if (!activeSupabaseIds.has(peerId)) {
-              globalActiveDirectory[peerId].isOffline = true;
+              if (!isAdminPeer(globalActiveDirectory[peerId])) globalActiveDirectory[peerId].isOffline = true; // V11.6: the Administrator stays visible while offline, until his bubble expires
             }
           }
         });
@@ -2920,11 +3064,13 @@
               createdAt: isStaleProfile ? null : (hasValidTopic ? (createdAtTime || existingPeer?.createdAt || Date.now()) : (topicExpired ? null : (existingPeer?.createdAt || null))),
               persistentTopic: false,
               isBot: false,
-              isOffline: isStaleProfile,
+              isOfflineGhost: false,
+              isOffline: (p.alias || '').toLowerCase() === 'administrator' ? false : isStaleProfile, // V11.6: admin chats stay visible until expiry, even when the admin is offline
               distance: calculateHaversineDistance(userState.lat, userState.lng, pLat, pLng)
             };
           }
         });
+        dedupeOfflineGhostPeers();
         if (!profilesUnchanged) {
           // Remove the local chat copy of any profile topic found expired above.
           profiles.forEach(p => {
@@ -3158,8 +3304,10 @@
         question: resolvedQuestion,
         createdAt: resolvedCreatedAt,
         isBot: data.isBot || false,
-        isOffline: false
+        isOffline: false,
+        isOfflineGhost: false
       };
+      dedupeOfflineGhostPeers();
 
       activeBubbleBySender[data.peerId] = data.id;
 
@@ -3532,9 +3680,11 @@
 
         container.innerHTML += `
           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
+            ${b.isAdmin ? '<div class="admin-rainbow-icon-wrap">' : ''}
             <div class="w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${getNodeIconVisual(b.accountType, b.category, b.isBot).borderClass}" style="background: ${getNodeIconVisual(b.accountType, b.category, b.isBot).bg}; border-radius: 50%;">
               ${renderNodeIconContent(b.accountType, b.category, b.isBot)}
             </div>
+            ${b.isAdmin ? '</div>' : ''}
             <div class="flex-1 min-w-0">
               <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin, b.hasUnread) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, b.isAdmin, false, b.isMainUser, b.isAdmin, b.hasUnread)}</div>
             </div>
@@ -3643,7 +3793,7 @@
       }
 
       const activeHasQuestion = peer.question && peer.createdAt;
-      const showUserIcon = !peer.isOffline;
+      const showUserIcon = !peer.isOffline || peerIsAdmin; // V11.6: the Administrator's icon/chat stays visible while he is offline, until the bubble expires
       const shouldDisplay = isEnabled && (activeHasQuestion || showUserIcon);
 
       nodeElem.style.display = shouldDisplay ? 'block' : 'none';
@@ -3659,7 +3809,7 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(chatRoomName)}', '${escapeJsArg(peer.question || '')}', '${escapeJsArg(peer.peerId)}', ${safeTimestampMs(peer.createdAt)})`;
       const onIconClickJs = onClickJs;
 
-      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length].join('|');
+      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', peerIsAdmin ? 'admin' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length].join('|');
       if (nodeElem.dataset.renderSig === renderSig && nodeElem.innerHTML) {
         return;
       }
@@ -3672,9 +3822,11 @@
           </div>
           ${showUserIcon ? `
             <div class="relative flex flex-col items-center">
+              ${peerIsAdmin ? '<div class="admin-rainbow-icon-wrap">' : ''}
               <div onclick="${onIconClickJs}" class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - click to start private chat with @${escapeChatHTML(chatRoomName)}">
                 ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
               </div>
+              ${peerIsAdmin ? '</div>' : ''}
               ${hasUnread ? '<span class="unread-badge" title="Unread replies">!</span>' : ''}
             </div>
             ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="personal-bot-badge">BOT</span>' : ''}
@@ -3812,7 +3964,7 @@
 
       input.value = '';
       showToast('Previous chat replaced with new chat bubble!', 'check-circle');
-      playAudioEffect('bell');
+      playAudioEffect('send'); // V11.6: send sound when a chat bubble is created
       savePersistentData();
       renderPinnedChats();
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
@@ -3849,6 +4001,7 @@
       if (localChatCache[targetRoomId].length > 200) localChatCache[targetRoomId].splice(0, localChatCache[targetRoomId].length - 200);
 
       appendMessage(senderDisplayName, text, timeStr, true);
+      playAudioEffect('send'); // V11.6: send sound
       input.value = ''; 
       input.style.height = '26px';
 
