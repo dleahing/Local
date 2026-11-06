@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.11 Business Info Bubble & Radar Text]</title>
+  <title>LocaL - Proximity Social Network [V11.12 Friends List & Navy Radar]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -199,7 +199,7 @@
        click-through and user icons underneath remain selectable. */
     .radar-drag-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 6; }
     .radar-drag-edge { fill: none; stroke: rgba(56, 189, 248, 0); stroke-width: 22; pointer-events: stroke; cursor: ew-resize; transition: stroke 0.2s ease; }
-    .radar-drag-edge:hover { stroke: rgba(56, 189, 248, 0.22); }
+    .radar-drag-edge:hover { stroke: rgba(30, 58, 138, 0.25); }
     .personal-bot-badge {
       margin-top: 3px; padding: 1px 6px; border-radius: 9999px;
       background: #7c3aed; color: #fff; font-size: 8px; font-weight: 800;
@@ -249,19 +249,26 @@
     .hairline-ring { border-width: 1px !important; }
     /* V11.10: the main radar ring keeps a clear BLUE border so people can
        see the edge they can click and drag to change the radar size. */
+    /* V11.12: the click-and-drag line is NAVY blue, and every radar line
+       (main ring, inner rings, centre rings, world boundary) shares ONE
+       thickness that stays constant on screen at any zoom - the width is
+       divided by the zoom scale, like the counter-scaled text. */
     #radarBoundaryRing {
-      border-width: 3px !important;
-      border-color: rgba(37, 99, 235, 0.95) !important;
-      box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65), 0 0 22px rgba(37, 99, 235, 0.55), inset 0 0 18px rgba(37, 99, 235, 0.18) !important;
+      border-width: calc(2.5px / max(0.35, var(--zoom-scale, 1))) !important;
+      border-color: rgba(30, 58, 138, 0.97) !important;
+      box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65), 0 0 22px rgba(30, 58, 138, 0.55), inset 0 0 18px rgba(30, 58, 138, 0.20) !important;
+    }
+    #radarBoundaryRing .hairline-ring, #worldMaxBoundaryRing, #radarCenter .hairline-ring {
+      border-width: calc(2.5px / max(0.35, var(--zoom-scale, 1))) !important;
     }
     .radar-drag-hint {
       position: absolute; left: 50%; bottom: -11px;
       transform: translateX(-50%) scale(calc(1 / max(0.20, var(--zoom-scale, 1))));
       z-index: 30; pointer-events: auto; cursor: ew-resize; white-space: nowrap;
-      background: rgba(37, 99, 235, 0.92); color: #fff;
+      background: rgba(30, 58, 138, 0.95); color: #fff;
       font-size: 9.5px; font-weight: 800; letter-spacing: 0.02em;
       padding: 2.5px 9px; border-radius: 9999px;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.5);
+      box-shadow: 0 4px 14px rgba(30, 58, 138, 0.5);
     }
 
     .radar-distance-label {
@@ -489,6 +496,10 @@
         </select>
       </div>
 
+      <button onclick="playAudioEffect('click'); openFriendsPanel()" title="Friends & Active Users" aria-label="Friends and active users" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
+        <i data-lucide="heart" class="w-4 h-4"></i>
+      </button>
+
       <button onclick="playAudioEffect('click'); toggleP2PModal()" title="People nearby" aria-label="People nearby" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
         <i data-lucide="users" class="w-4 h-4"></i>
       </button>
@@ -660,6 +671,21 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- FRIENDS & ACTIVE USERS PANEL (V11.12) -->
+  <div id="friendsModal" class="hidden fixed inset-0 z-[9999999] bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center mb-1 flex-shrink-0">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 tracking-tight">Friends & Active Users</h3>
+          <p class="text-[10px] text-emerald-900 font-semibold uppercase tracking-wider">Friends stay on top - tap + to make new friends</p>
+        </div>
+        <button onclick="playAudioEffect('click'); closeFriendsPanel()" aria-label="Close friends list" class="p-2 rounded-full bg-slate-900/5 hover:bg-slate-900/10 text-slate-700 transition-all shadow-sm flex-shrink-0"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <input type="text" id="friendsSearchInput" placeholder="Search friends & people..." aria-label="Search friends and people" class="w-full px-3.5 py-2 mb-2 rounded-2xl bg-white/70 border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none shadow-inner flex-shrink-0" oninput="friendsSearchQuery = this.value.trim().toLowerCase(); renderFriendsPanel();">
+      <div id="friendsListContainer" class="overflow-y-auto space-y-2 pr-1"></div>
     </div>
   </div>
 
@@ -1026,6 +1052,7 @@
 
     let activeBubbleBySender = {};
     let directorySearchQuery = '';
+    let friendsSearchQuery = ''; // V11.12
     let appSessionInitialized = false;
     let supabasePollInterval = null;
     let authSubscription = null;
@@ -2244,6 +2271,7 @@
       initRadiusDragHandlers();
       initTapRippleHandler();
       initMapPanHandlers();
+      initSidebarTapClose(); // V11.12
       initPinchZoomHandlers();
       initWheelZoomHandler();
       initDoubleTapHandler();
@@ -2519,6 +2547,24 @@
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label')) return;
         recenterAndResetZoom();
         toggleLeftChatList();
+      });
+    }
+
+    // V11.12: while the right-side list is up, a plain tap on the map
+    // (not a drag, and not on an icon, bubble or control) closes the list
+    // and returns to Show All on Map.
+    function initSidebarTapClose() {
+      const mapCanvas = document.getElementById('mapCanvas');
+      if (!mapCanvas) return;
+      let tapX = null, tapY = null;
+      mapCanvas.addEventListener('pointerdown', (e) => { tapX = e.clientX; tapY = e.clientY; });
+      mapCanvas.addEventListener('pointerup', (e) => {
+        if (currentLayoutMode !== 'right' || tapX === null) return;
+        const moved = Math.hypot(e.clientX - tapX, e.clientY - tapY);
+        tapX = null; tapY = null;
+        if (moved > 8) return;
+        if (e.target.closest('button, input, select, textarea, header, .glass-card, #chatDrawer, #profileModal, #p2pModal, #friendsModal, #pinnedChatsWrapper, #rightSideBubblesSidebar, .node-item, .scale-compensator, #radarBoundaryRing, .radar-distance-label')) return;
+        setLayoutMode('map');
       });
     }
 
@@ -3813,6 +3859,71 @@
       lucide.createIcons();
     }
 
+    // ---- V11.12: Friends & Active Users panel ----------------------------
+    // Friends are pinned to the top; everyone else active follows, nearest
+    // first. Rows reuse the people directory's data and actions (friend
+    // toggle + Connect), so making a new friend is one tap.
+    function openFriendsPanel() {
+      document.getElementById('friendsModal').classList.remove('hidden');
+      renderFriendsPanel();
+    }
+    function closeFriendsPanel() {
+      document.getElementById('friendsModal').classList.add('hidden');
+    }
+    function renderFriendsPanel() {
+      const container = document.getElementById('friendsListContainer');
+      if (!container) return;
+      const entries = Object.keys(globalActiveDirectory).map(id => ({ id, peer: globalActiveDirectory[id] }));
+      if (entries.length === 0) {
+        container.innerHTML = '<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No other peers discovered yet.</div>';
+        return;
+      }
+      const matches = (peer) => !friendsSearchQuery || (peer.rawSender || '').toLowerCase().includes(friendsSearchQuery) || (peer.question || '').toLowerCase().includes(friendsSearchQuery);
+      const byDistance = (a, b) => ((a.peer.distance != null ? a.peer.distance : 1e12) - (b.peer.distance != null ? b.peer.distance : 1e12));
+      const friends = entries.filter(e => friendPeerIds.has(e.id) && matches(e.peer)).sort(byDistance);
+      const others = entries.filter(e => !friendPeerIds.has(e.id) && matches(e.peer)).sort(byDistance);
+      const buildRow = (peerId, peer) => {
+        const isFriend = friendPeerIds.has(peerId);
+        const peerIsAdmin = isAdminPeer(peer);
+        const isBiz = peer.accountType === 'business';
+        const displayLabel = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
+        const nameColorClass = isBiz ? getBusinessCategoryTextColorClass(peer.category) : 'text-slate-900 font-bold';
+        const distStr = formatPeerDistance(peer) || '—';
+        const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
+        const visual = getNodeIconVisual(peer.accountType, peer.category, peer.isBot);
+        return `
+          <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between ${peer.isOffline ? 'opacity-60' : ''}">
+            <div class="flex items-center gap-3">
+              <div class="w-7.5 h-7.5 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${visual.borderClass}" style="background: ${visual.bg}; border-radius: 50%;">
+                ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <h4 class="text-xs ${nameColorClass}">@${escapeChatHTML(displayLabel)}</h4>
+                  ${isFriend ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold">Friend</span>' : ''}
+                  ${peerIsAdmin ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-extrabold uppercase">ADMIN</span>' : ''}
+                  ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="text-[9px] bg-violet-600 text-white px-1 rounded font-extrabold uppercase">Bot</span>' : ''}
+                  ${peer.isOffline ? '<span class="text-[9px] bg-slate-400 text-white px-1 rounded font-bold">Offline</span>' : ''}
+                </div>
+                <p class="text-[10px] text-slate-500 font-semibold">Distance: ${distStr}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="toggleFriendStatus('${escapeJsArg(peerId)}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
+                <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="playAudioEffect('chime'); closeFriendsPanel(); openChatDrawer('${roomId}', '${escapeJsArg(displayLabel)}', null, '${escapeJsArg(peerId)}', ${safeTimestampMs(peer.createdAt)})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
+            </div>
+          </div>`;
+      };
+      let html = `<div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 pt-1">Friends (${friends.length})</div>`;
+      html += friends.length ? friends.map(e => buildRow(e.id, e.peer)).join('') : '<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No friends yet - add people from the list below.</div>';
+      html += `<div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 pt-2">Active Users (${others.length})</div>`;
+      html += others.length ? others.map(e => buildRow(e.id, e.peer)).join('') : '<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No other active users right now.</div>';
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
     function renderGlobalUsersDirectory() {
       const container = document.getElementById('globalUsersDirectory');
       if (!container) return;
@@ -3866,6 +3977,7 @@
         `;
       });
       lucide.createIcons();
+      renderFriendsPanel();
     }
 
     function renderRightSidebarBubbles() {
