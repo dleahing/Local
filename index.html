@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.10 Alias Save Fix & Radar Border]</title>
+  <title>LocaL - Proximity Social Network [V11.11 Business Info Bubble & Radar Text]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -169,6 +169,13 @@
        Only the edge distance labels stay interactive, for drag-resizing. */
     #radarBoundaryRing { z-index: 0 !important; pointer-events: none !important; }
     #radarBoundaryRing .radar-distance-label { pointer-events: auto !important; cursor: ew-resize; }
+    /* V11.11: the radar's distance text keeps a constant on-screen size
+       while zooming - it counter-scales against the map zoom (the same
+       trick .scale-compensator uses for user icons) instead of shrinking
+       away when you zoom out. */
+    #radarBoundaryRing .radar-distance-label {
+      transform: translateY(-50%) scale(calc(1 / max(0.20, var(--zoom-scale, 1)))) !important;
+    }
     #radarCenter, #worldMaxBoundaryRing { pointer-events: none !important; z-index: 0 !important; }
     .peer-node-icon { position: relative; z-index: 9600 !important; pointer-events: auto !important; box-shadow: 0 10px 24px rgba(2, 32, 71, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.85) !important; }
     /* Name shown at the bottom of each user icon (from the V7 look). */
@@ -248,8 +255,9 @@
       box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65), 0 0 22px rgba(37, 99, 235, 0.55), inset 0 0 18px rgba(37, 99, 235, 0.18) !important;
     }
     .radar-drag-hint {
-      position: absolute; left: 50%; bottom: -11px; transform: translateX(-50%);
-      z-index: 30; pointer-events: none; white-space: nowrap;
+      position: absolute; left: 50%; bottom: -11px;
+      transform: translateX(-50%) scale(calc(1 / max(0.20, var(--zoom-scale, 1))));
+      z-index: 30; pointer-events: auto; cursor: ew-resize; white-space: nowrap;
       background: rgba(37, 99, 235, 0.92); color: #fff;
       font-size: 9.5px; font-weight: 800; letter-spacing: 0.02em;
       padding: 2.5px 9px; border-radius: 9999px;
@@ -944,7 +952,7 @@
     const METERS_PER_MILE = 1609.34;
     const DEFAULT_RADIUS_METERS = 804.67; // V11.5: default radar range is 0.5 miles
     const MIN_RADIUS_METERS = 402.34; // V11.6: smallest radar range is 0.25 miles
-    const HOME_RADIUS_METERS = 402.34; // V11.6: double-tap home view is 0.25 miles (per Shane)
+    const HOME_RADIUS_METERS = 804.67; // V11.11 (per Shane): double-tap home view is 0.5 miles
     const MAX_RADIUS_METERS = 48280.20; // Exact 30-mile maximum boundary limit
     
     const STORAGE_KEY_PROFILE = 'local_user_profile_v40';
@@ -1168,7 +1176,7 @@
         Object.keys(globalActiveDirectory).forEach(id => {
           const peer = globalActiveDirectory[id];
           if (peer.question && peer.createdAt && (Date.now() - peer.createdAt <= ONE_HOUR_MS)) {
-            snapshot[id] = { question: peer.question, createdAt: peer.createdAt, rawSender: peer.rawSender || null, isAdmin: isAdminPeer(peer), accountType: peer.accountType || 'personal', category: peer.category || 'store', lat: (typeof peer.lat === 'number' ? peer.lat : null), lng: (typeof peer.lng === 'number' ? peer.lng : null), hideMyName: !!peer.hideMyName, isBot: !!peer.isBot, hours: peer.hours || '', interestFilter: peer.interestFilter || 'none' }; // V11.6: keep the peer's identity so a restored bubble is not rebuilt as a nameless 'Offline Peer' duplicate
+            snapshot[id] = { question: peer.question, createdAt: peer.createdAt, rawSender: peer.rawSender || null, isAdmin: isAdminPeer(peer), accountType: peer.accountType || 'personal', category: peer.category || 'store', lat: (typeof peer.lat === 'number' ? peer.lat : null), lng: (typeof peer.lng === 'number' ? peer.lng : null), hideMyName: !!peer.hideMyName, isBot: !!peer.isBot, hours: peer.hours || '', address: peer.address || '', interestFilter: peer.interestFilter || 'none' }; // V11.6: keep the peer's identity so a restored bubble is not rebuilt as a nameless 'Offline Peer' duplicate
           }
         });
         // V11.4: never overwrite a stored snapshot with an empty one -
@@ -1217,6 +1225,7 @@
                   accountType: cachedData.accountType || 'personal',
                   category: cachedData.category || 'store',
                   hours: cachedData.hours || '',
+                  address: cachedData.address || '',
                   interestFilter: cachedData.interestFilter || 'none',
                   hideMyName: !!cachedData.hideMyName,
                   question: cachedData.question,
@@ -1504,10 +1513,19 @@
       `;
     }
 
-    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false, hasUnread = false) {
+    // V11.11: readable names for the business categories (the stored
+    // values are the Settings dropdown's icon names).
+    function getBusinessCategoryLabel(category) {
+      const labels = { store: 'General Retail Store', coffee: 'Coffee & Bakery', utensils: 'Restaurant & Dining', pill: 'Pharmacy & Health', home: 'Real Estate & Housing', wrench: 'Services', 'glass-water': 'Bar & Lounge' };
+      return labels[category] || 'Business';
+    }
+
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false, hasUnread = false, address = '') {
       const displayName = escapeChatHTML(getDisplayName(businessName, hideMyName, accountType));
       if (question) question = escapeChatHTML(question);
       if (hours) hours = escapeChatHTML(hours);
+      if (address) address = escapeChatHTML(address);
+      const categoryLabel = escapeChatHTML(getBusinessCategoryLabel(category));
       const nameColorClass = getBusinessCategoryTextColorClass(category);
       const animClass = hasUnread ? 'animate-giggle' : 'animate-float';
 
@@ -1549,8 +1567,8 @@
         `;
       }
       const neonStyle = getBusinessNeonStyle(accountType, category);
-      const bizOutline = isMainUser ? 'border-[3.5px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.9)]' : 'border border-white/20 shadow-2xl';
-      const bizHeaderHtml = isMainUser ? '' : `<div class="flex items-center justify-between mb-0.5"><span class="text-xs truncate ${nameColorClass}">${displayName}</span><span class="text-[9px] font-mono text-slate-400 font-bold px-1.5 py-0.2 rounded bg-slate-800">Store</span></div>`;
+      const bizOutline = isMainUser ? 'border-[3.5px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.9)]' : 'border border-amber-300/60 shadow-2xl'; // V11.11: business bubbles get a warm amber tint so they read differently from personal bubbles
+      const bizHeaderHtml = isMainUser ? '' : `<div class="flex items-center justify-between mb-0.5"><span class="text-xs truncate ${nameColorClass}">${displayName}</span><span class="text-[9px] font-mono text-slate-900 font-bold px-1.5 py-0.2 rounded bg-amber-400/90">Business</span></div>`;
       
       return `
         <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 ${animClass} z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
@@ -1571,7 +1589,11 @@
               ` : ''}
             </div>
           </div>
-          ${hours ? `<div class="pt-1.5 mt-0.5 border-t border-white/10 flex items-center justify-between"><span class="text-[10px] text-slate-400 font-medium">Open</span><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${hours}</span></div>` : ''}
+          <div class="pt-1.5 mt-0.5 border-t border-white/10 flex flex-col gap-1">
+            <div class="flex items-center gap-1.5"><i data-lucide="${neonStyle.lucideIcon}" class="w-3 h-3 text-amber-300 flex-shrink-0"></i><span class="text-[9.5px] text-slate-200 font-bold tracking-wide">${categoryLabel}</span><span class="text-[8px] font-mono font-bold uppercase tracking-wider text-amber-300/90 ml-auto">Info</span></div>
+            ${hours ? `<div class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3 h-3 text-emerald-300 flex-shrink-0"></i><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${hours}</span></div>` : ''}
+            ${address ? `<div class="flex items-start gap-1.5"><i data-lucide="map-pin" class="w-3 h-3 text-sky-300 flex-shrink-0 mt-[1px]"></i><span class="text-[9.5px] text-slate-300 font-medium leading-snug">${address}</span></div>` : ''}
+          </div>
         </div>
       `;
     }
@@ -2501,9 +2523,9 @@
     }
 
     function recenterAndResetZoom() {
-      // V11.6 (per Shane): double-tap brings back the radar AND the zoom -
+      // V11.11 (per Shane): double-tap brings back the radar AND the zoom -
       // centred, pan/zoom reset, Unlimited Radar turned OFF so the ring
-      // comes back, and the range set to the 0.25 mi home view with the
+      // comes back, and the range set to the 0.5 mi home view with the
       // zoom fitted to it.
       targetPanX = 0; targetPanY = 0; targetZoomScale = 1.0;
       if (unlimitedRadarActive) {
@@ -2513,7 +2535,7 @@
       }
       updateRadius(HOME_RADIUS_METERS, true);
       playAudioEffect('chime');
-      showToast('Map recentered (0.25 Mi)', 'navigation');
+      showToast('Map recentered (0.50 Mi)', 'navigation');
     }
 
     function startSmoothAnimationLoop() {
@@ -2627,7 +2649,7 @@
 
       // The ring fill is pointer-events:none so user icons underneath it stay
       // selectable; resizing starts from the ring's edge distance labels.
-      const dragHandles = [document.getElementById('radarRingDistanceLabelLeft'), document.getElementById('radarRingDistanceLabelRight'), document.querySelector('#radarBoundaryRing .radar-drag-edge')].filter(Boolean);
+      const dragHandles = [document.getElementById('radarRingDistanceLabelLeft'), document.getElementById('radarRingDistanceLabelRight'), document.querySelector('#radarBoundaryRing .radar-drag-edge'), document.querySelector('#radarBoundaryRing .radar-drag-hint')].filter(Boolean); // V11.11: the 'Click and drag Radar' pill is itself a drag handle
       dragHandles.forEach(handle => {
         // The SVG edge keeps its stroke-only hit area; labels get full auto.
         if (!handle.classList.contains('radar-drag-edge')) handle.style.pointerEvents = 'auto';
@@ -2838,7 +2860,7 @@
 
       if (userState.type === 'business') {
         topBubble.className = "block relative z-[99999999]";
-        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, displayText, userState.alias, onClickJs, userState.hours, userState.hideMyName, true, isUserAdmin, hasUnread);
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, displayText, userState.alias, onClickJs, userState.hours, userState.hideMyName, true, isUserAdmin, hasUnread, userState.address || '');
       } else {
         topBubble.className = "relative z-[99999999]";
         topBubble.innerHTML = renderUserBubbleCardHtml(displayText, myDisplayName, onClickJs, isUserAdmin, isGiggle, true, isUserAdmin, hasUnread);
@@ -3535,7 +3557,7 @@
         rawSender: data.sender, peerId: data.peerId, lat: data.lat, lng: data.lng,
         distance, bubbleColor: data.bubbleColor || 'violet', accountType: data.accountType || 'personal',
         category: data.category || 'store', openTime: data.openTime || '09:00', closeTime: data.closeTime || '21:00',
-        hours: calculatedHours, interestFilter: data.interestFilter || 'none', hideMyName: data.hideMyName || false,
+        hours: calculatedHours, address: data.address || '', interestFilter: data.interestFilter || 'none', hideMyName: data.hideMyName || false,
         lastSeen: Date.now(),
         question: resolvedQuestion,
         createdAt: resolvedCreatedAt,
@@ -3923,7 +3945,7 @@
             </div>
             ${b.isAdmin ? '</div>' : ''}
             <div class="flex-1 min-w-0">
-              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin, b.hasUnread) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, b.isAdmin, false, b.isMainUser, b.isAdmin, b.hasUnread)}</div>
+              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin, b.hasUnread, b.address || '') : renderUserBubbleCardHtml(b.question, b.name, onClickJs, b.isAdmin, false, b.isMainUser, b.isAdmin, b.hasUnread)}</div>
             </div>
           </div>
         `;
@@ -3939,7 +3961,7 @@
         type: 'PEER_PRESENCE', sender: userState.alias, bubbleColor: userState.bubbleColor,
         peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type,
         category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime,
-        hours: userState.hours, interestFilter: userState.interestFilter, hideMyName: userState.hideMyName,
+        hours: userState.hours, address: userState.type === 'business' ? (userState.address || '') : '', interestFilter: userState.interestFilter, hideMyName: userState.hideMyName, // V11.11: address rides along so business bubbles can show it in their info section
         isBot: false,
         isAdmin: isAdminUser,
         question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.text : null,
@@ -4047,7 +4069,7 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(chatRoomName)}', '${escapeJsArg(peer.question || '')}', '${escapeJsArg(peer.peerId)}', ${safeTimestampMs(peer.createdAt)})`;
       const onIconClickJs = onClickJs;
 
-      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', peerIsAdmin ? 'admin' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length].join('|');
+      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', peerIsAdmin ? 'admin' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.address || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length].join('|');
       if (nodeElem.dataset.renderSig === renderSig && nodeElem.innerHTML) {
         return;
       }
@@ -4056,7 +4078,7 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-10 h-10 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]" style="position:absolute; z-index:2000;">
-            ${(isBiz || activeHasQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread) : ''}
+            ${(isBiz || activeHasQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '') : ''}
           </div>
           ${showUserIcon ? `
             <div class="relative flex flex-col items-center">
