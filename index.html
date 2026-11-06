@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11 Chat Expiry Deletion, Soft Bell, Foreground Icons, Bot Icon & Bubble Override]</title>
+  <title>LocaL - Proximity Social Network [V12 Hardened, Faster, Refreshed Look]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -297,6 +297,27 @@
       box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 1);
     }
 
+    /* ===== V12 look refresh: crisper glass, softer depth, clearer focus ===== */
+    :focus-visible { outline: 2px solid rgba(16, 185, 129, 0.85); outline-offset: 2px; border-radius: 8px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+    #logoBadge { background: linear-gradient(135deg, #059669 0%, #0d9488 100%) !important; box-shadow: 0 6px 16px rgba(5, 150, 105, 0.45); }
+    #quickPostInput { font-size: 13px !important; }
+    #actionDockContainer .dark-biz-bubble {
+      background: linear-gradient(180deg, #262040 0%, #17142a 100%);
+      border-color: rgba(255, 255, 255, 0.28);
+      border-radius: 28px;
+      box-shadow: 0 24px 50px -12px rgba(10, 6, 32, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.22);
+    }
+    #chatDrawer { border-radius: 28px !important; }
+    .node-content-stack > div { border-radius: 20px; }
+    .peer-node-icon { box-shadow: 0 10px 24px rgba(2, 32, 71, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.85) !important; }
+    .expiry-urgent { background: rgba(239, 68, 68, 0.20) !important; border-color: rgba(248, 113, 113, 0.65) !important; color: #991b1b !important; }
+    #chatMessages::-webkit-scrollbar, #rightSidebarBubblesContainer::-webkit-scrollbar, #globalUsersDirectory::-webkit-scrollbar { width: 5px; }
+    #chatMessages::-webkit-scrollbar-thumb, #rightSidebarBubblesContainer::-webkit-scrollbar-thumb, #globalUsersDirectory::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.35); border-radius: 9999px; }
+    .glass-card { box-shadow: 0 14px 34px -8px rgba(15, 23, 42, 0.16); }
+
     .dark-biz-bubble {
       background: #1e1b2e;
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -401,7 +422,7 @@
             <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
           </svg>
         </div>
-        <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
+        <input type="text" id="quickPostInput" maxlength="140" aria-label="Broadcast a chat bubble" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
         <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-emerald-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-emerald-500 transition-all">
           <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
         </button>
@@ -577,6 +598,7 @@
           <div class="flex items-center justify-between mb-2">
             <label class="block text-xs font-semibold text-slate-800 uppercase tracking-wider">Discovered Peers & Bots (<span id="modalActiveCount">1</span>)</label>
           </div>
+          <input type="text" id="directorySearchInput" placeholder="Search people & bots..." aria-label="Search people and bots" class="w-full px-3.5 py-2 mb-2 rounded-2xl bg-white/70 border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none shadow-inner" oninput="directorySearchQuery = this.value.trim().toLowerCase(); renderGlobalUsersDirectory();">
           <div id="globalUsersDirectory" class="space-y-2 max-h-48 overflow-y-auto pr-1">
             <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">Searching network mesh for peers...</div>
           </div>
@@ -801,14 +823,14 @@
 
     <div class="pt-3 pb-1 flex-shrink-0 pointer-events-auto">
       <div class="glass-card rounded-[28px] p-2 pl-4 border border-white/90 shadow-xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-emerald-400 transition-all bg-white/95 pointer-events-auto">
-        <textarea id="chatInput" rows="1" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
+        <textarea id="chatInput" rows="1" maxlength="500" aria-label="Type a reply" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 pointer-events-auto">
           <div class="flex items-center gap-1">
             <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer"><i data-lucide="plus" class="w-4 h-4"></i></button>
             <button onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer"><i data-lucide="mic" class="w-4 h-4"></i></button>
           </div>
-          <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-emerald-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-emerald-500 transition-all cursor-pointer"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+          <button onclick="sendChatMessage()" id="sendBtn" type="button" aria-label="Send message" class="w-8 h-8 rounded-full bg-emerald-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-emerald-500 transition-all cursor-pointer"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
         </div>
       </div>
     </div>
@@ -890,6 +912,13 @@
     };
 
     let activeBubbleBySender = {};
+    let appSessionInitialized = false;
+    let supabasePollInterval = null;
+    let expiryLoopStarted = false;
+    let lastProfilesSignature = '';
+    let lastPresenceUpsertAt = 0;
+    let lastPresenceUpsertKey = '';
+    let directorySearchQuery = '';
 
     const RADAR_PALETTES = {
       cyan: { line: 'rgba(56, 189, 248, 0.35)', sweep: 'rgba(56, 189, 248, 0.50)', bg: 'rgba(56, 189, 248, 0.07)' },
@@ -1171,6 +1200,16 @@
       return true;
     }
 
+    function updateExpiryCountdownUi(createdAt) {
+      const countdownEl = document.getElementById('chatExpiryCountdown');
+      if (!countdownEl || !createdAt) return;
+      countdownEl.innerText = formatCountdownTime(createdAt);
+      const remainingMs = ONE_HOUR_MS - (Date.now() - createdAt);
+      countdownEl.classList.toggle('expiry-urgent', remainingMs > 0 && remainingMs < 5 * 60 * 1000);
+      const bar = document.getElementById('chatExpiryTimerBar');
+      if (bar) bar.classList.toggle('expiry-urgent', remainingMs > 0 && remainingMs < 5 * 60 * 1000);
+    }
+
     function formatCountdownTime(createdAt) {
       if (!createdAt) return '60m 00s';
       const parsedCreatedAt = typeof createdAt === 'number' ? createdAt : new Date(createdAt).getTime();
@@ -1184,6 +1223,8 @@
 
     function renderUserBubbleCardHtml(question, senderName, onClickJs, routerIsAdmin = false, isGiggle = false, isMainUser = false, isAdmin = false, hasUnread = false) {
       if (!question) return '';
+      question = escapeChatHTML(question);
+      senderName = escapeChatHTML(senderName || '');
       const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float');
       const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span></div>`;
 
@@ -1223,7 +1264,9 @@
     }
 
     function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false, hasUnread = false) {
-      const displayName = getDisplayName(businessName, hideMyName, accountType);
+      const displayName = escapeChatHTML(getDisplayName(businessName, hideMyName, accountType));
+      if (question) question = escapeChatHTML(question);
+      if (hours) hours = escapeChatHTML(hours);
       const nameColorClass = getBusinessCategoryTextColorClass(category);
       const animClass = hasUnread ? 'animate-jiggle-continuous' : 'animate-float';
 
@@ -1305,6 +1348,7 @@
     const UNREAD_BELL_INTERVAL_MS = 15000;
 
     function syncUnreadChimeLoop() {
+      updateMeshUI();
       if (unreadRoomIds.size > 0) {
         if (!unreadChimeTimer) {
           if (document.visibilityState === 'visible') playAudioEffect('unread-chime');
@@ -1751,6 +1795,13 @@
     }
 
     async function initializeAppSession() {
+      if (appSessionInitialized) {
+        // Already running (e.g. account switch): just refresh, never rebuild.
+        announcePresence();
+        fetchProfilesAndTopicsFromSupabase();
+        return;
+      }
+      appSessionInitialized = true;
       userState.radius = DEFAULT_RADIUS_METERS;
       initGPSLocation();
       initUserNode();
@@ -1871,9 +1922,14 @@
 
     function showToast(message, icon = 'info') {
       const toastContainer = document.getElementById('toastContainer');
+      if (!toastContainer) return;
+      // Cap the stack and drop exact duplicates so bursts of events (expiry,
+      // reconnects) cannot flood the screen.
+      if ([...toastContainer.querySelectorAll('span')].some(el => el.innerText === message)) return;
+      while (toastContainer.childElementCount >= 3) toastContainer.firstElementChild.remove();
       const toast = document.createElement('div');
       toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-900 text-xs font-semibold border border-white/60';
-      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-emerald-600"></i> <span>${message}</span>`;
+      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-emerald-600"></i> <span>${escapeChatHTML(message)}</span>`;
       toastContainer.appendChild(toast);
       lucide.createIcons();
       setTimeout(() => { toast.remove(); }, 3500);
@@ -2159,10 +2215,15 @@
         handle.addEventListener('mousedown', handleStart);
         handle.addEventListener('touchstart', handleStart, { passive: false });
       });
-      window.addEventListener('mousemove', handleMove);
-      window.addEventListener('mouseup', handleEnd);
-      window.addEventListener('touchmove', handleMove, { passive: false });
-      window.addEventListener('touchend', handleEnd);
+      // Window listeners are bound once only: this function re-runs whenever
+      // the radar style/color changes, and stacking them multiplied drags.
+      if (!initRadiusDragHandlers._windowBound) {
+        initRadiusDragHandlers._windowBound = true;
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+        window.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchend', handleEnd);
+      }
     }
 
     function matchesInterestFilter(peerInterestFilter) {
@@ -2334,14 +2395,14 @@
       const topBubble = document.getElementById('userTopBubble');
       if (!topBubble) return;
 
-      const hasValidActiveTopic = (activeTopicState.text && activeTopicState.createdAt) || participatedChatRoomIds.has('room-you');
+      const hasValidActiveTopic = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
       if (!hasValidActiveTopic && userState.type !== 'business') {
         topBubble.classList.add('hidden');
         return;
       }
 
       const myDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
-      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${userState.type === 'business' ? (activeTopicState.text || '') : (activeTopicState.text || 'Anyone here?')}', 'you', ${activeTopicState.createdAt || Date.now()})`;
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${escapeJsArg(myDisplayName)}', '${escapeJsArg(userState.type === 'business' ? (activeTopicState.text || '') : (activeTopicState.text || 'Anyone here?'))}', 'you', ${activeTopicState.createdAt || Date.now()})`;
 
       const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
       const hasUnread = unreadRoomIds.has('room-you');
@@ -2530,7 +2591,8 @@
           fetchProfilesAndTopicsFromSupabase();
           setupSupabaseRealtimeSubscriptions();
           
-          setInterval(() => {
+          if (supabasePollInterval) clearInterval(supabasePollInterval);
+          supabasePollInterval = setInterval(() => {
             if (currentActiveChatRoomId) {
               loadDbChatHistory(currentActiveChatRoomId);
             }
@@ -2579,6 +2641,15 @@
       return databaseRoomId === canonicalChatRoomId('room-you') ? 'room-you' : databaseRoomId;
     }
 
+    // Escape a value that will be interpolated inside a single-quoted inline
+    // onclick argument, e.g. openChatDrawer('...'). User text (aliases, bubble
+    // questions) must go through this (for the handler) AND escapeChatHTML
+    // (for visible markup); before V12 only chat messages were escaped, so a
+    // quote in a name/question could break handlers or inject markup.
+    function escapeJsArg(value) {
+      return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' ').replace(/</g, '\\u003c');
+    }
+
     function escapeChatHTML(value) {
       return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[ch]));
     }
@@ -2595,6 +2666,7 @@
       if (isDuplicate) return;
 
       localChatCache[targetRoomId].push({ id: msg.client_id || ('remote-' + msg.sender_id + '-' + msg.created_at), sender: msg.sender_alias, text: msg.message, time: timeStr, createdAt: msg.created_at || new Date().toISOString(), isMe: false });
+      if (localChatCache[targetRoomId].length > 200) localChatCache[targetRoomId].splice(0, localChatCache[targetRoomId].length - 200);
 
       if (currentActiveChatRoomId === targetRoomId) {
         appendMessage(msg.sender_alias, msg.message, timeStr, false);
@@ -2612,6 +2684,9 @@
       if (!supabaseClient) return;
       const { data: profiles, error } = await supabaseClient.from('profiles').select('*');
       if (!error && profiles) {
+        const profilesSignature = profiles.map(pr => [pr.id, pr.alias, pr.active_topic, pr.topic_created_at, pr.lat, pr.lng, pr.account_type, pr.interest_filter].join(':')).join('|');
+        const profilesUnchanged = profilesSignature === lastProfilesSignature && Object.keys(globalActiveDirectory).length > 0;
+        lastProfilesSignature = profilesSignature;
         const activeSupabaseIds = new Set(profiles.map(p => p.id));
 
         Object.keys(globalActiveDirectory).forEach(peerId => {
@@ -2656,16 +2731,18 @@
             };
           }
         });
-        // Remove the local chat copy of any profile topic found expired above.
-        profiles.forEach(p => {
-          if (p.id === currentAuthUser?.id || !p.active_topic || !p.topic_created_at) return;
-          const t = new Date(p.topic_created_at).getTime();
-          if (Number.isFinite(t) && Date.now() - t > ONE_HOUR_MS) {
-            deleteChatLocally('room-peer-' + String(p.id).replace(/[^a-zA-Z0-9]/g, '-'), p.id);
-          }
-        });
-        refreshAllPeerDistancesAndPositions();
-        updateMeshUI();
+        if (!profilesUnchanged) {
+          // Remove the local chat copy of any profile topic found expired above.
+          profiles.forEach(p => {
+            if (p.id === currentAuthUser?.id || !p.active_topic || !p.topic_created_at) return;
+            const t = new Date(p.topic_created_at).getTime();
+            if (Number.isFinite(t) && Date.now() - t > ONE_HOUR_MS) {
+              deleteChatLocally('room-peer-' + String(p.id).replace(/[^a-zA-Z0-9]/g, '-'), p.id);
+            }
+          });
+          refreshAllPeerDistancesAndPositions();
+          updateMeshUI();
+        }
       }
     }
 
@@ -2838,7 +2915,14 @@
       }
 
       if (data.id && processedMsgIds.has(data.id)) return;
-      if (data.id) processedMsgIds.add(data.id);
+      if (data.id) {
+        processedMsgIds.add(data.id);
+        // Cap the dedupe set so a long session cannot grow it without bound.
+        if (processedMsgIds.size > 600) {
+          const it = processedMsgIds.values();
+          for (let i = 0; i < 200; i++) processedMsgIds.delete(it.next().value);
+        }
+      }
 
       const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
       if (!globalActiveDirectory[data.peerId]) globalActiveDirectory[data.peerId] = { enabled: true };
@@ -3047,7 +3131,7 @@
         const isBiz = item.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(item.accountType, item.category);
         const nameColorClass = isBiz ? getBusinessCategoryTextColorClass(item.category) : 'text-slate-900 font-bold';
-        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${item.name}', '${item.question || ''}', '${item.peerId}', ${item.createdAt})`;
+        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${escapeJsArg(item.name)}', '${escapeJsArg(item.question || '')}', '${item.peerId}', ${item.createdAt})`;
         const jiggleClass = item.hasUnread ? 'animate-jiggle-continuous' : '';
         
         if (item.isAdmin) {
@@ -3059,7 +3143,7 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   ${item.isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${isBiz ? nameColorClass : 'text-amber-400 font-bold'}">@${item.name}</span></div>`}
-                  <span class="text-[9px] text-white font-medium block truncate">${item.question || 'Pinned Chat'}</span>
+                  <span class="text-[9px] text-white font-medium block truncate">${escapeChatHTML(item.question || 'Pinned Chat')}${item.createdAt ? ' \u00b7 ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
                 </div>
               </div>
             </div>
@@ -3073,7 +3157,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">@${item.name}</span></div>`}
-                <span class="text-[9px] text-slate-700 font-medium block truncate">${item.question || 'Pinned Chat'}</span>
+                <span class="text-[9px] text-slate-700 font-medium block truncate">${escapeChatHTML(item.question || 'Pinned Chat')}${item.createdAt ? ' \u00b7 ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
               </div>
             </div>
           `;
@@ -3097,6 +3181,7 @@
       container.innerHTML = '';
       peerIds.forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
+        if (directorySearchQuery && !(peer.rawSender || '').toLowerCase().includes(directorySearchQuery)) return;
         const isFriend = friendPeerIds.has(peerId);
         const matchesFilter = matchesInterestFilter(peer.interestFilter);
         const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
@@ -3116,7 +3201,7 @@
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
-                  <h4 class="text-xs ${nameColorClass}">@${displayLabel}</h4>
+                  <h4 class="text-xs ${nameColorClass}">@${escapeChatHTML(displayLabel)}</h4>
                   ${isFriend ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold">Friend</span>' : ''}
                   ${peerIsAdmin ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-extrabold uppercase">ADMIN</span>' : ''}
                   ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="text-[9px] bg-violet-600 text-white px-1 rounded font-extrabold uppercase">Bot</span>' : ''}
@@ -3128,11 +3213,14 @@
               <button onclick="toggleFriendStatus('${peerId}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
                 <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
               </button>
-              <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}', ${peer.createdAt})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
+              <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(displayLabel)}', null, '${peerId}', ${peer.createdAt})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
           </div>
         `;
       });
+      if (!container.innerHTML) {
+        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No matches for your search.</div>`;
+      }
       lucide.createIcons();
     }
 
@@ -3203,7 +3291,7 @@
       validBubbles.forEach(b => {
         const isBiz = b.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
-        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}', ${b.createdAt})`;
+        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${escapeJsArg(b.name)}', '${escapeJsArg(b.question)}', '${b.peerId}', ${b.createdAt})`;
 
         container.innerHTML += `
           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
@@ -3236,6 +3324,11 @@
       if (supabaseClient && currentAuthUser) {
         try {
           const topicIsLive = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
+          const presenceKey = [userState.alias, userState.type, userState.category, topicIsLive ? activeTopicState.text : '', topicIsLive ? activeTopicState.createdAt : '', Math.round(coords.lat * 10000), Math.round(coords.lng * 10000)].join('|');
+          const presenceDue = presenceKey !== lastPresenceUpsertKey || (Date.now() - lastPresenceUpsertAt > 60000);
+          if (presenceDue) {
+          lastPresenceUpsertKey = presenceKey;
+          lastPresenceUpsertAt = Date.now();
           supabaseClient.from('profiles').upsert({
             id: currentAuthUser.id,
             alias: userState.alias,
@@ -3249,6 +3342,7 @@
             topic_created_at: topicIsLive ? new Date(activeTopicState.createdAt).toISOString() : null,
             updated_at: new Date()
           });
+          }
         } catch(e) {}
       }
 
@@ -3320,9 +3414,14 @@
       const circleBg = iconVisual.bg;
       const showSonarRipple = matchesFilter && !isBiz && !peer.isOffline;
       const chatRoomName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
-      const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}', ${peer.createdAt})`;
-      const onIconClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}', ${peer.createdAt})`;
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(chatRoomName)}', '${escapeJsArg(peer.question || '')}', '${peer.peerId}', ${peer.createdAt})`;
+      const onIconClickJs = onClickJs;
 
+      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.rawSender || '', Math.round((peer.distance || 0) / 10), userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : ''].join('|');
+      if (nodeElem.dataset.renderSig === renderSig && nodeElem.innerHTML) {
+        return;
+      }
+      nodeElem.dataset.renderSig = renderSig;
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-10 h-10 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
@@ -3334,6 +3433,7 @@
               ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
             </div>
             ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="personal-bot-badge">BOT</span>' : ''}
+            ${peer.distance ? `<span class="mt-1 px-1.5 py-px rounded-full bg-slate-900/55 text-white text-[8px] font-bold tracking-wide" style="pointer-events:none;">${peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + ' mi' : Math.max(10, Math.round(peer.distance)) + ' m'}</span>` : ''}
           ` : ''}
         </div>
       `;
@@ -3341,14 +3441,17 @@
     }
 
     function checkChatExpiryLoop() {
+      if (expiryLoopStarted) return;
+      expiryLoopStarted = true;
       setInterval(() => {
+        let expiryChanged = false;
         if (activeTopicState.createdAt) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
+            expiryChanged = true;
             deleteExpiredChat('room-you', currentAuthUser ? currentAuthUser.id : myPeerId);
           } else if (currentActiveChatRoomId === 'room-you') {
-            const countdownEl = document.getElementById('chatExpiryCountdown');
-            if (countdownEl) countdownEl.innerText = formatCountdownTime(activeTopicState.createdAt);
+            updateExpiryCountdownUi(activeTopicState.createdAt);
           }
         }
 
@@ -3356,22 +3459,26 @@
           const peerId = currentActiveChatRoomId.replace('room-peer-', '');
           const currentPeer = globalActiveDirectory[peerId];
           if (currentPeer && currentPeer.createdAt) {
-            const countdownEl = document.getElementById('chatExpiryCountdown');
-            if (countdownEl) countdownEl.innerText = formatCountdownTime(currentPeer.createdAt);
+            updateExpiryCountdownUi(currentPeer.createdAt);
           }
         }
 
         Object.keys(globalActiveDirectory).forEach(peerId => {
           const peer = globalActiveDirectory[peerId];
           if (peer.createdAt && (Date.now() - peer.createdAt > ONE_HOUR_MS)) {
+            expiryChanged = true;
             deleteExpiredChat('room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-'), peerId);
           }
         });
 
-        refreshAllNodeVisibilities();
-        renderGlobalUsersDirectory();
-        renderPinnedChats();
-        if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+        // Only repaint lists when an expiry actually changed something; the
+        // 1-second tick itself now just updates the countdown text.
+        if (expiryChanged) {
+          refreshAllNodeVisibilities();
+          renderGlobalUsersDirectory();
+          renderPinnedChats();
+          if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+        }
       }, 1000);
     }
 
@@ -3411,7 +3518,7 @@
 
     function updateMeshUI() {
       const countElem = document.getElementById('activeUserCount');
-      if (countElem) countElem.innerText = `${Object.keys(globalActiveDirectory).length + 1} Active Peer`;
+      if (countElem) countElem.innerText = `${Object.keys(globalActiveDirectory).length + 1} Active Peer${unreadRoomIds.size ? ' \u00b7 ' + unreadRoomIds.size + ' Unread' : ''}`;
     }
 
     async function quickPostFromDock() {
@@ -3496,6 +3603,7 @@
       
       if (!localChatCache[targetRoomId]) localChatCache[targetRoomId] = [];
       localChatCache[targetRoomId].push({ id: clientMessageId, sender: senderDisplayName, text, time: timeStr, createdAt: sentAt, isMe: true });
+      if (localChatCache[targetRoomId].length > 200) localChatCache[targetRoomId].splice(0, localChatCache[targetRoomId].length - 200);
 
       appendMessage(senderDisplayName, text, timeStr, true);
       input.value = ''; 
@@ -3596,10 +3704,7 @@
       avatarEl.innerHTML = renderNodeIconContent(accountType, category, targetIsBot);
 
       const targetCreatedAt = createdAtVal || (isSelf ? activeTopicState.createdAt : globalActiveDirectory[peerId]?.createdAt);
-      if (targetCreatedAt) {
-        const countdownEl = document.getElementById('chatExpiryCountdown');
-        if (countdownEl) countdownEl.innerText = formatCountdownTime(targetCreatedAt);
-      }
+      if (targetCreatedAt) updateExpiryCountdownUi(targetCreatedAt);
 
       if ((topic || (isSelf && activeTopicState.text)) && targetCreatedAt) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
