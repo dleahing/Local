@@ -2353,18 +2353,32 @@
         });
     }
 
+    // One stable database room key shared by the room owner and visitors.
+    function canonicalChatRoomId(roomId) {
+      if (roomId === 'room-you') return 'room-peer-' + (currentAuthUser?.id || myPeerId).replace(/[^a-zA-Z0-9-]/g, '-');
+      return roomId;
+    }
+
+    function localChatRoomId(databaseRoomId) {
+      return databaseRoomId === canonicalChatRoomId('room-you') ? 'room-you' : databaseRoomId;
+    }
+
+    function escapeChatHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[ch]));
+    }
+
     function handleIncomingChatReplyPayload(msg) {
       if (!msg || !msg.room_id || msg.sender_id === (currentAuthUser ? currentAuthUser.id : myPeerId)) return;
       
-      const targetRoomId = msg.room_id;
+      const targetRoomId = localChatRoomId(msg.room_id);
       const timeStr = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       
       if (!localChatCache[targetRoomId]) localChatCache[targetRoomId] = [];
       
-      const isDuplicate = localChatCache[targetRoomId].some(m => m.text === msg.message && m.sender === msg.sender_alias && Math.abs(new Date(m.time || Date.now()) - new Date(timeStr)) < 5000);
+      const isDuplicate = localChatCache[targetRoomId].some(m => m.id && msg.client_id && m.id === msg.client_id);
       if (isDuplicate) return;
 
-      localChatCache[targetRoomId].push({ sender: msg.sender_alias, text: msg.message, time: timeStr, isMe: false });
+      localChatCache[targetRoomId].push({ id: msg.client_id, sender: msg.sender_alias, text: msg.message, time: timeStr, isMe: false });
 
       if (currentActiveChatRoomId === targetRoomId) {
         appendMessage(msg.sender_alias, msg.message, timeStr, false);
@@ -3178,7 +3192,7 @@
 
       const oldRoomId = 'room-you';
       if (supabaseClient) {
-        await supabaseClient.from('chat_messages').delete().eq('room_id', oldRoomId);
+        await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId(oldRoomId));
       }
       delete localChatCache[oldRoomId];
       participatedChatRoomIds.delete(oldRoomId);
@@ -3232,6 +3246,8 @@
       if (!text) return;
 
       const targetRoomId = currentActiveChatRoomId;
+      const databaseRoomId = canonicalChatRoomId(targetRoomId);
+      const clientMessageId = crypto.randomUUID();
 
       participatedChatRoomIds.add(targetRoomId);
       savePersistentData();
@@ -3241,14 +3257,15 @@
       const senderDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
       
       if (!localChatCache[targetRoomId]) localChatCache[targetRoomId] = [];
-      localChatCache[targetRoomId].push({ sender: senderDisplayName, text, time: timeStr, isMe: true });
+      localChatCache[targetRoomId].push({ id: clientMessageId, sender: senderDisplayName, text, time: timeStr, isMe: true });
 
       appendMessage(senderDisplayName, text, timeStr, true);
       input.value = ''; 
       input.style.height = '26px';
 
       const payloadMsg = {
-        room_id: targetRoomId, 
+        room_id: databaseRoomId, 
+        client_id: clientMessageId,
         sender_id: currentAuthUser ? currentAuthUser.id : myPeerId,
         sender_alias: senderDisplayName, 
         message: text, 
@@ -3267,12 +3284,13 @@
       }
 
       if (supabaseClient) {
-        await supabaseClient.from('chat_messages').insert({
-          room_id: targetRoomId, 
+        const { error } = await supabaseClient.from('chat_messages').insert({
+          room_id: databaseRoomId, 
           sender_id: currentAuthUser ? currentAuthUser.id : null,
           sender_alias: senderDisplayName, 
           message: text
         });
+        if (error) showToast('Message could not be saved: ' + error.message, 'alert-circle');
       }
 
       renderPinnedChats();
@@ -3284,10 +3302,10 @@
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full">
           <div class="flex items-center gap-1.5 px-1.5 mb-0.5">
-            <span class="text-[10px] text-slate-700 font-bold">@${sender}</span>
-            <span class="text-[9px] text-slate-500 font-medium">${time || ''}</span>
+            <span class="text-[10px] text-slate-700 font-bold">@${escapeChatHTML(sender)}</span>
+            <span class="text-[9px] text-slate-500 font-medium">${escapeChatHTML(time || '')}</span>
           </div>
-          <div class="px-4 py-2.5 rounded-2xl text-xs max-w-[85%] font-light leading-relaxed shadow-md ${isMe ? 'bg-emerald-600 text-white rounded-br-none shadow-emerald-500/20' : 'glass-card bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none border border-white/90 shadow-sm'}">${text.replace(/\n/g, '<br>')}</div>
+          <div class="px-4 py-2.5 rounded-2xl text-xs max-w-[85%] font-light leading-relaxed shadow-md ${isMe ? 'bg-emerald-600 text-white rounded-br-none shadow-emerald-500/20' : 'glass-card bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none border border-white/90 shadow-sm'}">${escapeChatHTML(text).replace(/\n/g, '<br>')}</div>
         </div>
       `;
       msgBox.scrollTop = msgBox.scrollHeight;
@@ -3354,7 +3372,7 @@
       if (!currentActiveChatRoomId) return;
       if (confirm("Are you sure you want to delete this entire chat room for all participants?")) {
         if (supabaseClient) {
-          await supabaseClient.from('chat_messages').delete().eq('room_id', currentActiveChatRoomId);
+          await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId(currentActiveChatRoomId));
           if (currentActiveChatRoomId === 'room-you' && currentAuthUser) {
             await supabaseClient.from('profiles').update({ active_topic: null, topic_created_at: null }).eq('id', currentAuthUser.id);
           }
@@ -3386,10 +3404,11 @@
           const { data, error } = await supabaseClient
             .from('chat_messages')
             .select('*')
-            .eq('room_id', roomId)
+            .eq('room_id', canonicalChatRoomId(roomId))
             .order('created_at', { ascending: true });
 
-          if (!error && data && data.length > 0) {
+          if (currentActiveChatRoomId !== roomId) return;
+          if (!error && data) {
             localChatCache[roomId] = [];
             data.forEach(msg => {
               const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -3402,6 +3421,7 @@
         } catch (e) {}
       }
 
+      if (currentActiveChatRoomId !== roomId) return;
       const cachedMessages = localChatCache[roomId] || [];
       cachedMessages.forEach(msg => {
         appendMessage(msg.sender, msg.text, msg.time, msg.isMe);
