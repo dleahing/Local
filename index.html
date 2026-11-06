@@ -144,7 +144,29 @@
     #nodesContainer .node-content-stack { z-index: 2000 !important; }
     #nodesContainer .node-item:focus-within,
     #nodesContainer .node-item:hover { z-index: 5000 !important; }
-    #chatDrawer, #chatBackdrop { transform: translateZ(0); }
+    #chatBackdrop { transform: translateZ(0); }
+    #chatDrawer {
+      left: 50% !important;
+      top: max(12px, env(safe-area-inset-top)) !important;
+      width: min(32rem, calc(100vw - 20px)) !important;
+      max-width: calc(100vw - 20px) !important;
+      max-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom))) !important;
+      box-sizing: border-box;
+      transform: translate3d(-50%, 0, 0) !important;
+      overflow: hidden;
+    }
+    #chatMessages { min-height: 72px; overscroll-behavior: contain; }
+    @media (max-width: 640px) {
+      #chatDrawer {
+        padding: 14px !important;
+        border-radius: 22px !important;
+        max-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom))) !important;
+      }
+      #chatDrawer > .flex:first-child { gap: 8px; }
+      #chatDrawer #addFriendFromChatBtn { max-width: 104px; white-space: nowrap; }
+      #chatDrawer #ownerDeleteRoomBtn { white-space: nowrap; }
+      #chatMessages { max-height: 34dvh; }
+    }
     .message-item { flex: 0 0 auto; }
 
     .scale-compensator {
@@ -824,7 +846,7 @@
     let currentZoomScale = 1.0, targetZoomScale = 1.0;
     let isDraggingMap = false, startDragX = 0, startDragY = 0, animationFrameId = null;
 
-    let activeTopicState = { text: "Anyone here?", createdAt: Date.now() }; 
+    let activeTopicState = { text: "Anyone here?", createdAt: Date.now(), persistent: false }; 
     let currentActiveChatRoomId = null;
     let localChatCache = {}; 
     let currentLayoutMode = 'map';
@@ -1170,6 +1192,21 @@
     let dragStartRadiusMeters = DEFAULT_RADIUS_METERS;
     let dragStartDistancePx = 175;
     let audioCtx = null;
+    let unreadChimeTimer = null;
+
+    function syncUnreadChimeLoop() {
+      if (unreadRoomIds.size > 0) {
+        if (!unreadChimeTimer) {
+          unreadChimeTimer = setInterval(() => {
+            if (unreadRoomIds.size > 0 && document.visibilityState === 'visible') playAudioEffect('unread-chime');
+            else if (unreadRoomIds.size === 0) { clearInterval(unreadChimeTimer); unreadChimeTimer = null; }
+          }, 1150);
+        }
+      } else if (unreadChimeTimer) {
+        clearInterval(unreadChimeTimer);
+        unreadChimeTimer = null;
+      }
+    }
 
     function initAudioContext() {
       if (!audioCtx) {
@@ -1177,6 +1214,7 @@
         if (AudioContextClass) audioCtx = new AudioContextClass();
       }
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      if (unreadRoomIds.size > 0) syncUnreadChimeLoop();
     }
 
     function playAudioEffect(type = 'click') {
@@ -1196,6 +1234,19 @@
           gain.connect(audioCtx.destination);
           osc.start(now);
           osc.stop(now + 0.04);
+        } else if (type === 'unread-chime') {
+          [659.25, 783.99].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const noteTime = now + idx * 0.11;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, noteTime);
+            gain.gain.setValueAtTime(0.0001, noteTime);
+            gain.gain.exponentialRampToValueAtTime(0.075, noteTime + 0.025);
+            gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.42);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(noteTime); osc.stop(noteTime + 0.44);
+          });
         } else if (type === 'bell' || type === 'chime') {
           [523.25, 659.25, 783.99].forEach((freq, idx) => {
             const osc = audioCtx.createOscillator();
@@ -1661,6 +1712,7 @@
         if (savedBots) customBotDefinitions = JSON.parse(savedBots);
         const savedUnread = localStorage.getItem(STORAGE_KEY_UNREAD_ROOMS);
         if (savedUnread) unreadRoomIds = new Set(JSON.parse(savedUnread));
+        syncUnreadChimeLoop();
       } catch (e) {}
     }
 
@@ -2392,6 +2444,7 @@
         appendMessage(msg.sender_alias, msg.message, timeStr, false);
       } else {
         unreadRoomIds.add(targetRoomId);
+        syncUnreadChimeLoop();
         savePersistentData();
         renderPinnedChats();
         if (currentLayoutMode === 'right') renderRightSidebarBubbles();
@@ -2415,9 +2468,11 @@
 
         profiles.forEach(p => {
           if (p.id !== currentAuthUser?.id) {
-            const hasValidTopic = p.active_topic && p.topic_created_at;
-            const createdAtTime = hasValidTopic ? new Date(p.topic_created_at).getTime() : null;
-            const isExpired = createdAtTime && (Date.now() - createdAtTime > ONE_HOUR_MS);
+            const hasValidTopic = !!p.active_topic;
+            const parsedTopicTime = p.topic_created_at ? new Date(p.topic_created_at).getTime() : null;
+            const createdAtTime = Number.isFinite(parsedTopicTime) ? parsedTopicTime : null;
+            // Supabase profile topics are durable: signing out or being offline
+            // must not remove the room or move its saved coordinates.
 
             const existingPeer = globalActiveDirectory[p.id];
             const pLat = p.lat !== undefined && p.lat !== null ? p.lat : (existingPeer?.lat || userState.lat + (Math.random() - 0.5) * 0.01);
@@ -2434,8 +2489,9 @@
               hours: p.hours,
               interestFilter: p.interest_filter || 'none',
               hideMyName: p.hide_my_name || false,
-              question: isExpired ? null : (p.active_topic || (existingPeer?.createdAt && Date.now()-existingPeer.createdAt < ONE_HOUR_MS ? existingPeer.question : null)),
-              createdAt: isExpired ? null : (createdAtTime || (existingPeer?.createdAt && Date.now()-existingPeer.createdAt < ONE_HOUR_MS ? existingPeer.createdAt : null)),
+              question: hasValidTopic ? p.active_topic : (existingPeer?.question || null),
+              createdAt: hasValidTopic ? (createdAtTime || existingPeer?.createdAt || Date.now()) : (existingPeer?.createdAt || null),
+              persistentTopic: hasValidTopic,
               isBot: false,
               isOffline: false,
               distance: calculateHaversineDistance(userState.lat, userState.lng, pLat, pLng)
@@ -2475,6 +2531,7 @@
     async function signOutUser() {
       if (!supabaseClient) return;
       await supabaseClient.auth.signOut();
+      // Do not delete the profile topic or chat_messages: the room remains available while its owner is offline.
       currentAuthUser = null;
       isAdminUser = false;
       userState.profileCreated = false;
@@ -2501,16 +2558,16 @@
         userState.profileCreated = true;
         if (userState.alias.toLowerCase() === 'administrator') isAdminUser = true;
 
-        if (data.active_topic && data.topic_created_at) {
-          const tTime = new Date(data.topic_created_at).getTime();
-          if (Date.now() - tTime <= ONE_HOUR_MS) {
-            activeTopicState.text = data.active_topic;
-            activeTopicState.createdAt = tTime;
-            renderUserTopBubbleContent();
-          } else {
-            activeTopicState.text = null;
-            activeTopicState.createdAt = null;
-          }
+        if (data.active_topic) {
+          const parsedTime = data.topic_created_at ? new Date(data.topic_created_at).getTime() : Date.now();
+          activeTopicState.text = data.active_topic;
+          activeTopicState.createdAt = Number.isFinite(parsedTime) ? parsedTime : Date.now();
+          activeTopicState.persistent = true;
+          renderUserTopBubbleContent();
+        } else {
+          activeTopicState.text = null;
+          activeTopicState.createdAt = null;
+          activeTopicState.persistent = false;
         }
         document.getElementById('avatarNameInput').value = userState.alias;
         document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
@@ -3058,7 +3115,7 @@
       }
 
       const hasValidQuestion = peer.question && peer.createdAt;
-      const isExpired = hasValidQuestion && (Date.now() - peer.createdAt > ONE_HOUR_MS);
+      const isExpired = hasValidQuestion && !peer.persistentTopic && (Date.now() - peer.createdAt > ONE_HOUR_MS);
       if (isExpired) {
         peer.question = null;
         peer.createdAt = null;
@@ -3100,7 +3157,7 @@
 
     function checkChatExpiryLoop() {
       setInterval(() => {
-        if (activeTopicState.createdAt) {
+        if (activeTopicState.createdAt && !activeTopicState.persistent) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
             activeTopicState.text = null;
@@ -3126,7 +3183,7 @@
         let directoryChanged = false;
         Object.keys(globalActiveDirectory).forEach(peerId => {
           const peer = globalActiveDirectory[peerId];
-          if (peer.createdAt && (Date.now() - peer.createdAt > ONE_HOUR_MS)) {
+          if (peer.createdAt && !peer.persistentTopic && (Date.now() - peer.createdAt > ONE_HOUR_MS)) {
             if (peer.question !== null) {
               peer.question = null;
               peer.createdAt = null;
@@ -3207,6 +3264,7 @@
 
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
+      activeTopicState.persistent = !!(supabaseClient && currentAuthUser);
       renderUserTopBubbleContent(true);
       document.getElementById('mainTopicText').innerText = text;
       participatedChatRoomIds.add(oldRoomId);
@@ -3330,6 +3388,7 @@
       if (!roomId) return;
       currentActiveChatRoomId = roomId;
       unreadRoomIds.delete(roomId);
+      syncUnreadChimeLoop();
       savePersistentData();
       refreshAllNodeVisibilities();
 
@@ -3395,8 +3454,9 @@
         delete localChatCache[currentActiveChatRoomId];
         participatedChatRoomIds.delete(currentActiveChatRoomId);
         unreadRoomIds.delete(currentActiveChatRoomId);
+        syncUnreadChimeLoop();
         if (currentActiveChatRoomId === 'room-you') {
-          activeTopicState.text = null; activeTopicState.createdAt = null;
+          activeTopicState.text = null; activeTopicState.createdAt = null; activeTopicState.persistent = false;
           renderUserTopBubbleContent();
         }
         savePersistentData();
