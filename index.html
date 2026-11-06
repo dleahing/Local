@@ -3290,9 +3290,13 @@
           sender_alias: senderDisplayName, 
           message: text
         });
-        if (error) showToast('Message could not be saved: ' + error.message, 'alert-circle');
+        if (error) {
+          showToast('Message shown locally but not saved: ' + error.message, 'alert-circle');
+          console.warn('Chat message insert failed:', error);
+        }
       }
 
+      if (!supabaseClient) showToast('Message shown locally; database unavailable', 'alert-circle');
       renderPinnedChats();
     }
 
@@ -3397,8 +3401,9 @@
     async function loadDbChatHistory(roomId) {
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
-      msgBox.innerHTML = '';
-
+      // Preserve optimistic and realtime messages while the database request runs.
+      const cachedBeforeFetch = [...(localChatCache[roomId] || [])];
+      let merged = cachedBeforeFetch;
       if (supabaseClient) {
         try {
           const { data, error } = await supabaseClient
@@ -3406,26 +3411,36 @@
             .select('*')
             .eq('room_id', canonicalChatRoomId(roomId))
             .order('created_at', { ascending: true });
-
           if (currentActiveChatRoomId !== roomId) return;
-          if (!error && data) {
-            localChatCache[roomId] = [];
-            data.forEach(msg => {
-              const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              const isMe = currentAuthUser ? (msg.sender_id === currentAuthUser.id) : (msg.sender_alias === userState.alias);
-              localChatCache[roomId].push({ sender: msg.sender_alias, text: msg.message, time: timeStr, isMe });
-              appendMessage(msg.sender_alias, msg.message, timeStr, isMe);
-            });
-            return;
+          if (!error && Array.isArray(data)) {
+            const dbMessages = data.map(msg => ({
+              id: msg.client_id || msg.id,
+              sender: msg.sender_alias,
+              text: msg.message,
+              time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              isMe: currentAuthUser ? msg.sender_id === currentAuthUser.id : msg.sender_alias === getDisplayName(userState.alias, userState.hideMyName, userState.type),
+              persisted: true
+            }));
+            // A database snapshot may be stale, or admin messages may not be
+            // writable under RLS. Never erase messages already shown locally.
+            merged = [...dbMessages];
+            const latestLocal = localChatCache[roomId] || [];
+            for (const msg of latestLocal) {
+              const exists = merged.some(db => (msg.id && db.id === msg.id) ||
+                (db.sender === msg.sender && db.text === msg.text && db.time === msg.time));
+              if (!exists) merged.push(msg);
+            }
+          } else if (error) {
+            console.warn('Chat history could not be loaded:', error.message);
           }
-        } catch (e) {}
+        } catch (error) {
+          console.warn('Chat history request failed:', error);
+        }
       }
-
       if (currentActiveChatRoomId !== roomId) return;
-      const cachedMessages = localChatCache[roomId] || [];
-      cachedMessages.forEach(msg => {
-        appendMessage(msg.sender, msg.text, msg.time, msg.isMe);
-      });
+      localChatCache[roomId] = merged;
+      msgBox.innerHTML = '';
+      merged.forEach(msg => appendMessage(msg.sender, msg.text, msg.time, msg.isMe));
     }
 
     function closeChatDrawer() {
