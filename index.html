@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V8 Fixed Radius & Countdown Sync]</title>
+  <title>LocaL - Proximity Social Network [V9 Fixed Chat Routing & Realtime Sync]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -777,15 +777,15 @@
     const DEFAULT_RADIUS_METERS = 402.33;
     const MAX_RADIUS_METERS = 48280.20; // Exact 30-mile maximum boundary limit
     
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v38';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v38';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v38';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v38';
-    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v38';
-    const STORAGE_KEY_FRIENDS = 'local_friends_list_v38';
-    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v38';
-    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v38';
-    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v38';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v39';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v39';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v39';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v39';
+    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v39';
+    const STORAGE_KEY_FRIENDS = 'local_friends_list_v39';
+    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v39';
+    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v39';
+    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v39';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -874,7 +874,6 @@
       return spaced;
     }
 
-    // Keep alive & background refresh heartbeat
     let heartbeatInterval = null;
 
     function initBackgroundKeepAlive() {
@@ -892,7 +891,6 @@
         captureOfflineTopicsSnapshot();
       });
 
-      // Background loop refresh every 10 seconds to state online presence
       if (heartbeatInterval) clearInterval(heartbeatInterval);
       heartbeatInterval = setInterval(() => {
         announcePresence();
@@ -1039,7 +1037,6 @@
       else return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-purple-400', shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);', iconColor: 'text-purple-300', glowText: 'text-purple-300', lucideIcon: category || 'store' };
     }
 
-    // Accurate UTC Countdown calculation
     function formatCountdownTime(createdAt) {
       if (!createdAt) return '60m 00s';
       const parsedCreatedAt = typeof createdAt === 'number' ? createdAt : new Date(createdAt).getTime();
@@ -2315,20 +2312,69 @@
           initAuthListener();
           
           fetchProfilesAndTopicsFromSupabase();
+          setupSupabaseRealtimeSubscriptions();
           
           setInterval(() => {
             if (currentActiveChatRoomId) {
               loadDbChatHistory(currentActiveChatRoomId);
             }
             fetchProfilesAndTopicsFromSupabase();
-          }, 2000);
+          }, 2500);
           
-          updatePeerServerStatus(true, "Connected via Supabase REST & Local Mesh");
+          updatePeerServerStatus(true, "Connected to Supabase Realtime & Mesh");
         }
       } catch(e) {
         updatePeerServerStatus(false, "Mesh Fallback (Local & DB)");
       }
       setupLocalBroadcastFallback();
+    }
+
+    function setupSupabaseRealtimeSubscriptions() {
+      if (!supabaseClient) return;
+      if (realtimeChannel) {
+        supabaseClient.removeChannel(realtimeChannel);
+      }
+
+      realtimeChannel = supabaseClient.channel('public-mesh-channel-v39', {
+        config: { broadcast: { self: false } }
+      });
+
+      realtimeChannel
+        .on('broadcast', { event: 'local_mesh_broadcast' }, payload => {
+          handleIncomingNetworkPayload(payload.payload);
+        })
+        .on('broadcast', { event: 'chat_reply' }, payload => {
+          handleIncomingChatReplyPayload(payload.payload);
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            updatePeerServerStatus(true, 'Supabase Realtime Channel Active');
+          }
+        });
+    }
+
+    function handleIncomingChatReplyPayload(msg) {
+      if (!msg || !msg.room_id || msg.sender_id === (currentAuthUser ? currentAuthUser.id : myPeerId)) return;
+      
+      const targetRoomId = msg.room_id;
+      const timeStr = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      if (!localChatCache[targetRoomId]) localChatCache[targetRoomId] = [];
+      
+      const isDuplicate = localChatCache[targetRoomId].some(m => m.text === msg.message && m.sender === msg.sender_alias && Math.abs(new Date(m.time || Date.now()) - new Date(timeStr)) < 5000);
+      if (isDuplicate) return;
+
+      localChatCache[targetRoomId].push({ sender: msg.sender_alias, text: msg.message, time: timeStr, isMe: false });
+
+      if (currentActiveChatRoomId === targetRoomId) {
+        appendMessage(msg.sender_alias, msg.message, timeStr, false);
+      } else {
+        unreadRoomIds.add(targetRoomId);
+        savePersistentData();
+        renderPinnedChats();
+        if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+        showToast(`New reply in @${msg.sender_alias}'s chat!`, 'message-square');
+      }
     }
 
     async function fetchProfilesAndTopicsFromSupabase() {
@@ -2485,12 +2531,25 @@
 
     function setupLocalBroadcastFallback() {
       if ('BroadcastChannel' in window && !broadcastChannel) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v38');
-        broadcastChannel.onmessage = (event) => { handleIncomingNetworkPayload(event.data); };
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v39');
+        broadcastChannel.onmessage = (event) => {
+          if (event.data && event.data.type === 'chat_reply') {
+            handleIncomingChatReplyPayload(event.data.payload);
+          } else {
+            handleIncomingNetworkPayload(event.data);
+          }
+        };
       }
       window.addEventListener('storage', (event) => {
         if (event.key === STORAGE_BEACON_KEY && event.newValue) {
-          try { handleIncomingNetworkPayload(JSON.parse(event.newValue)); } catch(e) {}
+          try {
+            const data = JSON.parse(event.newValue);
+            if (data && data.type === 'chat_reply') {
+              handleIncomingChatReplyPayload(data.payload);
+            } else {
+              handleIncomingNetworkPayload(data);
+            }
+          } catch(e) {}
         }
       });
     }
@@ -3331,9 +3390,11 @@
             .order('created_at', { ascending: true });
 
           if (!error && data && data.length > 0) {
+            localChatCache[roomId] = [];
             data.forEach(msg => {
               const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               const isMe = currentAuthUser ? (msg.sender_id === currentAuthUser.id) : (msg.sender_alias === userState.alias);
+              localChatCache[roomId].push({ sender: msg.sender_alias, text: msg.message, time: timeStr, isMe });
               appendMessage(msg.sender_alias, msg.message, timeStr, isMe);
             });
             return;
