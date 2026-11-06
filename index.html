@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V10 Precise Chat Routing & Scoping Fixes]</title>
+  <title>LocaL - Proximity Social Network [V11 Chat Expiry Deletion, Soft Bell, Foreground Icons, Bot Icon & Bubble Override]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -139,11 +139,27 @@
       transition: transform 0.15s cubic-bezier(0.15, 0.85, 0.35, 1);
     }
     #mapCanvas:active { cursor: grabbing; }
-    #nodesContainer { isolation: isolate; z-index: 900 !important; }
-    #nodesContainer .node-item { z-index: 1000 !important; }
-    #nodesContainer .node-content-stack { z-index: 2000 !important; }
+    /* Foreground layer for user icons: the nodes layer sits ABOVE all radar
+       artwork, and the container itself never swallows taps (only the icons
+       and bubbles inside it are interactive), so an icon can always be
+       selected even when the radar ring / sweep passes underneath it. */
+    #nodesContainer { isolation: isolate; z-index: 9000 !important; pointer-events: none !important; }
+    #nodesContainer .node-item { z-index: 9000 !important; pointer-events: auto; }
+    #nodesContainer .node-content-stack { z-index: 9500 !important; }
     #nodesContainer .node-item:focus-within,
-    #nodesContainer .node-item:hover { z-index: 5000 !important; }
+    #nodesContainer .node-item:hover { z-index: 9900 !important; }
+    /* Radar artwork is decoration only: rings and sweep never intercept taps.
+       Only the edge distance labels stay interactive, for drag-resizing. */
+    #radarBoundaryRing { z-index: 0 !important; pointer-events: none !important; }
+    #radarBoundaryRing .radar-distance-label { pointer-events: auto !important; cursor: ew-resize; }
+    #radarCenter, #worldMaxBoundaryRing { pointer-events: none !important; z-index: 0 !important; }
+    .peer-node-icon { position: relative; z-index: 9600 !important; pointer-events: auto !important; }
+    .personal-bot-badge {
+      margin-top: 3px; padding: 1px 6px; border-radius: 9999px;
+      background: #7c3aed; color: #fff; font-size: 8px; font-weight: 800;
+      letter-spacing: 0.14em; line-height: 1.4; box-shadow: 0 4px 10px rgba(124, 58, 237, 0.55);
+      pointer-events: none; white-space: nowrap;
+    }
     #chatBackdrop { transform: translateZ(0); }
     #chatDrawer {
       left: 50% !important;
@@ -308,7 +324,7 @@
       <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_15px_rgba(56,189,248,0.15)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
     </div>
 
-    <div id="nodesContainer" class="absolute inset-0 z-50 pointer-events-auto"></div>
+    <div id="nodesContainer" class="absolute inset-0 z-[9000] pointer-events-none"></div>
   </div>
 
   <!-- TOP-LEFT PINNED CHATS CONTAINER WITH HIDE/SHOW TOGGLE -->
@@ -931,7 +947,7 @@
         const snapshot = {};
         Object.keys(globalActiveDirectory).forEach(id => {
           const peer = globalActiveDirectory[id];
-          if (peer.question && peer.createdAt) {
+          if (peer.question && peer.createdAt && (Date.now() - peer.createdAt <= ONE_HOUR_MS)) {
             snapshot[id] = { question: peer.question, createdAt: peer.createdAt };
           }
         });
@@ -1066,6 +1082,95 @@
       else return { bg: SOLID_FLAT_BUSINESS_BG, borderClass: 'border-[3.5px] border-purple-400', shadowStyle: 'box-shadow: 0 0 25px rgba(216, 180, 254, 0.8);', iconColor: 'text-purple-300', glowText: 'text-purple-300', lucideIcon: category || 'store' };
     }
 
+    // ---- Chat expiry = chat deletion --------------------------------------
+    // A chat lives for ONE_HOUR_MS from its bubble's createdAt. When that
+    // passes, the chat is DELETED, not just hidden: its messages, room
+    // membership, unread flag and bubble are removed, the drawer closes if
+    // it is open on that room, and for your own room the Supabase messages
+    // and profile topic are cleared and peers are told to delete their copy.
+    let expiryDeletionInFlight = new Set();
+
+    function deleteChatLocally(roomId, peerId) {
+      if (!roomId) return;
+      const altRoomId = localChatRoomId(canonicalChatRoomId(roomId));
+      delete localChatCache[roomId];
+      delete localChatCache[altRoomId];
+      participatedChatRoomIds.delete(roomId);
+      participatedChatRoomIds.delete(altRoomId);
+      if (unreadRoomIds.delete(roomId) || unreadRoomIds.delete(altRoomId)) syncUnreadChimeLoop();
+      if (peerId && globalActiveDirectory[peerId]) {
+        globalActiveDirectory[peerId].question = null;
+        globalActiveDirectory[peerId].createdAt = null;
+        globalActiveDirectory[peerId].persistentTopic = false;
+      }
+      if (currentActiveChatRoomId === roomId || currentActiveChatRoomId === altRoomId) {
+        closeChatDrawer();
+      }
+      savePersistentData();
+    }
+
+    async function deleteExpiredChat(roomId, peerId) {
+      if (!roomId || expiryDeletionInFlight.has(roomId)) return;
+      expiryDeletionInFlight.add(roomId);
+      const ownPeerId = currentAuthUser ? currentAuthUser.id : myPeerId;
+      const isOwnRoom = roomId === 'room-you' || (peerId && peerId === ownPeerId);
+      const wasOpen = currentActiveChatRoomId === roomId;
+      const wasParticipated = participatedChatRoomIds.has(roomId);
+      try {
+        if (isOwnRoom) {
+          activeTopicState.text = null;
+          activeTopicState.createdAt = null;
+          activeTopicState.persistent = false;
+          renderUserTopBubbleContent();
+          if (supabaseClient) {
+            await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId('room-you'));
+            if (currentAuthUser) {
+              await supabaseClient.from('profiles').update({ active_topic: null, topic_created_at: null }).eq('id', currentAuthUser.id);
+            }
+          }
+          broadcastData({ id: 'exp-' + Math.random().toString(36).substring(2, 9), type: 'DELETE_ROOM', roomId: canonicalChatRoomId('room-you'), peerId: ownPeerId });
+        } else if (supabaseClient && isAdminUser) {
+          await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId(roomId));
+        }
+        deleteChatLocally(roomId, isOwnRoom ? null : peerId);
+        if (isOwnRoom) showToast('Your chat expired and was deleted.', 'clock');
+        else if (wasOpen || wasParticipated) showToast('A chat expired and was deleted.', 'clock');
+      } catch (e) {
+        // Local deletion above still stands even if a DB cleanup call fails.
+        try { deleteChatLocally(roomId, isOwnRoom ? null : peerId); } catch (err) {}
+      } finally {
+        expiryDeletionInFlight.delete(roomId);
+        refreshAllNodeVisibilities();
+        renderPinnedChats();
+        if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+      }
+    }
+
+    // ---- One live bubble per sender ---------------------------------------
+    // A new bubble from a sender OVERRIDES that sender's previous bubble and
+    // its chat: the old room's messages, membership and unread state are
+    // cleared, so only the newest bubble (with a fresh chat) survives.
+    function clearPreviousBubbleChat(peerId, newCreatedAt, newQuestion) {
+      if (!peerId) return false;
+      const peer = globalActiveDirectory[peerId];
+      if (!peer || !peer.question || !peer.createdAt) return false;
+      const isReplacement = (typeof newCreatedAt === 'number' && peer.createdAt !== newCreatedAt) ||
+        (newQuestion !== undefined && newQuestion !== null && newQuestion !== peer.question);
+      if (!isReplacement) return false;
+      const roomId = 'room-peer-' + String(peerId).replace(/[^a-zA-Z0-9]/g, '-');
+      delete localChatCache[roomId];
+      participatedChatRoomIds.delete(roomId);
+      if (unreadRoomIds.delete(roomId)) syncUnreadChimeLoop();
+      if (currentActiveChatRoomId === roomId) {
+        const msgBox = document.getElementById('chatMessages');
+        if (msgBox) msgBox.innerHTML = '';
+        const topicEl = document.getElementById('mainTopicText');
+        if (topicEl && newQuestion) topicEl.innerText = newQuestion;
+      }
+      savePersistentData();
+      return true;
+    }
+
     function formatCountdownTime(createdAt) {
       if (!createdAt) return '60m 00s';
       const parsedCreatedAt = typeof createdAt === 'number' ? createdAt : new Date(createdAt).getTime();
@@ -1194,18 +1299,48 @@
     let audioCtx = null;
     let unreadChimeTimer = null;
 
+    // Unread reminder: one soft bell ring when a chat first becomes unread,
+    // then a gentle re-ring every 15s while it stays unread (was: a harsh
+    // two-tone chime repeating every ~1.15s).
+    const UNREAD_BELL_INTERVAL_MS = 15000;
+
     function syncUnreadChimeLoop() {
       if (unreadRoomIds.size > 0) {
         if (!unreadChimeTimer) {
+          if (document.visibilityState === 'visible') playAudioEffect('unread-chime');
           unreadChimeTimer = setInterval(() => {
             if (unreadRoomIds.size > 0 && document.visibilityState === 'visible') playAudioEffect('unread-chime');
             else if (unreadRoomIds.size === 0) { clearInterval(unreadChimeTimer); unreadChimeTimer = null; }
-          }, 1150);
+          }, UNREAD_BELL_INTERVAL_MS);
         }
       } else if (unreadChimeTimer) {
         clearInterval(unreadChimeTimer);
         unreadChimeTimer = null;
       }
+    }
+
+    // Soft bell: sine partials with a gentle attack and a long, quiet decay -
+    // a single mellow ring instead of a repeating electronic chime.
+    function playSoftBell(startTime) {
+      if (!audioCtx) return;
+      const t = typeof startTime === 'number' ? startTime : audioCtx.currentTime;
+      const master = audioCtx.createGain();
+      master.gain.setValueAtTime(0.0001, t);
+      master.gain.exponentialRampToValueAtTime(0.055, t + 0.03);
+      master.gain.exponentialRampToValueAtTime(0.0001, t + 2.4);
+      master.connect(audioCtx.destination);
+      [{ f: 1318.51, g: 1.0, d: 2.4 }, { f: 1318.51 * 2.02, g: 0.35, d: 1.4 }, { f: 1318.51 * 2.74, g: 0.18, d: 0.9 }, { f: 1318.51 * 3.76, g: 0.08, d: 0.55 }].forEach(partial => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(partial.f, t);
+        gain.gain.setValueAtTime(partial.g, t);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + partial.d);
+        osc.connect(gain);
+        gain.connect(master);
+        osc.start(t);
+        osc.stop(t + partial.d + 0.05);
+      });
     }
 
     function initAudioContext() {
@@ -1235,18 +1370,7 @@
           osc.start(now);
           osc.stop(now + 0.04);
         } else if (type === 'unread-chime') {
-          [659.25, 783.99].forEach((freq, idx) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            const noteTime = now + idx * 0.11;
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, noteTime);
-            gain.gain.setValueAtTime(0.0001, noteTime);
-            gain.gain.exponentialRampToValueAtTime(0.075, noteTime + 0.025);
-            gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.42);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(noteTime); osc.stop(noteTime + 0.44);
-          });
+          playSoftBell(now);
         } else if (type === 'bell' || type === 'chime') {
           [523.25, 659.25, 783.99].forEach((freq, idx) => {
             const osc = audioCtx.createOscillator();
@@ -1587,6 +1711,7 @@
       const newName = document.getElementById(`edit-name-${id}`).value.trim();
       const newQ = document.getElementById(`edit-q-${id}`).value.trim();
       if (globalActiveDirectory[id]) {
+        clearPreviousBubbleChat(id, Date.now(), newQ);
         globalActiveDirectory[id].rawSender = newName;
         globalActiveDirectory[id].question = newQ;
         globalActiveDirectory[id].createdAt = Date.now();
@@ -2025,10 +2150,17 @@
         }
       };
 
-      ring.addEventListener('mousedown', handleStart);
+      // The ring fill is pointer-events:none so user icons underneath it stay
+      // selectable; resizing starts from the ring's edge distance labels.
+      const dragHandles = [document.getElementById('radarRingDistanceLabelLeft'), document.getElementById('radarRingDistanceLabelRight')].filter(Boolean);
+      dragHandles.forEach(handle => {
+        handle.style.pointerEvents = 'auto';
+        handle.style.cursor = 'ew-resize';
+        handle.addEventListener('mousedown', handleStart);
+        handle.addEventListener('touchstart', handleStart, { passive: false });
+      });
       window.addEventListener('mousemove', handleMove);
       window.addEventListener('mouseup', handleEnd);
-      ring.addEventListener('touchstart', handleStart, { passive: false });
       window.addEventListener('touchmove', handleMove, { passive: false });
       window.addEventListener('touchend', handleEnd);
     }
@@ -2246,8 +2378,32 @@
     const UPGRADED_PERSONAL_ICON_BORDER = 'border-[2px] border-white/90';
     const UPGRADED_PERSONAL_ICON_SHADOW = 'box-shadow: 0 12px 35px rgba(14, 165, 233, 0.55), inset 0 3px 6px rgba(255, 255, 255, 0.9), inset 0 -3px 6px rgba(0, 0, 0, 0.25);';
 
-    function renderNodeIconContent(accountType, category) {
+    // Personal USER BOTS get their own look, distinct from real active users:
+    // a violet/fuchsia bubble with a dashed ring and a robot glyph (plus a
+    // BOT badge on the map), instead of the blue bubble + person glyph that
+    // real personal users get.
+    const PERSONAL_BOT_ICON_BG = 'radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 1) 0%, rgba(196, 181, 253, 0.95) 38%, rgba(139, 92, 246, 0.98) 75%, rgba(91, 33, 182, 1) 100%)';
+    const PERSONAL_BOT_ICON_BORDER = 'border-[2px] border-dashed border-violet-200/95';
+    const PERSONAL_BOT_ICON_SHADOW = 'box-shadow: 0 12px 35px rgba(139, 92, 246, 0.6), inset 0 3px 6px rgba(255, 255, 255, 0.9), inset 0 -3px 6px rgba(0, 0, 0, 0.25);';
+
+    function isPersonalBot(accountType, isBot) {
+      return !!isBot && accountType !== 'business';
+    }
+
+    function getNodeIconVisual(accountType, category, isBot) {
+      if (accountType === 'business') {
+        const n = getBusinessNeonStyle(accountType, category);
+        return { bg: n.bg, borderClass: n.borderClass, shadowStyle: n.shadowStyle };
+      }
+      if (isPersonalBot(accountType, isBot)) {
+        return { bg: PERSONAL_BOT_ICON_BG, borderClass: PERSONAL_BOT_ICON_BORDER, shadowStyle: PERSONAL_BOT_ICON_SHADOW };
+      }
+      return { bg: UPGRADED_PERSONAL_ICON_BG, borderClass: UPGRADED_PERSONAL_ICON_BORDER, shadowStyle: UPGRADED_PERSONAL_ICON_SHADOW };
+    }
+
+    function renderNodeIconContent(accountType, category, isBot = false) {
       const isBiz = accountType === 'business';
+      if (!isBiz && isBot) return `<div class="bubble-glare"></div><i data-lucide="bot" class="w-5.5 h-5.5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)] z-10" stroke-width="2.5"></i>`;
       if (!isBiz) return `<div class="bubble-glare"></div><i data-lucide="user" class="w-5.5 h-5.5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-10" stroke-width="2.5"></i>`;
       const neonStyle = getBusinessNeonStyle(accountType, category);
       return `<i data-lucide="${neonStyle.lucideIcon}" class="w-4.5 h-4.5 ${neonStyle.iconColor} z-10" stroke-width="2.5"></i>`;
@@ -2297,7 +2453,7 @@
       const initialPx = Math.round((unlimitedRadarActive ? 30 : (userState.radius / METERS_PER_MILE)) * MAP_PIXELS_PER_MILE * 2);
 
       return `
-        <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer transition-all duration-75 z-10 shadow-2xl pointer-events-auto backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click & drag to scale boundary">
+        <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-75 z-0 shadow-2xl pointer-events-none backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: solid; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Drag the edge labels to scale the boundary">
           <div class="absolute inset-0 rounded-full overflow-hidden pointer-events-none z-0">
             <div class="absolute inset-[-50%] animate-radar-sweep pointer-events-none origin-center" style="transform-origin: 50% 50%; background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 270deg, ${palette.sweep} 360deg);"></div>
           </div>
@@ -2468,11 +2624,13 @@
 
         profiles.forEach(p => {
           if (p.id !== currentAuthUser?.id) {
-            const hasValidTopic = !!p.active_topic;
             const parsedTopicTime = p.topic_created_at ? new Date(p.topic_created_at).getTime() : null;
             const createdAtTime = Number.isFinite(parsedTopicTime) ? parsedTopicTime : null;
-            // Supabase profile topics are durable: signing out or being offline
-            // must not remove the room or move its saved coordinates.
+            // A topic older than one hour is an expired chat: it is treated as
+            // deleted and is never resurrected by this fetch.
+            const topicExpired = !!p.active_topic && !!createdAtTime && (Date.now() - createdAtTime > ONE_HOUR_MS);
+            const hasValidTopic = !!p.active_topic && !topicExpired;
+            if (hasValidTopic) clearPreviousBubbleChat(p.id, createdAtTime, p.active_topic);
 
             const existingPeer = globalActiveDirectory[p.id];
             const pLat = p.lat !== undefined && p.lat !== null ? p.lat : (existingPeer?.lat || userState.lat + (Math.random() - 0.5) * 0.01);
@@ -2489,13 +2647,21 @@
               hours: p.hours,
               interestFilter: p.interest_filter || 'none',
               hideMyName: p.hide_my_name || false,
-              question: hasValidTopic ? p.active_topic : (existingPeer?.question || null),
-              createdAt: hasValidTopic ? (createdAtTime || existingPeer?.createdAt || Date.now()) : (existingPeer?.createdAt || null),
-              persistentTopic: hasValidTopic,
+              question: hasValidTopic ? p.active_topic : (topicExpired ? null : (existingPeer?.question || null)),
+              createdAt: hasValidTopic ? (createdAtTime || existingPeer?.createdAt || Date.now()) : (topicExpired ? null : (existingPeer?.createdAt || null)),
+              persistentTopic: false,
               isBot: false,
               isOffline: false,
               distance: calculateHaversineDistance(userState.lat, userState.lng, pLat, pLng)
             };
+          }
+        });
+        // Remove the local chat copy of any profile topic found expired above.
+        profiles.forEach(p => {
+          if (p.id === currentAuthUser?.id || !p.active_topic || !p.topic_created_at) return;
+          const t = new Date(p.topic_created_at).getTime();
+          if (Number.isFinite(t) && Date.now() - t > ONE_HOUR_MS) {
+            deleteChatLocally('room-peer-' + String(p.id).replace(/[^a-zA-Z0-9]/g, '-'), p.id);
           }
         });
         refreshAllPeerDistancesAndPositions();
@@ -2560,10 +2726,19 @@
 
         if (data.active_topic) {
           const parsedTime = data.topic_created_at ? new Date(data.topic_created_at).getTime() : Date.now();
-          activeTopicState.text = data.active_topic;
-          activeTopicState.createdAt = Number.isFinite(parsedTime) ? parsedTime : Date.now();
-          activeTopicState.persistent = true;
-          renderUserTopBubbleContent();
+          const safeTime = Number.isFinite(parsedTime) ? parsedTime : Date.now();
+          if (Date.now() - safeTime > ONE_HOUR_MS) {
+            // Saved topic already expired: the chat is deleted, not restored.
+            activeTopicState.text = null;
+            activeTopicState.createdAt = null;
+            activeTopicState.persistent = false;
+            deleteExpiredChat('room-you', userId);
+          } else {
+            activeTopicState.text = data.active_topic;
+            activeTopicState.createdAt = safeTime;
+            activeTopicState.persistent = false;
+            renderUserTopBubbleContent();
+          }
         } else {
           activeTopicState.text = null;
           activeTopicState.createdAt = null;
@@ -2648,11 +2823,16 @@
     function handleIncomingNetworkPayload(data) {
       if (!data || data.peerId === myPeerId) return;
 
+      if (data.type === 'DELETE_ROOM') {
+        const targetRoomId = localChatRoomId(data.roomId || '');
+        deleteChatLocally(targetRoomId, data.peerId || null);
+        refreshAllPeerDistancesAndPositions();
+        return;
+      }
+
       if (data.type === 'CLEAR_PREVIOUS_BUBBLE') {
-        if (globalActiveDirectory[data.peerId]) {
-          globalActiveDirectory[data.peerId].question = null;
-          globalActiveDirectory[data.peerId].createdAt = null;
-        }
+        const prevRoomId = 'room-peer-' + String(data.peerId).replace(/[^a-zA-Z0-9]/g, '-');
+        deleteChatLocally(prevRoomId, data.peerId);
         refreshAllPeerDistancesAndPositions();
         return;
       }
@@ -2667,6 +2847,8 @@
 
       const newQuestionText = data.text !== undefined ? data.text : data.question;
       const questionCreatedAt = typeof data.createdAt === 'number' ? data.createdAt : (data.createdAt ? new Date(data.createdAt).getTime() : Date.now());
+      // New bubble from this sender overrides (deletes) their previous chat.
+      if (newQuestionText) clearPreviousBubbleChat(data.peerId, questionCreatedAt, newQuestionText);
 
       globalActiveDirectory[data.peerId] = {
         ...globalActiveDirectory[data.peerId],
@@ -2812,6 +2994,7 @@
           isAdmin: isUserAdmin,
           isMainUser: !isUserAdmin,
           isFriend: false,
+          isBot: false,
           hasUnread: unreadRoomIds.has('room-you')
         };
         if (isUserAdmin) adminList.push(item);
@@ -2839,6 +3022,7 @@
             category: peer.category,
             peerId,
             createdAt: peer.createdAt,
+            isBot: !!peer.isBot,
             isAdmin: peerIsAdmin,
             isMainUser: false,
             isFriend,
@@ -2870,8 +3054,8 @@
           container.innerHTML += `
             <div onclick="${onClickJs}" class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] hover:scale-105 transition-all ${jiggleClass}">
               <div class="admin-rainbow-inner px-3 py-2.5 rounded-[15px] shadow-xl flex items-center gap-2.5">
-                <div class="w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
-                  ${renderNodeIconContent(item.accountType, item.category)}
+                <div class="w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${getNodeIconVisual(item.accountType, item.category, item.isBot).borderClass}" style="background: ${getNodeIconVisual(item.accountType, item.category, item.isBot).bg}; border-radius: 50%;">
+                  ${renderNodeIconContent(item.accountType, item.category, item.isBot)}
                 </div>
                 <div class="min-w-0 flex-1">
                   ${item.isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${isBiz ? nameColorClass : 'text-amber-400 font-bold'}">@${item.name}</span></div>`}
@@ -2884,8 +3068,8 @@
           const cardOutline = item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (item.isFriend ? 'border-[2px] border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.6)]' : 'border border-white/80 shadow-xl');
           container.innerHTML += `
             <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} ${jiggleClass} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
-              <div class="w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
-                ${renderNodeIconContent(item.accountType, item.category)}
+              <div class="w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${getNodeIconVisual(item.accountType, item.category, item.isBot).borderClass}" style="background: ${getNodeIconVisual(item.accountType, item.category, item.isBot).bg}; border-radius: 50%;">
+                ${renderNodeIconContent(item.accountType, item.category, item.isBot)}
               </div>
               <div class="min-w-0 flex-1">
                 ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">@${item.name}</span></div>`}
@@ -2927,14 +3111,15 @@
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between transition-opacity ${isWithinRadius ? 'opacity-100' : 'opacity-40'}">
             <div class="flex items-center gap-3">
-              <div class="w-7.5 h-7.5 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
-                ${renderNodeIconContent(peer.accountType, peer.category)}
+              <div class="w-7.5 h-7.5 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${getNodeIconVisual(peer.accountType, peer.category, peer.isBot).borderClass}" style="background: ${getNodeIconVisual(peer.accountType, peer.category, peer.isBot).bg}; border-radius: 50%;">
+                ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
                   <h4 class="text-xs ${nameColorClass}">@${displayLabel}</h4>
                   ${isFriend ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold">Friend</span>' : ''}
                   ${peerIsAdmin ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-extrabold uppercase">ADMIN</span>' : ''}
+                  ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="text-[9px] bg-violet-600 text-white px-1 rounded font-extrabold uppercase">Bot</span>' : ''}
                 </div>
                 <p class="text-[10px] text-slate-500 font-semibold">Distance: ${distStr}</p>
               </div>
@@ -2970,7 +3155,7 @@
           question: hasSelfTopic ? activeTopicState.text : '',
           peerId: 'you', roomId: 'room-you', accountType: userState.type,
           category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName,
-          createdAt: activeTopicState.createdAt, isAdmin: isUserAdmin, isMainUser: !isUserAdmin, isFriend: false,
+          createdAt: activeTopicState.createdAt, isAdmin: isUserAdmin, isMainUser: !isUserAdmin, isFriend: false, isBot: false,
           hasUnread: unreadRoomIds.has('room-you')
         };
         if (isUserAdmin) adminBubbles.push(item);
@@ -2994,7 +3179,7 @@
               question: hasValidQuestion ? p.question : '',
               peerId: p.peerId, roomId, accountType: p.accountType,
               category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius,
-              createdAt: p.createdAt, isAdmin: peerIsAdmin, isMainUser: false, isFriend,
+              createdAt: p.createdAt, isAdmin: peerIsAdmin, isMainUser: false, isFriend, isBot: !!p.isBot,
               hasUnread: unreadRoomIds.has(roomId)
             };
             if (peerIsAdmin) adminBubbles.push(item);
@@ -3022,8 +3207,8 @@
 
         container.innerHTML += `
           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
-            <div class="w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG}; border-radius: 50%;">
-              ${renderNodeIconContent(b.accountType, b.category)}
+            <div class="w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${getNodeIconVisual(b.accountType, b.category, b.isBot).borderClass}" style="background: ${getNodeIconVisual(b.accountType, b.category, b.isBot).bg}; border-radius: 50%;">
+              ${renderNodeIconContent(b.accountType, b.category, b.isBot)}
             </div>
             <div class="flex-1 min-w-0">
               <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin, b.hasUnread) : renderUserBubbleCardHtml(b.question, b.name, onClickJs, b.isAdmin, false, b.isMainUser, b.isAdmin, b.hasUnread)}</div>
@@ -3050,6 +3235,7 @@
 
       if (supabaseClient && currentAuthUser) {
         try {
+          const topicIsLive = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
           supabaseClient.from('profiles').upsert({
             id: currentAuthUser.id,
             alias: userState.alias,
@@ -3059,8 +3245,8 @@
             hide_my_name: userState.hideMyName,
             lat: coords.lat,
             lng: coords.lng,
-            active_topic: activeTopicState.text,
-            topic_created_at: activeTopicState.createdAt ? new Date(activeTopicState.createdAt).toISOString() : null,
+            active_topic: topicIsLive ? activeTopicState.text : null,
+            topic_created_at: topicIsLive ? new Date(activeTopicState.createdAt).toISOString() : null,
             updated_at: new Date()
           });
         } catch(e) {}
@@ -3115,12 +3301,9 @@
       }
 
       const hasValidQuestion = peer.question && peer.createdAt;
-      const isExpired = hasValidQuestion && !peer.persistentTopic && (Date.now() - peer.createdAt > ONE_HOUR_MS);
+      const isExpired = hasValidQuestion && (Date.now() - peer.createdAt > ONE_HOUR_MS);
       if (isExpired) {
-        peer.question = null;
-        peer.createdAt = null;
-        participatedChatRoomIds.delete(roomId);
-        savePersistentData();
+        deleteExpiredChat(roomId, peer.peerId);
       }
 
       const activeHasQuestion = peer.question && peer.createdAt;
@@ -3133,7 +3316,8 @@
 
       const isBiz = peer.accountType === 'business';
       const neonStyle = getBusinessNeonStyle(peer.accountType, peer.category);
-      const circleBg = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
+      const iconVisual = getNodeIconVisual(peer.accountType, peer.category, peer.isBot);
+      const circleBg = iconVisual.bg;
       const showSonarRipple = matchesFilter && !isBiz && !peer.isOffline;
       const chatRoomName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}', ${peer.createdAt})`;
@@ -3146,9 +3330,10 @@
             ${(isBiz || activeHasQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread) : ''}
           </div>
           ${showUserIcon ? `
-            <div onclick="${onIconClickJs}" class="w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}" style="background: ${circleBg}; border-radius: 50%;" title="Click to start private chat with @${chatRoomName}">
-              ${renderNodeIconContent(peer.accountType, peer.category)}
+            <div onclick="${onIconClickJs}" class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - click to start private chat with @${chatRoomName}">
+              ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
             </div>
+            ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="personal-bot-badge">BOT</span>' : ''}
           ` : ''}
         </div>
       `;
@@ -3157,14 +3342,10 @@
 
     function checkChatExpiryLoop() {
       setInterval(() => {
-        if (activeTopicState.createdAt && !activeTopicState.persistent) {
+        if (activeTopicState.createdAt) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
-            activeTopicState.text = null;
-            activeTopicState.createdAt = null;
-            renderUserTopBubbleContent();
-            savePersistentData();
-            showToast('Your chat bubble has expired and was removed.', 'clock');
+            deleteExpiredChat('room-you', currentAuthUser ? currentAuthUser.id : myPeerId);
           } else if (currentActiveChatRoomId === 'room-you') {
             const countdownEl = document.getElementById('chatExpiryCountdown');
             if (countdownEl) countdownEl.innerText = formatCountdownTime(activeTopicState.createdAt);
@@ -3180,22 +3361,12 @@
           }
         }
 
-        let directoryChanged = false;
         Object.keys(globalActiveDirectory).forEach(peerId => {
           const peer = globalActiveDirectory[peerId];
-          if (peer.createdAt && !peer.persistentTopic && (Date.now() - peer.createdAt > ONE_HOUR_MS)) {
-            if (peer.question !== null) {
-              peer.question = null;
-              peer.createdAt = null;
-              directoryChanged = true;
-            }
-            participatedChatRoomIds.delete('room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-'));
+          if (peer.createdAt && (Date.now() - peer.createdAt > ONE_HOUR_MS)) {
+            deleteExpiredChat('room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-'), peerId);
           }
         });
-
-        if (directoryChanged) {
-          savePersistentData();
-        }
 
         refreshAllNodeVisibilities();
         renderGlobalUsersDirectory();
@@ -3264,7 +3435,7 @@
 
       activeTopicState.text = text; 
       activeTopicState.createdAt = Date.now();
-      activeTopicState.persistent = !!(supabaseClient && currentAuthUser);
+      activeTopicState.persistent = false; // Every bubble expires after 1h; expiry deletes its chat.
       renderUserTopBubbleContent(true);
       document.getElementById('mainTopicText').innerText = text;
       participatedChatRoomIds.add(oldRoomId);
@@ -3417,11 +3588,12 @@
         }
       }
 
-      const neonStyle = getBusinessNeonStyle(accountType, category);
+      const targetIsBot = !isSelf && !!(globalActiveDirectory[peerId] && globalActiveDirectory[peerId].isBot);
+      const avatarVisual = getNodeIconVisual(accountType, category, targetIsBot);
       const avatarEl = document.getElementById('chatTargetAvatar');
-      avatarEl.className = `w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${isBiz ? neonStyle.borderClass : UPGRADED_PERSONAL_ICON_BORDER}`;
-      avatarEl.style.background = isBiz ? neonStyle.bg : UPGRADED_PERSONAL_ICON_BG;
-      avatarEl.innerHTML = renderNodeIconContent(accountType, category);
+      avatarEl.className = `w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${avatarVisual.borderClass}`;
+      avatarEl.style.background = avatarVisual.bg;
+      avatarEl.innerHTML = renderNodeIconContent(accountType, category, targetIsBot);
 
       const targetCreatedAt = createdAtVal || (isSelf ? activeTopicState.createdAt : globalActiveDirectory[peerId]?.createdAt);
       if (targetCreatedAt) {
