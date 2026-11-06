@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.9 Delete Account & Forgot Password]</title>
+  <title>LocaL - Proximity Social Network [V11.10 Alias Save Fix & Radar Border]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -240,6 +240,21 @@
     }
 
     .hairline-ring { border-width: 1px !important; }
+    /* V11.10: the main radar ring keeps a clear BLUE border so people can
+       see the edge they can click and drag to change the radar size. */
+    #radarBoundaryRing {
+      border-width: 3px !important;
+      border-color: rgba(37, 99, 235, 0.95) !important;
+      box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65), 0 0 22px rgba(37, 99, 235, 0.55), inset 0 0 18px rgba(37, 99, 235, 0.18) !important;
+    }
+    .radar-drag-hint {
+      position: absolute; left: 50%; bottom: -11px; transform: translateX(-50%);
+      z-index: 30; pointer-events: none; white-space: nowrap;
+      background: rgba(37, 99, 235, 0.92); color: #fff;
+      font-size: 9.5px; font-weight: 800; letter-spacing: 0.02em;
+      padding: 2.5px 9px; border-radius: 9999px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.5);
+    }
 
     .radar-distance-label {
       font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -1901,7 +1916,18 @@
               if (profileData && profileData.alias) {
                 userState.alias = profileData.alias;
               } else {
-                userState.alias = emailInput.split('@')[0];
+                // V11.10: no profile row (or no alias on it). Use the alias
+                // stored on the login itself at sign-up - never a guess -
+                // and recreate the row so the alias sticks from now on.
+                const metaAlias = (currentAuthUser.user_metadata && currentAuthUser.user_metadata.alias) || null;
+                userState.alias = metaAlias || emailInput.split('@')[0];
+                try {
+                  await supabaseClient.from('profiles').upsert({
+                    id: currentAuthUser.id, alias: userState.alias, account_type: userState.type,
+                    category: userState.category, interest_filter: userState.interestFilter,
+                    hide_my_name: userState.hideMyName, updated_at: new Date()
+                  });
+                } catch(e) {}
               }
             }
           }
@@ -2234,6 +2260,9 @@
         if (savedProfile) {
           const parsed = JSON.parse(savedProfile);
           userState = { ...userState, ...parsed };
+          // V11.10: every launch starts at the default 0.5 mi radar with
+          // its fitted zoom - a range saved last session is not restored.
+          userState.radius = DEFAULT_RADIUS_METERS;
           isAdminUser = computeIsAdmin();
         }
         const savedTopicState = localStorage.getItem(STORAGE_KEY_TOPIC_STATE);
@@ -2954,10 +2983,11 @@
       }
 
       return `
-        <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-75 z-0 shadow-2xl pointer-events-none backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: ${style === 'cyberpunk' ? 'dashed' : 'solid'}; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Drag the edge to resize the radar">
+        <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-75 z-0 shadow-2xl pointer-events-none backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: ${style === 'cyberpunk' ? 'dashed' : 'solid'}; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click and drag Radar to change its size">
           ${inner}
           <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-20 pointer-events-auto">${initialMiles} Mi</div>
           <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-20 pointer-events-auto">${initialMiles} Mi</div>
+          <div class="radar-drag-hint">Click and drag Radar</div>
           <svg class="radar-drag-svg" viewBox="0 0 100 100" aria-hidden="true"><title>Drag the edge to resize the radar</title><circle class="radar-drag-edge" cx="50" cy="50" r="47" vector-effect="non-scaling-stroke"></circle></svg>
         </div>
       `;
@@ -3337,11 +3367,30 @@
         updateMyDisplayLabel();
         checkAdminPrivileges();
         savePersistentData();
+      } else if (currentAuthUser && currentAuthUser.id === userId) {
+        // V11.10: the profile row is missing - recreate it from the alias
+        // stored on the login (set at sign-up) so the alias survives
+        // sign-out/sign-in instead of reverting.
+        const metaAlias = (currentAuthUser.user_metadata && currentAuthUser.user_metadata.alias) || null;
+        if (metaAlias) {
+          userState.alias = metaAlias;
+          userState.profileCreated = true;
+          try {
+            await supabaseClient.from('profiles').upsert({
+              id: userId, alias: metaAlias, account_type: userState.type,
+              category: userState.category, interest_filter: userState.interestFilter,
+              hide_my_name: userState.hideMyName, updated_at: new Date()
+            });
+          } catch(e) {}
+          savePersistentData();
+        }
       }
     }
 
     async function saveUserProfileToSupabase() {
-      if (!supabaseClient || !currentAuthUser) return;
+      // No signed-in server account (local mode): the on-device save that
+      // already happened is all there is - report success.
+      if (!supabaseClient || !currentAuthUser) return true;
       const { data: existing, error: err } = await supabaseClient
         .from('profiles')
         .select('id')
@@ -3349,10 +3398,10 @@
 
       if (existing && existing.some(p => p.id !== currentAuthUser.id)) {
         showToast('That unique alias is already taken by another user!', 'alert-circle');
-        return;
+        return false;
       }
 
-      await supabaseClient.from('profiles').upsert({
+      const profileRow = {
         id: currentAuthUser.id,
         alias: userState.alias,
         account_type: userState.type,
@@ -3360,9 +3409,33 @@
         interest_filter: userState.interestFilter,
         hide_my_name: userState.hideMyName,
         updated_at: new Date()
-      });
-      document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
+      };
+      // V11.10: the old code fired this write without checking the result
+      // and always announced "updated" - so when the write failed, the new
+      // alias looked saved for the session and then reverted at the next
+      // sign-in. Now the save is verified: try the upsert, fall back to a
+      // plain update of the existing row, then re-read the row and only
+      // report success when the database actually holds the new alias.
+      let writeError = null;
+      const upsertRes = await supabaseClient.from('profiles').upsert(profileRow);
+      writeError = (upsertRes && upsertRes.error) || null;
+      if (writeError) {
+        const updateRow = { alias: profileRow.alias, account_type: profileRow.account_type, category: profileRow.category, interest_filter: profileRow.interest_filter, hide_my_name: profileRow.hide_my_name, updated_at: profileRow.updated_at };
+        const updateRes = await supabaseClient.from('profiles').update(updateRow).eq('id', currentAuthUser.id);
+        writeError = (updateRes && updateRes.error) || null;
+      }
+      if (!writeError) {
+        const { data: checkRow } = await supabaseClient.from('profiles').select('alias').eq('id', currentAuthUser.id).single();
+        if (!checkRow || checkRow.alias !== userState.alias) writeError = new Error('alias was not confirmed saved');
+      }
+      if (writeError) {
+        showToast('Your alias could not be saved to the server, so it would not stick. Please try again.', 'alert-circle');
+        return false;
+      }
+      const peerDisplay = document.getElementById('myPeerIdDisplay');
+      if (peerDisplay) peerDisplay.value = `${myPeerId} (@${userState.alias})`;
       showToast('Profile and unique alias updated!', 'check-circle');
+      return true;
     }
 
     function reconnectSupabase() {
@@ -4050,7 +4123,7 @@
       if (!skipSave) savePersistentData();
     }
 
-    function saveProfile() {
+    async function saveProfile() {
       const newAlias = document.getElementById('avatarNameInput').value.trim();
       if (!newAlias) { showToast('Please enter a valid unique alias', 'alert-circle'); return; }
       userState.alias = newAlias;
@@ -4070,9 +4143,11 @@
 
       updateMyDisplayLabel();
       savePersistentData();
-      saveUserProfileToSupabase();
+      // V11.10: wait for the verified server save. If it did not stick,
+      // Settings stays open so the failure isn't hidden.
+      const aliasSaved = await saveUserProfileToSupabase();
       announcePresence();
-      closeProfileModal();
+      if (aliasSaved !== false) closeProfileModal();
       checkAdminPrivileges();
     }
 
