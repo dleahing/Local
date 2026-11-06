@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.6 Home 0.25, Admin Rainbow, Sounds & Duplicate Fix]</title>
+  <title>LocaL - Proximity Social Network [V11.7 Admin Email Set]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1817,7 +1817,7 @@
     // 'admin'). It is never derived from the editable alias, and the old
     // hardcoded admin login has been removed. To make yourself
     // admin, add your Supabase login email to ADMIN_EMAILS below.
-    const ADMIN_EMAILS = [];
+    const ADMIN_EMAILS = ['dushanelee@gmail.com']; // V11.7: Shane's admin login - the same email as his personal account, so that one account has both roles
     function computeIsAdmin() {
       const u = currentAuthUser;
       if (!u) return false;
