@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V12 Hardened, Faster, Refreshed Look]</title>
+  <title>LocaL - Proximity Social Network [V11.1 V6 + V7 Favourites: Bell, Named Icons, Unread, Countdown & Radar Drag]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -153,7 +153,29 @@
     #radarBoundaryRing { z-index: 0 !important; pointer-events: none !important; }
     #radarBoundaryRing .radar-distance-label { pointer-events: auto !important; cursor: ew-resize; }
     #radarCenter, #worldMaxBoundaryRing { pointer-events: none !important; z-index: 0 !important; }
-    .peer-node-icon { position: relative; z-index: 9600 !important; pointer-events: auto !important; }
+    .peer-node-icon { position: relative; z-index: 9600 !important; pointer-events: auto !important; box-shadow: 0 10px 24px rgba(2, 32, 71, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.85) !important; }
+    /* Name shown at the bottom of each user icon (from the V7 look). */
+    .peer-name-label {
+      margin-top: 4px; padding: 1px 7px; border-radius: 9999px; max-width: 96px;
+      background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+      color: #1e293b; font-size: 9px; font-weight: 700; line-height: 1.5;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+    }
+    .unread-badge {
+      position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px;
+      border-radius: 9999px; background: #ef4444; color: #fff; border: 2px solid #fff;
+      font-size: 10px; font-weight: 800; line-height: 1; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(239, 68, 68, 0.55); z-index: 9700; pointer-events: none;
+      animation: pulse-glow 1.6s ease-in-out infinite;
+    }
+    .expiry-urgent { background: rgba(239, 68, 68, 0.20) !important; border-color: rgba(248, 113, 113, 0.65) !important; color: #991b1b !important; }
+    /* Radar resize handle: an invisible band on the ring's edge. Only the
+       band itself is draggable (SVG stroke hit-area), so the ring fill stays
+       click-through and user icons underneath remain selectable. */
+    .radar-drag-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 6; }
+    .radar-drag-edge { fill: none; stroke: rgba(56, 189, 248, 0); stroke-width: 22; pointer-events: stroke; cursor: ew-resize; transition: stroke 0.2s ease; }
+    .radar-drag-edge:hover { stroke: rgba(56, 189, 248, 0.22); }
     .personal-bot-badge {
       margin-top: 3px; padding: 1px 6px; border-radius: 9999px;
       background: #7c3aed; color: #fff; font-size: 8px; font-weight: 800;
@@ -297,27 +319,6 @@
       box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 1);
     }
 
-    /* ===== V12 look refresh: crisper glass, softer depth, clearer focus ===== */
-    :focus-visible { outline: 2px solid rgba(16, 185, 129, 0.85); outline-offset: 2px; border-radius: 8px; }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
-    }
-    #logoBadge { background: linear-gradient(135deg, #059669 0%, #0d9488 100%) !important; box-shadow: 0 6px 16px rgba(5, 150, 105, 0.45); }
-    #quickPostInput { font-size: 13px !important; }
-    #actionDockContainer .dark-biz-bubble {
-      background: linear-gradient(180deg, #262040 0%, #17142a 100%);
-      border-color: rgba(255, 255, 255, 0.28);
-      border-radius: 28px;
-      box-shadow: 0 24px 50px -12px rgba(10, 6, 32, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.22);
-    }
-    #chatDrawer { border-radius: 28px !important; }
-    .node-content-stack > div { border-radius: 20px; }
-    .peer-node-icon { box-shadow: 0 10px 24px rgba(2, 32, 71, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.85) !important; }
-    .expiry-urgent { background: rgba(239, 68, 68, 0.20) !important; border-color: rgba(248, 113, 113, 0.65) !important; color: #991b1b !important; }
-    #chatMessages::-webkit-scrollbar, #rightSidebarBubblesContainer::-webkit-scrollbar, #globalUsersDirectory::-webkit-scrollbar { width: 5px; }
-    #chatMessages::-webkit-scrollbar-thumb, #rightSidebarBubblesContainer::-webkit-scrollbar-thumb, #globalUsersDirectory::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.35); border-radius: 9999px; }
-    .glass-card { box-shadow: 0 14px 34px -8px rgba(15, 23, 42, 0.16); }
-
     .dark-biz-bubble {
       background: #1e1b2e;
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -404,6 +405,10 @@
         </select>
       </div>
 
+      <button onclick="playAudioEffect('click'); toggleP2PModal()" title="People nearby" aria-label="People nearby" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
+        <i data-lucide="users" class="w-4 h-4"></i>
+      </button>
+
       <button onclick="playAudioEffect('click'); openProfileModal()" title="Customize Profile" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
         <i data-lucide="user-cog" class="w-4 h-4"></i>
       </button>
@@ -422,7 +427,7 @@
             <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
           </svg>
         </div>
-        <input type="text" id="quickPostInput" maxlength="140" aria-label="Broadcast a chat bubble" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
+        <input type="text" id="quickPostInput" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
         <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-emerald-600 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-emerald-500 transition-all">
           <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
         </button>
@@ -598,7 +603,6 @@
           <div class="flex items-center justify-between mb-2">
             <label class="block text-xs font-semibold text-slate-800 uppercase tracking-wider">Discovered Peers & Bots (<span id="modalActiveCount">1</span>)</label>
           </div>
-          <input type="text" id="directorySearchInput" placeholder="Search people & bots..." aria-label="Search people and bots" class="w-full px-3.5 py-2 mb-2 rounded-2xl bg-white/70 border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none shadow-inner" oninput="directorySearchQuery = this.value.trim().toLowerCase(); renderGlobalUsersDirectory();">
           <div id="globalUsersDirectory" class="space-y-2 max-h-48 overflow-y-auto pr-1">
             <div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">Searching network mesh for peers...</div>
           </div>
@@ -803,12 +807,13 @@
       </div>
     </div>
 
-    <div id="chatExpiryTimerBar" class="my-2 px-3.5 py-2 rounded-2xl bg-white/60 backdrop-blur-md border border-amber-400/40 text-amber-950 text-xs font-semibold flex items-center justify-between flex-shrink-0 shadow-sm">
+    <div id="chatExpiryTimerBar" class="relative overflow-hidden my-2 px-3.5 py-2 rounded-2xl bg-white/60 backdrop-blur-md border border-amber-400/40 text-amber-950 text-xs font-semibold flex items-center justify-between flex-shrink-0 shadow-sm">
       <div class="flex items-center gap-2">
         <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
         <span>Chat bubble expires in:</span>
       </div>
       <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900 px-2 py-0.5 rounded-lg bg-amber-400/20 border border-amber-400/40">60m 00s</span>
+      <div id="chatExpiryProgress" class="absolute bottom-0 left-0 h-[3px] bg-amber-500 rounded-full" style="width: 100%; transition: width 1s linear, background-color 0.4s ease;"></div>
     </div>
 
     <div id="mainTopicContainer" class="hidden my-2 p-3 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-md flex items-start gap-2.5 flex-shrink-0">
@@ -823,14 +828,14 @@
 
     <div class="pt-3 pb-1 flex-shrink-0 pointer-events-auto">
       <div class="glass-card rounded-[28px] p-2 pl-4 border border-white/90 shadow-xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-emerald-400 transition-all bg-white/95 pointer-events-auto">
-        <textarea id="chatInput" rows="1" maxlength="500" aria-label="Type a reply" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
+        <textarea id="chatInput" rows="1" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 pointer-events-auto">
           <div class="flex items-center gap-1">
             <button onclick="playAudioEffect('click'); showToast('Attachment feature ready', 'paperclip')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer"><i data-lucide="plus" class="w-4 h-4"></i></button>
             <button onclick="playAudioEffect('click'); showToast('Voice transcription ready', 'mic')" type="button" class="p-1.5 text-slate-600 hover:text-emerald-600 rounded-full hover:bg-white/50 transition-colors cursor-pointer"><i data-lucide="mic" class="w-4 h-4"></i></button>
           </div>
-          <button onclick="sendChatMessage()" id="sendBtn" type="button" aria-label="Send message" class="w-8 h-8 rounded-full bg-emerald-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-emerald-500 transition-all cursor-pointer"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
+          <button onclick="sendChatMessage()" id="sendBtn" type="button" class="w-8 h-8 rounded-full bg-emerald-600 text-white font-medium flex items-center justify-center shadow-md active:scale-95 hover:bg-emerald-500 transition-all cursor-pointer"><i data-lucide="arrow-up" class="w-4 h-4"></i></button>
         </div>
       </div>
     </div>
@@ -912,13 +917,6 @@
     };
 
     let activeBubbleBySender = {};
-    let appSessionInitialized = false;
-    let supabasePollInterval = null;
-    let expiryLoopStarted = false;
-    let lastProfilesSignature = '';
-    let lastPresenceUpsertAt = 0;
-    let lastPresenceUpsertKey = '';
-    let directorySearchQuery = '';
 
     const RADAR_PALETTES = {
       cyan: { line: 'rgba(56, 189, 248, 0.35)', sweep: 'rgba(56, 189, 248, 0.50)', bg: 'rgba(56, 189, 248, 0.07)' },
@@ -1205,9 +1203,15 @@
       if (!countdownEl || !createdAt) return;
       countdownEl.innerText = formatCountdownTime(createdAt);
       const remainingMs = ONE_HOUR_MS - (Date.now() - createdAt);
-      countdownEl.classList.toggle('expiry-urgent', remainingMs > 0 && remainingMs < 5 * 60 * 1000);
+      const urgent = remainingMs > 0 && remainingMs < 5 * 60 * 1000;
+      countdownEl.classList.toggle('expiry-urgent', urgent);
       const bar = document.getElementById('chatExpiryTimerBar');
-      if (bar) bar.classList.toggle('expiry-urgent', remainingMs > 0 && remainingMs < 5 * 60 * 1000);
+      if (bar) bar.classList.toggle('expiry-urgent', urgent);
+      const progress = document.getElementById('chatExpiryProgress');
+      if (progress) {
+        progress.style.width = Math.max(0, Math.min(100, (remainingMs / ONE_HOUR_MS) * 100)) + '%';
+        progress.style.backgroundColor = urgent ? '#ef4444' : '';
+      }
     }
 
     function formatCountdownTime(createdAt) {
@@ -1223,8 +1227,6 @@
 
     function renderUserBubbleCardHtml(question, senderName, onClickJs, routerIsAdmin = false, isGiggle = false, isMainUser = false, isAdmin = false, hasUnread = false) {
       if (!question) return '';
-      question = escapeChatHTML(question);
-      senderName = escapeChatHTML(senderName || '');
       const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float');
       const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span></div>`;
 
@@ -1264,9 +1266,7 @@
     }
 
     function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false, hasUnread = false) {
-      const displayName = escapeChatHTML(getDisplayName(businessName, hideMyName, accountType));
-      if (question) question = escapeChatHTML(question);
-      if (hours) hours = escapeChatHTML(hours);
+      const displayName = getDisplayName(businessName, hideMyName, accountType);
       const nameColorClass = getBusinessCategoryTextColorClass(category);
       const animClass = hasUnread ? 'animate-jiggle-continuous' : 'animate-float';
 
@@ -1363,28 +1363,33 @@
       }
     }
 
-    // Soft bell: sine partials with a gentle attack and a long, quiet decay -
-    // a single mellow ring instead of a repeating electronic chime.
+    // Soft bell (the V7 sound): a warm C6 bell struck twice - one gentle ring
+    // and a quieter echo - sine partials with a slow attack and a long, quiet
+    // decay. Used for the unread-chat reminder.
     function playSoftBell(startTime) {
       if (!audioCtx) return;
-      const t = typeof startTime === 'number' ? startTime : audioCtx.currentTime;
-      const master = audioCtx.createGain();
-      master.gain.setValueAtTime(0.0001, t);
-      master.gain.exponentialRampToValueAtTime(0.055, t + 0.03);
-      master.gain.exponentialRampToValueAtTime(0.0001, t + 2.4);
-      master.connect(audioCtx.destination);
-      [{ f: 1318.51, g: 1.0, d: 2.4 }, { f: 1318.51 * 2.02, g: 0.35, d: 1.4 }, { f: 1318.51 * 2.74, g: 0.18, d: 0.9 }, { f: 1318.51 * 3.76, g: 0.08, d: 0.55 }].forEach(partial => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(partial.f, t);
-        gain.gain.setValueAtTime(partial.g, t);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + partial.d);
-        osc.connect(gain);
-        gain.connect(master);
-        osc.start(t);
-        osc.stop(t + partial.d + 0.05);
-      });
+      const t0 = typeof startTime === 'number' ? startTime : audioCtx.currentTime;
+      const strike = (t, level) => {
+        const master = audioCtx.createGain();
+        master.gain.setValueAtTime(0.0001, t);
+        master.gain.exponentialRampToValueAtTime(level, t + 0.04);
+        master.gain.exponentialRampToValueAtTime(0.0001, t + 2.8);
+        master.connect(audioCtx.destination);
+        [{ f: 1046.50, g: 1.0, d: 2.8 }, { f: 1046.50 * 2.02, g: 0.32, d: 1.6 }, { f: 1046.50 * 2.74, g: 0.16, d: 1.0 }, { f: 1046.50 * 3.76, g: 0.07, d: 0.6 }].forEach(partial => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(partial.f, t);
+          gain.gain.setValueAtTime(partial.g, t);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + partial.d);
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(t);
+          osc.stop(t + partial.d + 0.05);
+        });
+      };
+      strike(t0, 0.05);
+      strike(t0 + 1.15, 0.028);
     }
 
     function initAudioContext() {
@@ -1795,13 +1800,6 @@
     }
 
     async function initializeAppSession() {
-      if (appSessionInitialized) {
-        // Already running (e.g. account switch): just refresh, never rebuild.
-        announcePresence();
-        fetchProfilesAndTopicsFromSupabase();
-        return;
-      }
-      appSessionInitialized = true;
       userState.radius = DEFAULT_RADIUS_METERS;
       initGPSLocation();
       initUserNode();
@@ -1922,14 +1920,9 @@
 
     function showToast(message, icon = 'info') {
       const toastContainer = document.getElementById('toastContainer');
-      if (!toastContainer) return;
-      // Cap the stack and drop exact duplicates so bursts of events (expiry,
-      // reconnects) cannot flood the screen.
-      if ([...toastContainer.querySelectorAll('span')].some(el => el.innerText === message)) return;
-      while (toastContainer.childElementCount >= 3) toastContainer.firstElementChild.remove();
       const toast = document.createElement('div');
       toast.className = 'glass-card px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 text-slate-900 text-xs font-semibold border border-white/60';
-      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-emerald-600"></i> <span>${escapeChatHTML(message)}</span>`;
+      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 text-emerald-600"></i> <span>${message}</span>`;
       toastContainer.appendChild(toast);
       lucide.createIcons();
       setTimeout(() => { toast.remove(); }, 3500);
@@ -2208,22 +2201,18 @@
 
       // The ring fill is pointer-events:none so user icons underneath it stay
       // selectable; resizing starts from the ring's edge distance labels.
-      const dragHandles = [document.getElementById('radarRingDistanceLabelLeft'), document.getElementById('radarRingDistanceLabelRight')].filter(Boolean);
+      const dragHandles = [document.getElementById('radarRingDistanceLabelLeft'), document.getElementById('radarRingDistanceLabelRight'), document.querySelector('#radarBoundaryRing .radar-drag-edge')].filter(Boolean);
       dragHandles.forEach(handle => {
-        handle.style.pointerEvents = 'auto';
+        // The SVG edge keeps its stroke-only hit area; labels get full auto.
+        if (!handle.classList.contains('radar-drag-edge')) handle.style.pointerEvents = 'auto';
         handle.style.cursor = 'ew-resize';
         handle.addEventListener('mousedown', handleStart);
         handle.addEventListener('touchstart', handleStart, { passive: false });
       });
-      // Window listeners are bound once only: this function re-runs whenever
-      // the radar style/color changes, and stacking them multiplied drags.
-      if (!initRadiusDragHandlers._windowBound) {
-        initRadiusDragHandlers._windowBound = true;
-        window.addEventListener('mousemove', handleMove);
-        window.addEventListener('mouseup', handleEnd);
-        window.addEventListener('touchmove', handleMove, { passive: false });
-        window.addEventListener('touchend', handleEnd);
-      }
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+      window.addEventListener('touchmove', handleMove, { passive: false });
+      window.addEventListener('touchend', handleEnd);
     }
 
     function matchesInterestFilter(peerInterestFilter) {
@@ -2389,20 +2378,24 @@
       });
     }
 
-    function updateMyDisplayLabel() { renderUserTopBubbleContent(false); }
+    function updateMyDisplayLabel() {
+      renderUserTopBubbleContent(false);
+      const lbl = document.getElementById('userNameLabel');
+      if (lbl) lbl.innerText = getDisplayName(userState.alias, userState.hideMyName, userState.type);
+    }
 
     function renderUserTopBubbleContent(isGiggle = false) {
       const topBubble = document.getElementById('userTopBubble');
       if (!topBubble) return;
 
-      const hasValidActiveTopic = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
+      const hasValidActiveTopic = (activeTopicState.text && activeTopicState.createdAt) || participatedChatRoomIds.has('room-you');
       if (!hasValidActiveTopic && userState.type !== 'business') {
         topBubble.classList.add('hidden');
         return;
       }
 
       const myDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
-      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${escapeJsArg(myDisplayName)}', '${escapeJsArg(userState.type === 'business' ? (activeTopicState.text || '') : (activeTopicState.text || 'Anyone here?'))}', 'you', ${activeTopicState.createdAt || Date.now()})`;
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('room-you', '${myDisplayName}', '${userState.type === 'business' ? (activeTopicState.text || '') : (activeTopicState.text || 'Anyone here?')}', 'you', ${activeTopicState.createdAt || Date.now()})`;
 
       const isUserAdmin = userState.alias.toLowerCase() === 'administrator' || isAdminUser;
       const hasUnread = unreadRoomIds.has('room-you');
@@ -2522,6 +2515,7 @@
           <div class="absolute inset-8 rounded-full pointer-events-none hairline-ring z-0" style="border-style: solid; border-color: ${palette.line}; opacity: 0.4;"></div>
           <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-20 pointer-events-auto">${initialMiles} Mi</div>
           <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-20 pointer-events-auto">${initialMiles} Mi</div>
+          <svg class="radar-drag-svg" viewBox="0 0 100 100" aria-hidden="true"><title>Drag the edge to resize the radar</title><circle class="radar-drag-edge" cx="50" cy="50" r="47" vector-effect="non-scaling-stroke"></circle></svg>
         </div>
       `;
     }
@@ -2550,6 +2544,7 @@
             <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[52.2px] h-[52.2px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[99999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
               ${renderNodeIconContent(userState.type, userState.category)}
             </div>
+            <span id="userNameLabel" class="peer-name-label">${escapeChatHTML(getDisplayName(userState.alias, userState.hideMyName, userState.type))}</span>
           </div>
         </div>
       `;
@@ -2591,8 +2586,7 @@
           fetchProfilesAndTopicsFromSupabase();
           setupSupabaseRealtimeSubscriptions();
           
-          if (supabasePollInterval) clearInterval(supabasePollInterval);
-          supabasePollInterval = setInterval(() => {
+          setInterval(() => {
             if (currentActiveChatRoomId) {
               loadDbChatHistory(currentActiveChatRoomId);
             }
@@ -2641,15 +2635,6 @@
       return databaseRoomId === canonicalChatRoomId('room-you') ? 'room-you' : databaseRoomId;
     }
 
-    // Escape a value that will be interpolated inside a single-quoted inline
-    // onclick argument, e.g. openChatDrawer('...'). User text (aliases, bubble
-    // questions) must go through this (for the handler) AND escapeChatHTML
-    // (for visible markup); before V12 only chat messages were escaped, so a
-    // quote in a name/question could break handlers or inject markup.
-    function escapeJsArg(value) {
-      return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' ').replace(/</g, '\\u003c');
-    }
-
     function escapeChatHTML(value) {
       return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[ch]));
     }
@@ -2666,7 +2651,6 @@
       if (isDuplicate) return;
 
       localChatCache[targetRoomId].push({ id: msg.client_id || ('remote-' + msg.sender_id + '-' + msg.created_at), sender: msg.sender_alias, text: msg.message, time: timeStr, createdAt: msg.created_at || new Date().toISOString(), isMe: false });
-      if (localChatCache[targetRoomId].length > 200) localChatCache[targetRoomId].splice(0, localChatCache[targetRoomId].length - 200);
 
       if (currentActiveChatRoomId === targetRoomId) {
         appendMessage(msg.sender_alias, msg.message, timeStr, false);
@@ -2684,9 +2668,6 @@
       if (!supabaseClient) return;
       const { data: profiles, error } = await supabaseClient.from('profiles').select('*');
       if (!error && profiles) {
-        const profilesSignature = profiles.map(pr => [pr.id, pr.alias, pr.active_topic, pr.topic_created_at, pr.lat, pr.lng, pr.account_type, pr.interest_filter].join(':')).join('|');
-        const profilesUnchanged = profilesSignature === lastProfilesSignature && Object.keys(globalActiveDirectory).length > 0;
-        lastProfilesSignature = profilesSignature;
         const activeSupabaseIds = new Set(profiles.map(p => p.id));
 
         Object.keys(globalActiveDirectory).forEach(peerId => {
@@ -2731,18 +2712,16 @@
             };
           }
         });
-        if (!profilesUnchanged) {
-          // Remove the local chat copy of any profile topic found expired above.
-          profiles.forEach(p => {
-            if (p.id === currentAuthUser?.id || !p.active_topic || !p.topic_created_at) return;
-            const t = new Date(p.topic_created_at).getTime();
-            if (Number.isFinite(t) && Date.now() - t > ONE_HOUR_MS) {
-              deleteChatLocally('room-peer-' + String(p.id).replace(/[^a-zA-Z0-9]/g, '-'), p.id);
-            }
-          });
-          refreshAllPeerDistancesAndPositions();
-          updateMeshUI();
-        }
+        // Remove the local chat copy of any profile topic found expired above.
+        profiles.forEach(p => {
+          if (p.id === currentAuthUser?.id || !p.active_topic || !p.topic_created_at) return;
+          const t = new Date(p.topic_created_at).getTime();
+          if (Number.isFinite(t) && Date.now() - t > ONE_HOUR_MS) {
+            deleteChatLocally('room-peer-' + String(p.id).replace(/[^a-zA-Z0-9]/g, '-'), p.id);
+          }
+        });
+        refreshAllPeerDistancesAndPositions();
+        updateMeshUI();
       }
     }
 
@@ -2915,14 +2894,7 @@
       }
 
       if (data.id && processedMsgIds.has(data.id)) return;
-      if (data.id) {
-        processedMsgIds.add(data.id);
-        // Cap the dedupe set so a long session cannot grow it without bound.
-        if (processedMsgIds.size > 600) {
-          const it = processedMsgIds.values();
-          for (let i = 0; i < 200; i++) processedMsgIds.delete(it.next().value);
-        }
-      }
+      if (data.id) processedMsgIds.add(data.id);
 
       const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
       if (!globalActiveDirectory[data.peerId]) globalActiveDirectory[data.peerId] = { enabled: true };
@@ -3131,7 +3103,7 @@
         const isBiz = item.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(item.accountType, item.category);
         const nameColorClass = isBiz ? getBusinessCategoryTextColorClass(item.category) : 'text-slate-900 font-bold';
-        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${escapeJsArg(item.name)}', '${escapeJsArg(item.question || '')}', '${item.peerId}', ${item.createdAt})`;
+        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${item.name}', '${item.question || ''}', '${item.peerId}', ${item.createdAt})`;
         const jiggleClass = item.hasUnread ? 'animate-jiggle-continuous' : '';
         
         if (item.isAdmin) {
@@ -3143,7 +3115,7 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   ${item.isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${isBiz ? nameColorClass : 'text-amber-400 font-bold'}">@${item.name}</span></div>`}
-                  <span class="text-[9px] text-white font-medium block truncate">${escapeChatHTML(item.question || 'Pinned Chat')}${item.createdAt ? ' \u00b7 ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
+                  <span class="text-[9px] text-white font-medium block truncate">${item.question || 'Pinned Chat'}${item.createdAt ? ' · ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
                 </div>
               </div>
             </div>
@@ -3157,7 +3129,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">@${item.name}</span></div>`}
-                <span class="text-[9px] text-slate-700 font-medium block truncate">${escapeChatHTML(item.question || 'Pinned Chat')}${item.createdAt ? ' \u00b7 ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
+                <span class="text-[9px] text-slate-700 font-medium block truncate">${item.question || 'Pinned Chat'}${item.createdAt ? ' · ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
               </div>
             </div>
           `;
@@ -3181,7 +3153,6 @@
       container.innerHTML = '';
       peerIds.forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
-        if (directorySearchQuery && !(peer.rawSender || '').toLowerCase().includes(directorySearchQuery)) return;
         const isFriend = friendPeerIds.has(peerId);
         const matchesFilter = matchesInterestFilter(peer.interestFilter);
         const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
@@ -3201,7 +3172,7 @@
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
-                  <h4 class="text-xs ${nameColorClass}">@${escapeChatHTML(displayLabel)}</h4>
+                  <h4 class="text-xs ${nameColorClass}">@${displayLabel}</h4>
                   ${isFriend ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold">Friend</span>' : ''}
                   ${peerIsAdmin ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-extrabold uppercase">ADMIN</span>' : ''}
                   ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="text-[9px] bg-violet-600 text-white px-1 rounded font-extrabold uppercase">Bot</span>' : ''}
@@ -3213,14 +3184,11 @@
               <button onclick="toggleFriendStatus('${peerId}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
                 <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
               </button>
-              <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(displayLabel)}', null, '${peerId}', ${peer.createdAt})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
+              <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${displayLabel}', null, '${peerId}', ${peer.createdAt})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
           </div>
         `;
       });
-      if (!container.innerHTML) {
-        container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No matches for your search.</div>`;
-      }
       lucide.createIcons();
     }
 
@@ -3291,7 +3259,7 @@
       validBubbles.forEach(b => {
         const isBiz = b.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
-        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${escapeJsArg(b.name)}', '${escapeJsArg(b.question)}', '${b.peerId}', ${b.createdAt})`;
+        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${b.name}', '${b.question}', '${b.peerId}', ${b.createdAt})`;
 
         container.innerHTML += `
           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
@@ -3324,11 +3292,6 @@
       if (supabaseClient && currentAuthUser) {
         try {
           const topicIsLive = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
-          const presenceKey = [userState.alias, userState.type, userState.category, topicIsLive ? activeTopicState.text : '', topicIsLive ? activeTopicState.createdAt : '', Math.round(coords.lat * 10000), Math.round(coords.lng * 10000)].join('|');
-          const presenceDue = presenceKey !== lastPresenceUpsertKey || (Date.now() - lastPresenceUpsertAt > 60000);
-          if (presenceDue) {
-          lastPresenceUpsertKey = presenceKey;
-          lastPresenceUpsertAt = Date.now();
           supabaseClient.from('profiles').upsert({
             id: currentAuthUser.id,
             alias: userState.alias,
@@ -3342,7 +3305,6 @@
             topic_created_at: topicIsLive ? new Date(activeTopicState.createdAt).toISOString() : null,
             updated_at: new Date()
           });
-          }
         } catch(e) {}
       }
 
@@ -3414,14 +3376,9 @@
       const circleBg = iconVisual.bg;
       const showSonarRipple = matchesFilter && !isBiz && !peer.isOffline;
       const chatRoomName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
-      const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(chatRoomName)}', '${escapeJsArg(peer.question || '')}', '${peer.peerId}', ${peer.createdAt})`;
-      const onIconClickJs = onClickJs;
+      const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}', ${peer.createdAt})`;
+      const onIconClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${chatRoomName}', '${peer.question || ''}', '${peer.peerId}', ${peer.createdAt})`;
 
-      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.rawSender || '', Math.round((peer.distance || 0) / 10), userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : ''].join('|');
-      if (nodeElem.dataset.renderSig === renderSig && nodeElem.innerHTML) {
-        return;
-      }
-      nodeElem.dataset.renderSig = renderSig;
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-10 h-10 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
@@ -3429,11 +3386,14 @@
             ${(isBiz || activeHasQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread) : ''}
           </div>
           ${showUserIcon ? `
-            <div onclick="${onIconClickJs}" class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - click to start private chat with @${chatRoomName}">
-              ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
+            <div class="relative flex flex-col items-center">
+              <div onclick="${onIconClickJs}" class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - click to start private chat with @${chatRoomName}">
+                ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
+              </div>
+              ${hasUnread ? '<span class="unread-badge" title="Unread replies">!</span>' : ''}
             </div>
             ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="personal-bot-badge">BOT</span>' : ''}
-            ${peer.distance ? `<span class="mt-1 px-1.5 py-px rounded-full bg-slate-900/55 text-white text-[8px] font-bold tracking-wide" style="pointer-events:none;">${peer.distance >= 1000 ? (peer.distance / METERS_PER_MILE).toFixed(1) + ' mi' : Math.max(10, Math.round(peer.distance)) + ' m'}</span>` : ''}
+            <span class="peer-name-label">${escapeChatHTML(chatRoomName)}</span>
           ` : ''}
         </div>
       `;
@@ -3441,14 +3401,10 @@
     }
 
     function checkChatExpiryLoop() {
-      if (expiryLoopStarted) return;
-      expiryLoopStarted = true;
       setInterval(() => {
-        let expiryChanged = false;
         if (activeTopicState.createdAt) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
-            expiryChanged = true;
             deleteExpiredChat('room-you', currentAuthUser ? currentAuthUser.id : myPeerId);
           } else if (currentActiveChatRoomId === 'room-you') {
             updateExpiryCountdownUi(activeTopicState.createdAt);
@@ -3466,19 +3422,14 @@
         Object.keys(globalActiveDirectory).forEach(peerId => {
           const peer = globalActiveDirectory[peerId];
           if (peer.createdAt && (Date.now() - peer.createdAt > ONE_HOUR_MS)) {
-            expiryChanged = true;
             deleteExpiredChat('room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-'), peerId);
           }
         });
 
-        // Only repaint lists when an expiry actually changed something; the
-        // 1-second tick itself now just updates the countdown text.
-        if (expiryChanged) {
-          refreshAllNodeVisibilities();
-          renderGlobalUsersDirectory();
-          renderPinnedChats();
-          if (currentLayoutMode === 'right') renderRightSidebarBubbles();
-        }
+        refreshAllNodeVisibilities();
+        renderGlobalUsersDirectory();
+        renderPinnedChats();
+        if (currentLayoutMode === 'right') renderRightSidebarBubbles();
       }, 1000);
     }
 
@@ -3518,7 +3469,7 @@
 
     function updateMeshUI() {
       const countElem = document.getElementById('activeUserCount');
-      if (countElem) countElem.innerText = `${Object.keys(globalActiveDirectory).length + 1} Active Peer${unreadRoomIds.size ? ' \u00b7 ' + unreadRoomIds.size + ' Unread' : ''}`;
+      if (countElem) countElem.innerText = `${Object.keys(globalActiveDirectory).length + 1} Active Peer${unreadRoomIds.size ? ' · ' + unreadRoomIds.size + ' Unread' : ''}`;
     }
 
     async function quickPostFromDock() {
@@ -3603,7 +3554,6 @@
       
       if (!localChatCache[targetRoomId]) localChatCache[targetRoomId] = [];
       localChatCache[targetRoomId].push({ id: clientMessageId, sender: senderDisplayName, text, time: timeStr, createdAt: sentAt, isMe: true });
-      if (localChatCache[targetRoomId].length > 200) localChatCache[targetRoomId].splice(0, localChatCache[targetRoomId].length - 200);
 
       appendMessage(senderDisplayName, text, timeStr, true);
       input.value = ''; 
