@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.8 Separate Accounts]</title>
+  <title>LocaL - Proximity Social Network [V11.9 Delete Account & Forgot Password]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -139,6 +139,13 @@
       animation: rainbow-rotate 4s linear infinite;
       box-shadow: 0 0 24px rgba(255, 215, 0, 0.8);
       flex-shrink: 0;
+    }
+    /* V11.9: a wrong email/password gets a clear red outline on its box. */
+    .auth-field-error {
+      border-color: #ef4444 !important;
+      outline: 2px solid rgba(239, 68, 68, 0.9) !important;
+      outline-offset: 1px;
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.30) !important;
     }
 
     #mapCanvas {
@@ -609,22 +616,25 @@
 
         <div id="signupUsernameContainer" class="hidden">
           <label class="block text-xs font-semibold text-slate-300 mb-1">Unique Alias (Handle)</label>
-          <input type="text" id="welcomeUsernameInput" maxlength="60" placeholder="e.g. OceanExplorer" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none">
+          <input type="text" id="welcomeUsernameInput" maxlength="60" placeholder="e.g. OceanExplorer" oninput="this.classList.remove('auth-field-error')" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm font-medium focus:outline-none">
           <p class="text-[10px] text-slate-400 mt-0.5">This unique alias is tied permanently to your Supabase account.</p>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
-          <input type="email" id="welcomeEmailInput" placeholder="your@email.com" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
+          <input type="email" id="welcomeEmailInput" placeholder="your@email.com" oninput="this.classList.remove('auth-field-error')" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
-          <input type="password" id="welcomePasswordInput" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
+          <input type="password" id="welcomePasswordInput" placeholder="••••••••" oninput="this.classList.remove('auth-field-error')" class="w-full px-4 py-2.5 rounded-2xl bg-slate-900/90 border border-slate-700 text-white text-sm focus:outline-none">
         </div>
 
         <div class="pt-2">
           <button type="button" onclick="submitAuthForm()" id="authSubmitBtn" class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] active:scale-98 transition-all cursor-pointer pointer-events-auto hover:bg-emerald-500">Sign In</button>
+          <div id="forgotPasswordWrap" class="text-center mt-2.5">
+            <button type="button" id="forgotPasswordBtn" onclick="forgotPassword()" class="text-[11px] text-emerald-300 hover:text-emerald-200 font-semibold underline underline-offset-2 cursor-pointer">Forgot password?</button>
+          </div>
         </div>
       </div>
     </div>
@@ -699,6 +709,10 @@
           <div class="flex items-center justify-between pt-1 gap-2">
             <button id="signOutBtn" onclick="playAudioEffect('click'); signOutUser()" type="button" class="px-3 py-1.5 rounded-xl bg-red-500/90 hover:bg-red-500 text-white font-semibold text-xs shadow-md">Sign Out</button>
             <button onclick="playAudioEffect('click'); openWelcomeModalToSwitch()" type="button" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md">Switch Account</button>
+          </div>
+          <div class="pt-1.5">
+            <button id="deleteAccountBtn" onclick="deleteAccount()" type="button" class="w-full py-2 rounded-xl bg-transparent border border-red-500/60 text-red-400 hover:bg-red-500/15 font-semibold text-xs shadow-sm transition-all">Delete Account</button>
+            <p class="text-[10px] text-slate-400 mt-1">Deletes your profile, your chat bubble and your messages from LocaL, clears this device, and signs you out. This cannot be undone.</p>
           </div>
         </div>
 
@@ -1699,17 +1713,21 @@
       const usernameContainer = document.getElementById('signupUsernameContainer');
       const submitBtn = document.getElementById('authSubmitBtn');
       const subtitleElem = document.getElementById('welcomeModalSubtitle');
+      const forgotWrap = document.getElementById('forgotPasswordWrap');
+      clearAuthFieldErrors();
 
       if (tab === 'signin') {
         btnSignIn.className = 'flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md';
         btnSignUp.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
         usernameContainer.classList.add('hidden');
+        if (forgotWrap) forgotWrap.classList.remove('hidden');
         submitBtn.innerText = 'Sign In';
         subtitleElem.innerText = 'Sign in with your email and password.';
       } else {
         btnSignUp.className = 'flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs transition-all shadow-md';
         btnSignIn.className = 'flex-1 py-2 rounded-xl text-slate-400 font-bold text-xs transition-all';
         usernameContainer.classList.remove('hidden');
+        if (forgotWrap) forgotWrap.classList.add('hidden');
         submitBtn.innerText = 'Create Account';
         subtitleElem.innerText = 'Choose a unique alias, email, and password.';
       }
@@ -1720,17 +1738,98 @@
       setAuthTab(isReturningLogin ? 'signin' : 'signup');
     }
 
+    // ---- V11.9: login feedback, error outlines, forgot password -----------
+    // Wrong email/password: the offending box gets a red outline. Supabase
+    // deliberately answers "Invalid login credentials" for a wrong email OR
+    // a wrong password, so in that case BOTH boxes are outlined (it won't
+    // say which one is wrong). More specific errors outline their own box.
+    function markAuthFieldError(kind) {
+      try {
+        if (kind === 'email' || kind === 'both') document.getElementById('welcomeEmailInput')?.classList.add('auth-field-error');
+        if (kind === 'password' || kind === 'both') document.getElementById('welcomePasswordInput')?.classList.add('auth-field-error');
+        if (kind === 'username') document.getElementById('welcomeUsernameInput')?.classList.add('auth-field-error');
+      } catch(e) {}
+    }
+    function clearAuthFieldErrors() {
+      try { document.querySelectorAll('#welcomeProfileModal .auth-field-error').forEach(el => el.classList.remove('auth-field-error')); } catch(e) {}
+    }
+    function authErrorFieldKind(message) {
+      const m = String(message || '').toLowerCase();
+      if (m.includes('invalid login credentials')) return 'both';
+      if (m.includes('already') && m.includes('regist')) return 'email';
+      if (m.includes('password')) return 'password';
+      if (m.includes('email')) return 'email';
+      return 'both';
+    }
+    // Press feedback: a sound and a bounce, so it is obvious the Sign In /
+    // Create Account button was pressed.
+    function pressAuthSubmitFeedback() {
+      playAudioEffect('send');
+      const btn = document.getElementById('authSubmitBtn');
+      if (!btn) return;
+      btn.classList.remove('animate-bounce-press');
+      void btn.offsetWidth;
+      btn.classList.add('animate-bounce-press');
+      setTimeout(() => { try { btn.classList.remove('animate-bounce-press'); } catch(e) {} }, 550);
+    }
+
+    async function forgotPassword() {
+      playAudioEffect('click');
+      const emailEl = document.getElementById('welcomeEmailInput');
+      const email = emailEl ? emailEl.value.trim() : '';
+      clearAuthFieldErrors();
+      if (!email) {
+        markAuthFieldError('email');
+        showToast('Type your email above first, then tap Forgot password.', 'alert-circle');
+        if (emailEl) emailEl.focus();
+        return;
+      }
+      try {
+        if (!supabaseClient && window.supabase) supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
+        if (!supabaseClient) { showToast('Password reset is unavailable right now.', 'alert-circle'); return; }
+        const redirectTo = window.location.href.split('#')[0].split('?')[0];
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) {
+          markAuthFieldError(authErrorFieldKind(error.message));
+          showToast(error.message, 'alert-circle');
+          return;
+        }
+        showToast('Password reset email sent to ' + email + ' - tap the link in it to set a new password.', 'mail');
+      } catch(e) {
+        showToast('Password reset failed: ' + (e.message || e), 'alert-circle');
+      }
+    }
+
+    // Runs when the user returns via the reset-email link (Supabase fires
+    // PASSWORD_RECOVERY): ask for the new password and save it.
+    async function handlePasswordRecovery() {
+      try {
+        if (!supabaseClient) return;
+        const newPassword = window.prompt('Set a new password for your LocaL account (at least 6 characters):');
+        if (!newPassword) { showToast('Password reset cancelled.', 'info'); return; }
+        if (newPassword.length < 6) { showToast('Password must be at least 6 characters - tap the email link again to retry.', 'alert-circle'); return; }
+        const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+        if (error) { showToast('Could not set the new password: ' + error.message, 'alert-circle'); return; }
+        showToast('Password updated - you are signed in with your new password.', 'check-circle');
+      } catch(e) {}
+    }
+
     async function submitAuthForm() {
+      pressAuthSubmitFeedback();
+      clearAuthFieldErrors();
       const emailInput = document.getElementById('welcomeEmailInput').value.trim();
       const password = document.getElementById('welcomePasswordInput').value;
       const usernameInput = document.getElementById('welcomeUsernameInput').value.trim();
 
       if (!emailInput || !password) {
+        if (!emailInput) markAuthFieldError('email');
+        if (!password) markAuthFieldError('password');
         showToast('Please enter email and password', 'alert-circle');
         return;
       }
 
       if (currentAuthTab === 'signup' && !usernameInput) {
+        markAuthFieldError('username');
         showToast('Please create a unique alias for your account', 'alert-circle');
         return;
       }
@@ -1746,6 +1845,7 @@
               .eq('alias', usernameInput);
             
             if (existingProfiles && existingProfiles.length > 0) {
+              markAuthFieldError('username');
               showToast('That unique alias is already taken. Please choose another.', 'alert-circle');
               return;
             }
@@ -1757,6 +1857,7 @@
             });
 
             if (authResult.error) {
+              markAuthFieldError(authErrorFieldKind(authResult.error.message));
               showToast(authResult.error.message, 'alert-circle');
               return;
             }
@@ -1788,6 +1889,7 @@
             });
 
             if (authResult.error) {
+              markAuthFieldError(authErrorFieldKind(authResult.error.message));
               showToast(authResult.error.message, 'alert-circle');
               return;
             }
@@ -1805,6 +1907,7 @@
           }
         }
       } catch(e) {
+        markAuthFieldError('both');
         showToast('Authentication error: ' + (e.message || e), 'alert-circle');
         return;
       }
@@ -3101,6 +3204,7 @@
       if (authSubscription) { try { authSubscription.unsubscribe(); } catch(e) {} authSubscription = null; }
       const { data: authSubData } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
         updateAuthUI(session?.user || null);
+        if (event === 'PASSWORD_RECOVERY') { setTimeout(() => { handlePasswordRecovery(); }, 800); }
         if (session?.user) { currentAuthUser = session.user; myPeerId = session.user.id; await fetchUserProfile(session.user.id); }
       });
       authSubscription = authSubData?.subscription || null;
@@ -3138,6 +3242,57 @@
       showToast('Logged out successfully', 'log-out');
       closeProfileModal();
       openWelcomeModalForLogin(true);
+    }
+
+    // ---- V11.9: Delete Account --------------------------------------------
+    // First tap arms the button for 6 seconds; the second tap deletes.
+    // Deleting removes the user's profile, chat bubble and messages from
+    // Supabase, tells peers to delete his chat, wipes everything the app
+    // stored on this device, and signs him out. (Removing the Supabase
+    // login record itself needs the project dashboard or a server
+    // function - a browser app cannot do that with the public key.)
+    let deleteAccountArmed = false;
+    let deleteAccountArmTimer = null;
+    async function deleteAccount() {
+      const btn = document.getElementById('deleteAccountBtn');
+      if (!deleteAccountArmed) {
+        deleteAccountArmed = true;
+        if (btn) { btn.innerText = 'Are you sure? Tap again to delete forever'; btn.classList.add('bg-red-500/25'); }
+        playAudioEffect('click');
+        showToast('Tap Delete Account again to confirm. This cannot be undone.', 'alert-circle');
+        if (deleteAccountArmTimer) clearTimeout(deleteAccountArmTimer);
+        deleteAccountArmTimer = setTimeout(() => {
+          deleteAccountArmed = false;
+          if (btn) { btn.innerText = 'Delete Account'; btn.classList.remove('bg-red-500/25'); }
+        }, 6000);
+        return;
+      }
+      deleteAccountArmed = false;
+      if (deleteAccountArmTimer) { clearTimeout(deleteAccountArmTimer); deleteAccountArmTimer = null; }
+      playAudioEffect('click');
+      const userId = currentAuthUser ? currentAuthUser.id : null;
+      try {
+        broadcastData({ id: 'del-acct-' + Math.random().toString(36).substring(2, 9), type: 'DELETE_ROOM', roomId: canonicalChatRoomId('room-you'), peerId: userId || myPeerId });
+        if (supabaseClient && userId) {
+          await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId('room-you'));
+          await supabaseClient.from('chat_messages').delete().eq('sender_id', userId);
+          await supabaseClient.from('profiles').delete().eq('id', userId);
+        }
+      } catch(e) {}
+      try {
+        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+      } catch(e) {}
+      if (supabasePollInterval) { clearInterval(supabasePollInterval); supabasePollInterval = null; }
+      if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+      if (gpsWatchId !== null && navigator.geolocation) { try { navigator.geolocation.clearWatch(gpsWatchId); } catch(e) {} gpsWatchId = null; }
+      try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch(e) {}
+      currentAuthUser = null;
+      isAdminUser = false;
+      appSessionInitialized = false;
+      userState.profileCreated = false;
+      closeProfileModal();
+      showToast('Your LocaL data was deleted and you were signed out.', 'trash-2');
+      openWelcomeModalForLogin(false);
     }
 
     function openWelcomeModalToSwitch() {
