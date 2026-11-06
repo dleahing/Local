@@ -139,6 +139,13 @@
       transition: transform 0.15s cubic-bezier(0.15, 0.85, 0.35, 1);
     }
     #mapCanvas:active { cursor: grabbing; }
+    #nodesContainer { isolation: isolate; z-index: 900 !important; }
+    #nodesContainer .node-item { z-index: 1000 !important; }
+    #nodesContainer .node-content-stack { z-index: 2000 !important; }
+    #nodesContainer .node-item:focus-within,
+    #nodesContainer .node-item:hover { z-index: 5000 !important; }
+    #chatDrawer, #chatBackdrop { transform: translateZ(0); }
+    .message-item { flex: 0 0 auto; }
 
     .scale-compensator {
       transform: scale(calc(1 / max(0.20, var(--zoom-scale, 1))));
@@ -1808,7 +1815,7 @@
           const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
-            targetZoomScale = Math.max(0.20, Math.min(4.0, initialPinchScale * factor));
+            targetZoomScale = Math.max(0.35, Math.min(3.5, initialPinchScale * factor));
           }
         }
       }, { passive: true });
@@ -1827,7 +1834,7 @@
           applyLeftChatListVisibility();
         }
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-        targetZoomScale = Math.max(0.20, Math.min(4.0, targetZoomScale * zoomFactor));
+        targetZoomScale = Math.max(0.35, Math.min(3.5, targetZoomScale * zoomFactor));
       }, { passive: false });
     }
 
@@ -1869,11 +1876,12 @@
         panX += (targetPanX - panX) * 0.25;
         panY += (targetPanY - panY) * 0.25;
         currentZoomScale += (targetZoomScale - currentZoomScale) * 0.20;
-        if (currentZoomScale < 0.20) currentZoomScale = 0.20;
+        if (!Number.isFinite(currentZoomScale)) currentZoomScale = 1;
+        currentZoomScale = Math.max(0.35, Math.min(3.5, currentZoomScale));
 
         mapCanvas.style.setProperty('--pan-x', `${panX}px`);
         mapCanvas.style.setProperty('--pan-y', `${panY}px`);
-        mapCanvas.style.setProperty('--zoom-scale', Math.max(0.20, currentZoomScale).toFixed(4));
+        mapCanvas.style.setProperty('--zoom-scale', Math.max(0.35, Math.min(3.5, currentZoomScale)).toFixed(4));
         animationFrameId = requestAnimationFrame(renderLoop);
       };
       animationFrameId = requestAnimationFrame(renderLoop);
@@ -2070,8 +2078,9 @@
     }
 
     function refreshAllPeerDistancesAndPositions() {
-      const peerIds = Object.keys(globalActiveDirectory);
+      const peerIds = Object.keys(globalActiveDirectory).sort();
       const placedNodes = [];
+      const minNodeGap = 76;
 
       peerIds.forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
@@ -2081,22 +2090,21 @@
           let radiusMiles = userState.radius / METERS_PER_MILE;
           let pixelDistanceFromCenter = (peer.distance / userState.radius) * (radiusMiles * MAP_PIXELS_PER_MILE);
 
-          let attempts = 0;
-          while (attempts < 5) {
-            let collision = false;
-            for (let other of placedNodes) {
-              let dPx = Math.hypot(other.pixelDist - pixelDistanceFromCenter, (other.bearing - bearingRad) * 100);
-              if (dPx < 65) { collision = true; break; }
-            }
-            if (!collision) break;
-            bearingRad += 0.35;
-            attempts++;
+          // Deterministic spiral displacement keeps nearby peer icons separated.
+          let candidateX = Math.sin(bearingRad) * pixelDistanceFromCenter;
+          let candidateY = -Math.cos(bearingRad) * pixelDistanceFromCenter;
+          let attempt = 0;
+          while (placedNodes.some(other => Math.hypot(other.x-candidateX, other.y-candidateY) < minNodeGap) && attempt < 48) {
+            attempt++;
+            const angle = attempt * 2.399963229728653;
+            const radius = minNodeGap * Math.sqrt(attempt);
+            candidateX = Math.sin(bearingRad) * pixelDistanceFromCenter + Math.cos(angle) * radius;
+            candidateY = -Math.cos(bearingRad) * pixelDistanceFromCenter + Math.sin(angle) * radius;
           }
-
-          placedNodes.push({ pixelDist: pixelDistanceFromCenter, bearing: bearingRad });
+          placedNodes.push({ x: candidateX, y: candidateY });
           const mapCanvasWidth = 5625;
-          let leftPercent = 50 + ((Math.sin(bearingRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
-          let topPercent = 50 - ((Math.cos(bearingRad) * pixelDistanceFromCenter) / (mapCanvasWidth / 2)) * 100;
+          let leftPercent = 50 + (candidateX / (mapCanvasWidth / 2)) * 100;
+          let topPercent = 50 + (candidateY / (mapCanvasWidth / 2)) * 100;
 
           updatePeerNodeOnMapObject(peer, leftPercent, topPercent);
         }
@@ -2378,7 +2386,7 @@
       const isDuplicate = localChatCache[targetRoomId].some(m => m.id && msg.client_id && m.id === msg.client_id);
       if (isDuplicate) return;
 
-      localChatCache[targetRoomId].push({ id: msg.client_id, sender: msg.sender_alias, text: msg.message, time: timeStr, isMe: false });
+      localChatCache[targetRoomId].push({ id: msg.client_id || ('remote-' + msg.sender_id + '-' + msg.created_at), sender: msg.sender_alias, text: msg.message, time: timeStr, createdAt: msg.created_at || new Date().toISOString(), isMe: false });
 
       if (currentActiveChatRoomId === targetRoomId) {
         appendMessage(msg.sender_alias, msg.message, timeStr, false);
@@ -2426,8 +2434,8 @@
               hours: p.hours,
               interestFilter: p.interest_filter || 'none',
               hideMyName: p.hide_my_name || false,
-              question: isExpired ? null : p.active_topic,
-              createdAt: isExpired ? null : createdAtTime,
+              question: isExpired ? null : (p.active_topic || (existingPeer?.createdAt && Date.now()-existingPeer.createdAt < ONE_HOUR_MS ? existingPeer.question : null)),
+              createdAt: isExpired ? null : (createdAtTime || (existingPeer?.createdAt && Date.now()-existingPeer.createdAt < ONE_HOUR_MS ? existingPeer.createdAt : null)),
               isBot: false,
               isOffline: false,
               distance: calculateHaversineDistance(userState.lat, userState.lng, pLat, pLng)
@@ -3077,7 +3085,7 @@
       nodeElem.innerHTML = `
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-10 h-10 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
-          <div class="node-content-stack pointer-events-auto z-[99999999]">
+          <div class="node-content-stack pointer-events-auto z-[99999999]" style="position:absolute; z-index:2000;">
             ${(isBiz || activeHasQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread) : ''}
           </div>
           ${showUserIcon ? `
@@ -3253,11 +3261,12 @@
       savePersistentData();
       refreshAllNodeVisibilities();
 
-      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const sentAt = new Date().toISOString();
+      const timeStr = new Date(sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const senderDisplayName = getDisplayName(userState.alias, userState.hideMyName, userState.type);
       
       if (!localChatCache[targetRoomId]) localChatCache[targetRoomId] = [];
-      localChatCache[targetRoomId].push({ id: clientMessageId, sender: senderDisplayName, text, time: timeStr, isMe: true });
+      localChatCache[targetRoomId].push({ id: clientMessageId, sender: senderDisplayName, text, time: timeStr, createdAt: sentAt, isMe: true });
 
       appendMessage(senderDisplayName, text, timeStr, true);
       input.value = ''; 
@@ -3269,7 +3278,7 @@
         sender_id: currentAuthUser ? currentAuthUser.id : myPeerId,
         sender_alias: senderDisplayName, 
         message: text, 
-        created_at: new Date().toISOString()
+        created_at: sentAt
       };
 
       if (realtimeChannel) {
@@ -3285,10 +3294,12 @@
 
       if (supabaseClient) {
         const { error } = await supabaseClient.from('chat_messages').insert({
-          room_id: databaseRoomId, 
+          room_id: databaseRoomId,
+          client_id: clientMessageId,
           sender_id: currentAuthUser ? currentAuthUser.id : null,
-          sender_alias: senderDisplayName, 
-          message: text
+          sender_alias: senderDisplayName,
+          message: text,
+          created_at: sentAt
         });
         if (error) {
           showToast('Message shown locally but not saved: ' + error.message, 'alert-circle');
@@ -3419,7 +3430,7 @@
               text: msg.message,
               time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               isMe: currentAuthUser ? msg.sender_id === currentAuthUser.id : msg.sender_alias === getDisplayName(userState.alias, userState.hideMyName, userState.type),
-              persisted: true
+              createdAt: msg.created_at, persisted: true
             }));
             // A database snapshot may be stale, or admin messages may not be
             // writable under RLS. Never erase messages already shown locally.
@@ -3438,6 +3449,18 @@
         }
       }
       if (currentActiveChatRoomId !== roomId) return;
+      const seen = new Set();
+      merged = merged.filter(msg => {
+        const key = msg.id || `${msg.sender}|${msg.text}|${msg.time}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).map((msg, index) => ({ ...msg, _order: index }))
+        .sort((a, b) => {
+          const ta = new Date(a.createdAt || 0).getTime();
+          const tb = new Date(b.createdAt || 0).getTime();
+          return (ta - tb) || (a._order - b._order);
+        });
       localChatCache[roomId] = merged;
       msgBox.innerHTML = '';
       merged.forEach(msg => appendMessage(msg.sender, msg.text, msg.time, msg.isMe));
