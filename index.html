@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.7 Admin Email Set]</title>
+  <title>LocaL - Proximity Social Network [V11.8 Separate Accounts]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1063,7 +1063,13 @@
       return String(name || '').toLowerCase() === 'administrator';
     }
     function isAdminPeer(peer) {
-      return !!peer && isAdminName(peer.rawSender);
+      // V11.8: admin follows the ACCOUNT, not just the name. The gmail
+      // admin account flags its own presence and bubbles (peer.isAdmin,
+      // set from its email-based admin status), so other phones recognise
+      // the admin account's chats - visible until expiry, pinned, rainbow -
+      // from the flag. The "Administrator" name check stays as a fallback
+      // for peers discovered only through the profiles table.
+      return !!peer && (isAdminName(peer.rawSender) || peer.isAdmin === true);
     }
 
     // V11.6 DUPLICATE-BUBBLE FIX: when a user went offline and came back,
@@ -1133,7 +1139,7 @@
         Object.keys(globalActiveDirectory).forEach(id => {
           const peer = globalActiveDirectory[id];
           if (peer.question && peer.createdAt && (Date.now() - peer.createdAt <= ONE_HOUR_MS)) {
-            snapshot[id] = { question: peer.question, createdAt: peer.createdAt, rawSender: peer.rawSender || null, accountType: peer.accountType || 'personal', category: peer.category || 'store', lat: (typeof peer.lat === 'number' ? peer.lat : null), lng: (typeof peer.lng === 'number' ? peer.lng : null), hideMyName: !!peer.hideMyName, isBot: !!peer.isBot, hours: peer.hours || '', interestFilter: peer.interestFilter || 'none' }; // V11.6: keep the peer's identity so a restored bubble is not rebuilt as a nameless 'Offline Peer' duplicate
+            snapshot[id] = { question: peer.question, createdAt: peer.createdAt, rawSender: peer.rawSender || null, isAdmin: isAdminPeer(peer), accountType: peer.accountType || 'personal', category: peer.category || 'store', lat: (typeof peer.lat === 'number' ? peer.lat : null), lng: (typeof peer.lng === 'number' ? peer.lng : null), hideMyName: !!peer.hideMyName, isBot: !!peer.isBot, hours: peer.hours || '', interestFilter: peer.interestFilter || 'none' }; // V11.6: keep the peer's identity so a restored bubble is not rebuilt as a nameless 'Offline Peer' duplicate
           }
         });
         // V11.4: never overwrite a stored snapshot with an empty one -
@@ -1169,7 +1175,7 @@
               // and dedupeOfflineGhostPeers() removes them the moment the
               // live peer with the same bubble appears.
               const restoredName = cachedData.rawSender || null;
-              const isPeerAdmin = restoredName ? restoredName.toLowerCase() === 'administrator' : (id.includes('admin') || cachedData.question.toLowerCase().includes('admin'));
+              const isPeerAdmin = !!cachedData.isAdmin || (restoredName ? restoredName.toLowerCase() === 'administrator' : (id.includes('admin') || cachedData.question.toLowerCase().includes('admin')));
               const isPeerFriend = friendPeerIds.has(id);
               const alreadyLive = Object.keys(globalActiveDirectory).some(otherId => otherId !== id && globalActiveDirectory[otherId].question === cachedData.question && globalActiveDirectory[otherId].createdAt === parsedCreated && !globalActiveDirectory[otherId].isOfflineGhost);
               if (!alreadyLive) {
@@ -1187,6 +1193,7 @@
                   question: cachedData.question,
                   createdAt: parsedCreated,
                   isBot: !!cachedData.isBot,
+                  isAdmin: !!cachedData.isAdmin,
                   isOffline: true,
                   isOfflineGhost: true
                 };
@@ -1817,7 +1824,7 @@
     // 'admin'). It is never derived from the editable alias, and the old
     // hardcoded admin login has been removed. To make yourself
     // admin, add your Supabase login email to ADMIN_EMAILS below.
-    const ADMIN_EMAILS = ['dushanelee@gmail.com']; // V11.7: Shane's admin login - the same email as his personal account, so that one account has both roles
+    const ADMIN_EMAILS = ['dushanelee@gmail.com']; // V11.8: SEPARATED accounts - this gmail account IS the Administrator. Shane's personal account (dushanelee@yahoo.com) is deliberately NOT in this list, so it signs in as a normal user.
     function computeIsAdmin() {
       const u = currentAuthUser;
       if (!u) return false;
@@ -2520,7 +2527,7 @@
         let roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
 
         if (nodeElem) {
-          const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
+          const peerIsAdmin = isAdminPeer(peer);
           const isEnabled = peer.enabled !== false;
           const isFriend = friendPeerIds.has(peerId);
           const matchesFilter = matchesInterestFilter(peer.interestFilter);
@@ -3045,7 +3052,7 @@
             if (hasValidTopic) clearPreviousBubbleChat(p.id, createdAtTime, p.active_topic);
 
             const existingPeer = globalActiveDirectory[p.id];
-            const isStaleProfile = (p.alias || '').toLowerCase() !== 'administrator' && (!p.updated_at || (Date.now() - new Date(p.updated_at).getTime() > 150000)); // V11.5: the Administrator's bubble always shows
+            const isStaleProfile = (p.alias || '').toLowerCase() !== 'administrator' && !(existingPeer && existingPeer.isAdmin) && (!p.updated_at || (Date.now() - new Date(p.updated_at).getTime() > 150000)); // V11.8: the Administrator's bubble always shows - recognised by name OR by his account's admin flag
             const pLat = p.lat !== undefined && p.lat !== null ? p.lat : (existingPeer?.lat || userState.lat + (Math.random() - 0.5) * 0.01);
             const pLng = p.lng !== undefined && p.lng !== null ? p.lng : (existingPeer?.lng || userState.lng + (Math.random() - 0.5) * 0.01);
 
@@ -3064,8 +3071,9 @@
               createdAt: isStaleProfile ? null : (hasValidTopic ? (createdAtTime || existingPeer?.createdAt || Date.now()) : (topicExpired ? null : (existingPeer?.createdAt || null))),
               persistentTopic: false,
               isBot: false,
+              isAdmin: existingPeer?.isAdmin === true,
               isOfflineGhost: false,
-              isOffline: (p.alias || '').toLowerCase() === 'administrator' ? false : isStaleProfile, // V11.6: admin chats stay visible until expiry, even when the admin is offline
+              isOffline: ((p.alias || '').toLowerCase() === 'administrator' || (existingPeer && existingPeer.isAdmin)) ? false : isStaleProfile, // V11.8: the admin account's chats stay visible until expiry, even when the admin is offline
               distance: calculateHaversineDistance(userState.lat, userState.lng, pLat, pLng)
             };
           }
@@ -3304,6 +3312,7 @@
         question: resolvedQuestion,
         createdAt: resolvedCreatedAt,
         isBot: data.isBot || false,
+        isAdmin: data.isAdmin === true,
         isOffline: false,
         isOfflineGhost: false
       };
@@ -3453,7 +3462,7 @@
         const peerId = roomId.replace('room-peer-', '');
         const peer = globalActiveDirectory[peerId];
         if (peer && peer.createdAt) {
-          const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
+          const peerIsAdmin = isAdminPeer(peer);
           const isFriend = friendPeerIds.has(peerId);
           const isBiz = peer.accountType === 'business';
           const isBot = peer.isBot;
@@ -3487,7 +3496,7 @@
       Object.keys(globalActiveDirectory).forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
         if (!peer || !peer.question || !peer.createdAt) return;
-        if ((peer.rawSender || '').toLowerCase() !== 'administrator') return;
+        if (!isAdminPeer(peer)) return; // V11.8: pinned for the admin account (name or flag)
         if (Date.now() - peer.createdAt > ONE_HOUR_MS) return;
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         if (adminList.some(it => it.roomId === roomId)) return;
@@ -3572,7 +3581,7 @@
         if (directorySearchQuery && !(peer.rawSender || '').toLowerCase().includes(directorySearchQuery) && !(peer.question || '').toLowerCase().includes(directorySearchQuery)) return;
         const isFriend = friendPeerIds.has(peerId);
         const matchesFilter = matchesInterestFilter(peer.interestFilter);
-        const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
+        const peerIsAdmin = isAdminPeer(peer);
         const isWithinRadius = peerIsAdmin || isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
         const distStr = formatPeerDistance(peer) || '—';
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
@@ -3641,7 +3650,7 @@
         const roomId = 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const isParticipated = participatedChatRoomIds.has(roomId);
         const isFriend = friendPeerIds.has(pId);
-        const peerIsAdmin = (p.rawSender || '').toLowerCase() === 'administrator';
+        const peerIsAdmin = isAdminPeer(p);
 
         if (p.enabled !== false && hasValidQuestion) {
           const matches = matchesInterestFilter(p.interestFilter);
@@ -3704,6 +3713,7 @@
         category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime,
         hours: userState.hours, interestFilter: userState.interestFilter, hideMyName: userState.hideMyName,
         isBot: false,
+        isAdmin: isAdminUser,
         question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.text : null,
         createdAt: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.createdAt : null
       };
@@ -3769,7 +3779,7 @@
       nodeElem.style.left = `${leftPercent}%`;
       nodeElem.style.top = `${topPercent}%`;
 
-      const peerIsAdmin = (peer.rawSender || '').toLowerCase() === 'administrator';
+      const peerIsAdmin = isAdminPeer(peer);
       const isEnabled = peer.enabled !== false;
       const isFriend = friendPeerIds.has(peer.peerId);
       const matchesFilter = matchesInterestFilter(peer.interestFilter);
@@ -3959,7 +3969,7 @@
         id: msgId, type: 'NEW_QUESTION', text, sender: userState.alias,
         bubbleColor: userState.bubbleColor, peerId: myPeerId, lat: coords.lat, lng: coords.lng,
         accountType: userState.type, category: userState.category, hours: userState.hours,
-        interestFilter: userState.interestFilter, hideMyName: userState.hideMyName, createdAt: activeTopicState.createdAt, isBot: false
+        interestFilter: userState.interestFilter, hideMyName: userState.hideMyName, createdAt: activeTopicState.createdAt, isBot: false, isAdmin: isAdminUser
       });
 
       input.value = '';
