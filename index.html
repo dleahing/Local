@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V9 Fixed Chat Routing & Realtime Sync]</title>
+  <title>LocaL - Proximity Social Network [V10 Precise Chat Routing & Scoping Fixes]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -777,15 +777,15 @@
     const DEFAULT_RADIUS_METERS = 402.33;
     const MAX_RADIUS_METERS = 48280.20; // Exact 30-mile maximum boundary limit
     
-    const STORAGE_KEY_PROFILE = 'local_user_profile_v39';
-    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v39';
-    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v39';
-    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v39';
-    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v39';
-    const STORAGE_KEY_FRIENDS = 'local_friends_list_v39';
-    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v39';
-    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v39';
-    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v39';
+    const STORAGE_KEY_PROFILE = 'local_user_profile_v40';
+    const STORAGE_BEACON_KEY = 'local_peerjs_mesh_beacon_v40';
+    const STORAGE_KEY_ACTIVE_ROOM = 'local_active_chat_room_v40';
+    const STORAGE_KEY_TOPIC_STATE = 'local_active_topic_state_v40';
+    const STORAGE_KEY_PARTICIPATED_ROOMS = 'local_participated_rooms_v40';
+    const STORAGE_KEY_FRIENDS = 'local_friends_list_v40';
+    const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v40';
+    const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v40';
+    const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v40';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -2335,7 +2335,7 @@
         supabaseClient.removeChannel(realtimeChannel);
       }
 
-      realtimeChannel = supabaseClient.channel('public-mesh-channel-v39', {
+      realtimeChannel = supabaseClient.channel('public-mesh-channel-v40', {
         config: { broadcast: { self: false } }
       });
 
@@ -2531,7 +2531,7 @@
 
     function setupLocalBroadcastFallback() {
       if ('BroadcastChannel' in window && !broadcastChannel) {
-        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v39');
+        broadcastChannel = new BroadcastChannel('local_peerjs_mesh_v40');
         broadcastChannel.onmessage = (event) => {
           if (event.data && event.data.type === 'chat_reply') {
             handleIncomingChatReplyPayload(event.data.payload);
