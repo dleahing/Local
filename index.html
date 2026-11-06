@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.4 Fixed Build]</title>
+  <title>LocaL - Proximity Social Network [V11.5 Admin Pin, Giggle & Zoom]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -136,7 +136,6 @@
       will-change: transform;
       cursor: grab;
       touch-action: none;
-      transition: transform 0.15s cubic-bezier(0.15, 0.85, 0.35, 1);
     }
     #mapCanvas:active { cursor: grabbing; }
     /* Foreground layer for user icons: the nodes layer sits ABOVE all radar
@@ -481,8 +480,8 @@
 
       <div class="flex items-center gap-3">
         <span class="text-[7px] font-bold text-emerald-300 uppercase tracking-wider whitespace-nowrap">Radar</span>
-        <input type="range" id="radarRangeSlider" min="402.33" max="48280.20" step="250" value="402.33" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
-        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.25 Mi</span>
+        <input type="range" id="radarRangeSlider" min="804.67" max="48280.20" step="250" value="804.67" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
+        <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.50 Mi</span>
       </div>
     </div>
   </div>
@@ -903,7 +902,7 @@
     const MESH_ROOM_KEY = 'local-proximity-public';
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const METERS_PER_MILE = 1609.34;
-    const DEFAULT_RADIUS_METERS = 402.33;
+    const DEFAULT_RADIUS_METERS = 804.67; // V11.5: default radar range is 0.5 miles
     const MAX_RADIUS_METERS = 48280.20; // Exact 30-mile maximum boundary limit
     
     const STORAGE_KEY_PROFILE = 'local_user_profile_v40';
@@ -1332,7 +1331,7 @@
       if (!question) return '';
       question = escapeChatHTML(question);
       senderName = escapeChatHTML(senderName || '');
-      const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float');
+      const animClass = hasUnread ? 'animate-giggle' : (isGiggle ? 'animate-giggle' : 'animate-float');
       const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span></div>`;
 
       if (isAdmin) {
@@ -1375,7 +1374,7 @@
       if (question) question = escapeChatHTML(question);
       if (hours) hours = escapeChatHTML(hours);
       const nameColorClass = getBusinessCategoryTextColorClass(category);
-      const animClass = hasUnread ? 'animate-jiggle-continuous' : 'animate-float';
+      const animClass = hasUnread ? 'animate-giggle' : 'animate-float';
 
       if (isAdmin) {
         return `
@@ -1447,27 +1446,18 @@
     let dragStartRadiusMeters = DEFAULT_RADIUS_METERS;
     let dragStartDistancePx = 175;
     let audioCtx = null;
-    let unreadChimeTimer = null;
+    // Unread reminder: one soft bell ring when a chat becomes unread
+    // (V11.5: it no longer re-rings while the chat stays unread).
 
-    // Unread reminder: one soft bell ring when a chat first becomes unread,
-    // then a gentle re-ring every 15s while it stays unread (was: a harsh
-    // two-tone chime repeating every ~1.15s).
-    const UNREAD_BELL_INTERVAL_MS = 15000;
-
+    let bellRungRoomIds = new Set();
     function syncUnreadChimeLoop() {
       updateMeshUI();
-      if (unreadRoomIds.size > 0) {
-        if (!unreadChimeTimer) {
-          if (document.visibilityState === 'visible') playAudioEffect('unread-chime');
-          unreadChimeTimer = setInterval(() => {
-            if (unreadRoomIds.size > 0 && document.visibilityState === 'visible') playAudioEffect('unread-chime');
-            else if (unreadRoomIds.size === 0) { clearInterval(unreadChimeTimer); unreadChimeTimer = null; }
-          }, UNREAD_BELL_INTERVAL_MS);
-        }
-      } else if (unreadChimeTimer) {
-        clearInterval(unreadChimeTimer);
-        unreadChimeTimer = null;
-      }
+      // V11.5: the soft bell rings ONCE when a chat becomes unread. It no
+      // longer re-rings every 15s while the chat stays unread.
+      let hasNewUnread = false;
+      unreadRoomIds.forEach(roomId => { if (!bellRungRoomIds.has(roomId)) hasNewUnread = true; });
+      if (hasNewUnread && document.visibilityState === 'visible') playAudioEffect('unread-chime');
+      bellRungRoomIds = new Set(unreadRoomIds);
     }
 
     // Soft bell: sine partials with a gentle attack and a long, quiet decay -
@@ -2189,7 +2179,7 @@
           const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
-            targetZoomScale = Math.max(0.35, Math.min(3.5, initialPinchScale * factor));
+            targetZoomScale = Math.max(0.35, Math.min(2.5, initialPinchScale * factor));
           }
         }
       }, { passive: true });
@@ -2208,7 +2198,7 @@
           applyLeftChatListVisibility();
         }
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-        targetZoomScale = Math.max(0.35, Math.min(3.5, targetZoomScale * zoomFactor));
+        targetZoomScale = Math.max(0.35, Math.min(2.5, targetZoomScale * zoomFactor));
       }, { passive: false });
     }
 
@@ -2237,26 +2227,31 @@
     }
 
     function recenterAndResetZoom() {
-      // V11.4: recenter only - the old version also reset the radar radius
-      // to the 0.25 mi default, wiping the user's chosen range.
+      // Double-tap: return to the home view - centred, radar back at the
+      // default 0.5 mi range, zoom fitted to it (V11.5, per Shane).
       targetPanX = 0; targetPanY = 0; targetZoomScale = 1.0;
+      if (!unlimitedRadarActive) updateRadius(DEFAULT_RADIUS_METERS, true);
       playAudioEffect('chime');
-      showToast('Map recentered', 'navigation');
+      showToast('Map recentered (0.50 Mi)', 'navigation');
     }
 
     function startSmoothAnimationLoop() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
+      let lastPanX = 0, lastPanY = 0, lastZoomOut = 1;
       const renderLoop = () => {
         panX += (targetPanX - panX) * 0.25;
         panY += (targetPanY - panY) * 0.25;
         currentZoomScale += (targetZoomScale - currentZoomScale) * 0.20;
         if (!Number.isFinite(currentZoomScale)) currentZoomScale = 1;
-        currentZoomScale = Math.max(0.35, Math.min(3.5, currentZoomScale));
+        currentZoomScale = Math.max(0.35, Math.min(2.5, currentZoomScale));
 
-        mapCanvas.style.setProperty('--pan-x', `${panX}px`);
-        mapCanvas.style.setProperty('--pan-y', `${panY}px`);
-        mapCanvas.style.setProperty('--zoom-scale', Math.max(0.35, Math.min(3.5, currentZoomScale)).toFixed(4));
+        if (Math.abs(panX - lastPanX) > 0.05 || Math.abs(panY - lastPanY) > 0.05 || Math.abs(currentZoomScale - lastZoomOut) > 0.0005) {
+          lastPanX = panX; lastPanY = panY; lastZoomOut = currentZoomScale;
+          mapCanvas.style.setProperty('--pan-x', `${panX}px`);
+          mapCanvas.style.setProperty('--pan-y', `${panY}px`);
+          mapCanvas.style.setProperty('--zoom-scale', Math.max(0.35, Math.min(2.5, currentZoomScale)).toFixed(4));
+        }
         animationFrameId = requestAnimationFrame(renderLoop);
       };
       animationFrameId = requestAnimationFrame(renderLoop);
@@ -2265,7 +2260,8 @@
     const MAP_PIXELS_PER_MILE = 187.5;
 
     function updateRadius(val, autoZoom = false) {
-      const meters = unlimitedRadarActive ? 999999 : Math.max(402.33, Math.min(MAX_RADIUS_METERS, Number(val)));
+      const parsedRadius = Number(val);
+      const meters = unlimitedRadarActive ? 999999 : Math.max(DEFAULT_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number.isFinite(parsedRadius) ? parsedRadius : DEFAULT_RADIUS_METERS));
       userState.radius = meters;
 
       const ring = document.getElementById('radarBoundaryRing');
@@ -2337,7 +2333,7 @@
         const currentDistPx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
         const deltaPx = currentDistPx - dragStartDistancePx;
         const metersPerPx = METERS_PER_MILE / MAP_PIXELS_PER_MILE;
-        const newMeters = Math.max(402.33, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
+        const newMeters = Math.max(DEFAULT_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, dragStartRadiusMeters + (deltaPx * metersPerPx)));
         updateRadius(newMeters, true);
       };
 
@@ -2905,7 +2901,7 @@
             if (hasValidTopic) clearPreviousBubbleChat(p.id, createdAtTime, p.active_topic);
 
             const existingPeer = globalActiveDirectory[p.id];
-            const isStaleProfile = !p.updated_at || (Date.now() - new Date(p.updated_at).getTime() > 150000);
+            const isStaleProfile = (p.alias || '').toLowerCase() !== 'administrator' && (!p.updated_at || (Date.now() - new Date(p.updated_at).getTime() > 150000)); // V11.5: the Administrator's bubble always shows
             const pLat = p.lat !== undefined && p.lat !== null ? p.lat : (existingPeer?.lat || userState.lat + (Math.random() - 0.5) * 0.01);
             const pLng = p.lng !== undefined && p.lng !== null ? p.lng : (existingPeer?.lng || userState.lng + (Math.random() - 0.5) * 0.01);
 
@@ -3338,6 +3334,31 @@
         }
       });
 
+      // V11.5: the Administrator's bubble is ALWAYS pinned at the top of
+      // this list while it is live - not only after you have joined the chat.
+      Object.keys(globalActiveDirectory).forEach(peerId => {
+        const peer = globalActiveDirectory[peerId];
+        if (!peer || !peer.question || !peer.createdAt) return;
+        if ((peer.rawSender || '').toLowerCase() !== 'administrator') return;
+        if (Date.now() - peer.createdAt > ONE_HOUR_MS) return;
+        const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
+        if (adminList.some(it => it.roomId === roomId)) return;
+        adminList.push({
+          roomId,
+          name: getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType),
+          question: peer.question,
+          accountType: peer.accountType,
+          category: peer.category,
+          peerId,
+          createdAt: peer.createdAt,
+          isBot: !!peer.isBot,
+          isAdmin: true,
+          isMainUser: false,
+          isFriend: friendPeerIds.has(peerId),
+          hasUnread: unreadRoomIds.has(roomId)
+        });
+      });
+
       const pinnedList = [...adminList, ...mainUserList, ...friendList, ...participantList];
 
       if (pinnedList.length === 0) {
@@ -3638,7 +3659,7 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(chatRoomName)}', '${escapeJsArg(peer.question || '')}', '${escapeJsArg(peer.peerId)}', ${safeTimestampMs(peer.createdAt)})`;
       const onIconClickJs = onClickJs;
 
-      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', peer.distance != null ? Math.round(peer.distance / 50) : ''].join('|');
+      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length].join('|');
       if (nodeElem.dataset.renderSig === renderSig && nodeElem.innerHTML) {
         return;
       }
