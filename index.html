@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.12 Friends List & Navy Radar]</title>
+  <title>LocaL - Proximity Social Network [V11.13 Filters, Logo & List Mode]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -479,7 +479,7 @@
       </div>
       
       <div class="flex flex-col">
-        <span class="text-xs font-bold text-slate-900 leading-tight">LocaL <span id="adminBadgeTag" class="hidden text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded font-extrabold uppercase">ADMIN</span></span>
+        <span class="text-xs font-bold text-slate-900 leading-tight">Loca<span class="text-yellow-500">L</span> <span id="adminBadgeTag" class="hidden text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded font-extrabold uppercase">ADMIN</span></span>
         <span id="activeUserCount" class="text-[9px] text-emerald-950 font-semibold">1 Active Peer</span>
       </div>
     </div>
@@ -497,10 +497,6 @@
       </div>
 
       <button onclick="playAudioEffect('click'); openFriendsPanel()" title="Friends & Active Users" aria-label="Friends and active users" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
-        <i data-lucide="heart" class="w-4 h-4"></i>
-      </button>
-
-      <button onclick="playAudioEffect('click'); toggleP2PModal()" title="People nearby" aria-label="People nearby" class="liquid-glass-icon p-2 rounded-2xl text-slate-900 hover:scale-105 transition-all active:scale-95 shadow-lg">
         <i data-lucide="users" class="w-4 h-4"></i>
       </button>
 
@@ -906,6 +902,19 @@
           </label>
         </div>
 
+        <div class="settings-card p-4 space-y-2">
+          <label class="settings-label">Map & List Filters</label>
+          <label class="flex items-center justify-between text-xs font-medium text-slate-200 cursor-pointer">
+            <span>Turn Off All Businesses</span>
+            <input type="checkbox" id="filterHideBusinesses" onchange="toggleHideBusinesses(this.checked)" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
+          </label>
+          <label class="flex items-center justify-between text-xs font-medium text-slate-200 cursor-pointer">
+            <span>Turn Off All Bots</span>
+            <input type="checkbox" id="filterHideBots" onchange="toggleHideBots(this.checked)" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
+          </label>
+          <p class="text-[10px] text-slate-400">Hidden businesses/bots disappear from the map and all lists until you turn them back on. The Administrator always stays visible.</p>
+        </div>
+
         <button onclick="playAudioEffect('chime'); saveProfile()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-xs shadow-[0_12px_28px_-8px_rgba(16,185,129,0.7)] active:scale-98 transition-all">Save Profile & Broadcast</button>
       </div>
     </div>
@@ -1047,6 +1056,8 @@
       locationPrecision: 'show',
       ghostMode: false,
       hideMyName: false,
+      hideBusinesses: false,
+      hideBots: false,
       profileCreated: false
     };
 
@@ -2289,6 +2300,8 @@
       document.getElementById('bgModeSelect').value = userState.bgMode || 'aurora';
       document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
       document.getElementById('privacyMakeNamePublic').checked = !!userState.hideMyName;
+      document.getElementById('filterHideBusinesses').checked = !!userState.hideBusinesses;
+      document.getElementById('filterHideBots').checked = !!userState.hideBots;
       selectAccountType(userState.type || 'personal', true);
       setLocationPrecision(userState.locationPrecision || 'show');
       applyBackgroundMode(userState.bgMode || 'aurora');
@@ -2424,11 +2437,15 @@
       if (mode === 'right') {
         sidebar.classList.remove('hidden');
         renderRightSidebarBubbles();
+        refreshAllPeerDistancesAndPositions(); // V11.13: re-render map nodes without their bubbles
+        renderUserTopBubbleContent();
         leftChatListHidden = true;
         applyLeftChatListVisibility();
         showToast('Switched to Right-Side Bubbles List', 'list');
       } else {
         sidebar.classList.add('hidden');
+        refreshAllPeerDistancesAndPositions(); // V11.13: bubbles return to the map
+        renderUserTopBubbleContent();
         showToast('Switched to Map View', 'navigation');
       }
     }
@@ -2712,6 +2729,28 @@
       }
     }
 
+    // ---- V11.13: turn off all businesses / all bots -----------------------
+    // Settings switches. Hidden peers disappear from the map and every
+    // list. The Administrator is exempt - he must always stay visible.
+    function isPeerTypeFiltered(peer) {
+      if (!peer || isAdminPeer(peer)) return false;
+      if (userState.hideBusinesses && peer.accountType === 'business') return true;
+      if (userState.hideBots && peer.isBot) return true;
+      return false;
+    }
+    function toggleHideBusinesses(checked) {
+      userState.hideBusinesses = !!checked;
+      savePersistentData();
+      refreshAllNodeVisibilities();
+      showToast(checked ? 'All businesses hidden' : 'Businesses visible again', 'store');
+    }
+    function toggleHideBots(checked) {
+      userState.hideBots = !!checked;
+      savePersistentData();
+      refreshAllNodeVisibilities();
+      showToast(checked ? 'All bots hidden' : 'Bots visible again', 'bot');
+    }
+
     function matchesInterestFilter(peerInterestFilter) {
       if (unlimitedRadarActive) return true;
       if (!userState.interestFilter || userState.interestFilter === 'none') return true;
@@ -2728,7 +2767,7 @@
 
         if (nodeElem) {
           const peerIsAdmin = isAdminPeer(peer);
-          const isEnabled = peer.enabled !== false;
+          const isEnabled = peer.enabled !== false && !isPeerTypeFiltered(peer); // V11.13
           const isFriend = friendPeerIds.has(peerId);
           const matchesFilter = matchesInterestFilter(peer.interestFilter);
           const isWithinRadius = peerIsAdmin || isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
@@ -2890,6 +2929,9 @@
     function renderUserTopBubbleContent(isGiggle = false) {
       const topBubble = document.getElementById('userTopBubble');
       if (!topBubble) return;
+      // V11.13: while chats are listed to the right, the map bubbles are
+      // hidden (they are in the list) until the list is closed.
+      if (currentLayoutMode === 'right') { topBubble.classList.add('hidden'); return; }
 
       const hasValidActiveTopic = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
       if (!hasValidActiveTopic && userState.type !== 'business') {
@@ -3758,6 +3800,7 @@
         const peerId = roomId.replace('room-peer-', '');
         const peer = globalActiveDirectory[peerId];
         if (peer && peer.createdAt) {
+          if (isPeerTypeFiltered(peer)) return; // V11.13
           const peerIsAdmin = isAdminPeer(peer);
           const isFriend = friendPeerIds.has(peerId);
           const isBiz = peer.accountType === 'business';
@@ -3873,7 +3916,7 @@
     function renderFriendsPanel() {
       const container = document.getElementById('friendsListContainer');
       if (!container) return;
-      const entries = Object.keys(globalActiveDirectory).map(id => ({ id, peer: globalActiveDirectory[id] }));
+      const entries = Object.keys(globalActiveDirectory).map(id => ({ id, peer: globalActiveDirectory[id] })).filter(e => !isPeerTypeFiltered(e.peer)); // V11.13
       if (entries.length === 0) {
         container.innerHTML = '<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No other peers discovered yet.</div>';
         return;
@@ -3939,6 +3982,7 @@
       container.innerHTML = '';
       peerIds.forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
+        if (isPeerTypeFiltered(peer)) return; // V11.13
         if (directorySearchQuery && !(peer.rawSender || '').toLowerCase().includes(directorySearchQuery) && !(peer.question || '').toLowerCase().includes(directorySearchQuery)) return;
         const isFriend = friendPeerIds.has(peerId);
         const matchesFilter = matchesInterestFilter(peer.interestFilter);
@@ -4008,6 +4052,7 @@
 
       peerIds.forEach(pId => {
         const p = globalActiveDirectory[pId];
+        if (isPeerTypeFiltered(p)) return; // V11.13
         const hasValidQuestion = p.question && p.createdAt;
         const roomId = 'room-peer-' + p.peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const isParticipated = participatedChatRoomIds.has(roomId);
@@ -4181,7 +4226,7 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(chatRoomName)}', '${escapeJsArg(peer.question || '')}', '${escapeJsArg(peer.peerId)}', ${safeTimestampMs(peer.createdAt)})`;
       const onIconClickJs = onClickJs;
 
-      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', peerIsAdmin ? 'admin' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.address || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length].join('|');
+      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', peerIsAdmin ? 'admin' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.address || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', currentLayoutMode === 'right' ? 'listR' : 'map', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length].join('|'); // V11.13: layout mode in the signature so bubbles hide/show with the right list
       if (nodeElem.dataset.renderSig === renderSig && nodeElem.innerHTML) {
         return;
       }
@@ -4190,7 +4235,7 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-10 h-10 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-auto z-[99999999]" style="position:absolute; z-index:2000;">
-            ${(isBiz || activeHasQuestion) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '') : ''}
+            ${(currentLayoutMode !== 'right' && (isBiz || activeHasQuestion)) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '') : ''}
           </div>
           ${showUserIcon ? `
             <div class="relative flex flex-col items-center">
@@ -4271,6 +4316,8 @@
       userState.bgMode = document.getElementById('bgModeSelect').value;
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
       userState.hideMyName = document.getElementById('privacyMakeNamePublic').checked;
+      userState.hideBusinesses = document.getElementById('filterHideBusinesses').checked;
+      userState.hideBots = document.getElementById('filterHideBots').checked;
       if (userState.type === 'business') userState.address = document.getElementById('businessAddressInput').value.trim();
       userState.profileCreated = true;
       isAdminUser = computeIsAdmin();
