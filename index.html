@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.14 Zoom-Out Crash Fix]</title>
+  <title>LocaL - Proximity Social Network [V11.13 Filters, Logo & List Mode]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -235,25 +235,6 @@
       transform: scale(calc(1 / max(0.20, var(--zoom-scale, 1))));
       will-change: transform;
     }
-
-    /* V11.14: zooming out crashed the app on phones. At low zoom the whole
-       world is on screen at once, and the combined cost of the rotating
-       radar sweep (a gradient disc twice the ring's size, repainted every
-       frame), the ring's backdrop blur over a huge area, glow shadows, and
-       dozens of infinitely animating icons/bubbles overloads the phone's
-       graphics memory until the browser kills the page. Below 0.75x zoom
-       the app enters a lite mode (toggled by the render loop) that turns
-       those effects off - the map, radar and chats work exactly the same,
-       and everything comes back when you zoom in again. The ring's
-       backdrop blur is off permanently: its tinted fill does the same job
-       for a fraction of the cost. */
-    #radarBoundaryRing { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-    html.zoom-lite .animate-radar-sweep { animation: none !important; }
-    html.zoom-lite #radarBoundaryRing { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65) !important; }
-    html.zoom-lite .peer-sonar-ring { display: none !important; }
-    html.zoom-lite .animate-float, html.zoom-lite .animate-bubble-subtle, html.zoom-lite .animate-giggle, html.zoom-lite .animate-jiggle, html.zoom-lite .animate-pulse-glow { animation: none !important; }
-    html.zoom-lite .peer-name-label { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-    html.zoom-lite .dark-biz-bubble, html.zoom-lite .glass-card { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 
     .node-item {
       pointer-events: auto !important;
@@ -2624,20 +2605,12 @@
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
       let lastPanX = 0, lastPanY = 0, lastZoomOut = 1;
-      let liteModeOn = false; // V11.14
       const renderLoop = () => {
         panX += (targetPanX - panX) * 0.25;
         panY += (targetPanY - panY) * 0.25;
         currentZoomScale += (targetZoomScale - currentZoomScale) * 0.20;
         if (!Number.isFinite(currentZoomScale)) currentZoomScale = 1;
         currentZoomScale = Math.max(0.35, Math.min(2.5, currentZoomScale));
-
-        // V11.14: lite mode under 0.75x zoom (see the zoom-lite CSS).
-        const shouldLite = currentZoomScale < 0.75;
-        if (shouldLite !== liteModeOn) {
-          liteModeOn = shouldLite;
-          document.documentElement.classList.toggle('zoom-lite', shouldLite);
-        }
 
         if (Math.abs(panX - lastPanX) > 0.05 || Math.abs(panY - lastPanY) > 0.05 || Math.abs(currentZoomScale - lastZoomOut) > 0.0005) {
           lastPanX = panX; lastPanY = panY; lastZoomOut = currentZoomScale;
