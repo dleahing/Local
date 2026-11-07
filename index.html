@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.15 Signup + Audit Fixes]</title>
+  <title>LocaL - Proximity Social Network [V11.16 Animation, Centering, Saved Chats, Friend Requests]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -206,6 +206,17 @@
       letter-spacing: 0.14em; line-height: 1.4; box-shadow: 0 4px 10px rgba(124, 58, 237, 0.55);
       pointer-events: none; white-space: nowrap;
     }
+    /* V11.16: the BOT badge + name pill hang BELOW the icon, out of flow.
+       In flow they pushed the icon off the centre of its stack, and the
+       counter-scale transform magnified that offset at low zoom - the
+       radar ring (centred on the stack) visibly missed the user icon.
+       Out of flow, the stack box IS the icon, so ring, sonar and icon
+       share one centre at every zoom. */
+    .node-under-icon {
+      position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center;
+      pointer-events: none; z-index: 9600;
+    }
     #chatBackdrop { transform: translateZ(0); }
     #chatDrawer {
       left: 50% !important;
@@ -242,16 +253,16 @@
        frame), the ring's backdrop blur over a huge area, glow shadows, and
        dozens of infinitely animating icons/bubbles overloads the phone's
        graphics memory until the browser kills the page. Below 0.75x zoom
-       the app enters a lite mode (toggled by the render loop) that turns
-       those effects off - the map, radar and chats work exactly the same,
-       and everything comes back when you zoom in again. The ring's
+       the app enters a lite mode (toggled by the render loop) that strips
+       the expensive blur/glow compositing - animations keep running
+       (V11.16), and the full effects come back when you zoom in again. The ring's
        backdrop blur is off permanently: its tinted fill does the same job
        for a fraction of the cost. */
     #radarBoundaryRing { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-    html.zoom-lite .animate-radar-sweep { animation: none !important; }
+    /* V11.16: lite mode no longer freezes any animation - Shane wants the
+       radar sweep and icon motion kept at low zoom. Only the costly
+       compositing (backdrop blurs, the ring's glow shadow) is stripped. */
     html.zoom-lite #radarBoundaryRing { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65) !important; }
-    html.zoom-lite .peer-sonar-ring { display: none !important; }
-    html.zoom-lite .animate-float, html.zoom-lite .animate-bubble-subtle, html.zoom-lite .animate-giggle, html.zoom-lite .animate-jiggle, html.zoom-lite .animate-pulse-glow { animation: none !important; }
     html.zoom-lite .peer-name-label { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
     html.zoom-lite .dark-biz-bubble, html.zoom-lite .glass-card { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 
@@ -498,8 +509,8 @@
       </div>
       
       <div class="flex flex-col">
-        <span class="text-xs font-bold text-slate-900 leading-tight">Loca<span class="text-yellow-500">L</span> <span id="adminBadgeTag" class="hidden text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded font-extrabold uppercase">ADMIN</span></span>
-        <span id="activeUserCount" class="text-[9px] text-emerald-950 font-semibold">1 Active Peer</span>
+        <span class="text-xs font-bold text-slate-900 leading-tight">Loca<span class="text-yellow-300" style="text-shadow: 0 0 10px rgba(253, 224, 71, 0.95), 0 0 3px rgba(253, 224, 71, 0.9);">L</span> <span id="adminBadgeTag" class="hidden text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded font-extrabold uppercase">ADMIN</span></span>
+        <span id="activeUserCount" class="text-[9px] text-emerald-950 font-semibold">1 Active Users</span>
       </div>
     </div>
 
@@ -691,16 +702,21 @@
   </div>
 
   <!-- FRIENDS & ACTIVE USERS PANEL (V11.12) -->
-  <div id="friendsModal" class="hidden fixed inset-0 z-[9999999] bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card w-full max-w-md rounded-3xl p-6 border border-white/50 shadow-2xl max-h-[85vh] flex flex-col">
-      <div class="flex justify-between items-center mb-1 flex-shrink-0">
-        <div>
-          <h3 class="text-lg font-bold text-slate-900 tracking-tight">Friends & Active Users</h3>
-          <p class="text-[10px] text-emerald-900 font-semibold uppercase tracking-wider">Friends stay on top - tap + to make new friends</p>
+  <div id="friendsModal" class="hidden fixed inset-0 z-[9999999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="settings-panel w-full max-w-md rounded-[32px] p-6 max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center mb-3 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-[0_8px_20px_-6px_rgba(16,185,129,0.7)]">
+            <i data-lucide="users" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-white tracking-tight">Friends & Active Users</h3>
+            <p class="text-[10px] text-emerald-300 font-semibold uppercase tracking-wider">Friends on top · new friends accept a request</p>
+          </div>
         </div>
-        <button onclick="playAudioEffect('click'); closeFriendsPanel()" aria-label="Close friends list" class="p-2 rounded-full bg-slate-900/5 hover:bg-slate-900/10 text-slate-700 transition-all shadow-sm flex-shrink-0"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="playAudioEffect('click'); closeFriendsPanel()" aria-label="Close friends list" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-200 transition-all shadow-sm flex-shrink-0"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-      <input type="text" id="friendsSearchInput" placeholder="Search friends & people..." aria-label="Search friends and people" class="w-full px-3.5 py-2 mb-2 rounded-2xl bg-white/70 border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none shadow-inner flex-shrink-0" oninput="friendsSearchQuery = this.value.trim().toLowerCase(); renderFriendsPanel();">
+      <input type="text" id="friendsSearchInput" placeholder="Search friends & people..." aria-label="Search friends and people" class="settings-input flex-shrink-0" style="margin-bottom: 8px;" oninput="friendsSearchQuery = this.value.trim().toLowerCase(); renderFriendsPanel();">
       <div id="friendsListContainer" class="overflow-y-auto space-y-2 pr-1"></div>
     </div>
   </div>
@@ -1020,6 +1036,8 @@
     const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v40';
     const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v40';
     const STORAGE_KEY_HIDDEN_PEERS = 'local_hidden_peers_v40';
+    const STORAGE_KEY_CHAT_CACHE = 'local_chat_cache_v40';
+    const STORAGE_KEY_FRIEND_REQUESTS = 'local_friend_requests_v40';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -1041,6 +1059,10 @@
     let processedMsgIds = new Set();
     let participatedChatRoomIds = new Set();
     let friendPeerIds = new Set();
+    let friendRequestsIn = {};
+    let friendRequestsOut = new Set();
+    let friendRequestResentAt = {};
+    let chatCachePersistenceStarted = false;
     let hiddenPeerIds = new Set();
     let customBotDefinitions = [];
     let offlineTopicsCache = {};
@@ -1421,6 +1443,7 @@
       delete localChatCache[altRoomId];
       delete chatRenderSigs[roomId];
       delete chatRenderSigs[altRoomId];
+      persistChatCache();
       participatedChatRoomIds.delete(roomId);
       participatedChatRoomIds.delete(altRoomId);
       if (unreadRoomIds.delete(roomId) || unreadRoomIds.delete(altRoomId)) syncUnreadChimeLoop();
@@ -1486,6 +1509,7 @@
       const roomId = 'room-peer-' + String(peerId).replace(/[^a-zA-Z0-9]/g, '-');
       delete localChatCache[roomId];
       delete chatRenderSigs[roomId];
+      persistChatCache();
       participatedChatRoomIds.delete(roomId);
       if (unreadRoomIds.delete(roomId)) syncUnreadChimeLoop();
       if (currentActiveChatRoomId === roomId) {
@@ -2441,6 +2465,40 @@
       if ('vibrate' in navigator) { try { navigator.vibrate(pattern); } catch(e) {} }
     }
 
+    // V11.16: chat messages live on this device between sessions. The
+    // in-memory cache used to be the only copy for mesh/local chats, so
+    // closing the app wiped every conversation. The cache is now saved
+    // to localStorage; deletions remove messages from the saved copy
+    // too (persistChatCache runs after every delete), so deleted chats
+    // stay deleted, and messages from expired bubbles are pruned on
+    // restore so they cannot outlive their bubble.
+    function persistChatCache() {
+      try { localStorage.setItem(STORAGE_KEY_CHAT_CACHE, JSON.stringify(localChatCache)); } catch (e) {}
+    }
+
+    function restoreChatCache() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_CHAT_CACHE);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          Object.keys(parsed || {}).forEach(roomId => {
+            if (roomId !== 'room-you' && !participatedChatRoomIds.has(roomId)) return;
+            const msgs = (parsed[roomId] || []).filter(m => {
+              const ts = safeTimestampMs(m.createdAt);
+              return ts && (Date.now() - ts <= ONE_HOUR_MS);
+            });
+            if (msgs.length) localChatCache[roomId] = msgs.slice(-200);
+          });
+        }
+      } catch (e) {}
+      if (!chatCachePersistenceStarted) {
+        chatCachePersistenceStarted = true;
+        setInterval(persistChatCache, 4000);
+        window.addEventListener('pagehide', persistChatCache);
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') persistChatCache(); });
+      }
+    }
+
     function loadPersistentData() {
       try {
         const savedProfile = localStorage.getItem(STORAGE_KEY_PROFILE);
@@ -2470,6 +2528,13 @@
         if (savedBots) customBotDefinitions = JSON.parse(savedBots);
         const savedUnread = localStorage.getItem(STORAGE_KEY_UNREAD_ROOMS);
         if (savedUnread) unreadRoomIds = new Set(JSON.parse(savedUnread));
+        const savedFriendRequests = localStorage.getItem(STORAGE_KEY_FRIEND_REQUESTS);
+        if (savedFriendRequests) {
+          const parsedReq = JSON.parse(savedFriendRequests);
+          friendRequestsIn = parsedReq.in || {};
+          friendRequestsOut = new Set(parsedReq.out || []);
+        }
+        restoreChatCache();
         syncUnreadChimeLoop();
       } catch (e) {}
     }
@@ -2483,6 +2548,7 @@
         localStorage.setItem(STORAGE_KEY_HIDDEN_PEERS, JSON.stringify(Array.from(hiddenPeerIds)));
         localStorage.setItem(STORAGE_KEY_CUSTOM_BOTS, JSON.stringify(customBotDefinitions));
         localStorage.setItem(STORAGE_KEY_UNREAD_ROOMS, JSON.stringify(Array.from(unreadRoomIds)));
+        localStorage.setItem(STORAGE_KEY_FRIEND_REQUESTS, JSON.stringify({ in: friendRequestsIn, out: Array.from(friendRequestsOut) }));
         captureOfflineTopicsSnapshot();
         if (currentActiveChatRoomId) localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
         else localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM);
@@ -2589,10 +2655,8 @@
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label')) return;
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
         isDraggingMap = true;
-        if (!leftChatListHidden) {
-          leftChatListHidden = true;
-          applyLeftChatListVisibility();
-        }
+        // V11.16: starting a drag no longer hides the left chat list -
+        // it hides on a tap instead (see initTapRippleHandler).
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         startDragX = clientX - targetPanX;
@@ -2629,10 +2693,6 @@
       mapCanvas.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
           isDraggingMap = false;
-          if (!leftChatListHidden) {
-            leftChatListHidden = true;
-            applyLeftChatListVisibility();
-          }
           initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
           if (initialPinchDistance < 1) initialPinchDistance = 1;
           initialPinchScale = targetZoomScale;
@@ -2658,10 +2718,6 @@
       mapCanvas.addEventListener('wheel', (e) => {
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal, #pinnedChatsWrapper')) return;
         e.preventDefault();
-        if (!leftChatListHidden) {
-          leftChatListHidden = true;
-          applyLeftChatListVisibility();
-        }
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
         targetZoomScale = Math.max(0.35, Math.min(2.5, targetZoomScale * zoomFactor));
       }, { passive: false });
@@ -2809,10 +2865,6 @@
         if (unlimitedRadarActive) return;
         isDraggingRadius = true;
         isDraggingMap = false;
-        if (!leftChatListHidden) {
-          leftChatListHidden = true;
-          applyLeftChatListVisibility();
-        }
         e.stopPropagation(); 
         e.preventDefault();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -3044,8 +3096,17 @@
     }
 
     function initTapRippleHandler() {
+      // V11.16: the left chat list hides on a TAP only. A drag/pan also
+      // ends in a click event, so the press position is recorded and the
+      // click only counts as a tap when the pointer barely moved
+      // (<=10px) - dragging the map now leaves the list open.
+      let tapDownX = null, tapDownY = null;
+      window.addEventListener('pointerdown', (e) => { tapDownX = e.clientX; tapDownY = e.clientY; }, { passive: true });
       window.addEventListener('click', (e) => {
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label')) return;
+        const movedPx = (tapDownX === null) ? 0 : Math.hypot(e.clientX - tapDownX, e.clientY - tapDownY);
+        tapDownX = null; tapDownY = null;
+        if (movedPx > 10) return; // it was a drag, not a tap
         if (!leftChatListHidden) {
           leftChatListHidden = true;
           applyLeftChatListVisibility();
@@ -3264,7 +3325,7 @@
                 ${renderNodeIconContent(userState.type, userState.category)}
               </div>
             </div>
-            <span id="userNameLabel" class="peer-name-label">${escapeChatHTML(getDisplayName(userState.alias, userState.hideMyName, userState.type))}</span>
+            <div class="node-under-icon"><span id="userNameLabel" class="peer-name-label">${escapeChatHTML(getDisplayName(userState.alias, userState.hideMyName, userState.type))}</span></div>
           </div>
         </div>
       `;
@@ -3394,6 +3455,7 @@
 
       localChatCache[targetRoomId].push({ id: msg.client_id || ('remote-' + msg.sender_id + '-' + msg.created_at), sender: msg.sender_alias, text: msg.message, time: timeStr, createdAt: msg.created_at || new Date().toISOString(), isMe: false });
       if (localChatCache[targetRoomId].length > 200) localChatCache[targetRoomId].splice(0, localChatCache[targetRoomId].length - 200);
+      persistChatCache();
 
       if (currentActiveChatRoomId === targetRoomId) {
         appendMessage(msg.sender_alias, msg.message, timeStr, false);
@@ -3539,6 +3601,10 @@
       bellRungRoomIds = new Set();
       processedMsgIds = new Set();
       participatedChatRoomIds = new Set();
+      friendPeerIds = new Set();
+      friendRequestsIn = {};
+      friendRequestsOut = new Set();
+      friendRequestResentAt = {};
       activeBubbleBySender = {};
       currentActiveChatRoomId = null;
       activeTopicState = { text: null, createdAt: null, persistent: false };
@@ -3603,7 +3669,7 @@
         }
       } catch(e) {}
       try {
-        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
       } catch(e) {}
       try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch(e) {}
       currentAuthUser = null;
@@ -3809,6 +3875,49 @@
         return;
       }
 
+      // V11.16: friend requests. Addressed payloads (targetId) are only
+      // acted on by their recipient, and this branch sits before the
+      // dedupe check so a re-sent request (sent again when the
+      // requester next sees the recipient announce) still lands.
+      if (data.type === 'FRIEND_REQUEST' || data.type === 'FRIEND_RESPONSE' || data.type === 'FRIEND_REQUEST_CANCEL') {
+        if (data.targetId !== myPeerId || !data.peerId) return;
+        const fromId = data.peerId;
+        const fromName = data.sender || globalActiveDirectory[fromId]?.rawSender || 'Peer';
+        if (data.type === 'FRIEND_REQUEST') {
+          if (friendPeerIds.has(fromId)) {
+            broadcastData({ id: 'fr-' + Math.random().toString(36).substring(2, 9), type: 'FRIEND_RESPONSE', targetId: fromId, peerId: myPeerId, sender: getDisplayName(userState.alias, userState.hideMyName, userState.type), accepted: true });
+          } else if (friendRequestsOut.has(fromId)) {
+            // Both people sent a request at the same time - that is a yes.
+            friendRequestsOut.delete(fromId);
+            friendPeerIds.add(fromId);
+            broadcastData({ id: 'fr-' + Math.random().toString(36).substring(2, 9), type: 'FRIEND_RESPONSE', targetId: fromId, peerId: myPeerId, sender: getDisplayName(userState.alias, userState.hideMyName, userState.type), accepted: true });
+            showToast(`You and @${fromName} are now friends!`, 'user-check');
+          } else if (!friendRequestsIn[fromId]) {
+            friendRequestsIn[fromId] = { name: fromName, at: Date.now() };
+            showToast(`Friend request from @${fromName}`, 'user-plus');
+            playAudioEffect('unread-chime');
+          }
+        } else if (data.type === 'FRIEND_RESPONSE') {
+          if (friendRequestsOut.has(fromId)) {
+            friendRequestsOut.delete(fromId);
+            if (data.accepted) {
+              friendPeerIds.add(fromId);
+              showToast(`@${fromName} accepted your friend request!`, 'user-check');
+            } else {
+              showToast(`@${fromName} declined your friend request.`, 'user-minus');
+            }
+          }
+        } else {
+          delete friendRequestsIn[fromId];
+        }
+        savePersistentData();
+        refreshAllNodeVisibilities();
+        renderGlobalUsersDirectory();
+        renderFriendsPanel();
+        renderProfileFriendsList();
+        return;
+      }
+
       if (data.id && processedMsgIds.has(data.id)) return;
       if (data.id) {
         processedMsgIds.add(data.id);
@@ -3869,6 +3978,15 @@
 
       activeBubbleBySender[data.peerId] = data.id;
 
+      // V11.16: a friend request travels on the live mesh, so if one to
+      // this peer is still pending, send it again when they announce
+      // (at most once a minute per peer) - that is how a request
+      // reaches someone who was not around when it was first sent.
+      if (friendRequestsOut.has(data.peerId) && (Date.now() - (friendRequestResentAt[data.peerId] || 0) > 60000)) {
+        friendRequestResentAt[data.peerId] = Date.now();
+        broadcastData({ id: 'fr-' + Math.random().toString(36).substring(2, 9), type: 'FRIEND_REQUEST', targetId: data.peerId, peerId: myPeerId, sender: getDisplayName(userState.alias, userState.hideMyName, userState.type) });
+      }
+
       updateMeshUI();
       refreshAllPeerDistancesAndPositions();
     }
@@ -3919,23 +4037,58 @@
     }
 
     function toggleFriendStatus(peerId) {
+      const peer = globalActiveDirectory[peerId];
       if (friendPeerIds.has(peerId)) {
         friendPeerIds.delete(peerId);
         showToast('Removed from Friends.', 'user-minus');
-      } else {
+      } else if (peer && peer.isBot) {
+        // Bots are simulated on this device - they cannot answer a
+        // request, so they still add instantly.
         friendPeerIds.add(peerId);
         showToast('Added to Friends! Pinned to top of side lists.', 'user-check');
+      } else if (friendRequestsIn[peerId]) {
+        respondToFriendRequest(peerId, true);
+        return;
+      } else if (friendRequestsOut.has(peerId)) {
+        friendRequestsOut.delete(peerId);
+        broadcastData({ id: 'fr-' + Math.random().toString(36).substring(2, 9), type: 'FRIEND_REQUEST_CANCEL', targetId: peerId, peerId: myPeerId, sender: getDisplayName(userState.alias, userState.hideMyName, userState.type) });
+        showToast('Friend request cancelled.', 'user-minus');
+      } else {
+        friendRequestsOut.add(peerId);
+        friendRequestResentAt[peerId] = Date.now();
+        broadcastData({ id: 'fr-' + Math.random().toString(36).substring(2, 9), type: 'FRIEND_REQUEST', targetId: peerId, peerId: myPeerId, sender: getDisplayName(userState.alias, userState.hideMyName, userState.type) });
+        showToast('Friend request sent!', 'user-plus');
       }
       savePersistentData();
       refreshAllNodeVisibilities();
       renderGlobalUsersDirectory();
+      renderFriendsPanel();
       renderProfileFriendsList();
-      
-      const btnText = document.getElementById('friendBtnText');
-      if (btnText) {
-        const isF = friendPeerIds.has(currentActiveChatRoomId?.replace('room-peer-', ''));
-        btnText.innerText = isF ? 'Friends ✓' : 'Add Friend';
+      updateFriendButtonLabel();
+    }
+
+    function respondToFriendRequest(peerId, accepted) {
+      delete friendRequestsIn[peerId];
+      if (accepted) {
+        friendPeerIds.add(peerId);
+        showToast('Added to Friends! Pinned to top of side lists.', 'user-check');
+      } else {
+        showToast('Friend request declined.', 'user-minus');
       }
+      broadcastData({ id: 'fr-' + Math.random().toString(36).substring(2, 9), type: 'FRIEND_RESPONSE', targetId: peerId, peerId: myPeerId, sender: getDisplayName(userState.alias, userState.hideMyName, userState.type), accepted: !!accepted });
+      savePersistentData();
+      refreshAllNodeVisibilities();
+      renderGlobalUsersDirectory();
+      renderFriendsPanel();
+      renderProfileFriendsList();
+      updateFriendButtonLabel();
+    }
+
+    function updateFriendButtonLabel() {
+      const btnText = document.getElementById('friendBtnText');
+      if (!btnText || !currentActiveChatRoomId) return;
+      const peerId = currentActiveChatRoomId.replace('room-peer-', '');
+      btnText.innerText = friendPeerIds.has(peerId) ? 'Friends ✓' : (friendRequestsOut.has(peerId) ? 'Requested…' : (friendRequestsIn[peerId] ? 'Accept Request' : 'Add Friend'));
     }
 
     function toggleFriendStatusFromChat() {
@@ -4128,8 +4281,9 @@
       const container = document.getElementById('friendsListContainer');
       if (!container) return;
       const entries = Object.keys(globalActiveDirectory).map(id => ({ id, peer: globalActiveDirectory[id] })).filter(e => !isPeerTypeFiltered(e.peer)); // V11.13
-      if (entries.length === 0) {
-        container.innerHTML = '<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No other peers discovered yet.</div>';
+      const requestIds = Object.keys(friendRequestsIn).filter(id => !friendPeerIds.has(id));
+      if (entries.length === 0 && requestIds.length === 0) {
+        container.innerHTML = '<div class="p-3 rounded-2xl bg-white/5 border border-white/10 text-center text-xs text-slate-400 font-light">No other peers discovered yet.</div>';
         return;
       }
       const matches = (peer) => !friendsSearchQuery || (peer.rawSender || '').toLowerCase().includes(friendsSearchQuery) || (peer.question || '').toLowerCase().includes(friendsSearchQuery);
@@ -4138,15 +4292,20 @@
       const others = entries.filter(e => !friendPeerIds.has(e.id) && matches(e.peer)).sort(byDistance);
       const buildRow = (peerId, peer) => {
         const isFriend = friendPeerIds.has(peerId);
+        const reqOut = friendRequestsOut.has(peerId);
+        const reqIn = !!friendRequestsIn[peerId];
         const peerIsAdmin = isAdminPeer(peer);
         const isBiz = peer.accountType === 'business';
         const displayLabel = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
-        const nameColorClass = isBiz ? getBusinessCategoryTextColorClass(peer.category) : 'text-slate-900 font-bold';
+        const nameColorClass = isBiz ? 'text-amber-300 font-bold' : 'text-white font-bold';
         const distStr = formatPeerDistance(peer) || '—';
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         const visual = getNodeIconVisual(peer.accountType, peer.category, peer.isBot);
+        const friendBtnClass = isFriend ? 'bg-amber-500 text-slate-950 font-bold' : (reqIn ? 'bg-emerald-600 text-white' : 'bg-white/10 text-slate-200');
+        const friendBtnIcon = isFriend ? 'user-check' : (reqOut ? 'clock' : 'user-plus');
+        const friendBtnTitle = isFriend ? 'Remove friend' : (reqIn ? 'Accept friend request' : (reqOut ? 'Request sent - tap to cancel' : 'Send friend request'));
         return `
-          <div class="p-3 rounded-2xl bg-white/60 border border-white/80 shadow-sm flex items-center justify-between ${peer.isOffline ? 'opacity-60' : ''}">
+          <div class="p-3 rounded-2xl bg-white/5 border border-white/10 shadow-sm flex items-center justify-between ${peer.isOffline ? 'opacity-60' : ''}">
             <div class="flex items-center gap-3">
               <div class="w-7.5 h-7.5 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${visual.borderClass}" style="background: ${visual.bg}; border-radius: 50%;">
                 ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
@@ -4155,25 +4314,47 @@
                 <div class="flex items-center gap-1.5">
                   <h4 class="text-xs ${nameColorClass}">@${escapeChatHTML(displayLabel)}</h4>
                   ${isFriend ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold">Friend</span>' : ''}
+                  ${reqOut ? '<span class="text-[9px] bg-sky-500 text-white px-1 rounded font-bold">Requested</span>' : ''}
+                  ${reqIn ? '<span class="text-[9px] bg-emerald-500 text-white px-1 rounded font-bold">Request</span>' : ''}
                   ${peerIsAdmin ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-extrabold uppercase">ADMIN</span>' : ''}
                   ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="text-[9px] bg-violet-600 text-white px-1 rounded font-extrabold uppercase">Bot</span>' : ''}
-                  ${peer.isOffline ? '<span class="text-[9px] bg-slate-400 text-white px-1 rounded font-bold">Offline</span>' : ''}
+                  ${peer.isOffline ? '<span class="text-[9px] bg-slate-500 text-white px-1 rounded font-bold">Offline</span>' : ''}
                 </div>
-                <p class="text-[10px] text-slate-500 font-semibold">Distance: ${distStr}</p>
+                <p class="text-[10px] text-slate-400 font-semibold">Distance: ${distStr}</p>
               </div>
             </div>
             <div class="flex items-center gap-1.5">
-              <button onclick="toggleFriendStatus('${escapeJsArg(peerId)}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
-                <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
+              <button onclick="toggleFriendStatus('${escapeJsArg(peerId)}')" class="px-2 py-1.5 rounded-xl ${friendBtnClass} text-[10px]" title="${friendBtnTitle}">
+                <i data-lucide="${friendBtnIcon}" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="playAudioEffect('chime'); closeFriendsPanel(); openChatDrawer('${roomId}', '${escapeJsArg(displayLabel)}', null, '${escapeJsArg(peerId)}', ${safeTimestampMs(peer.createdAt)})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
           </div>`;
       };
-      let html = `<div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 pt-1">Friends (${friends.length})</div>`;
-      html += friends.length ? friends.map(e => buildRow(e.id, e.peer)).join('') : '<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No friends yet - add people from the list below.</div>';
-      html += `<div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 pt-2">Active Users (${others.length})</div>`;
-      html += others.length ? others.map(e => buildRow(e.id, e.peer)).join('') : '<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No other active users right now.</div>';
+      let html = '';
+      if (requestIds.length) {
+        html += `<div class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-300 pt-1">Friend Requests (${requestIds.length})</div>`;
+        html += requestIds.map(id => {
+          const req = friendRequestsIn[id];
+          const peer = globalActiveDirectory[id];
+          const label = escapeChatHTML(peer ? getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType) : (req.name || 'Peer'));
+          return `
+          <div class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-400/30 flex items-center justify-between">
+            <div>
+              <h4 class="text-xs text-white font-bold">@${label}</h4>
+              <p class="text-[10px] text-emerald-300 font-semibold">Wants to be friends</p>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="respondToFriendRequest('${escapeJsArg(id)}', true)" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Accept</button>
+              <button onclick="respondToFriendRequest('${escapeJsArg(id)}', false)" class="px-3 py-1.5 rounded-xl bg-white/10 text-slate-300 font-semibold text-xs">Decline</button>
+            </div>
+          </div>`;
+        }).join('');
+      }
+      html += `<div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 pt-1">Friends (${friends.length})</div>`;
+      html += friends.length ? friends.map(e => buildRow(e.id, e.peer)).join('') : '<div class="p-3 rounded-2xl bg-white/5 border border-white/10 text-center text-xs text-slate-400 font-light">No friends yet - send a request from the list below.</div>';
+      html += `<div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 pt-2">Active Users (${others.length})</div>`;
+      html += others.length ? others.map(e => buildRow(e.id, e.peer)).join('') : '<div class="p-3 rounded-2xl bg-white/5 border border-white/10 text-center text-xs text-slate-400 font-light">No other active users right now.</div>';
       container.innerHTML = html;
       lucide.createIcons();
     }
@@ -4374,7 +4555,7 @@
       // must still go out - otherwise your deletions and bubble
       // replacements never reach other phones, and they keep chats you
       // deleted until expiry.
-      const isControlPayload = !!payload && (payload.type === 'DELETE_ROOM' || payload.type === 'CLEAR_PREVIOUS_BUBBLE');
+      const isControlPayload = !!payload && (payload.type === 'DELETE_ROOM' || payload.type === 'CLEAR_PREVIOUS_BUBBLE' || payload.type === 'FRIEND_REQUEST' || payload.type === 'FRIEND_RESPONSE' || payload.type === 'FRIEND_REQUEST_CANCEL');
       if (userState.ghostMode && userState.type !== 'business' && !isControlPayload) return;
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat; payload.lng = payload.lng || coords.lng;
@@ -4462,8 +4643,10 @@
               ${peerIsAdmin ? '</div>' : ''}
               ${hasUnread ? '<span class="unread-badge" title="Unread replies">!</span>' : ''}
             </div>
-            ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="personal-bot-badge">BOT</span>' : ''}
-            <span class="peer-name-label">${escapeChatHTML(chatRoomName)}${formatPeerDistance(peer) ? ' · ' + escapeChatHTML(formatPeerDistance(peer)) : ''}</span>
+            <div class="node-under-icon">
+              ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="personal-bot-badge">BOT</span>' : ''}
+              <span class="peer-name-label">${escapeChatHTML(chatRoomName)}${formatPeerDistance(peer) ? ' · ' + escapeChatHTML(formatPeerDistance(peer)) : ''}</span>
+            </div>
           ` : ''}
         </div>
       `;
@@ -4572,7 +4755,12 @@
 
     function updateMeshUI() {
       const countElem = document.getElementById('activeUserCount');
-      if (countElem) countElem.innerText = `${Object.keys(globalActiveDirectory).length + 1} Active Peer${unreadRoomIds.size ? ' · ' + unreadRoomIds.size + ' Unread' : ''}`;
+      if (!countElem) return;
+      // V11.16: "Active Users" counts real people only - yourself plus
+      // live personal accounts. Bots, businesses and offline ghosts in
+      // the directory are not users.
+      const userCount = 1 + Object.values(globalActiveDirectory).filter(peer => peer && peer.rawSender && !peer.isBot && peer.accountType !== 'business' && !peer.isOffline).length;
+      countElem.innerText = `${userCount} Active Users${unreadRoomIds.size ? ' · ' + unreadRoomIds.size + ' Unread' : ''}`;
     }
 
     async function quickPostFromDock() {
@@ -4658,6 +4846,7 @@
       if (!localChatCache[targetRoomId]) localChatCache[targetRoomId] = [];
       localChatCache[targetRoomId].push({ id: clientMessageId, sender: senderDisplayName, text, time: timeStr, createdAt: sentAt, isMe: true });
       if (localChatCache[targetRoomId].length > 200) localChatCache[targetRoomId].splice(0, localChatCache[targetRoomId].length - 200);
+      persistChatCache();
 
       appendMessage(senderDisplayName, text, timeStr, true);
       playAudioEffect('send'); // V11.6: send sound
@@ -4747,7 +4936,7 @@
         } else {
           friendBtnContainer.classList.remove('hidden');
           const isF = friendPeerIds.has(peerId);
-          document.getElementById('friendBtnText').innerText = isF ? 'Friends ✓' : 'Add Friend';
+          document.getElementById('friendBtnText').innerText = isF ? 'Friends ✓' : (friendRequestsOut.has(peerId) ? 'Requested…' : (friendRequestsIn[peerId] ? 'Accept Request' : 'Add Friend'));
         }
       }
 
@@ -4828,7 +5017,14 @@
           // loaded the newest 200 messages anyway, resurrecting the
           // previous deleted chat under the same room id (e.g. Connect
           // from the Friends panel, where the peer has no live bubble).
-          if (!roomStartMs) { localChatCache[roomId] = []; msgBox.innerHTML = ''; chatRenderSigs[roomId] = ''; return; }
+          if (!roomStartMs) {
+            // V11.16: no live bubble for this room - fall back to this
+            // device's saved messages instead of showing an empty chat.
+            // The saved copy is pruned to the bubble's lifetime and is
+            // cleared by every delete path, so a deleted chat does not
+            // resurrect from it.
+            merged = cachedBeforeFetch;
+          } else {
           historyQuery = historyQuery.gte('created_at', new Date(roomStartMs - 5000).toISOString());
           const { data, error } = await historyQuery
             .order('created_at', { ascending: false })
@@ -4862,6 +5058,7 @@
           } else if (error) {
             console.warn('Chat history could not be loaded:', error.message);
           }
+          }
         } catch (error) {
           console.warn('Chat history request failed:', error);
         }
@@ -4880,6 +5077,7 @@
           return (ta - tb) || (a._order - b._order);
         });
       localChatCache[roomId] = merged;
+      persistChatCache();
       const renderSig = merged.map(m => (m.id || '') + ':' + m.text).join('|');
       if (chatRenderSigs[roomId] === renderSig) return;
       chatRenderSigs[roomId] = renderSig;
