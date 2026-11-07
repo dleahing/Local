@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.16 Animation, Centering, Saved Chats, Friend Requests]</title>
+  <title>LocaL - Proximity Social Network [V11.17 Bubble Jiggle + Offline Messages]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1038,6 +1038,7 @@
     const STORAGE_KEY_HIDDEN_PEERS = 'local_hidden_peers_v40';
     const STORAGE_KEY_CHAT_CACHE = 'local_chat_cache_v40';
     const STORAGE_KEY_FRIEND_REQUESTS = 'local_friend_requests_v40';
+    const STORAGE_KEY_CHAT_CLEARED = 'local_chat_cleared_v40';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -1059,6 +1060,7 @@
     let processedMsgIds = new Set();
     let participatedChatRoomIds = new Set();
     let friendPeerIds = new Set();
+    let chatRoomClearedAt = {};
     let friendRequestsIn = {};
     let friendRequestsOut = new Set();
     let friendRequestResentAt = {};
@@ -1444,6 +1446,8 @@
       delete chatRenderSigs[roomId];
       delete chatRenderSigs[altRoomId];
       persistChatCache();
+      markChatRoomCleared(roomId);
+      markChatRoomCleared(altRoomId);
       participatedChatRoomIds.delete(roomId);
       participatedChatRoomIds.delete(altRoomId);
       if (unreadRoomIds.delete(roomId) || unreadRoomIds.delete(altRoomId)) syncUnreadChimeLoop();
@@ -1510,6 +1514,7 @@
       delete localChatCache[roomId];
       delete chatRenderSigs[roomId];
       persistChatCache();
+      markChatRoomCleared(roomId);
       participatedChatRoomIds.delete(roomId);
       if (unreadRoomIds.delete(roomId)) syncUnreadChimeLoop();
       if (currentActiveChatRoomId === roomId) {
@@ -1575,7 +1580,7 @@
       if (!question) return '';
       question = escapeChatHTML(question);
       senderName = escapeChatHTML(senderName || '');
-      const animClass = hasUnread ? 'animate-giggle' : (isGiggle ? 'animate-giggle' : 'animate-float');
+      const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float'); // V11.17: unread map bubbles jiggle continuously, matching the pinned chats
       const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span></div>`;
 
       if (isAdmin) {
@@ -1627,7 +1632,7 @@
       if (address) address = escapeChatHTML(address);
       const categoryLabel = escapeChatHTML(getBusinessCategoryLabel(category));
       const nameColorClass = getBusinessCategoryTextColorClass(category);
-      const animClass = hasUnread ? 'animate-giggle' : 'animate-float';
+      const animClass = hasUnread ? 'animate-jiggle-continuous' : 'animate-float'; // V11.17
 
       if (isAdmin) {
         return `
@@ -2455,6 +2460,7 @@
       applyBackgroundMode(userState.bgMode || 'aurora');
       applyRadarColorCSS(userState.radarColor || 'cyan');
       renderProfileFriendsList();
+      checkOfflineMessagesCatchUp(); // V11.17: offline messages in your own room
     }
 
     async function requestScreenWakeLock() {
@@ -2474,6 +2480,28 @@
     // restore so they cannot outlive their bubble.
     function persistChatCache() {
       try { localStorage.setItem(STORAGE_KEY_CHAT_CACHE, JSON.stringify(localChatCache)); } catch (e) {}
+    }
+
+    // V11.17: per-room "cleared at" watermarks. Every local delete
+    // (expiry, override, owner delete, DELETE_ROOM from the owner) stamps
+    // the room here, and history loads never reach back past the stamp -
+    // that is what lets the offline catch-up below show waiting messages
+    // without resurrecting chats the user already deleted.
+    function markChatRoomCleared(roomId) {
+      if (!roomId) return;
+      chatRoomClearedAt[roomId] = Date.now();
+      try { localStorage.setItem(STORAGE_KEY_CHAT_CLEARED, JSON.stringify(chatRoomClearedAt)); } catch (e) {}
+    }
+
+    // V11.17: the start of the history window for a room. With a live
+    // bubble it is the bubble's start (5s clock-skew grace, as before);
+    // without one - e.g. you messaged someone while they were offline -
+    // it is one hour back, the bubble lifetime. Either way the delete
+    // watermark wins when it is later.
+    function computeHistoryWindowStartMs(roomStartMs, clearedAtMs, nowMs) {
+      const watermark = clearedAtMs || 0;
+      if (roomStartMs) return Math.max(roomStartMs - 5000, watermark);
+      return Math.max(nowMs - ONE_HOUR_MS, watermark);
     }
 
     function restoreChatCache() {
@@ -2533,6 +2561,11 @@
           const parsedReq = JSON.parse(savedFriendRequests);
           friendRequestsIn = parsedReq.in || {};
           friendRequestsOut = new Set(parsedReq.out || []);
+        }
+        const savedCleared = localStorage.getItem(STORAGE_KEY_CHAT_CLEARED);
+        if (savedCleared) {
+          const parsedCleared = JSON.parse(savedCleared);
+          Object.keys(parsedCleared || {}).forEach(k => { if (Date.now() - parsedCleared[k] <= ONE_HOUR_MS) chatRoomClearedAt[k] = parsedCleared[k]; });
         }
         restoreChatCache();
         syncUnreadChimeLoop();
@@ -3602,6 +3635,7 @@
       processedMsgIds = new Set();
       participatedChatRoomIds = new Set();
       friendPeerIds = new Set();
+      chatRoomClearedAt = {};
       friendRequestsIn = {};
       friendRequestsOut = new Set();
       friendRequestResentAt = {};
@@ -3669,7 +3703,7 @@
         }
       } catch(e) {}
       try {
-        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS, STORAGE_KEY_CHAT_CLEARED].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
       } catch(e) {}
       try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch(e) {}
       currentAuthUser = null;
@@ -4995,6 +5029,49 @@
       }
     }
 
+    // V11.17: when you sign in, check your own room once for messages
+    // that arrived while you were offline. Anything new is merged into
+    // the local cache in time order and the room is marked unread, so
+    // the pinned list badges it and the bell rings - the messages then
+    // open exactly like a live conversation.
+    async function checkOfflineMessagesCatchUp() {
+      if (!supabaseClient || !currentAuthUser) return;
+      try {
+        const ownDbRoom = canonicalChatRoomId('room-you');
+        const startMs = computeHistoryWindowStartMs(safeTimestampMs(activeTopicState.createdAt), chatRoomClearedAt['room-you'] || 0, Date.now());
+        const { data, error } = await supabaseClient
+          .from('chat_messages')
+          .select('*')
+          .eq('room_id', ownDbRoom)
+          .gte('created_at', new Date(startMs).toISOString())
+          .order('created_at', { ascending: false })
+          .limit(200);
+        if (error || !Array.isArray(data) || !data.length) return;
+        const existing = localChatCache['room-you'] || [];
+        const existingIds = new Set(existing.map(m => m.id));
+        let added = 0;
+        data.map(msg => ({
+          id: msg.client_id || msg.id,
+          sender: msg.sender_alias,
+          text: msg.message,
+          time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isMe: msg.sender_id === currentAuthUser.id,
+          createdAt: msg.created_at, persisted: true
+        })).reverse().forEach(m => { if (!existingIds.has(m.id)) { existing.push(m); added++; } });
+        if (!added) return;
+        existing.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+        localChatCache['room-you'] = existing.slice(-200);
+        persistChatCache();
+        participatedChatRoomIds.add('room-you');
+        if (currentActiveChatRoomId !== 'room-you') {
+          unreadRoomIds.add('room-you');
+          savePersistentData();
+          syncUnreadChimeLoop();
+        }
+        renderPinnedChats();
+      } catch (e) {}
+    }
+
     async function loadDbChatHistory(roomId) {
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
@@ -5017,15 +5094,15 @@
           // loaded the newest 200 messages anyway, resurrecting the
           // previous deleted chat under the same room id (e.g. Connect
           // from the Friends panel, where the peer has no live bubble).
-          if (!roomStartMs) {
-            // V11.16: no live bubble for this room - fall back to this
-            // device's saved messages instead of showing an empty chat.
-            // The saved copy is pruned to the bubble's lifetime and is
-            // cleared by every delete path, so a deleted chat does not
-            // resurrect from it.
-            merged = cachedBeforeFetch;
-          } else {
-          historyQuery = historyQuery.gte('created_at', new Date(roomStartMs - 5000).toISOString());
+          // V11.17: one window rule for every room (see
+          // computeHistoryWindowStartMs). A room with no live bubble -
+          // the normal case for messages sent to you while you were
+          // offline - now loads the last hour from the database instead
+          // of only this device's saved copy, so those messages are
+          // there, in order, when you sign back in. The delete
+          // watermark keeps deleted chats deleted.
+          const windowStartMs = computeHistoryWindowStartMs(roomStartMs, chatRoomClearedAt[roomId] || 0, Date.now());
+          historyQuery = historyQuery.gte('created_at', new Date(windowStartMs).toISOString());
           const { data, error } = await historyQuery
             .order('created_at', { ascending: false })
             .limit(200);
@@ -5057,7 +5134,6 @@
             }
           } else if (error) {
             console.warn('Chat history could not be loaded:', error.message);
-          }
           }
         } catch (error) {
           console.warn('Chat history request failed:', error);
