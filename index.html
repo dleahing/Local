@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.13 Filters, Logo & List Mode]</title>
+  <title>LocaL - Proximity Social Network [V11.15 Signup + Audit Fixes]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -235,6 +235,25 @@
       transform: scale(calc(1 / max(0.20, var(--zoom-scale, 1))));
       will-change: transform;
     }
+
+    /* V11.14: zooming out crashed the app on phones. At low zoom the whole
+       world is on screen at once, and the combined cost of the rotating
+       radar sweep (a gradient disc twice the ring's size, repainted every
+       frame), the ring's backdrop blur over a huge area, glow shadows, and
+       dozens of infinitely animating icons/bubbles overloads the phone's
+       graphics memory until the browser kills the page. Below 0.75x zoom
+       the app enters a lite mode (toggled by the render loop) that turns
+       those effects off - the map, radar and chats work exactly the same,
+       and everything comes back when you zoom in again. The ring's
+       backdrop blur is off permanently: its tinted fill does the same job
+       for a fraction of the cost. */
+    #radarBoundaryRing { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+    html.zoom-lite .animate-radar-sweep { animation: none !important; }
+    html.zoom-lite #radarBoundaryRing { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65) !important; }
+    html.zoom-lite .peer-sonar-ring { display: none !important; }
+    html.zoom-lite .animate-float, html.zoom-lite .animate-bubble-subtle, html.zoom-lite .animate-giggle, html.zoom-lite .animate-jiggle, html.zoom-lite .animate-pulse-glow { animation: none !important; }
+    html.zoom-lite .peer-name-label { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+    html.zoom-lite .dark-biz-bubble, html.zoom-lite .glass-card { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 
     .node-item {
       pointer-events: auto !important;
@@ -665,6 +684,7 @@
           <div id="forgotPasswordWrap" class="text-center mt-2.5">
             <button type="button" id="forgotPasswordBtn" onclick="forgotPassword()" class="text-[11px] text-emerald-300 hover:text-emerald-200 font-semibold underline underline-offset-2 cursor-pointer">Forgot password?</button>
           </div>
+          <div id="authInlineMessage" class="hidden"></div>
         </div>
       </div>
     </div>
@@ -1071,6 +1091,14 @@
     let gpsWatchId = null;
     let expiryLoopStarted = false;
     let lastProfilesSignature = '';
+    let bellSyncInProgress = false; // V11.15 (#1): re-entrancy guard for the unread chime
+    let knownProfileAliasById = {}; // V11.15 (#3): alias per user id from the profiles table, cross-checked against mesh broadcasts
+    let knownAdminPeerIds = new Set(); // V11.15 (#3): verified admin user ids from the optional admin_users table
+    let adminVerificationActive = false; // V11.15 (#3): true once admin_users returns rows
+    let appChromeInitialized = false; // V11.15 (#4): one-time-per-page-load UI wiring
+    let animationLoopStarted = false; // V11.15 (#4)
+    let expiryIntervalId = null; // V11.15 (#4)
+    let keepAliveListenersAdded = false; // V11.15 (#4)
     let lastPresenceUpsertAt = 0;
     let lastPresenceUpsertKey = '';
     let chatRenderSigs = {};
@@ -1111,19 +1139,26 @@
     let heartbeatInterval = null;
 
     function initBackgroundKeepAlive() {
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          startBackgroundAudioKeepAlive();
-        } else {
-          stopBackgroundAudioKeepAlive();
+      // V11.15 (#4): listeners are added once per page load; the heartbeat
+      // interval below is (re)created on every call, so initializeAppSession
+      // can restart it after a sign-out/sign-in in the same page load.
+      if (!keepAliveListenersAdded) {
+        keepAliveListenersAdded = true;
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            startBackgroundAudioKeepAlive();
+          } else {
+            stopBackgroundAudioKeepAlive();
+            captureOfflineTopicsSnapshot();
+            announcePresence();
+            fetchProfilesAndTopicsFromSupabase();
+            syncUnreadChimeLoop(); // V11.15 (#1): ring for unreads that arrived while hidden
+          }
+        });
+        window.addEventListener('beforeunload', () => {
           captureOfflineTopicsSnapshot();
-          announcePresence();
-          fetchProfilesAndTopicsFromSupabase();
-        }
-      });
-      window.addEventListener('beforeunload', () => {
-        captureOfflineTopicsSnapshot();
-      });
+        });
+      }
 
       if (heartbeatInterval) clearInterval(heartbeatInterval);
       heartbeatInterval = setInterval(() => {
@@ -1144,6 +1179,9 @@
       // the admin account's chats - visible until expiry, pinned, rainbow -
       // from the flag. The "Administrator" name check stays as a fallback
       // for peers discovered only through the profiles table.
+      // V11.15 (#3): peer.isAdmin is no longer taken on trust at ingest -
+      // handleIncomingNetworkPayload only stores the flag when it is
+      // verified (see claimedAdmin there).
       return !!peer && (isAdminName(peer.rawSender) || peer.isAdmin === true);
     }
 
@@ -1646,13 +1684,31 @@
 
     let bellRungRoomIds = new Set();
     function syncUnreadChimeLoop() {
-      updateMeshUI();
-      // V11.5: the soft bell rings ONCE when a chat becomes unread. It no
-      // longer re-rings every 15s while the chat stays unread.
-      let hasNewUnread = false;
-      unreadRoomIds.forEach(roomId => { if (!bellRungRoomIds.has(roomId)) hasNewUnread = true; });
-      if (hasNewUnread && document.visibilityState === 'visible') playAudioEffect('unread-chime');
-      bellRungRoomIds = new Set(unreadRoomIds);
+      // V11.5: the soft bell rings ONCE when a chat becomes unread.
+      // V11.15 (#1): two bugs fixed. (a) The old order - play first, mark
+      // rung afterwards - recursed: playAudioEffect -> initAudioContext ->
+      // syncUnreadChimeLoop, with hasNewUnread still true at every level,
+      // stacking chimes until the call stack blew. Rooms are now marked
+      // rung BEFORE playing, and a re-entrancy guard backs that up.
+      // (b) A hidden tab used to consume the ring without sounding it;
+      // now the rung set is left untouched while hidden, so the chime
+      // still rings once when the user returns (visibilitychange calls
+      // this again).
+      if (bellSyncInProgress) return;
+      bellSyncInProgress = true;
+      try {
+        updateMeshUI();
+        let hasNewUnread = false;
+        unreadRoomIds.forEach(roomId => { if (!bellRungRoomIds.has(roomId)) hasNewUnread = true; });
+        if (hasNewUnread && document.visibilityState === 'visible') {
+          bellRungRoomIds = new Set(unreadRoomIds);
+          playAudioEffect('unread-chime');
+        } else if (!hasNewUnread) {
+          bellRungRoomIds = new Set(unreadRoomIds);
+        }
+      } finally {
+        bellSyncInProgress = false;
+      }
     }
 
     // V11.6: NEW unread sound (per Shane - the old V7 soft bell is gone):
@@ -1828,8 +1884,22 @@
     function clearAuthFieldErrors() {
       try { document.querySelectorAll('#welcomeProfileModal .auth-field-error').forEach(el => el.classList.remove('auth-field-error')); } catch(e) {}
     }
+    // V11.15: persistent in-modal auth messages. A toast disappears in a
+    // few seconds; account problems deserve text that stays on screen.
+    function showAuthMessage(text, isError) {
+      const el = document.getElementById('authInlineMessage');
+      if (!el) { if (text) showToast(text, isError ? 'alert-circle' : 'mail'); return; }
+      if (!text) { el.classList.add('hidden'); el.innerText = ''; return; }
+      el.innerText = text;
+      el.className = isError
+        ? 'mt-3 px-3.5 py-2.5 rounded-2xl text-[11px] font-semibold leading-snug bg-red-500/15 border border-red-400/50 text-red-200'
+        : 'mt-3 px-3.5 py-2.5 rounded-2xl text-[11px] font-semibold leading-snug bg-emerald-500/15 border border-emerald-400/50 text-emerald-200';
+    }
     function authErrorFieldKind(message) {
       const m = String(message || '').toLowerCase();
+      // V11.15: a failed confirmation-email SEND (or an auth rate limit)
+      // is not the email address's fault - outline nothing for those.
+      if (m.includes('sending confirmation email') || m.includes('rate limit')) return 'none';
       if (m.includes('invalid login credentials')) return 'both';
       if (m.includes('already') && m.includes('regist')) return 'email';
       if (m.includes('password')) return 'password';
@@ -1892,6 +1962,7 @@
     async function submitAuthForm() {
       pressAuthSubmitFeedback();
       clearAuthFieldErrors();
+      showAuthMessage('', false);
       const emailInput = document.getElementById('welcomeEmailInput').value.trim();
       const password = document.getElementById('welcomePasswordInput').value;
       const usernameInput = document.getElementById('welcomeUsernameInput').value.trim();
@@ -1900,6 +1971,12 @@
         if (!emailInput) markAuthFieldError('email');
         if (!password) markAuthFieldError('password');
         showToast('Please enter email and password', 'alert-circle');
+        return;
+      }
+
+      if (!/^\S+@\S+\.\S+$/.test(emailInput)) {
+        markAuthFieldError('email');
+        showAuthMessage('That email address does not look complete - check it and try again.', true);
         return;
       }
 
@@ -1914,13 +1991,17 @@
           if (!supabaseClient) supabaseClient = window.supabase.createClient(supabaseConfig.url, supabaseConfig.key);
           
           if (currentAuthTab === 'signup') {
+            // V11.15: case-insensitive alias check - the old exact-match
+            // check let 'administrator' (or any taken name) slip through in
+            // a different case.
             const { data: existingProfiles, error: checkErr } = await supabaseClient
               .from('profiles')
               .select('id')
-              .eq('alias', usernameInput);
-            
+              .ilike('alias', usernameInput.replace(/[%_\\]/g, ''));
+
             if (existingProfiles && existingProfiles.length > 0) {
               markAuthFieldError('username');
+              showAuthMessage('That unique alias is already taken. Please choose another.', true);
               showToast('That unique alias is already taken. Please choose another.', 'alert-circle');
               return;
             }
@@ -1932,17 +2013,40 @@
             });
 
             if (authResult.error) {
-              markAuthFieldError(authErrorFieldKind(authResult.error.message));
-              showToast(authResult.error.message, 'alert-circle');
+              const errMsg = authResult.error.message || 'Sign-up failed.';
+              const errKind = authErrorFieldKind(errMsg);
+              if (errKind !== 'none') markAuthFieldError(errKind);
+              const lowErr = errMsg.toLowerCase();
+              if (lowErr.includes('sending confirmation email') || lowErr.includes('rate limit')) {
+                showAuthMessage('Supabase could not send the confirmation email (' + errMsg + '). The account may still have been created - wait a few minutes and try signing in. The built-in email service is heavily rate-limited; the durable fix is in the Supabase dashboard: Authentication -> Providers -> Email - turn off "Confirm email", or set up custom SMTP.', true);
+              } else if (lowErr.includes('already') && lowErr.includes('regist')) {
+                showAuthMessage('That email already has a LocaL account. Use Sign In, or Forgot password if you cannot remember it.', true);
+              } else {
+                showAuthMessage(errMsg, true);
+              }
+              showToast(errMsg, 'alert-circle');
               return;
             }
 
-            if (authResult.data?.user || authResult.data?.session?.user) {
+            // Supabase answers an already-registered email with a fake
+            // success whose user has NO identities - say so plainly instead
+            // of pretending a new account was made.
+            if (authResult.data?.user && Array.isArray(authResult.data.user.identities) && authResult.data.user.identities.length === 0) {
+              showAuthMessage('That email already has a LocaL account. Use Sign In, or Forgot password if you cannot remember it.', true);
+              setAuthTab('signin');
+              return;
+            }
+
+            if ((authResult.data?.user || authResult.data?.session?.user) && authResult.data?.session) {
               currentAuthUser = authResult.data.user || authResult.data.session.user;
               myPeerId = currentAuthUser.id;
               userState.alias = usernameInput;
-              
-              await supabaseClient.from('profiles').upsert({
+
+              // V11.15: the profile is only written when there is a real
+              // session. Before email confirmation there is no session, so
+              // the old upsert here was silently rejected (and the row only
+              // appeared later via the sign-in heal path anyway).
+              const profRes = await supabaseClient.from('profiles').upsert({
                 id: currentAuthUser.id,
                 alias: usernameInput,
                 account_type: userState.type,
@@ -1951,10 +2055,16 @@
                 hide_my_name: userState.hideMyName,
                 updated_at: new Date()
               });
+              if (profRes && profRes.error) showAuthMessage('Account created, but saving your profile failed (' + profRes.error.message + '). It is retried automatically when you sign in.', true);
             }
             if (!authResult.data?.session) {
-              showToast('Account created! Please confirm your email, then sign in.', 'mail');
+              // This project requires email confirmation (verified against
+              // the project's public auth settings): no session exists
+              // until the emailed link is tapped, so nobody can sign in
+              // before that - with ANY email address.
               setAuthTab('signin');
+              showAuthMessage('Account created for ' + emailInput + '. Supabase requires email confirmation: open the confirmation email, tap its link, then sign in here. No email after a few minutes? Check spam - and note the built-in mail service is rate-limited, so repeated attempts can delay it further.', false);
+              showToast('Account created! Please confirm your email, then sign in.', 'mail');
               return;
             }
           } else {
@@ -1964,7 +2074,13 @@
             });
 
             if (authResult.error) {
-              markAuthFieldError(authErrorFieldKind(authResult.error.message));
+              const signInErrKind = authErrorFieldKind(authResult.error.message);
+              if (signInErrKind !== 'none') markAuthFieldError(signInErrKind);
+              if ((authResult.error.message || '').toLowerCase().includes('not confirmed')) {
+                showAuthMessage('That account exists but its email is not confirmed yet. Open the confirmation email from Supabase and tap its link, then sign in. No email? It may have been rate-limited - the project owner can switch off "Confirm email" in the Supabase dashboard.', true);
+              } else {
+                showAuthMessage(authResult.error.message, true);
+              }
               showToast(authResult.error.message, 'alert-circle');
               return;
             }
@@ -1994,6 +2110,7 @@
         }
       } catch(e) {
         markAuthFieldError('both');
+        showAuthMessage('Authentication error: ' + (e.message || e), true);
         showToast('Authentication error: ' + (e.message || e), 'alert-circle');
         return;
       }
@@ -2252,6 +2369,7 @@
         return;
       }
       appSessionInitialized = true;
+      initBackgroundKeepAlive(); // V11.15 (#4): (re)starts the 10s presence heartbeat - sign-out cleared it, and page load is no longer the only chance it gets
       if (!Number.isFinite(userState.radius) || userState.radius <= 0) userState.radius = DEFAULT_RADIUS_METERS;
       initGPSLocation();
       initUserNode();
@@ -2278,15 +2396,21 @@
 
       updateRadius(userState.radius, true);
 
-      window.addEventListener('resize', recalculateNodePositions);
-      initRadiusDragHandlers();
-      initTapRippleHandler();
-      initMapPanHandlers();
-      initSidebarTapClose(); // V11.12
-      initPinchZoomHandlers();
-      initWheelZoomHandler();
-      initDoubleTapHandler();
-      startSmoothAnimationLoop();
+      // V11.15 (#4): one-time page chrome. Sign-out resets
+      // appSessionInitialized, and re-running these on every sign-in used
+      // to stack duplicate listeners and animation loops.
+      if (!appChromeInitialized) {
+        appChromeInitialized = true;
+        window.addEventListener('resize', recalculateNodePositions);
+        initRadiusDragHandlers();
+        initTapRippleHandler();
+        initMapPanHandlers();
+        initSidebarTapClose(); // V11.12
+        initPinchZoomHandlers();
+        initWheelZoomHandler();
+        initDoubleTapHandler();
+        startSmoothAnimationLoop();
+      }
 
       document.getElementById('avatarNameInput').value = userState.alias || '';
       document.getElementById('businessAddressInput').value = userState.address || '';
@@ -2604,13 +2728,23 @@
     function startSmoothAnimationLoop() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
+      if (animationLoopStarted) return; // V11.15 (#4): never run two render loops
+      animationLoopStarted = true;
       let lastPanX = 0, lastPanY = 0, lastZoomOut = 1;
+      let liteModeOn = false; // V11.14
       const renderLoop = () => {
         panX += (targetPanX - panX) * 0.25;
         panY += (targetPanY - panY) * 0.25;
         currentZoomScale += (targetZoomScale - currentZoomScale) * 0.20;
         if (!Number.isFinite(currentZoomScale)) currentZoomScale = 1;
         currentZoomScale = Math.max(0.35, Math.min(2.5, currentZoomScale));
+
+        // V11.14: lite mode under 0.75x zoom (see the zoom-lite CSS).
+        const shouldLite = currentZoomScale < 0.75;
+        if (shouldLite !== liteModeOn) {
+          liteModeOn = shouldLite;
+          document.documentElement.classList.toggle('zoom-lite', shouldLite);
+        }
 
         if (Math.abs(panX - lastPanX) > 0.05 || Math.abs(panY - lastPanY) > 0.05 || Math.abs(currentZoomScale - lastZoomOut) > 0.0005) {
           lastPanX = panX; lastPanY = panY; lastZoomOut = currentZoomScale;
@@ -3104,6 +3238,7 @@
     }
 
     function initUserNode() {
+      if (document.getElementById('userAvatarNode')) return; // V11.15 (#4): never duplicate the own avatar / radar ring
       const container = document.getElementById('nodesContainer');
       const userDiv = document.createElement('div');
       userDiv.id = 'userAvatarNode';
@@ -3243,7 +3378,12 @@
 
     function handleIncomingChatReplyPayload(msg) {
       if (!msg || !msg.room_id || msg.sender_id === (currentAuthUser ? currentAuthUser.id : myPeerId)) return;
-      
+      // V11.15 (#3): drop replies whose claimed alias contradicts the
+      // sender's profiles-table alias (rows there are written by the
+      // owner's own signed-in account) - forged-reply impersonation.
+      const knownReplyAlias = knownProfileAliasById[msg.sender_id];
+      if (knownReplyAlias && msg.sender_alias && String(knownReplyAlias).toLowerCase() !== String(msg.sender_alias).toLowerCase()) return;
+
       const targetRoomId = localChatRoomId(msg.room_id);
       const timeStr = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       
@@ -3275,6 +3415,18 @@
         const profilesUnchanged = profilesSignature === lastProfilesSignature && Object.keys(globalActiveDirectory).length > 0;
         lastProfilesSignature = profilesSignature;
         const activeSupabaseIds = new Set(profiles.map(p => p.id));
+        profiles.forEach(p => { if (p.id && p.alias) knownProfileAliasById[p.id] = p.alias; }); // V11.15 (#3)
+        // V11.15 (#3): load the verified admin id list when the project has
+        // an admin_users table (a user_id column, maintained from the
+        // dashboard). A missing/empty table keeps the legacy behaviour; a
+        // populated one switches broadcast-admin verification ON.
+        try {
+          const { data: adminRows, error: adminErr } = await supabaseClient.from('admin_users').select('user_id');
+          if (!adminErr && Array.isArray(adminRows) && adminRows.length > 0) {
+            knownAdminPeerIds = new Set(adminRows.map(r => r.user_id).filter(Boolean));
+            adminVerificationActive = knownAdminPeerIds.size > 0;
+          }
+        } catch(e) {}
 
         Object.keys(globalActiveDirectory).forEach(peerId => {
           if (!peerId.startsWith('custom-bot-') && !peerId.startsWith('sim-peer-')) {
@@ -3365,20 +3517,51 @@
       }
     }
 
-    async function signOutUser() {
-      if (!supabaseClient) return;
-      await supabaseClient.auth.signOut();
-      // Do not delete the profile topic or chat_messages: the room remains available while its owner is offline.
-      currentAuthUser = null;
-      isAdminUser = false;
-      // V11.4: stop the per-session machinery so a different account signing
-      // in on this device starts clean instead of reusing stale state.
+    // V11.15 (#4): one teardown for sign-out and delete-account. Stops
+    // every per-session timer/channel and clears the in-memory session, so
+    // the next account on this device genuinely starts clean - and nothing
+    // stale is left in memory to be saved back over a wipe.
+    function teardownSessionState() {
       if (supabasePollInterval) { clearInterval(supabasePollInterval); supabasePollInterval = null; }
       if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+      stopChatExpiryLoop();
       if (gpsWatchId !== null && navigator.geolocation) { try { navigator.geolocation.clearWatch(gpsWatchId); } catch(e) {} gpsWatchId = null; }
+      if (realtimeChannel && supabaseClient) { try { supabaseClient.removeChannel(realtimeChannel); } catch(e) {} }
+      realtimeChannel = null;
+      if (dbMessagesChannel && supabaseClient) { try { supabaseClient.removeChannel(dbMessagesChannel); } catch(e) {} }
+      dbMessagesChannel = null;
+      if (broadcastChannel) { try { broadcastChannel.close(); } catch(e) {} broadcastChannel = null; }
+      if (wakeLock) { try { const wl = wakeLock; if (wl.release) { const p = wl.release(); if (p && p.catch) p.catch(() => {}); } } catch(e) {} wakeLock = null; }
+      globalActiveDirectory = {};
+      localChatCache = {};
+      chatRenderSigs = {};
+      unreadRoomIds = new Set();
+      bellRungRoomIds = new Set();
+      processedMsgIds = new Set();
+      participatedChatRoomIds = new Set();
+      activeBubbleBySender = {};
+      currentActiveChatRoomId = null;
+      activeTopicState = { text: null, createdAt: null, persistent: false };
+      lastProfilesSignature = '';
+      const nodesEl = document.getElementById('nodesContainer');
+      if (nodesEl) nodesEl.innerHTML = '';
+      try { localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM); } catch(e) {}
+    }
+
+    async function signOutUser() {
+      // Do not delete the profile topic or chat_messages: the room remains available while its owner is offline.
+      // V11.15 (#4): the old version returned immediately when there was no
+      // Supabase client (Sign Out did nothing at all in local/offline mode)
+      // and ended with savePersistentData(), writing the OLD account's
+      // state back to the device. Local cleanup now always runs and
+      // nothing is re-saved.
+      try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch(e) {}
+      currentAuthUser = null;
+      isAdminUser = false;
+      teardownSessionState();
       appSessionInitialized = false;
       userState.profileCreated = false;
-      savePersistentData();
+      try { localStorage.removeItem(STORAGE_KEY_UNREAD_ROOMS); localStorage.removeItem(STORAGE_KEY_PARTICIPATED_ROOMS); } catch(e) {}
       showToast('Logged out successfully', 'log-out');
       closeProfileModal();
       openWelcomeModalForLogin(true);
@@ -3422,12 +3605,14 @@
       try {
         [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
       } catch(e) {}
-      if (supabasePollInterval) { clearInterval(supabasePollInterval); supabasePollInterval = null; }
-      if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
-      if (gpsWatchId !== null && navigator.geolocation) { try { navigator.geolocation.clearWatch(gpsWatchId); } catch(e) {} gpsWatchId = null; }
       try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch(e) {}
       currentAuthUser = null;
       isAdminUser = false;
+      // V11.15 (#4): clear memory as well as storage - the old flow wiped
+      // the localStorage keys but left userState / activeTopicState /
+      // caches alive, so the next savePersistentData() (e.g. moving the
+      // radar slider) wrote the "deleted" account's data straight back.
+      teardownSessionState();
       appSessionInitialized = false;
       userState.profileCreated = false;
       closeProfileModal();
@@ -3504,7 +3689,7 @@
       const { data: existing, error: err } = await supabaseClient
         .from('profiles')
         .select('id')
-        .eq('alias', userState.alias);
+        .ilike('alias', String(userState.alias).replace(/[%_\\]/g, '')); // V11.15: case-insensitive, matching the sign-up check
 
       if (existing && existing.some(p => p.id !== currentAuthUser.id)) {
         showToast('That unique alias is already taken by another user!', 'alert-circle');
@@ -3598,11 +3783,20 @@
       if (data.peerId && hiddenPeerIds.has(data.peerId)) return; // V11.4: hidden via Admin Disconnect / bot removal
 
       if (data.type === 'DELETE_ROOM') {
-        // V11.4: ignore malformed/legacy delete broadcasts carrying no sender
-        // peerId or a literal local 'room-you' id - those used to delete the
-        // RECEIVER's own room.
-        if (!data.peerId || !data.roomId || data.roomId === 'room-you') return;
-        const targetRoomId = localChatRoomId(data.roomId || '');
+        // V11.15 (#3): a delete is only honoured for the sender's OWN
+        // room - the room id must be exactly the canonical room of the
+        // claimed peerId. The V11.4 guard only blocked the literal
+        // 'room-you', so a forged delete naming the receiver's canonical
+        // room (room-peer-<receiver's id>) deleted the receiver's own
+        // chat; that form now also fails here, because the claimed
+        // peerId would have to be the receiver's own id - and payloads
+        // carrying the receiver's own peerId are dropped at the top of
+        // this handler.
+        if (!data.peerId || !data.roomId) return;
+        const senderRoomId = 'room-peer-' + String(data.peerId).replace(/[^a-zA-Z0-9]/g, '-');
+        if (data.roomId !== senderRoomId) return;
+        const targetRoomId = localChatRoomId(senderRoomId);
+        if (targetRoomId === 'room-you') return;
         deleteChatLocally(targetRoomId, data.peerId || null);
         refreshAllPeerDistancesAndPositions();
         return;
@@ -3624,13 +3818,30 @@
         }
       }
 
+      // V11.15 (#3): cross-check the claimed identity against the
+      // profiles table. A broadcast reusing someone else's peerId under a
+      // different name is impersonation - drop it. (Broadcasts cannot be
+      // cryptographically verified with a publishable key; this binds the
+      // mesh identity to the DB identity wherever the DB knows it.)
+      const knownAliasForPeer = knownProfileAliasById[data.peerId];
+      if (knownAliasForPeer && data.sender && String(knownAliasForPeer).toLowerCase() !== String(data.sender).toLowerCase()) return;
+      // V11.15 (#3): a self-declared isAdmin flag is trusted when the
+      // sender is the named Administrator, or - once an admin_users table
+      // exists in the project - only for the user ids listed there.
+      // Before that table exists the legacy flag behaviour is kept so the
+      // admin account keeps working (see the V11.15 changelog).
+      const claimedAdmin = data.isAdmin === true && (!adminVerificationActive || knownAdminPeerIds.has(data.peerId) || isAdminName(data.sender));
+
       const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
       if (!globalActiveDirectory[data.peerId]) globalActiveDirectory[data.peerId] = { enabled: true };
 
       const calculatedHours = (data.accountType === 'business' && data.openTime && data.closeTime) ? computeBusinessHoursStatus(data.openTime, data.closeTime) : (data.hours || 'Open 9:00 AM • Closes 9:00 PM');
 
       const newQuestionText = data.text !== undefined ? data.text : data.question;
-      const incomingTs = safeTimestampMs(data.createdAt);
+      const rawIncomingTs = safeTimestampMs(data.createdAt);
+      // V11.15 (#3): never accept a bubble timestamp in the future - it
+      // would never satisfy the 1-hour expiry test.
+      const incomingTs = (rawIncomingTs && rawIncomingTs > Date.now() + 60000) ? Date.now() : rawIncomingTs;
       const questionCreatedAt = incomingTs || Date.now();
       // New bubble from this sender overrides (deletes) their previous chat.
       if (newQuestionText) clearPreviousBubbleChat(data.peerId, questionCreatedAt, newQuestionText);
@@ -3650,7 +3861,7 @@
         question: resolvedQuestion,
         createdAt: resolvedCreatedAt,
         isBot: data.isBot || false,
-        isAdmin: data.isAdmin === true,
+        isAdmin: claimedAdmin,
         isOffline: false,
         isOfflineGhost: false
       };
@@ -4159,7 +4370,12 @@
     }
 
     function broadcastData(payload) {
-      if (userState.ghostMode && userState.type !== 'business') return;
+      // V11.15 (#7): ghost mode hides your presence, but control messages
+      // must still go out - otherwise your deletions and bubble
+      // replacements never reach other phones, and they keep chats you
+      // deleted until expiry.
+      const isControlPayload = !!payload && (payload.type === 'DELETE_ROOM' || payload.type === 'CLEAR_PREVIOUS_BUBBLE');
+      if (userState.ghostMode && userState.type !== 'business' && !isControlPayload) return;
       const coords = getBroadcastCoordinates();
       payload.lat = payload.lat || coords.lat; payload.lng = payload.lng || coords.lng;
       if (realtimeChannel && (realtimeChannel.state === 'joined' || realtimeChannel.subState === 'joined')) {
@@ -4254,10 +4470,17 @@
       lucide.createIcons();
     }
 
+    // V11.15 (#4): the expiry loop's handle is stored so sign-out can stop
+    // it; previously it ran forever, even on a signed-out session.
+    function stopChatExpiryLoop() {
+      if (expiryIntervalId) { clearInterval(expiryIntervalId); expiryIntervalId = null; }
+      expiryLoopStarted = false;
+    }
+
     function checkChatExpiryLoop() {
       if (expiryLoopStarted) return;
       expiryLoopStarted = true;
-      setInterval(() => {
+      expiryIntervalId = setInterval(() => {
         let expiryChanged = false;
         if (activeTopicState.createdAt) {
           const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
@@ -4305,6 +4528,7 @@
     async function saveProfile() {
       const newAlias = document.getElementById('avatarNameInput').value.trim();
       if (!newAlias) { showToast('Please enter a valid unique alias', 'alert-circle'); return; }
+      const previousAlias = userState.alias; // V11.15 (#5): restored if the server rejects the new alias
       userState.alias = newAlias;
       userState.category = document.getElementById('businessCategorySelect').value;
       userState.openTime = document.getElementById('businessOpenTimeInput').value;
@@ -4322,13 +4546,27 @@
       userState.profileCreated = true;
       isAdminUser = computeIsAdmin();
 
+      // V11.15 (#5): verify the server save BEFORE persisting locally or
+      // announcing presence. The old order saved and broadcast first, so
+      // an alias the server had just rejected (taken / write failed) was
+      // still stored on the device - and announcePresence's own profiles
+      // upsert then wrote the rejected alias to the database anyway,
+      // defeating the verified save. On rejection the previous alias is
+      // restored everywhere and nothing is announced.
+      const aliasSaved = await saveUserProfileToSupabase();
+      if (aliasSaved === false) {
+        userState.alias = previousAlias;
+        const aliasInputEl = document.getElementById('avatarNameInput');
+        if (aliasInputEl) aliasInputEl.value = previousAlias;
+        updateMyDisplayLabel();
+        savePersistentData(); // keep the other settings, under the alias that actually exists on the server
+        checkAdminPrivileges();
+        return; // Settings stays open; no presence announce with a rejected alias
+      }
       updateMyDisplayLabel();
       savePersistentData();
-      // V11.10: wait for the verified server save. If it did not stick,
-      // Settings stays open so the failure isn't hidden.
-      const aliasSaved = await saveUserProfileToSupabase();
       announcePresence();
-      if (aliasSaved !== false) closeProfileModal();
+      closeProfileModal();
       checkAdminPrivileges();
     }
 
@@ -4545,19 +4783,20 @@
             await supabaseClient.from('profiles').update({ active_topic: null, topic_created_at: null }).eq('id', currentAuthUser.id);
           }
         }
-        delete localChatCache[currentActiveChatRoomId];
-        participatedChatRoomIds.delete(currentActiveChatRoomId);
-        unreadRoomIds.delete(currentActiveChatRoomId);
-        syncUnreadChimeLoop();
-        if (currentActiveChatRoomId === 'room-you') {
-          activeTopicState.text = null; activeTopicState.createdAt = null; activeTopicState.persistent = false;
-          renderUserTopBubbleContent();
-        }
-        savePersistentData();
+        // V11.15 (#7): capture the room/peer first, then clear the room
+        // the same way expiry does. The old manual deletes left the
+        // peer's bubble on the map and in the pinned lists (its
+        // question/createdAt were never nulled) and missed the canonical
+        // cache key - the "deleted" chat reopened, emptied but alive.
         const delRoomId = currentActiveChatRoomId;
         let delPeerId = null;
         if (delRoomId === 'room-you') delPeerId = currentAuthUser ? currentAuthUser.id : myPeerId;
         else { const matchId = Object.keys(globalActiveDirectory).find(pid => 'room-peer-' + pid.replace(/[^a-zA-Z0-9]/g, '-') === delRoomId); delPeerId = matchId || delRoomId.replace('room-peer-', ''); }
+        if (delRoomId === 'room-you') {
+          activeTopicState.text = null; activeTopicState.createdAt = null; activeTopicState.persistent = false;
+          renderUserTopBubbleContent();
+        }
+        deleteChatLocally(delRoomId, delRoomId === 'room-you' ? null : delPeerId);
         broadcastData({ id: 'del-' + Math.random().toString(36).substring(2, 9), type: 'DELETE_ROOM', roomId: canonicalChatRoomId(delRoomId), peerId: delPeerId });
         closeChatDrawer();
         refreshAllNodeVisibilities();
@@ -4584,7 +4823,13 @@
             .eq('room_id', canonicalChatRoomId(roomId));
           const roomPeerKey = roomId === 'room-you' ? null : roomId.replace('room-peer-', '');
           const roomStartMs = safeTimestampMs(roomId === 'room-you' ? activeTopicState.createdAt : (roomPeerKey ? (globalActiveDirectory[roomPeerKey]?.createdAt || null) : null));
-          if (roomStartMs) historyQuery = historyQuery.gte('created_at', new Date(roomStartMs - 5000).toISOString());
+          // V11.15 (#8): no known start time means there is no current
+          // bubble, so the chat was deleted - load nothing. The old code
+          // loaded the newest 200 messages anyway, resurrecting the
+          // previous deleted chat under the same room id (e.g. Connect
+          // from the Friends panel, where the peer has no live bubble).
+          if (!roomStartMs) { localChatCache[roomId] = []; msgBox.innerHTML = ''; chatRenderSigs[roomId] = ''; return; }
+          historyQuery = historyQuery.gte('created_at', new Date(roomStartMs - 5000).toISOString());
           const { data, error } = await historyQuery
             .order('created_at', { ascending: false })
             .limit(200);
@@ -4602,10 +4847,17 @@
             // writable under RLS. Never erase messages already shown locally.
             merged = [...dbMessages];
             const latestLocal = localChatCache[roomId] || [];
+            // V11.15 (#8): match duplicates by COUNT, not by existence -
+            // the old check dropped a second identical message sent by
+            // the same person within the same minute.
+            const dbLooseCounts = {};
+            merged.forEach(db => { const k = db.sender + '|' + db.text + '|' + db.time; dbLooseCounts[k] = (dbLooseCounts[k] || 0) + 1; });
             for (const msg of latestLocal) {
-              const exists = merged.some(db => (msg.id && db.id === msg.id) ||
-                (db.sender === msg.sender && db.text === msg.text && db.time === msg.time));
-              if (!exists) merged.push(msg);
+              if (msg.id && merged.some(db => db.id === msg.id)) continue;
+              const looseKey = msg.sender + '|' + msg.text + '|' + msg.time;
+              if (!msg.id && dbLooseCounts[looseKey] > 0) { dbLooseCounts[looseKey]--; continue; }
+              if (msg.id && dbLooseCounts[looseKey] > 0 && merged.some(db => !db.id && db.sender === msg.sender && db.text === msg.text && db.time === msg.time)) { dbLooseCounts[looseKey]--; continue; }
+              merged.push(msg);
             }
           } else if (error) {
             console.warn('Chat history could not be loaded:', error.message);
