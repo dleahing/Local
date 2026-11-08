@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.18 Admin Bubble + Supabase Chat Restore]</title>
+  <title>LocaL - Proximity Social Network [V11.19 Private Messages, Notifications, Topo Camo]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -422,6 +422,19 @@
     .bg-mode-ocean { background: radial-gradient(circle at 50% 50%, #164e63 0%, #0c4a6e 55%, #082f49 100%); }
     .bg-mode-forest { background: radial-gradient(circle at 50% 50%, #14532d 0%, #052e16 60%, #02120a 100%); }
     .bg-mode-grape { background: radial-gradient(circle at 50% 50%, #4c1d95 0%, #2e1065 60%, #170b33 100%); }
+    .bg-mode-topocamo {
+      background-color: #22331d;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720' viewBox='0 0 720 720'%3E%3Cg fill='none' stroke-width='2'%3E%3Cpath d='M118 148 C158 100 244 92 292 128 C340 164 330 236 282 270 C234 304 152 294 120 250 C90 208 84 190 118 148 Z' stroke='%23a3e635' stroke-opacity='0.35'/%3E%3Cpath d='M148 168 C178 134 238 128 272 154 C304 180 298 226 264 250 C230 274 172 268 148 236 C126 208 124 196 148 168 Z' stroke='%232dd4bf' stroke-opacity='0.35'/%3E%3Cpath d='M178 190 C198 168 236 164 258 182 C278 200 272 228 250 240 C226 254 192 246 178 226 C166 208 164 204 178 190 Z' stroke='%23f59e0b' stroke-opacity='0.4'/%3E%3Cpath d='M452 428 C496 386 584 384 626 424 C664 460 652 532 606 562 C560 592 478 584 448 540 C420 500 416 464 452 428 Z' stroke='%23c084fc' stroke-opacity='0.35'/%3E%3Cpath d='M484 454 C516 424 576 424 606 452 C632 478 624 524 590 544 C556 564 500 556 478 524 C458 494 458 478 484 454 Z' stroke='%2338bdf8' stroke-opacity='0.35'/%3E%3Cpath d='M516 480 C536 462 572 462 590 480 C604 496 598 520 578 528 C556 538 526 530 516 512 C508 496 506 492 516 480 Z' stroke='%23a3e635' stroke-opacity='0.35'/%3E%3Cpath d='M-20 380 C120 340 240 420 380 380 C520 340 620 400 740 360' stroke='%23f472b6' stroke-opacity='0.28'/%3E%3Cpath d='M-20 420 C120 380 240 460 380 420 C520 380 620 440 740 400' stroke='%232dd4bf' stroke-opacity='0.28'/%3E%3Cpath d='M-20 340 C120 300 240 380 380 340 C520 300 620 360 740 320' stroke='%23f59e0b' stroke-opacity='0.24'/%3E%3Cpath d='M420 90 C470 60 540 70 570 110 C598 146 580 200 540 218 C500 236 448 224 428 186 C410 152 396 116 420 90 Z' stroke='%2338bdf8' stroke-opacity='0.3'/%3E%3Cpath d='M96 560 C140 528 210 532 240 566 C268 596 252 646 212 660 C174 672 120 656 102 622 C88 594 70 584 96 560 Z' stroke='%23f472b6' stroke-opacity='0.3'/%3E%3C/g%3E%3C/svg%3E"),
+        radial-gradient(ellipse 340px 210px at 18% 22%, rgba(133,161,74,0.55), transparent 70%),
+        radial-gradient(ellipse 300px 230px at 78% 28%, rgba(94,84,52,0.60), transparent 70%),
+        radial-gradient(ellipse 390px 250px at 55% 80%, rgba(64,96,58,0.65), transparent 70%),
+        radial-gradient(ellipse 260px 190px at 88% 86%, rgba(146,124,66,0.50), transparent 70%),
+        radial-gradient(ellipse 300px 260px at 28% 90%, rgba(44,74,66,0.55), transparent 70%),
+        linear-gradient(135deg, #2c4423 0%, #22331d 45%, #182818 100%);
+      background-size: 720px 720px, auto, auto, auto, auto, auto, auto;
+      background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+    }
 
     .dark-biz-bubble {
       background: #1e1b2e;
@@ -841,6 +854,7 @@
                 <option value="cyber">Cyber Grid Dark</option>
                 <option value="minimal">Clean Minimalist</option>
                 <option value="midnight">Midnight Radar</option>
+                <option value="topocamo">Chromatic Topo Camo</option>
               </select>
             </div>
             <div>
@@ -936,6 +950,11 @@
             <span>Ghost Mode (Invisible on map)</span>
             <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
           </label>
+          <label class="flex items-center justify-between text-xs font-medium text-slate-200 cursor-pointer">
+            <span>Device Notifications (replies & requests)</span>
+            <input type="checkbox" id="deviceNotifyToggle" onchange="toggleDeviceNotifications(this.checked)" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
+          </label>
+          <p class="text-[10px] text-slate-400">Phone notification for new replies and friend requests while LocaL is in the background. On iPhone, add LocaL to your Home Screen first - iOS only allows notifications for home-screen web apps.</p>
         </div>
 
         <div class="settings-card p-4 space-y-2">
@@ -2459,6 +2478,7 @@
       document.getElementById('radarColorSelect').value = userState.radarColor || 'cyan';
       document.getElementById('bgModeSelect').value = userState.bgMode || 'aurora';
       document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
+      document.getElementById('deviceNotifyToggle').checked = !!userState.notifyEnabled;
       document.getElementById('privacyMakeNamePublic').checked = !!userState.hideMyName;
       document.getElementById('filterHideBusinesses').checked = !!userState.hideBusinesses;
       document.getElementById('filterHideBots').checked = !!userState.hideBots;
@@ -2532,6 +2552,43 @@
       };
     }
 
+    // V11.19: private (direct) messages. A DM room id is built from the
+    // two participants' account ids, sorted, so both phones compute the
+    // SAME room: 'room-dm-<idA>__<idB>'. Only the two participants ever
+    // open it. DM messages live in chat_messages under that room id
+    // like any other room, but DMs are not bubble chats: no 1-hour
+    // expiry - they keep a 30-day window and are exempt from the
+    // 1-hour restore pruning below.
+    function cleanRoomIdPart(id) { return String(id || '').replace(/[^a-zA-Z0-9-]/g, '-'); }
+    function dmRoomIdFor(peerId) {
+      const me = cleanRoomIdPart(currentAuthUser?.id || myPeerId);
+      const them = cleanRoomIdPart(peerId);
+      return 'room-dm-' + [me, them].sort().join('__');
+    }
+    function parseDmRoom(roomId) {
+      if (!roomId || typeof roomId !== 'string' || !roomId.startsWith('room-dm-')) return null;
+      const parts = roomId.slice('room-dm-'.length).split('__');
+      return parts.length === 2 && parts[0] && parts[1] ? parts : null;
+    }
+    function otherDmParticipant(roomId) {
+      const parts = parseDmRoom(roomId);
+      if (!parts) return null;
+      const me = cleanRoomIdPart(currentAuthUser?.id || myPeerId);
+      if (parts[0] === me) return parts[1];
+      if (parts[1] === me) return parts[0];
+      return null;
+    }
+    function openPrivateChat(peerId, displayName) {
+      if (!peerId) return;
+      const roomId = dmRoomIdFor(peerId);
+      participatedChatRoomIds.add(roomId);
+      savePersistentData();
+      closeFriendsPanel();
+      const p2p = document.getElementById('p2pModal');
+      if (p2p && !p2p.classList.contains('hidden')) toggleP2PModal();
+      openChatDrawer(roomId, displayName || 'Private Chat', null, peerId, null);
+    }
+
     function restoreChatCache() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY_CHAT_CACHE);
@@ -2540,6 +2597,7 @@
           Object.keys(parsed || {}).forEach(roomId => {
             if (roomId !== 'room-you' && !participatedChatRoomIds.has(roomId)) return;
             const msgs = (parsed[roomId] || []).filter(m => {
+              if (parseDmRoom(roomId)) return true; // V11.19: DMs are not 1-hour bubble chats
               const ts = safeTimestampMs(m.createdAt);
               return ts && (Date.now() - ts <= ONE_HOUR_MS);
             });
@@ -3273,7 +3331,7 @@
       if (!mapCanvas) return;
       mapCanvas.className = `absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-${mode}`;
       if (gridOverlay) {
-        gridOverlay.className = (mode === 'cyber' || mode === 'midnight' || mode === 'ocean' || mode === 'forest' || mode === 'grape') ? 'absolute inset-0 opacity-20 map-grid-pattern-dark pointer-events-none' : 'absolute inset-0 opacity-20 map-grid-pattern pointer-events-none';
+        gridOverlay.className = (mode === 'cyber' || mode === 'midnight' || mode === 'ocean' || mode === 'forest' || mode === 'grape' || mode === 'topocamo') ? 'absolute inset-0 opacity-20 map-grid-pattern-dark pointer-events-none' : 'absolute inset-0 opacity-20 map-grid-pattern pointer-events-none';
       }
     }
 
@@ -3518,6 +3576,12 @@
 
       localChatCache[targetRoomId].push({ id: msg.client_id || ('remote-' + msg.sender_id + '-' + msg.created_at), sender: msg.sender_alias, text: msg.message, time: timeStr, createdAt: msg.created_at || new Date().toISOString(), isMe: false });
       if (localChatCache[targetRoomId].length > 200) localChatCache[targetRoomId].splice(0, localChatCache[targetRoomId].length - 200);
+      // V11.19: a private message addressed to me joins my DM list even
+      // if they messaged first.
+      if (parseDmRoom(targetRoomId) && otherDmParticipant(targetRoomId) && !participatedChatRoomIds.has(targetRoomId)) {
+        participatedChatRoomIds.add(targetRoomId);
+        savePersistentData();
+      }
       persistChatCache();
 
       if (currentActiveChatRoomId === targetRoomId) {
@@ -3529,6 +3593,7 @@
         renderPinnedChats();
         if (currentLayoutMode === 'right') renderRightSidebarBubbles();
         showToast(`New reply in @${msg.sender_alias}'s chat!`, 'message-square');
+        notifyDevice(`New reply from @${msg.sender_alias}`, msg.message); // V11.19
       }
     }
 
@@ -3701,7 +3766,12 @@
       teardownSessionState();
       appSessionInitialized = false;
       userState.profileCreated = false;
-      try { localStorage.removeItem(STORAGE_KEY_UNREAD_ROOMS); localStorage.removeItem(STORAGE_KEY_PARTICIPATED_ROOMS); } catch(e) {}
+      // V11.19: sign-out no longer wipes the participated-rooms or
+      // unread records. They are device-local continuity (like the
+      // friends list, which always survived sign-out) - wiping them is
+      // what made messages typed while logged out impossible to find
+      // after signing back in: the restore had no rooms left to load.
+      // Delete Account still wipes everything.
       showToast('Logged out successfully', 'log-out');
       closeProfileModal();
       openWelcomeModalForLogin(true);
@@ -3979,6 +4049,7 @@
             friendRequestsIn[fromId] = { name: fromName, at: Date.now() };
             showToast(`Friend request from @${fromName}`, 'user-plus');
             playAudioEffect('unread-chime');
+            notifyDevice('Friend request', `@${fromName} wants to be friends`); // V11.19
           }
         } else if (data.type === 'FRIEND_RESPONSE') {
           if (friendRequestsOut.has(fromId)) {
@@ -4177,7 +4248,7 @@
 
     function toggleFriendStatusFromChat() {
       if (!currentActiveChatRoomId || currentActiveChatRoomId === 'room-you') return;
-      const peerId = currentActiveChatRoomId.replace('room-peer-', '');
+      const peerId = otherDmParticipant(currentActiveChatRoomId) || currentActiveChatRoomId.replace('room-peer-', '');
       toggleFriendStatus(peerId);
     }
 
@@ -4303,7 +4374,34 @@
         });
       });
 
-      const pinnedList = [...adminList, ...mainUserList, ...friendList, ...participantList];
+      // V11.19: private-message threads pin alongside the bubble chats,
+      // labelled with the last message instead of a countdown.
+      const dmList = [];
+      participatedChatRoomIds.forEach(roomId => {
+        if (!parseDmRoom(roomId)) return;
+        const otherId = otherDmParticipant(roomId);
+        if (!otherId) return;
+        const peer = globalActiveDirectory[otherId];
+        const msgs = localChatCache[roomId] || [];
+        const lastMsg = msgs.length ? msgs[msgs.length - 1] : null;
+        dmList.push({
+          roomId,
+          name: peer ? getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType) : (friendRequestsIn[otherId]?.name || 'Private Chat'),
+          question: lastMsg ? lastMsg.text : 'Private messages',
+          accountType: peer?.accountType || 'personal',
+          category: peer?.category || 'store',
+          peerId: otherId,
+          createdAt: null,
+          isBot: !!peer?.isBot,
+          isAdmin: false,
+          isMainUser: false,
+          isFriend: friendPeerIds.has(otherId),
+          hasUnread: unreadRoomIds.has(roomId),
+          isDm: true
+        });
+      });
+
+      const pinnedList = [...adminList, ...mainUserList, ...friendList, ...participantList, ...dmList];
 
       if (pinnedList.length === 0) {
         container.innerHTML = '';
@@ -4341,7 +4439,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">@${escapeChatHTML(item.name)}</span></div>`}
-                <span class="text-[9px] text-slate-700 font-medium block truncate">${escapeChatHTML(item.question || 'Pinned Chat')}${item.createdAt ? ' · ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
+                <span class="text-[9px] text-slate-700 font-medium block truncate">${item.isDm ? '🔒 ' : ''}${escapeChatHTML(item.question || 'Pinned Chat')}${item.createdAt ? ' · ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
               </div>
             </div>
           `;
@@ -4410,6 +4508,9 @@
             <div class="flex items-center gap-1.5">
               <button onclick="toggleFriendStatus('${escapeJsArg(peerId)}')" class="px-2 py-1.5 rounded-xl ${friendBtnClass} text-[10px]" title="${friendBtnTitle}">
                 <i data-lucide="${friendBtnIcon}" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openPrivateChat('${escapeJsArg(peerId)}', '${escapeJsArg(displayLabel)}')" class="px-2 py-1.5 rounded-xl bg-violet-600 text-white text-[10px] shadow-md" title="Private message">
+                <i data-lucide="lock" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="playAudioEffect('chime'); closeFriendsPanel(); openChatDrawer('${roomId}', '${escapeJsArg(displayLabel)}', null, '${escapeJsArg(peerId)}', ${safeTimestampMs(peer.createdAt)})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
@@ -4490,6 +4591,9 @@
             <div class="flex items-center gap-1.5">
               <button onclick="toggleFriendStatus('${escapeJsArg(peerId)}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
                 <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openPrivateChat('${escapeJsArg(peerId)}', '${escapeJsArg(displayLabel)}')" class="px-2 py-1.5 rounded-xl bg-violet-600 text-white text-[10px] shadow-md" title="Private message">
+                <i data-lucide="lock" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(displayLabel)}', null, '${escapeJsArg(peerId)}', ${safeTimestampMs(peer.createdAt)})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
@@ -4806,6 +4910,7 @@
       userState.radarColor = document.getElementById('radarColorSelect').value;
       userState.bgMode = document.getElementById('bgModeSelect').value;
       userState.ghostMode = document.getElementById('privacyGhostMode').checked;
+      userState.notifyEnabled = document.getElementById('deviceNotifyToggle').checked;
       userState.hideMyName = document.getElementById('privacyMakeNamePublic').checked;
       userState.hideBusinesses = document.getElementById('filterHideBusinesses').checked;
       userState.hideBots = document.getElementById('filterHideBots').checked;
@@ -4835,6 +4940,35 @@
       announcePresence();
       closeProfileModal();
       checkAdminPrivileges();
+    }
+
+    // V11.19: device (OS-level) notifications. Fired only while the app
+    // is in the background - in-app toasts and the bell cover the
+    // foreground. On iPhone, iOS only delivers these when LocaL was
+    // added to the Home Screen (iOS 16.4+); elsewhere the toggle is a
+    // graceful no-op.
+    function deviceNotificationsSupported() { return typeof window !== 'undefined' && 'Notification' in window; }
+    async function toggleDeviceNotifications(enabled) {
+      userState.notifyEnabled = !!enabled;
+      if (enabled && deviceNotificationsSupported() && Notification.permission === 'default') {
+        try { await Notification.requestPermission(); } catch (e) {}
+        if (Notification.permission !== 'granted') {
+          showToast('Notifications were not allowed by the browser.', 'bell-off');
+          userState.notifyEnabled = false;
+          const t = document.getElementById('deviceNotifyToggle');
+          if (t) t.checked = false;
+        }
+      }
+      savePersistentData();
+    }
+    function notifyDevice(title, body) {
+      try {
+        if (!userState.notifyEnabled || !deviceNotificationsSupported()) return;
+        if (Notification.permission !== 'granted') return;
+        if (document.visibilityState === 'visible') return;
+        const n = new Notification(title, { body: body || '', tag: 'local-notify' });
+        n.onclick = () => { try { window.focus(); } catch (e) {} n.close(); };
+      } catch (e) {}
     }
 
     function updateMeshUI() {
@@ -5000,6 +5134,10 @@
       refreshAllNodeVisibilities();
 
       document.getElementById('chatTargetName').innerText = '@' + roomName;
+      const isDm = !!parseDmRoom(roomId);
+      const expiryBar = document.getElementById('chatExpiryTimerBar');
+      if (expiryBar) expiryBar.style.display = isDm ? 'none' : ''; // V11.19: private chats do not expire
+      if (isDm) document.getElementById('chatTargetName').innerText = '@' + roomName + ' · Private';
       
       const isSelf = roomId === 'room-you';
       const isBiz = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business');
@@ -5031,7 +5169,7 @@
       avatarEl.style.background = avatarVisual.bg;
       avatarEl.innerHTML = renderNodeIconContent(accountType, category, targetIsBot);
 
-      const targetCreatedAt = createdAtVal || (isSelf ? activeTopicState.createdAt : globalActiveDirectory[peerId]?.createdAt);
+      const targetCreatedAt = isDm ? null : (createdAtVal || (isSelf ? activeTopicState.createdAt : globalActiveDirectory[peerId]?.createdAt));
       if (targetCreatedAt) updateExpiryCountdownUi(targetCreatedAt);
 
       if ((topic || (isSelf && activeTopicState.text)) && targetCreatedAt) {
@@ -5117,6 +5255,7 @@
           unreadRoomIds.add('room-you');
           savePersistentData();
           syncUnreadChimeLoop();
+          notifyDevice('LocaL', 'Messages arrived while you were away'); // V11.19
         }
         renderPinnedChats();
       } catch (e) {}
@@ -5179,12 +5318,37 @@
       chatsRestoredFromSupabase = true;
       const roomIds = new Set(participatedChatRoomIds);
       roomIds.add('room-you');
+      // V11.19: also discover rooms from the server - every room this
+      // account has SENT into in the last 30 days. This rebuilds the
+      // participation record even when the device lost it (older builds
+      // wiped it at sign-out), which is what hid messages typed while
+      // the user was logged out.
+      try {
+        const { data: myRows, error: myErr } = await supabaseClient
+          .from('chat_messages')
+          .select('room_id')
+          .eq('sender_id', currentAuthUser.id)
+          .gte('created_at', new Date(Date.now() - 30 * 24 * ONE_HOUR_MS).toISOString())
+          .limit(500);
+        if (!myErr && Array.isArray(myRows)) {
+          let discoveredAny = false;
+          myRows.forEach(r => {
+            const local = localChatRoomId(r.room_id);
+            if (local && !roomIds.has(local)) { roomIds.add(local); }
+            if (local && !participatedChatRoomIds.has(local)) { participatedChatRoomIds.add(local); discoveredAny = true; }
+          });
+          if (discoveredAny) savePersistentData();
+        }
+      } catch (e) {}
       let anyChanged = false;
+      let unreadChanged = false;
       await Promise.all(Array.from(roomIds).map(async roomId => {
         try {
-          const peerKey = roomId === 'room-you' ? null : roomId.replace('room-peer-', '');
-          const roomStartMs = safeTimestampMs(roomId === 'room-you' ? activeTopicState.createdAt : (peerKey ? (globalActiveDirectory[peerKey]?.createdAt || null) : null));
-          const windowStartMs = computeHistoryWindowStartMs(roomStartMs, chatRoomClearedAt[roomId] || 0, Date.now());
+          const isDmRoom = !!parseDmRoom(roomId);
+          const peerKey = (roomId === 'room-you' || isDmRoom) ? null : roomId.replace('room-peer-', '');
+          const roomStartMs = isDmRoom ? null : safeTimestampMs(roomId === 'room-you' ? activeTopicState.createdAt : (peerKey ? (globalActiveDirectory[peerKey]?.createdAt || null) : null));
+          const windowStartMs = isDmRoom ? Math.max(Date.now() - 30 * 24 * ONE_HOUR_MS, chatRoomClearedAt[roomId] || 0) : computeHistoryWindowStartMs(roomStartMs, chatRoomClearedAt[roomId] || 0, Date.now());
+          const beforeIds = new Set((localChatCache[roomId] || []).map(m => m.id));
           const { data, error } = await supabaseClient
             .from('chat_messages')
             .select('*')
@@ -5193,10 +5357,25 @@
             .order('created_at', { ascending: false })
             .limit(200);
           if (!error && Array.isArray(data) && data.length) {
-            if (mergeDbRowsIntoCache(roomId, data)) anyChanged = true;
+            if (mergeDbRowsIntoCache(roomId, data)) {
+              anyChanged = true;
+              // V11.19: messages from other people that this device had
+              // never seen (typed while logged out / app closed) mark
+              // the room unread, so the user can actually find them.
+              const gainedForeign = (localChatCache[roomId] || []).some(m => !m.isMe && m.id && !beforeIds.has(m.id));
+              if (gainedForeign && roomId !== currentActiveChatRoomId && !unreadRoomIds.has(roomId)) {
+                unreadRoomIds.add(roomId);
+                unreadChanged = true;
+              }
+            }
           }
         } catch (e) {}
       }));
+      if (unreadChanged) {
+        savePersistentData();
+        syncUnreadChimeLoop();
+        notifyDevice('LocaL', 'You have new messages waiting');
+      }
       if (anyChanged) {
         renderPinnedChats();
         if (currentActiveChatRoomId) loadDbChatHistory(currentActiveChatRoomId);
@@ -5218,8 +5397,9 @@
             .from('chat_messages')
             .select('*')
             .eq('room_id', canonicalChatRoomId(roomId));
-          const roomPeerKey = roomId === 'room-you' ? null : roomId.replace('room-peer-', '');
-          const roomStartMs = safeTimestampMs(roomId === 'room-you' ? activeTopicState.createdAt : (roomPeerKey ? (globalActiveDirectory[roomPeerKey]?.createdAt || null) : null));
+          const isDmRoom = !!parseDmRoom(roomId);
+          const roomPeerKey = (roomId === 'room-you' || isDmRoom) ? null : roomId.replace('room-peer-', '');
+          const roomStartMs = isDmRoom ? null : safeTimestampMs(roomId === 'room-you' ? activeTopicState.createdAt : (roomPeerKey ? (globalActiveDirectory[roomPeerKey]?.createdAt || null) : null));
           // V11.15 (#8): no known start time means there is no current
           // bubble, so the chat was deleted - load nothing. The old code
           // loaded the newest 200 messages anyway, resurrecting the
@@ -5232,7 +5412,7 @@
           // of only this device's saved copy, so those messages are
           // there, in order, when you sign back in. The delete
           // watermark keeps deleted chats deleted.
-          const windowStartMs = computeHistoryWindowStartMs(roomStartMs, chatRoomClearedAt[roomId] || 0, Date.now());
+          const windowStartMs = isDmRoom ? Math.max(Date.now() - 30 * 24 * ONE_HOUR_MS, chatRoomClearedAt[roomId] || 0) : computeHistoryWindowStartMs(roomStartMs, chatRoomClearedAt[roomId] || 0, Date.now()); // V11.19: DMs keep 30 days
           historyQuery = historyQuery.gte('created_at', new Date(windowStartMs).toISOString());
           const { data, error } = await historyQuery
             .order('created_at', { ascending: false })
