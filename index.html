@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.22 Schema-Tolerant Writes + Private Message Box]</title>
+  <title>LocaL - Proximity Social Network [V11.23 Private Threads Listed + Tap-Outside Close]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -596,7 +596,7 @@
   </div>
 
   <!-- ADMIN MANAGEMENT MODAL -->
-  <div id="adminManagementModal" class="hidden fixed inset-0 z-[99999999] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4 pointer-events-auto">
+  <div id="adminManagementModal" onclick="if (event.target === this) closeAdminModal()" class="hidden fixed inset-0 z-[99999999] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4 pointer-events-auto">
     <div class="dark-biz-bubble w-full max-w-lg rounded-[32px] p-6 border border-amber-500/50 shadow-[0_25px_60px_-15px_rgba(251,191,36,0.3)] max-h-[90vh] overflow-y-auto pointer-events-auto relative z-[99999999]">
       <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/20">
         <div class="flex items-center gap-2">
@@ -733,7 +733,7 @@
   </div>
 
   <!-- FRIENDS & ACTIVE USERS PANEL (V11.12) -->
-  <div id="friendsModal" class="hidden fixed inset-0 z-[9999999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+  <div id="friendsModal" onclick="if (event.target === this) closeFriendsPanel()" class="hidden fixed inset-0 z-[9999999] bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
     <div class="settings-panel w-full max-w-md rounded-[32px] p-6 max-h-[85vh] flex flex-col">
       <div class="flex justify-between items-center mb-3 flex-shrink-0">
         <div class="flex items-center gap-2.5">
@@ -799,7 +799,7 @@
   </div>
 
   <!-- Settings / Profile Modal (redesigned to match the app theme) -->
-  <div id="profileModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-2xl flex items-center justify-center p-4">
+  <div id="profileModal" onclick="if (event.target === this) closeProfileModal()" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-2xl flex items-center justify-center p-4">
     <div class="settings-panel w-full max-w-md rounded-[32px] p-6 max-h-[90vh] overflow-y-auto relative">
       <div class="flex justify-between items-center mb-5 pb-3 border-b border-white/10">
         <div class="flex items-center gap-2.5">
@@ -4469,16 +4469,15 @@
         });
       });
 
-      // V11.21: a private thread joins this list once you have RECEIVED
-      // a message in it (Shane's rule) - threads you started stay
-      // icon-only until the other person writes back.
+      // V11.23: private threads show in this list like the bubble
+      // chats (Shane) - the V11.21 "only once you have received a
+      // message" gate is gone, so threads you started appear too.
       const dmList = [];
       participatedChatRoomIds.forEach(roomId => {
         if (!parseDmRoom(roomId)) return;
         const otherId = otherDmParticipant(roomId);
         if (!otherId) return;
         const msgs = localChatCache[roomId] || [];
-        if (!msgs.some(m => !m.isMe)) return; // nothing received yet
         const peer = globalActiveDirectory[otherId];
         const lastMsg = msgs[msgs.length - 1];
         dmList.push({
