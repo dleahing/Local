@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.17 Bubble Jiggle + Offline Messages]</title>
+  <title>LocaL - Proximity Social Network [V11.18 Admin Bubble + Supabase Chat Restore]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1039,6 +1039,7 @@
     const STORAGE_KEY_CHAT_CACHE = 'local_chat_cache_v40';
     const STORAGE_KEY_FRIEND_REQUESTS = 'local_friend_requests_v40';
     const STORAGE_KEY_CHAT_CLEARED = 'local_chat_cleared_v40';
+    const STORAGE_KEY_ADMIN_PEERS = 'local_admin_peers_v40';
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -1061,6 +1062,12 @@
     let participatedChatRoomIds = new Set();
     let friendPeerIds = new Set();
     let chatRoomClearedAt = {};
+    let localKnownAdminIds = new Set();
+    function rememberAdminPeerId(id) {
+      if (!id || localKnownAdminIds.has(id)) return;
+      localKnownAdminIds.add(id);
+      try { localStorage.setItem(STORAGE_KEY_ADMIN_PEERS, JSON.stringify(Array.from(localKnownAdminIds))); } catch (e) {}
+    }
     let friendRequestsIn = {};
     let friendRequestsOut = new Set();
     let friendRequestResentAt = {};
@@ -2461,6 +2468,7 @@
       applyRadarColorCSS(userState.radarColor || 'cyan');
       renderProfileFriendsList();
       checkOfflineMessagesCatchUp(); // V11.17: offline messages in your own room
+      restoreChatsFromSupabase(); // V11.18: restore all chats from Supabase on reopen
     }
 
     async function requestScreenWakeLock() {
@@ -2502,6 +2510,26 @@
       const watermark = clearedAtMs || 0;
       if (roomStartMs) return Math.max(roomStartMs - 5000, watermark);
       return Math.max(nowMs - ONE_HOUR_MS, watermark);
+    }
+
+    // V11.18: decides what a profiles-table row contributes to a peer's
+    // bubble. A topic whose own timestamp is inside the 1-hour lifetime
+    // is shown until it expires - the poster's presence heartbeat
+    // (updated_at) going stale when they close the app now only marks
+    // them offline, it no longer deletes a live bubble. Staleness still
+    // hides topics that carry no usable timestamp (they could otherwise
+    // show forever), and the Administrator is exempt by recognition.
+    function resolveProfileTopic(o) {
+      const topicExpired = !!o.activeTopic && !!o.topicCreatedAtMs && (o.nowMs - o.topicCreatedAtMs > ONE_HOUR_MS);
+      const hasValidTopic = !!o.activeTopic && !topicExpired;
+      const hasTimestampedLiveTopic = !!o.activeTopic && !!o.topicCreatedAtMs && (o.nowMs - o.topicCreatedAtMs <= ONE_HOUR_MS);
+      const isStale = !o.isAdmin && (!o.updatedAtMs || (o.nowMs - o.updatedAtMs > 150000));
+      const hideTopic = isStale && !hasTimestampedLiveTopic;
+      return {
+        question: hideTopic ? null : (hasValidTopic ? o.activeTopic : (topicExpired ? null : o.existingQuestion)),
+        createdAt: hideTopic ? null : (hasValidTopic ? (o.topicCreatedAtMs || o.existingCreatedAt || o.nowMs) : (topicExpired ? null : o.existingCreatedAt)),
+        isOffline: o.isAdmin ? false : isStale
+      };
     }
 
     function restoreChatCache() {
@@ -2562,6 +2590,8 @@
           friendRequestsIn = parsedReq.in || {};
           friendRequestsOut = new Set(parsedReq.out || []);
         }
+        const savedAdminPeers = localStorage.getItem(STORAGE_KEY_ADMIN_PEERS);
+        if (savedAdminPeers) localKnownAdminIds = new Set(JSON.parse(savedAdminPeers));
         const savedCleared = localStorage.getItem(STORAGE_KEY_CHAT_CLEARED);
         if (savedCleared) {
           const parsedCleared = JSON.parse(savedCleared);
@@ -3542,7 +3572,15 @@
             if (hasValidTopic) clearPreviousBubbleChat(p.id, createdAtTime, p.active_topic);
 
             const existingPeer = globalActiveDirectory[p.id];
-            const isStaleProfile = (p.alias || '').toLowerCase() !== 'administrator' && !(existingPeer && existingPeer.isAdmin) && (!p.updated_at || (Date.now() - new Date(p.updated_at).getTime() > 150000)); // V11.8: the Administrator's bubble always shows - recognised by name OR by his account's admin flag
+            // V11.18: the Administrator is recognised by name, by the
+            // verified admin_users list, by an id this device has seen
+            // broadcast the admin flag before, or by the flag already on
+            // the peer entry - name/flag alone missed him after a fresh
+            // start, so his bubble died 2.5 minutes after he closed the
+            // app (the updated_at staleness rule nulled it).
+            const profileIsAdmin = (p.alias || '').toLowerCase() === 'administrator' || knownAdminPeerIds.has(p.id) || localKnownAdminIds.has(p.id) || !!(existingPeer && existingPeer.isAdmin);
+            if (existingPeer && existingPeer.isAdmin) rememberAdminPeerId(p.id);
+            const topicDecision = resolveProfileTopic({ activeTopic: p.active_topic, topicCreatedAtMs: createdAtTime, updatedAtMs: p.updated_at ? new Date(p.updated_at).getTime() : null, existingQuestion: existingPeer?.question || null, existingCreatedAt: existingPeer?.createdAt || null, isAdmin: profileIsAdmin, nowMs: Date.now() });
             const pLat = p.lat !== undefined && p.lat !== null ? p.lat : (existingPeer?.lat || userState.lat + (Math.random() - 0.5) * 0.01);
             const pLng = p.lng !== undefined && p.lng !== null ? p.lng : (existingPeer?.lng || userState.lng + (Math.random() - 0.5) * 0.01);
 
@@ -3557,18 +3595,19 @@
               hours: p.hours,
               interestFilter: p.interest_filter || 'none',
               hideMyName: p.hide_my_name || false,
-              question: isStaleProfile ? null : (hasValidTopic ? p.active_topic : (topicExpired ? null : (existingPeer?.question || null))),
-              createdAt: isStaleProfile ? null : (hasValidTopic ? (createdAtTime || existingPeer?.createdAt || Date.now()) : (topicExpired ? null : (existingPeer?.createdAt || null))),
+              question: topicDecision.question,
+              createdAt: topicDecision.createdAt,
               persistentTopic: false,
               isBot: false,
-              isAdmin: existingPeer?.isAdmin === true,
+              isAdmin: existingPeer?.isAdmin === true || knownAdminPeerIds.has(p.id) || localKnownAdminIds.has(p.id),
               isOfflineGhost: false,
-              isOffline: ((p.alias || '').toLowerCase() === 'administrator' || (existingPeer && existingPeer.isAdmin)) ? false : isStaleProfile, // V11.8: the admin account's chats stay visible until expiry, even when the admin is offline
+              isOffline: topicDecision.isOffline,
               distance: calculateHaversineDistance(userState.lat, userState.lng, pLat, pLng)
             };
           }
         });
         dedupeOfflineGhostPeers();
+        restoreChatsFromSupabase(); // V11.18: once per session, after the directory is populated
         if (!profilesUnchanged) {
           // Remove the local chat copy of any profile topic found expired above.
           profiles.forEach(p => {
@@ -3636,6 +3675,7 @@
       participatedChatRoomIds = new Set();
       friendPeerIds = new Set();
       chatRoomClearedAt = {};
+      chatsRestoredFromSupabase = false;
       friendRequestsIn = {};
       friendRequestsOut = new Set();
       friendRequestResentAt = {};
@@ -3703,7 +3743,7 @@
         }
       } catch(e) {}
       try {
-        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS, STORAGE_KEY_CHAT_CLEARED].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS, STORAGE_KEY_CHAT_CLEARED, STORAGE_KEY_ADMIN_PEERS].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
       } catch(e) {}
       try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch(e) {}
       currentAuthUser = null;
@@ -3753,9 +3793,18 @@
             renderUserTopBubbleContent();
           }
         } else {
-          activeTopicState.text = null;
-          activeTopicState.createdAt = null;
-          activeTopicState.persistent = false;
+          // V11.18: a profile row with no topic must not erase a bubble
+          // this device still holds live - a presence upsert from an
+          // early/empty state can write a null topic over the row, and
+          // reading that back used to delete the Administrator's (and
+          // anyone's) own bubble on reopen. The next presence announce
+          // rewrites the row from the surviving local state.
+          const localTopicLive = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
+          if (!localTopicLive) {
+            activeTopicState.text = null;
+            activeTopicState.createdAt = null;
+            activeTopicState.persistent = false;
+          }
         }
         document.getElementById('avatarNameInput').value = userState.alias;
         document.getElementById('myPeerIdDisplay').value = `${myPeerId} (@${userState.alias})`;
@@ -3974,6 +4023,7 @@
       // Before that table exists the legacy flag behaviour is kept so the
       // admin account keeps working (see the V11.15 changelog).
       const claimedAdmin = data.isAdmin === true && (!adminVerificationActive || knownAdminPeerIds.has(data.peerId) || isAdminName(data.sender));
+      if (claimedAdmin && data.peerId) rememberAdminPeerId(data.peerId); // V11.18: remember the admin account's id on this device
 
       const distance = calculateHaversineDistance(userState.lat, userState.lng, data.lat, data.lng);
       if (!globalActiveDirectory[data.peerId]) globalActiveDirectory[data.peerId] = { enabled: true };
@@ -5070,6 +5120,87 @@
         }
         renderPinnedChats();
       } catch (e) {}
+    }
+
+    // V11.18: merge database rows into a room's local cache - dedupes by
+    // id, then by count for id-less rows (the same rule as the
+    // chat-history merge), keeps time order, caps at 200. Returns true
+    // when the cache changed.
+    function mergeDbRowsIntoCache(roomId, rows) {
+      if (!Array.isArray(rows) || !rows.length) return false;
+      const mapped = rows.map(msg => ({
+        id: msg.client_id || msg.id,
+        sender: msg.sender_alias,
+        text: msg.message,
+        time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isMe: currentAuthUser ? msg.sender_id === currentAuthUser.id : msg.sender_alias === getDisplayName(userState.alias, userState.hideMyName, userState.type),
+        createdAt: msg.created_at, persisted: true
+      }));
+      let merged = [...mapped];
+      const latestLocal = localChatCache[roomId] || [];
+      const dbLooseCounts = {};
+      merged.forEach(db => { const k = db.sender + '|' + db.text + '|' + db.time; dbLooseCounts[k] = (dbLooseCounts[k] || 0) + 1; });
+      for (const msg of latestLocal) {
+        if (msg.id && merged.some(db => db.id === msg.id)) continue;
+        const looseKey = msg.sender + '|' + msg.text + '|' + msg.time;
+        if (!msg.id && dbLooseCounts[looseKey] > 0) { dbLooseCounts[looseKey]--; continue; }
+        if (msg.id && dbLooseCounts[looseKey] > 0 && merged.some(db => !db.id && db.sender === msg.sender && db.text === msg.text && db.time === msg.time)) { dbLooseCounts[looseKey]--; continue; }
+        merged.push(msg);
+      }
+      const seen = new Set();
+      merged = merged.filter(msg => {
+        const key = msg.id || `${msg.sender}|${msg.text}|${msg.time}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).map((msg, index) => ({ ...msg, _order: index }))
+        .sort((a, b) => (new Date(a.createdAt || 0) - new Date(b.createdAt || 0)) || (a._order - b._order))
+        .map(stripOrderKey);
+      if (merged.length > 200) merged = merged.slice(-200);
+      const changed = JSON.stringify(merged) !== JSON.stringify(localChatCache[roomId] || []);
+      if (changed) { localChatCache[roomId] = merged; persistChatCache(); }
+      return changed;
+    }
+
+    function stripOrderKey(msg) { const { _order, ...rest } = msg; return rest; }
+
+    // V11.18: chats are restored FROM SUPABASE when the app reopens.
+    // The database is the source of truth for signed-in accounts, so
+    // messages survive the on-device copy being missing, pruned or
+    // evicted (iOS clears web storage aggressively - the likely cause
+    // of "messages gone after reopen" reports that the local restore
+    // could not fix). The device cache remains as the local-mode and
+    // offline mirror and is merged over, never blindly replaced.
+    // Windows follow the same rule as opening a chat, including the
+    // delete watermark, so deleted chats stay deleted.
+    let chatsRestoredFromSupabase = false;
+    async function restoreChatsFromSupabase() {
+      if (chatsRestoredFromSupabase || !supabaseClient || !currentAuthUser) return;
+      chatsRestoredFromSupabase = true;
+      const roomIds = new Set(participatedChatRoomIds);
+      roomIds.add('room-you');
+      let anyChanged = false;
+      await Promise.all(Array.from(roomIds).map(async roomId => {
+        try {
+          const peerKey = roomId === 'room-you' ? null : roomId.replace('room-peer-', '');
+          const roomStartMs = safeTimestampMs(roomId === 'room-you' ? activeTopicState.createdAt : (peerKey ? (globalActiveDirectory[peerKey]?.createdAt || null) : null));
+          const windowStartMs = computeHistoryWindowStartMs(roomStartMs, chatRoomClearedAt[roomId] || 0, Date.now());
+          const { data, error } = await supabaseClient
+            .from('chat_messages')
+            .select('*')
+            .eq('room_id', canonicalChatRoomId(roomId))
+            .gte('created_at', new Date(windowStartMs).toISOString())
+            .order('created_at', { ascending: false })
+            .limit(200);
+          if (!error && Array.isArray(data) && data.length) {
+            if (mergeDbRowsIntoCache(roomId, data)) anyChanged = true;
+          }
+        } catch (e) {}
+      }));
+      if (anyChanged) {
+        renderPinnedChats();
+        if (currentActiveChatRoomId) loadDbChatHistory(currentActiveChatRoomId);
+      }
     }
 
     async function loadDbChatHistory(roomId) {
