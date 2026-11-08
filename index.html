@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.25 Reliable Icon Taps + Map Declutter]</title>
+  <title>LocaL - Proximity Social Network [V11.26 Welcome Guide Tutorial Bot]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -108,6 +108,16 @@
 
     .animate-screen-tap { animation: tap-ripple-wave 1.2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards; will-change: transform, opacity; }
     .animate-giggle { animation: giggle-pop 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; will-change: transform; }
+    /* V11.26: the Welcome Guide's bubble giggles in short bursts until its chat is first opened. */
+    @keyframes giggle-loop {
+      0%, 55%, 100% { transform: rotate(0deg); }
+      60% { transform: rotate(-2.6deg); }
+      65% { transform: rotate(2.6deg); }
+      70% { transform: rotate(-1.8deg); }
+      75% { transform: rotate(1.8deg); }
+      80% { transform: rotate(-0.8deg); }
+    }
+    .animate-giggle-loop { animation: giggle-loop 2.6s ease-in-out infinite; will-change: transform; }
     .animate-jiggle-continuous { animation: jiggle-continuous 0.38s ease-in-out infinite !important; will-change: transform; }
     .animate-radar-sweep { animation: radar-sweep 3s linear infinite; transform-origin: center center; will-change: transform; }
     .animate-peer-sonar { animation: peer-sonar-pulse 2.2s cubic-bezier(0.15, 0.85, 0.35, 1) infinite; will-change: transform, opacity; }
@@ -1078,6 +1088,71 @@
     const STORAGE_KEY_FRIEND_REQUESTS = 'local_friend_requests_v40';
     const STORAGE_KEY_CHAT_CLEARED = 'local_chat_cleared_v40';
     const STORAGE_KEY_ADMIN_PEERS = 'local_admin_peers_v40';
+    const STORAGE_KEY_WELCOME_OPENED = 'local_welcome_opened_v40';
+
+    // V11.26: the Welcome Guide - a scripted on-device tutorial bot.
+    // It keeps the tutorial bot's long-standing peer id, so existing
+    // devices keep their conversation history across the rename. Its
+    // chat is LOCAL ONLY: messages in its room are never broadcast on
+    // the mesh and never written to the database - the guide answers
+    // from the script below, one step per message the user sends.
+    const WELCOME_GUIDE_PEER_ID = 'sim-peer-tutorial-bot';
+    const WELCOME_GUIDE_ROOM_ID = 'room-peer-sim-peer-tutorial-bot';
+    const WELCOME_GUIDE_NAME = 'Welcome Guide';
+    const WELCOME_SCRIPT = [
+      "Welcome to LocaL, an app designed for communities. On the main screen try typing a question in the text box located at the bottom of the screen, this will post a question for the community to see and reply to. Now type anything to continue.",
+      "Great, nice typing skills lol... You can adjust the radar to expand your viewing radius to see chat bubbles that might be further away. Double tapping the screen will bring you back to the default view. Text something, anything to continue.",
+      "You are doing great, When you double-tap on the screen you can see my chat bubble to the left on your screen under pinned chats. These are chats you are engaged in. You can click on any chat bubble to continue where you left off. There is a second way to view your chats. At the top of your screen there is a Show all on map button, this is the default view that shows the chat bubbles on the map and their relative distance from you. Changing to List to right side, will list all chats for better viewing. Are you still here? You know what to do to continue.",
+      "lol you are a natural, next to the Show all on map button you will see two other icons, they are Friend list and Profile settings don't forget to take a look at them. Well it was a pleasure chatting with you, have fun on the app."
+    ];
+    const WELCOME_SCRIPT_DONE = "What are you doing here go chat with some real people.";
+    let welcomeGuideOpened = false;
+    try { welcomeGuideOpened = localStorage.getItem(STORAGE_KEY_WELCOME_OPENED) === '1'; } catch (e) {}
+    let welcomeGreetingTimer = null;
+
+    function deliverWelcomeGuideMessage(text, delayMs, once) {
+      const send = () => {
+        const msgs = localChatCache[WELCOME_GUIDE_ROOM_ID] || (localChatCache[WELCOME_GUIDE_ROOM_ID] = []);
+        if (once && msgs.some(m => !m.isMe && m.text === text)) return; // a script line is never delivered twice
+        const nowIso = new Date().toISOString();
+        const timeStr = new Date(nowIso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        msgs.push({ id: 'welcome-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), sender: WELCOME_GUIDE_NAME, text, time: timeStr, createdAt: nowIso, isMe: false });
+        if (msgs.length > 200) msgs.splice(0, msgs.length - 200);
+        persistChatCache();
+        if (currentActiveChatRoomId === WELCOME_GUIDE_ROOM_ID) {
+          appendMessage(WELCOME_GUIDE_NAME, text, timeStr, false);
+        } else {
+          unreadRoomIds.add(WELCOME_GUIDE_ROOM_ID);
+          savePersistentData();
+          syncUnreadChimeLoop();
+        }
+        renderPinnedChats();
+        refreshAllNodeVisibilities();
+      };
+      if (delayMs) setTimeout(send, delayMs); else send();
+    }
+
+    function onWelcomeGuideChatOpened() {
+      if (!welcomeGuideOpened) {
+        welcomeGuideOpened = true;
+        try { localStorage.setItem(STORAGE_KEY_WELCOME_OPENED, '1'); } catch (e) {}
+        refreshAllPeerDistancesAndPositions(); // re-render the guide's node without the giggle
+      }
+      const msgs = localChatCache[WELCOME_GUIDE_ROOM_ID] || [];
+      if (!msgs.length && !welcomeGreetingTimer) {
+        welcomeGreetingTimer = setTimeout(() => { welcomeGreetingTimer = null; deliverWelcomeGuideMessage(WELCOME_SCRIPT[0], 0, true); }, 700);
+      }
+    }
+
+    function scheduleWelcomeGuideReply() {
+      const msgs = localChatCache[WELCOME_GUIDE_ROOM_ID] || [];
+      const myCount = msgs.filter(m => m.isMe).length; // includes the message just sent
+      const botTexts = msgs.filter(m => !m.isMe).map(m => m.text);
+      const queue = [];
+      if (!botTexts.includes(WELCOME_SCRIPT[0])) queue.push(WELCOME_SCRIPT[0]);
+      queue.push(myCount <= 3 ? WELCOME_SCRIPT[myCount] : WELCOME_SCRIPT_DONE);
+      queue.forEach((text, i) => deliverWelcomeGuideMessage(text, 600 + (i * 1400), text !== WELCOME_SCRIPT_DONE));
+    }
 
     let supabaseClient = null;
     let realtimeChannel = null;
@@ -1670,14 +1745,14 @@
       return labels[category] || 'Business';
     }
 
-    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false, hasUnread = false, address = '') {
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false, hasUnread = false, address = '', forceAnimClass = null) {
       const displayName = escapeChatHTML(getDisplayName(businessName, hideMyName, accountType));
       if (question) question = escapeChatHTML(question);
       if (hours) hours = escapeChatHTML(hours);
       if (address) address = escapeChatHTML(address);
       const categoryLabel = escapeChatHTML(getBusinessCategoryLabel(category));
       const nameColorClass = getBusinessCategoryTextColorClass(category);
-      const animClass = hasUnread ? 'animate-jiggle-continuous' : 'animate-float'; // V11.17
+      const animClass = forceAnimClass || (hasUnread ? 'animate-jiggle-continuous' : 'animate-float'); // V11.17 (+ V11.26 forced class)
 
       if (isAdmin) {
         return `
@@ -2665,6 +2740,7 @@
             if (roomId !== 'room-you' && !participatedChatRoomIds.has(roomId)) return;
             const msgs = (parsed[roomId] || []).filter(m => {
               if (parseDmRoom(roomId)) return true; // V11.19: DMs are not 1-hour bubble chats
+              if (roomId === WELCOME_GUIDE_ROOM_ID) return true; // V11.26: the tutorial conversation is kept
               const ts = safeTimestampMs(m.createdAt);
               return ts && (Date.now() - ts <= ONE_HOUR_MS);
             });
@@ -4006,7 +4082,7 @@
         }
       } catch(e) {}
       try {
-        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS, STORAGE_KEY_CHAT_CLEARED, STORAGE_KEY_ADMIN_PEERS].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS, STORAGE_KEY_CHAT_CLEARED, STORAGE_KEY_ADMIN_PEERS, STORAGE_KEY_WELCOME_OPENED].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
       } catch(e) {}
       try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch(e) {}
       currentAuthUser = null;
@@ -4343,7 +4419,7 @@
 
     function spawnDefaultSimulatedUsers() {
       const defaultBots = [
-        { name: 'JensenBeachGuide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.3, question: 'Welcome! Tap my bubble to learn how LocaL works.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
+        { name: 'Welcome Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.3, question: 'Tap here to get started.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
         { name: 'PickleballPro', peerId: 'sim-peer-bot-05mi', targetMiles: 0.4, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
         { name: 'IslandGrill', peerId: 'sim-peer-restaurant-08mi', targetMiles: 0.8, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'CoastlineCafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.2, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'coffee', openTime: '06:00', closeTime: '18:00', hours: 'Open 6:00 AM • Closes 6:00 PM', interestFilter: 'Food', isBot: true },
@@ -5002,7 +5078,7 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(chatRoomName)}', '${escapeJsArg(peer.question || '')}', '${escapeJsArg(peer.peerId)}', ${safeTimestampMs(peer.createdAt)})`;
       const onIconClickJs = `playAudioEffect('chime'); openPeerActions('${escapeJsArg(peer.peerId)}')`; // V11.20: icon tap offers Bubble Chat / Private Message
 
-      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', peerIsAdmin ? 'admin' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.address || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', currentLayoutMode === 'right' ? 'listR' : 'map', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length].join('|'); // V11.13: layout mode in the signature so bubbles hide/show with the right list
+      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', peerIsAdmin ? 'admin' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.address || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', currentLayoutMode === 'right' ? 'listR' : 'map', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length, peer.peerId === WELCOME_GUIDE_PEER_ID ? (welcomeGuideOpened ? 'wg-open' : 'wg-new') : ''].join('|'); // V11.13: layout mode in the signature so bubbles hide/show with the right list
       if (nodeElem.dataset.renderSig === renderSig && nodeElem.innerHTML) {
         return;
       }
@@ -5012,7 +5088,7 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-none z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-10 h-10 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-none z-[99999999]" style="position:absolute; z-index:2000;">
-            ${(currentLayoutMode !== 'right' && (isBiz || activeHasQuestion)) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '') : ''}
+            ${(currentLayoutMode !== 'right' && (isBiz || activeHasQuestion)) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '', (peer.peerId === WELCOME_GUIDE_PEER_ID && !welcomeGuideOpened) ? 'animate-giggle-loop' : null) : ''}
           </div>
           ${showUserIcon ? `
             <div class="relative flex flex-col items-center pointer-events-auto cursor-pointer p-2.5 -m-2.5" onclick="${onIconClickJs}" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
@@ -5062,6 +5138,11 @@
             updateExpiryCountdownUi(currentPeer.createdAt);
           }
         }
+
+        // V11.26: the Welcome Guide is a permanent fixture - its bubble
+        // never expires, so its chat (and the tutorial) never resets.
+        const welcomeGuidePeer = globalActiveDirectory[WELCOME_GUIDE_PEER_ID];
+        if (welcomeGuidePeer && welcomeGuidePeer.question) welcomeGuidePeer.createdAt = Date.now();
 
         Object.keys(globalActiveDirectory).forEach(peerId => {
           const peer = globalActiveDirectory[peerId];
@@ -5272,7 +5353,12 @@
         created_at: sentAt
       };
 
-      if (parseDmRoom(targetRoomId)) {
+      const isWelcomeGuideRoom = targetRoomId === WELCOME_GUIDE_ROOM_ID;
+      if (isWelcomeGuideRoom) {
+        // V11.26: the Welcome Guide lives on this device - nothing is
+        // broadcast or saved to the database; it answers from its script.
+        scheduleWelcomeGuideReply();
+      } else if (parseDmRoom(targetRoomId)) {
         // V11.20: a private message's TEXT never crosses the shared
         // broadcast channel - other people's apps could otherwise read
         // it in transit. Only a content-free ping goes out; the partner
@@ -5290,13 +5376,13 @@
           realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
         } catch(e) {}
       }
-      if (!parseDmRoom(targetRoomId) && broadcastChannel) {
+      if (!isWelcomeGuideRoom && !parseDmRoom(targetRoomId) && broadcastChannel) {
         try {
           broadcastChannel.postMessage({ type: 'chat_reply', payload: payloadMsg });
         } catch(e) {}
       }
 
-      if (supabaseClient) {
+      if (supabaseClient && !isWelcomeGuideRoom) {
         const { error } = await dbInsert('chat_messages', {
           room_id: databaseRoomId,
           client_id: clientMessageId,
@@ -5311,7 +5397,7 @@
         }
       }
 
-      if (!supabaseClient) showToast('Message shown locally; database unavailable', 'alert-circle');
+      if (!supabaseClient && !isWelcomeGuideRoom) showToast('Message shown locally; database unavailable', 'alert-circle');
       renderPinnedChats();
     }
 
@@ -5334,6 +5420,7 @@
       if (!roomId) return;
       closePeerActions();
       currentActiveChatRoomId = roomId;
+      if (roomId === WELCOME_GUIDE_ROOM_ID) onWelcomeGuideChatOpened(); // V11.26
       unreadRoomIds.delete(roomId);
       syncUnreadChimeLoop();
       savePersistentData();
