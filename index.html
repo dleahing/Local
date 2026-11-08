@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.20 Private Message via Icon Tap]</title>
+  <title>LocaL - Proximity Social Network [V11.21 Received Private Chats Listed + Offline DM Delivery]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4476,9 +4476,36 @@
         });
       });
 
-      // V11.20: private threads are NOT listed here - Shane opens them
-      // from the person's map icon, keeping the side list bubble-only.
-      const pinnedList = [...adminList, ...mainUserList, ...friendList, ...participantList];
+      // V11.21: a private thread joins this list once you have RECEIVED
+      // a message in it (Shane's rule) - threads you started stay
+      // icon-only until the other person writes back.
+      const dmList = [];
+      participatedChatRoomIds.forEach(roomId => {
+        if (!parseDmRoom(roomId)) return;
+        const otherId = otherDmParticipant(roomId);
+        if (!otherId) return;
+        const msgs = localChatCache[roomId] || [];
+        if (!msgs.some(m => !m.isMe)) return; // nothing received yet
+        const peer = globalActiveDirectory[otherId];
+        const lastMsg = msgs[msgs.length - 1];
+        dmList.push({
+          roomId,
+          name: peer ? getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType) : (friendRequestsIn[otherId]?.name || 'Private Chat'),
+          question: lastMsg ? lastMsg.text : 'Private messages',
+          accountType: peer?.accountType || 'personal',
+          category: peer?.category || 'store',
+          peerId: otherId,
+          createdAt: null,
+          isBot: !!peer?.isBot,
+          isAdmin: false,
+          isMainUser: false,
+          isFriend: friendPeerIds.has(otherId),
+          hasUnread: unreadRoomIds.has(roomId),
+          isDm: true
+        });
+      });
+
+      const pinnedList = [...adminList, ...mainUserList, ...friendList, ...participantList, ...dmList];
 
       if (pinnedList.length === 0) {
         container.innerHTML = '';
@@ -4516,7 +4543,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">@${escapeChatHTML(item.name)}</span></div>`}
-                <span class="text-[9px] text-slate-700 font-medium block truncate">${escapeChatHTML(item.question || 'Pinned Chat')}${item.createdAt ? ' · ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
+                <span class="text-[9px] text-slate-700 font-medium block truncate">${item.isDm ? 'Private · ' : ''}${escapeChatHTML(item.question || 'Pinned Chat')}${item.createdAt ? ' · ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
               </div>
             </div>
           `;
@@ -5424,6 +5451,31 @@
             if (local && !participatedChatRoomIds.has(local)) { participatedChatRoomIds.add(local); discoveredAny = true; }
           });
           if (discoveredAny) savePersistentData();
+        }
+      } catch (e) {}
+      // V11.21: also discover private rooms ADDRESSED to me. A private
+      // message sent while I was offline leaves no trace on this device
+      // (I never sent in that room, so the sent-side discovery above
+      // cannot find it, and I have no participation record) - which is
+      // why offline private messages were never seen. DM room ids name
+      // both accounts, so rooms containing my account id are mine.
+      try {
+        const { data: dmRows, error: dmErr } = await supabaseClient
+          .from('chat_messages')
+          .select('room_id')
+          .like('room_id', 'room-dm-%' + currentAuthUser.id + '%')
+          .gte('created_at', new Date(Date.now() - 30 * 24 * ONE_HOUR_MS).toISOString())
+          .limit(500);
+        if (!dmErr && Array.isArray(dmRows)) {
+          let discoveredDm = false;
+          dmRows.forEach(r => {
+            const local = localChatRoomId(r.room_id);
+            if (local && parseDmRoom(local) && otherDmParticipant(local)) {
+              if (!roomIds.has(local)) roomIds.add(local);
+              if (!participatedChatRoomIds.has(local)) { participatedChatRoomIds.add(local); discoveredDm = true; }
+            }
+          });
+          if (discoveredDm) savePersistentData();
         }
       } catch (e) {}
       let anyChanged = false;
