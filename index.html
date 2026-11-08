@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.19 Private Messages, Notifications, Topo Camo]</title>
+  <title>LocaL - Proximity Social Network [V11.20 Private Message via Icon Tap]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -574,6 +574,25 @@
         <input type="range" id="radarRangeSlider" min="402.34" max="48280.20" step="250" value="804.67" oninput="updateRadiusFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
         <span id="sliderRangeLabel" class="text-[10px] font-bold text-white uppercase whitespace-nowrap">0.50 Mi</span>
       </div>
+    </div>
+  </div>
+
+  <!-- V11.20: peer action popover - appears when a person's map icon is tapped -->
+  <div id="peerActionPopover" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999997] w-full max-w-xs px-4 pointer-events-auto">
+    <div class="dark-biz-bubble px-4 py-3 rounded-3xl shadow-2xl backdrop-blur-xl">
+      <div class="flex items-center gap-2.5 mb-3">
+        <div id="peerActionAvatar" class="w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md overflow-hidden flex-shrink-0"></div>
+        <div class="min-w-0 flex-1">
+          <div id="peerActionName" class="text-sm font-bold text-white truncate">@Peer</div>
+          <div id="peerActionSub" class="text-[10px] text-slate-400 truncate">Choose how to reach them</div>
+        </div>
+        <button onclick="closePeerActions()" class="p-1.5 rounded-full bg-white/10 text-slate-300 flex-shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="peerActionOpenChat()" class="py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"><i data-lucide="message-circle" class="w-4 h-4"></i>Bubble Chat</button>
+        <button onclick="peerActionPrivateMessage()" class="py-2.5 rounded-2xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"><i data-lucide="mail" class="w-4 h-4"></i>Private Message</button>
+      </div>
+      <p class="text-[9px] text-slate-500 mt-2 text-center">Private messages are only shown to you and this person.</p>
     </div>
   </div>
 
@@ -2578,6 +2597,46 @@
       if (parts[1] === me) return parts[0];
       return null;
     }
+    // V11.20: tapping a person's map icon opens this small menu - the
+    // way into a private message, per Shane's spec. The bubble card
+    // above the icon still opens the bubble chat directly.
+    let pendingPeerActionId = null;
+    function openPeerActions(peerId) {
+      const peer = globalActiveDirectory[peerId];
+      if (!peer) return;
+      pendingPeerActionId = peerId;
+      const name = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
+      document.getElementById('peerActionName').innerText = '@' + name;
+      document.getElementById('peerActionSub').innerText = peer.question ? 'Bubble: ' + peer.question : 'No active bubble right now';
+      const visual = getNodeIconVisual(peer.accountType, peer.category, peer.isBot);
+      const avatarEl = document.getElementById('peerActionAvatar');
+      avatarEl.className = `w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md overflow-hidden flex-shrink-0 ${visual.borderClass}`;
+      avatarEl.style.background = visual.bg;
+      avatarEl.innerHTML = renderNodeIconContent(peer.accountType, peer.category, peer.isBot);
+      document.getElementById('peerActionPopover').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closePeerActions() {
+      pendingPeerActionId = null;
+      const pop = document.getElementById('peerActionPopover');
+      if (pop) pop.classList.add('hidden');
+    }
+    function peerActionOpenChat() {
+      const peerId = pendingPeerActionId;
+      const peer = peerId ? globalActiveDirectory[peerId] : null;
+      closePeerActions();
+      if (!peer) return;
+      const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
+      openChatDrawer(roomId, getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType), peer.question || '', peerId, peer.createdAt);
+    }
+    function peerActionPrivateMessage() {
+      const peerId = pendingPeerActionId;
+      const peer = peerId ? globalActiveDirectory[peerId] : null;
+      closePeerActions();
+      if (!peer) return;
+      openPrivateChat(peerId, getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType));
+    }
+
     function openPrivateChat(peerId, displayName) {
       if (!peerId) return;
       const roomId = dmRoomIdFor(peerId);
@@ -3529,6 +3588,9 @@
         .on('broadcast', { event: 'chat_reply' }, payload => {
           handleIncomingChatReplyPayload(payload.payload);
         })
+        .on('broadcast', { event: 'dm_ping' }, payload => {
+          handleDmPing(payload.payload);
+        })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             updatePeerServerStatus(true, 'Supabase Realtime Channel Active');
@@ -3556,6 +3618,44 @@
 
     function escapeChatHTML(value) {
       return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[ch]));
+    }
+
+    // V11.20: a private-message ping carries no text - just enough to
+    // know a DM arrived. If the room is one of MY private rooms, pull
+    // the new messages from the database (30-day DM window) and either
+    // show them (thread open) or badge the room unread.
+    async function handleDmPing(ping) {
+      if (!ping || !ping.room_id) return;
+      if (ping.sender_id === (currentAuthUser ? currentAuthUser.id : myPeerId)) return;
+      const targetRoomId = localChatRoomId(ping.room_id);
+      if (!parseDmRoom(targetRoomId) || !otherDmParticipant(targetRoomId)) return;
+      if (!participatedChatRoomIds.has(targetRoomId)) {
+        participatedChatRoomIds.add(targetRoomId);
+        savePersistentData();
+      }
+      if (supabaseClient && currentAuthUser) {
+        try {
+          const windowStartMs = Math.max(Date.now() - 30 * 24 * ONE_HOUR_MS, chatRoomClearedAt[targetRoomId] || 0);
+          const { data, error } = await supabaseClient
+            .from('chat_messages')
+            .select('*')
+            .eq('room_id', canonicalChatRoomId(targetRoomId))
+            .gte('created_at', new Date(windowStartMs).toISOString())
+            .order('created_at', { ascending: false })
+            .limit(200);
+          if (!error && Array.isArray(data) && data.length) mergeDbRowsIntoCache(targetRoomId, data);
+        } catch (e) {}
+      }
+      if (currentActiveChatRoomId === targetRoomId) {
+        loadDbChatHistory(targetRoomId);
+      } else {
+        unreadRoomIds.add(targetRoomId);
+        syncUnreadChimeLoop();
+        savePersistentData();
+        showToast(`Private message from @${ping.sender_alias || 'someone'}`, 'mail');
+        notifyDevice('Private message', `@${ping.sender_alias || 'Someone'} sent you a private message`);
+      }
+      refreshAllNodeVisibilities();
     }
 
     function handleIncomingChatReplyPayload(msg) {
@@ -3964,6 +4064,8 @@
         broadcastChannel.onmessage = (event) => {
           if (event.data && event.data.type === 'chat_reply') {
             handleIncomingChatReplyPayload(event.data.payload);
+          } else if (event.data && event.data.type === 'dm_ping') {
+            handleDmPing(event.data.payload);
           } else {
             handleIncomingNetworkPayload(event.data);
           }
@@ -4374,34 +4476,9 @@
         });
       });
 
-      // V11.19: private-message threads pin alongside the bubble chats,
-      // labelled with the last message instead of a countdown.
-      const dmList = [];
-      participatedChatRoomIds.forEach(roomId => {
-        if (!parseDmRoom(roomId)) return;
-        const otherId = otherDmParticipant(roomId);
-        if (!otherId) return;
-        const peer = globalActiveDirectory[otherId];
-        const msgs = localChatCache[roomId] || [];
-        const lastMsg = msgs.length ? msgs[msgs.length - 1] : null;
-        dmList.push({
-          roomId,
-          name: peer ? getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType) : (friendRequestsIn[otherId]?.name || 'Private Chat'),
-          question: lastMsg ? lastMsg.text : 'Private messages',
-          accountType: peer?.accountType || 'personal',
-          category: peer?.category || 'store',
-          peerId: otherId,
-          createdAt: null,
-          isBot: !!peer?.isBot,
-          isAdmin: false,
-          isMainUser: false,
-          isFriend: friendPeerIds.has(otherId),
-          hasUnread: unreadRoomIds.has(roomId),
-          isDm: true
-        });
-      });
-
-      const pinnedList = [...adminList, ...mainUserList, ...friendList, ...participantList, ...dmList];
+      // V11.20: private threads are NOT listed here - Shane opens them
+      // from the person's map icon, keeping the side list bubble-only.
+      const pinnedList = [...adminList, ...mainUserList, ...friendList, ...participantList];
 
       if (pinnedList.length === 0) {
         container.innerHTML = '';
@@ -4439,7 +4516,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 ${item.isMainUser ? '' : `<div class="flex items-center justify-between"><span class="text-[9px] uppercase truncate ${nameColorClass}">@${escapeChatHTML(item.name)}</span></div>`}
-                <span class="text-[9px] text-slate-700 font-medium block truncate">${item.isDm ? '🔒 ' : ''}${escapeChatHTML(item.question || 'Pinned Chat')}${item.createdAt ? ' · ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
+                <span class="text-[9px] text-slate-700 font-medium block truncate">${escapeChatHTML(item.question || 'Pinned Chat')}${item.createdAt ? ' · ' + formatCountdownTime(item.createdAt) + ' left' : ''}</span>
               </div>
             </div>
           `;
@@ -4508,9 +4585,6 @@
             <div class="flex items-center gap-1.5">
               <button onclick="toggleFriendStatus('${escapeJsArg(peerId)}')" class="px-2 py-1.5 rounded-xl ${friendBtnClass} text-[10px]" title="${friendBtnTitle}">
                 <i data-lucide="${friendBtnIcon}" class="w-3.5 h-3.5"></i>
-              </button>
-              <button onclick="openPrivateChat('${escapeJsArg(peerId)}', '${escapeJsArg(displayLabel)}')" class="px-2 py-1.5 rounded-xl bg-violet-600 text-white text-[10px] shadow-md" title="Private message">
-                <i data-lucide="lock" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="playAudioEffect('chime'); closeFriendsPanel(); openChatDrawer('${roomId}', '${escapeJsArg(displayLabel)}', null, '${escapeJsArg(peerId)}', ${safeTimestampMs(peer.createdAt)})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
@@ -4591,9 +4665,6 @@
             <div class="flex items-center gap-1.5">
               <button onclick="toggleFriendStatus('${escapeJsArg(peerId)}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
                 <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
-              </button>
-              <button onclick="openPrivateChat('${escapeJsArg(peerId)}', '${escapeJsArg(displayLabel)}')" class="px-2 py-1.5 rounded-xl bg-violet-600 text-white text-[10px] shadow-md" title="Private message">
-                <i data-lucide="lock" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(displayLabel)}', null, '${escapeJsArg(peerId)}', ${safeTimestampMs(peer.createdAt)})" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-md">Connect</button>
             </div>
@@ -4778,7 +4849,8 @@
       const isWithinRadius = peerIsAdmin || isFriend || unlimitedRadarActive || ((userState.radius === 0 || peer.distance <= userState.radius) && matchesFilter);
       let roomId = 'room-peer-' + peer.peerId.replace(/[^a-zA-Z0-9]/g, '-');
       const isParticipated = participatedChatRoomIds.has(roomId);
-      const hasUnread = unreadRoomIds.has(roomId);
+      const hasDmUnread = unreadRoomIds.has(dmRoomIdFor(peer.peerId)); // V11.20: waiting private message shows on the icon
+      const hasUnread = unreadRoomIds.has(roomId) || hasDmUnread;
 
       let opacityVal = 1;
       if (peerIsAdmin || isParticipated || isFriend || unlimitedRadarActive) opacityVal = 0.95;
@@ -4809,7 +4881,7 @@
       const showSonarRipple = matchesFilter && !isBiz && !peer.isOffline;
       const chatRoomName = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(chatRoomName)}', '${escapeJsArg(peer.question || '')}', '${escapeJsArg(peer.peerId)}', ${safeTimestampMs(peer.createdAt)})`;
-      const onIconClickJs = onClickJs;
+      const onIconClickJs = `playAudioEffect('chime'); openPeerActions('${escapeJsArg(peer.peerId)}')`; // V11.20: icon tap offers Bubble Chat / Private Message
 
       const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', peerIsAdmin ? 'admin' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.address || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', currentLayoutMode === 'right' ? 'listR' : 'map', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length].join('|'); // V11.13: layout mode in the signature so bubbles hide/show with the right list
       if (nodeElem.dataset.renderSig === renderSig && nodeElem.innerHTML) {
@@ -4825,7 +4897,7 @@
           ${showUserIcon ? `
             <div class="relative flex flex-col items-center">
               ${peerIsAdmin ? '<div class="admin-rainbow-icon-wrap">' : ''}
-              <div onclick="${onIconClickJs}" class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - click to start private chat with @${escapeChatHTML(chatRoomName)}">
+              <div onclick="${onIconClickJs}" class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
                 ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
               </div>
               ${peerIsAdmin ? '</div>' : ''}
@@ -5080,12 +5152,25 @@
         created_at: sentAt
       };
 
-      if (realtimeChannel) {
+      if (parseDmRoom(targetRoomId)) {
+        // V11.20: a private message's TEXT never crosses the shared
+        // broadcast channel - other people's apps could otherwise read
+        // it in transit. Only a content-free ping goes out; the partner
+        // pulls the message from the database, where it lives between
+        // the two accounts.
+        const ping = { room_id: databaseRoomId, sender_id: payloadMsg.sender_id, sender_alias: senderDisplayName };
+        if (realtimeChannel) {
+          try { realtimeChannel.send({ type: 'broadcast', event: 'dm_ping', payload: ping }); } catch(e) {}
+        }
+        if (broadcastChannel) {
+          try { broadcastChannel.postMessage({ type: 'dm_ping', payload: ping }); } catch(e) {}
+        }
+      } else if (realtimeChannel) {
         try {
           realtimeChannel.send({ type: 'broadcast', event: 'chat_reply', payload: payloadMsg });
         } catch(e) {}
       }
-      if (broadcastChannel) {
+      if (!parseDmRoom(targetRoomId) && broadcastChannel) {
         try {
           broadcastChannel.postMessage({ type: 'chat_reply', payload: payloadMsg });
         } catch(e) {}
@@ -5127,6 +5212,7 @@
 
     async function openChatDrawer(roomId, roomName, topic, peerId, createdAtVal) {
       if (!roomId) return;
+      closePeerActions();
       currentActiveChatRoomId = roomId;
       unreadRoomIds.delete(roomId);
       syncUnreadChimeLoop();
