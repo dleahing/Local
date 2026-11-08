@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.29 Account Type Reorg, Business Name Colours]</title>
+  <title>LocaL - Proximity Social Network [V11.30 Duplicate Fix, Missing Bubbles, Icon Taps]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -532,7 +532,7 @@
       </div>
       
       <div class="flex flex-col">
-        <span class="text-xs font-bold text-slate-900 leading-tight">Loca<span class="text-yellow-300" style="text-shadow: 0 0 10px rgba(253, 224, 71, 0.95), 0 0 3px rgba(253, 224, 71, 0.9);">L</span> <span id="adminBadgeTag" class="hidden text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded font-extrabold uppercase">ADMIN</span></span>
+        <span class="text-xs font-bold text-slate-900 leading-tight">Loca<span class="text-sky-400">L</span> <span id="adminBadgeTag" class="hidden text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded font-extrabold uppercase">ADMIN</span></span>
         <span id="activeUserCount" class="text-[9px] text-emerald-950 font-semibold">1 Active Users</span>
       </div>
     </div>
@@ -2709,7 +2709,13 @@
       const hasValidTopic = !!o.activeTopic && !topicExpired;
       const hasTimestampedLiveTopic = !!o.activeTopic && !!o.topicCreatedAtMs && (o.nowMs - o.topicCreatedAtMs <= ONE_HOUR_MS);
       const isStale = !o.isAdmin && (!o.updatedAtMs || (o.nowMs - o.updatedAtMs > 150000));
-      const hideTopic = isStale && !hasTimestampedLiveTopic;
+      // V11.30: a mesh-learned topic whose own start time is still
+      // inside the 1-hour lifetime is spared too - while the profiles
+      // table lacks the topic timestamp columns, the mesh start time
+      // is the only one there is, and bubbles were dying ~2.5 minutes
+      // after the poster backgrounded the app.
+      const existingLiveTopic = !!o.existingQuestion && !!o.existingCreatedAt && (o.nowMs - o.existingCreatedAt <= ONE_HOUR_MS);
+      const hideTopic = isStale && !hasTimestampedLiveTopic && !existingLiveTopic;
       return {
         question: hideTopic ? null : (hasValidTopic ? o.activeTopic : (topicExpired ? null : o.existingQuestion)),
         createdAt: hideTopic ? null : (hasValidTopic ? (o.topicCreatedAtMs || o.existingCreatedAt || o.nowMs) : (topicExpired ? null : o.existingCreatedAt)),
@@ -3489,10 +3495,13 @@
         if (!it.card) return;
         const r = it.card.getBoundingClientRect();
         if (!r.width) return;
-        const clashCard = placedCards.some(p => rectsOverlapPx(r, p, 6));
+        // V11.30: hide a bubble only when it would cover someone's
+        // icon (the tappability problem) - never for merely
+        // overlapping another bubble, and never the Administrator's
+        // or the Welcome Guide's bubble (both must always show).
         const clashIcon = items.some((other, idx) => other !== it && rectsOverlapPx(r, iconRects[idx], 2));
-        if (clashCard || clashIcon) it.card.style.visibility = 'hidden';
-        else placedCards.push(r);
+        const protectedCard = it.prio === 0 || (it.peer && it.peer.peerId === WELCOME_GUIDE_PEER_ID);
+        if (clashIcon && !protectedCard) it.card.style.visibility = 'hidden';
       });
     }
     let declutterScheduled = false, lastDeclutterAt = 0;
@@ -5192,7 +5201,7 @@
             ${(currentLayoutMode !== 'right' && (isBiz || activeHasQuestion)) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '', (peer.peerId === WELCOME_GUIDE_PEER_ID && !welcomeGuideOpened) ? 'animate-giggle-loop' : null, peer.businessInfo || '') : ''}
           </div>
           ${showUserIcon ? `
-            <div class="relative flex flex-col items-center pointer-events-auto cursor-pointer p-2.5 -m-2.5" onclick="${onIconClickJs}" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
+            <div class="relative z-[3000] flex flex-col items-center pointer-events-auto cursor-pointer p-3.5 -m-3.5" onclick="${onIconClickJs}" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
               ${peerIsAdmin ? '<div class="admin-rainbow-icon-wrap">' : ''}
               <div class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;">
                 ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
@@ -5202,7 +5211,7 @@
             </div>
             <div class="node-under-icon">
               ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="personal-bot-badge">BOT</span>' : ''}
-              <span class="peer-name-label"${isBiz ? ` style="color: ${getBusinessCategoryColorHex(peer.category)}"` : ''}>${escapeChatHTML(chatRoomName)}${formatPeerDistance(peer) ? ' · ' + escapeChatHTML(formatPeerDistance(peer)) : ''}</span>
+              <span class="peer-name-label pointer-events-auto cursor-pointer" onclick="${onIconClickJs}"${isBiz ? ` style="color: ${getBusinessCategoryColorHex(peer.category)}"` : ''}>${escapeChatHTML(chatRoomName)}${formatPeerDistance(peer) ? ' · ' + escapeChatHTML(formatPeerDistance(peer)) : ''}</span>
             </div>
           ` : ''}
         </div>
@@ -5240,10 +5249,10 @@
           }
         }
 
-        // V11.26: the Welcome Guide is a permanent fixture - its bubble
-        // never expires, so its chat (and the tutorial) never resets.
-        const welcomeGuidePeer = globalActiveDirectory[WELCOME_GUIDE_PEER_ID];
-        if (welcomeGuidePeer && welcomeGuidePeer.question) welcomeGuidePeer.createdAt = Date.now();
+        // V11.26/V11.30: bots are permanent local fixtures - refreshing
+        // their bubble start keeps them from expiring mid-session with
+        // no respawn (the Welcome Guide is one of them).
+        Object.values(globalActiveDirectory).forEach(botPeer => { if (botPeer && botPeer.isBot && botPeer.question) botPeer.createdAt = Date.now(); });
 
         Object.keys(globalActiveDirectory).forEach(peerId => {
           const peer = globalActiveDirectory[peerId];
@@ -5745,6 +5754,7 @@
         if (error || !Array.isArray(data) || !data.length) return;
         const existing = localChatCache['room-you'] || [];
         const existingIds = new Set(existing.map(m => m.id));
+        const existingKeys = new Set(existing.map(m => m.sender + '|' + m.text + '|' + Date.parse(m.createdAt || ''))); // V11.30: content guard for rows whose client_id was stripped
         let added = 0;
         data.map(msg => ({
           id: msg.client_id || msg.id,
@@ -5753,7 +5763,7 @@
           time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           isMe: msg.sender_id === currentAuthUser.id,
           createdAt: msg.created_at, persisted: true
-        })).reverse().forEach(m => { if (!existingIds.has(m.id)) { existing.push(m); added++; } });
+        })).reverse().forEach(m => { const k = m.sender + '|' + m.text + '|' + Date.parse(m.createdAt || ''); if (!existingIds.has(m.id) && !existingKeys.has(k)) { existing.push(m); existingKeys.add(k); added++; } });
         if (!added) return;
         existing.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
         localChatCache['room-you'] = existing.slice(-200);
@@ -5843,7 +5853,11 @@
         if (msg.id && merged.some(db => db.id === msg.id)) continue;
         const looseKey = msg.sender + '|' + msg.text + '|' + msg.time;
         if (!msg.id && dbLooseCounts[looseKey] > 0) { dbLooseCounts[looseKey]--; continue; }
-        if (msg.id && dbLooseCounts[looseKey] > 0 && merged.some(db => !db.id && db.sender === msg.sender && db.text === msg.text && db.time === msg.time)) { dbLooseCounts[looseKey]--; continue; }
+        // V11.30: content-based dedupe must not require the DB row to
+        // lack an id - rows saved while chat_messages.client_id was
+        // missing come back with a fresh row id, so the optimistic copy
+        // never matched and every sent message showed up twice.
+        if (msg.id && dbLooseCounts[looseKey] > 0) { dbLooseCounts[looseKey]--; continue; }
         merged.push(msg);
       }
       const seen = new Set();
@@ -6042,7 +6056,8 @@
               if (msg.id && merged.some(db => db.id === msg.id)) continue;
               const looseKey = msg.sender + '|' + msg.text + '|' + msg.time;
               if (!msg.id && dbLooseCounts[looseKey] > 0) { dbLooseCounts[looseKey]--; continue; }
-              if (msg.id && dbLooseCounts[looseKey] > 0 && merged.some(db => !db.id && db.sender === msg.sender && db.text === msg.text && db.time === msg.time)) { dbLooseCounts[looseKey]--; continue; }
+              // V11.30: content-based dedupe must not require the DB row to lack an id - rows saved while chat_messages.client_id was missing come back with a fresh row id, so the optimistic copy never matched and every sent message showed up twice.
+              if (msg.id && dbLooseCounts[looseKey] > 0) { dbLooseCounts[looseKey]--; continue; }
               merged.push(msg);
             }
           } else if (error) {
