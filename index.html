@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.23 Private Threads Listed + Tap-Outside Close]</title>
+  <title>LocaL - Proximity Social Network [V11.24 Private Bubble Outline + Popover Polish]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -578,7 +578,7 @@
   </div>
 
   <!-- V11.20: peer action popover - appears when a person's map icon is tapped -->
-  <div id="peerActionPopover" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999997] w-full max-w-xs px-4 pointer-events-auto">
+  <div id="peerActionPopover" class="hidden fixed bottom-44 left-1/2 -translate-x-1/2 z-[9999997] w-full max-w-xs px-4 pointer-events-auto">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5 mb-3">
         <div id="peerActionAvatar" class="w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md overflow-hidden flex-shrink-0"></div>
@@ -588,8 +588,9 @@
         </div>
         <button onclick="closePeerActions()" class="p-1.5 rounded-full bg-white/10 text-slate-300 flex-shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
       </div>
-      <div>
-        <button onclick="peerActionPrivateMessage()" class="w-full py-2.5 rounded-2xl bg-sky-400 hover:bg-sky-300 text-slate-950 font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"><i data-lucide="mail" class="w-4 h-4"></i>Private Message</button>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="peerActionPrivateMessage()" class="py-2.5 rounded-2xl bg-sky-400 hover:bg-sky-300 text-slate-950 font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"><i data-lucide="mail" class="w-4 h-4"></i>Private Message</button>
+        <button onclick="peerActionToggleFriend()" class="py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"><i data-lucide="user-plus" class="w-4 h-4"></i><span id="peerActionFriendBtnText">Add Friend</span></button>
       </div>
       <p class="text-[9px] text-slate-500 mt-2 text-center">Private messages are only shown to you and this person.</p>
     </div>
@@ -2613,6 +2614,7 @@
       avatarEl.style.background = visual.bg;
       avatarEl.innerHTML = renderNodeIconContent(peer.accountType, peer.category, peer.isBot);
       document.getElementById('peerActionPopover').classList.remove('hidden');
+      updatePeerActionFriendBtn();
       lucide.createIcons();
     }
     function closePeerActions() {
@@ -2622,6 +2624,19 @@
     }
     // V11.22: the popover is private-message only (Shane) - the bubble
     // chat is still one tap on the floating bubble card itself.
+    // V11.24: the popover's Add Friend button mirrors the chat drawer's
+    // friend button - same states, same toggle.
+    function updatePeerActionFriendBtn() {
+      const el = document.getElementById('peerActionFriendBtnText');
+      if (!el || !pendingPeerActionId) return;
+      el.innerText = friendPeerIds.has(pendingPeerActionId) ? 'Friends ✓' : (friendRequestsOut.has(pendingPeerActionId) ? 'Requested…' : (friendRequestsIn[pendingPeerActionId] ? 'Accept Request' : 'Add Friend'));
+    }
+    function peerActionToggleFriend() {
+      if (!pendingPeerActionId) return;
+      toggleFriendStatus(pendingPeerActionId);
+      updatePeerActionFriendBtn();
+    }
+
     function peerActionPrivateMessage() {
       const peerId = pendingPeerActionId;
       const peer = peerId ? globalActiveDirectory[peerId] : null;
@@ -3276,7 +3291,7 @@
       let tapDownX = null, tapDownY = null;
       window.addEventListener('pointerdown', (e) => { tapDownX = e.clientX; tapDownY = e.clientY; }, { passive: true });
       window.addEventListener('click', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label')) return;
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label, #peerActionPopover, .node-item')) return; // V11.24: icon taps and the box itself are not map taps
         const movedPx = (tapDownX === null) ? 0 : Math.hypot(e.clientX - tapDownX, e.clientY - tapDownY);
         tapDownX = null; tapDownY = null;
         if (movedPx > 10) return; // it was a drag, not a tap
@@ -3284,6 +3299,7 @@
           leftChatListHidden = true;
           applyLeftChatListVisibility();
         }
+        closePeerActions(); // V11.24: tapping the map hides the private message box
         createScreenTapPulseAt(e.clientX, e.clientY);
       });
     }
@@ -4527,7 +4543,7 @@
             </div>
           `;
         } else {
-          const cardOutline = item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (item.isFriend ? 'border-[2px] border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.6)]' : 'border border-white/80 shadow-xl');
+          const cardOutline = item.isDm ? 'border-[2px] border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.65)]' : (item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (item.isFriend ? 'border-[2px] border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.6)]' : 'border border-white/80 shadow-xl')); // V11.24: private threads get a blue outline
           container.innerHTML += `
             <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} ${jiggleClass} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
               <div class="w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${getNodeIconVisual(item.accountType, item.category, item.isBot).borderClass}" style="background: ${getNodeIconVisual(item.accountType, item.category, item.isBot).bg}; border-radius: 50%;">
