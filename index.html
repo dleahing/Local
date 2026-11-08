@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.26 Welcome Guide Tutorial Bot]</title>
+  <title>LocaL - Proximity Social Network [V11.27 Guide Swap, DM Delete Fix, Business Info]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -967,6 +967,10 @@
             <label class="settings-label">Store Street Address (Fixed)</label>
             <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="settings-input">
           </div>
+          <div>
+            <label class="settings-label">About Your Store (shows in your bubble's info section)</label>
+            <textarea id="businessInfoInput" rows="2" maxlength="140" placeholder="e.g. Family-owned since 1998 - fresh catch daily, patio seating, dog friendly." class="settings-input"></textarea>
+          </div>
         </div>
 
         <div class="settings-card p-4 space-y-2">
@@ -1209,6 +1213,7 @@
       closeTime: '21:00',
       hours: 'Open 9:00 AM • Closes 9:00 PM',
       address: '',
+      businessInfo: '',
       interestFilter: 'none',
       radius: DEFAULT_RADIUS_METERS,
       lat: 27.2730,
@@ -1396,7 +1401,7 @@
         Object.keys(globalActiveDirectory).forEach(id => {
           const peer = globalActiveDirectory[id];
           if (peer.question && peer.createdAt && (Date.now() - peer.createdAt <= ONE_HOUR_MS)) {
-            snapshot[id] = { question: peer.question, createdAt: peer.createdAt, rawSender: peer.rawSender || null, isAdmin: isAdminPeer(peer), accountType: peer.accountType || 'personal', category: peer.category || 'store', lat: (typeof peer.lat === 'number' ? peer.lat : null), lng: (typeof peer.lng === 'number' ? peer.lng : null), hideMyName: !!peer.hideMyName, isBot: !!peer.isBot, hours: peer.hours || '', address: peer.address || '', interestFilter: peer.interestFilter || 'none' }; // V11.6: keep the peer's identity so a restored bubble is not rebuilt as a nameless 'Offline Peer' duplicate
+            snapshot[id] = { question: peer.question, createdAt: peer.createdAt, rawSender: peer.rawSender || null, isAdmin: isAdminPeer(peer), accountType: peer.accountType || 'personal', category: peer.category || 'store', lat: (typeof peer.lat === 'number' ? peer.lat : null), lng: (typeof peer.lng === 'number' ? peer.lng : null), hideMyName: !!peer.hideMyName, isBot: !!peer.isBot, hours: peer.hours || '', address: peer.address || '', businessInfo: peer.businessInfo || '', interestFilter: peer.interestFilter || 'none' }; // V11.6: keep the peer's identity so a restored bubble is not rebuilt as a nameless 'Offline Peer' duplicate
           }
         });
         // V11.4: never overwrite a stored snapshot with an empty one -
@@ -1446,6 +1451,7 @@
                   category: cachedData.category || 'store',
                   hours: cachedData.hours || '',
                   address: cachedData.address || '',
+                  businessInfo: cachedData.businessInfo || '',
                   interestFilter: cachedData.interestFilter || 'none',
                   hideMyName: !!cachedData.hideMyName,
                   question: cachedData.question,
@@ -1721,7 +1727,7 @@
           </div>
         `;
       }
-      const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
+      const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/40 shadow-xl'; // V11.27: group chat bubbles lose the strong white border
       return `
         <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">
           ${headerHtml}
@@ -1745,11 +1751,12 @@
       return labels[category] || 'Business';
     }
 
-    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false, hasUnread = false, address = '', forceAnimClass = null) {
+    function renderBusinessBubbleCardHtml(accountType, category, question, businessName, onClickJs, hours, hideMyName, isMainUser = false, isAdmin = false, hasUnread = false, address = '', forceAnimClass = null, businessInfo = '') {
       const displayName = escapeChatHTML(getDisplayName(businessName, hideMyName, accountType));
       if (question) question = escapeChatHTML(question);
       if (hours) hours = escapeChatHTML(hours);
       if (address) address = escapeChatHTML(address);
+      if (businessInfo) businessInfo = escapeChatHTML(businessInfo);
       const categoryLabel = escapeChatHTML(getBusinessCategoryLabel(category));
       const nameColorClass = getBusinessCategoryTextColorClass(category);
       const animClass = forceAnimClass || (hasUnread ? 'animate-jiggle-continuous' : 'animate-float'); // V11.17 (+ V11.26 forced class)
@@ -1774,7 +1781,7 @@
       }
       if (accountType !== 'business') {
         if (!question) return '';
-        const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
+        const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/40 shadow-xl'; // V11.27: group chat bubbles lose the strong white border
         const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${displayName}</span></div>`;
         return `
           <div class="peer-bubble-card px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 ${animClass} z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
@@ -1797,6 +1804,12 @@
       
       return `
         <div class="peer-bubble-card dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 ${animClass} z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+          <div class="pb-1.5 mb-0.5 border-b border-white/10 flex flex-col gap-1">
+            <div class="flex items-center gap-1.5"><i data-lucide="${neonStyle.lucideIcon}" class="w-3 h-3 text-amber-300 flex-shrink-0"></i><span class="text-[9.5px] text-slate-200 font-bold tracking-wide">${categoryLabel}</span><span class="text-[8px] font-mono font-bold uppercase tracking-wider text-amber-300/90 ml-auto">Info</span></div>
+            ${businessInfo ? `<div class="flex items-start gap-1.5"><i data-lucide="info" class="w-3 h-3 text-amber-200 flex-shrink-0 mt-[1px]"></i><span class="text-[9.5px] text-slate-200 font-medium leading-snug">${businessInfo}</span></div>` : ''}
+            ${hours ? `<div class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3 h-3 text-emerald-300 flex-shrink-0"></i><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${hours}</span></div>` : ''}
+            ${address ? `<div class="flex items-start gap-1.5"><i data-lucide="map-pin" class="w-3 h-3 text-sky-300 flex-shrink-0 mt-[1px]"></i><span class="text-[9.5px] text-slate-300 font-medium leading-snug">${address}</span></div>` : ''}
+          </div>
           <div class="flex items-start gap-2.5">
             <i data-lucide="${neonStyle.lucideIcon}" class="w-3.5 h-3.5 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
@@ -1813,11 +1826,6 @@
                 </div>
               ` : ''}
             </div>
-          </div>
-          <div class="pt-1.5 mt-0.5 border-t border-white/10 flex flex-col gap-1">
-            <div class="flex items-center gap-1.5"><i data-lucide="${neonStyle.lucideIcon}" class="w-3 h-3 text-amber-300 flex-shrink-0"></i><span class="text-[9.5px] text-slate-200 font-bold tracking-wide">${categoryLabel}</span><span class="text-[8px] font-mono font-bold uppercase tracking-wider text-amber-300/90 ml-auto">Info</span></div>
-            ${hours ? `<div class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3 h-3 text-emerald-300 flex-shrink-0"></i><span class="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-semibold border border-emerald-500/30 whitespace-nowrap">${hours}</span></div>` : ''}
-            ${address ? `<div class="flex items-start gap-1.5"><i data-lucide="map-pin" class="w-3 h-3 text-sky-300 flex-shrink-0 mt-[1px]"></i><span class="text-[9.5px] text-slate-300 font-medium leading-snug">${address}</span></div>` : ''}
           </div>
         </div>
       `;
@@ -2563,6 +2571,7 @@
 
       document.getElementById('avatarNameInput').value = userState.alias || '';
       document.getElementById('businessAddressInput').value = userState.address || '';
+      document.getElementById('businessInfoInput').value = userState.businessInfo || '';
       document.getElementById('businessOpenTimeInput').value = userState.openTime || '09:00';
       document.getElementById('businessCloseTimeInput').value = userState.closeTime || '21:00';
       document.getElementById('businessHoursInput').value = userState.hours || 'Open 9:00 AM • Closes 9:00 PM';
@@ -2796,7 +2805,7 @@
         const savedCleared = localStorage.getItem(STORAGE_KEY_CHAT_CLEARED);
         if (savedCleared) {
           const parsedCleared = JSON.parse(savedCleared);
-          Object.keys(parsedCleared || {}).forEach(k => { if (Date.now() - parsedCleared[k] <= ONE_HOUR_MS) chatRoomClearedAt[k] = parsedCleared[k]; });
+          Object.keys(parsedCleared || {}).forEach(k => { const clearAge = Date.now() - parsedCleared[k]; if (clearAge <= ONE_HOUR_MS || (parseDmRoom(k) && clearAge <= 30 * 24 * ONE_HOUR_MS)) chatRoomClearedAt[k] = parsedCleared[k]; }); // V11.27: private-chat delete marks live as long as private chats do (30 days), or a restart resurrected deleted threads
         }
         restoreChatCache();
         syncUnreadChimeLoop();
@@ -3109,7 +3118,7 @@
         if (autoZoom || isDraggingRadius) {
           const viewportMin = Math.min(window.innerWidth, window.innerHeight);
           const targetScaleFactor = (viewportMin * 0.65) / Math.max(100, pixelDiameter);
-          targetZoomScale = Math.max(0.35, Math.min(2.5, targetScaleFactor));
+          targetZoomScale = Math.max(0.35, Math.min(2.0, targetScaleFactor)); // V11.27: auto-fit only - on tablets the fit used to slam into the 2.5x ceiling, and iOS renders the giant map layer from a capped-size bitmap, so the whole map opened blurry until the user zoomed out. Manual pinch/wheel zoom still reaches 2.5x.
         }
       }
 
@@ -3289,6 +3298,12 @@
     }
 
     function getDeterministicBearing(peerId, rawSender) {
+      // V11.27: the Welcome Guide and PickleballPro trade places (Shane).
+      // Each is plotted with the other's bearing seed, and their spawn
+      // distances are swapped in the bot definitions, so the two icons
+      // exchange map locations exactly.
+      if (peerId === 'sim-peer-tutorial-bot') { peerId = 'sim-peer-bot-05mi'; rawSender = 'PickleballPro'; }
+      else if (peerId === 'sim-peer-bot-05mi') { peerId = 'sim-peer-tutorial-bot'; rawSender = 'Welcome Guide'; }
       const seedString = (peerId || '') + (rawSender || '');
       let hash = 0;
       for (let i = 0; i < seedString.length; i++) {
@@ -3299,7 +3314,7 @@
     }
 
     function refreshAllPeerDistancesAndPositions() {
-      const peerIds = Object.keys(globalActiveDirectory).sort();
+      const peerIds = Object.keys(globalActiveDirectory).sort((a, b) => (a === WELCOME_GUIDE_PEER_ID ? -1 : (b === WELCOME_GUIDE_PEER_ID ? 1 : (a < b ? -1 : 1)))); // V11.27: the Welcome Guide is placed first so the separation spiral can never shove it away from the user
       const placedNodes = [];
       const minNodeGap = 76;
 
@@ -3492,7 +3507,7 @@
 
       if (userState.type === 'business') {
         topBubble.className = "block relative z-[99999999]";
-        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, displayText, userState.alias, onClickJs, userState.hours, userState.hideMyName, true, isUserAdmin, hasUnread, userState.address || '');
+        topBubble.innerHTML = renderBusinessBubbleCardHtml(userState.type, userState.category, displayText, userState.alias, onClickJs, userState.hours, userState.hideMyName, true, isUserAdmin, hasUnread, userState.address || '', null, userState.type === 'business' ? (userState.businessInfo || '') : '');
       } else {
         topBubble.className = "relative z-[99999999]";
         topBubble.innerHTML = renderUserBubbleCardHtml(displayText, myDisplayName, onClickJs, isUserAdmin, isGiggle, true, isUserAdmin, hasUnread);
@@ -4391,7 +4406,7 @@
         rawSender: data.sender, peerId: data.peerId, lat: data.lat, lng: data.lng,
         distance, bubbleColor: data.bubbleColor || 'violet', accountType: data.accountType || 'personal',
         category: data.category || 'store', openTime: data.openTime || '09:00', closeTime: data.closeTime || '21:00',
-        hours: calculatedHours, address: data.address || '', interestFilter: data.interestFilter || 'none', hideMyName: data.hideMyName || false,
+        hours: calculatedHours, address: data.address || '', businessInfo: data.businessInfo || '', interestFilter: data.interestFilter || 'none', hideMyName: data.hideMyName || false,
         lastSeen: Date.now(),
         question: resolvedQuestion,
         createdAt: resolvedCreatedAt,
@@ -4419,8 +4434,8 @@
 
     function spawnDefaultSimulatedUsers() {
       const defaultBots = [
-        { name: 'Welcome Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.3, question: 'Tap here to get started.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
-        { name: 'PickleballPro', peerId: 'sim-peer-bot-05mi', targetMiles: 0.4, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
+        { name: 'Welcome Guide', peerId: 'sim-peer-tutorial-bot', targetMiles: 0.4, question: 'Tap here to get started.', color: 'blue', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Life', isBot: true },
+        { name: 'PickleballPro', peerId: 'sim-peer-bot-05mi', targetMiles: 0.3, question: 'Pickleball tournament this afternoon!', color: 'emerald', accountType: 'personal', category: 'store', openTime: '', closeTime: '', hours: '', interestFilter: 'Pickleball', isBot: true },
         { name: 'IslandGrill', peerId: 'sim-peer-restaurant-08mi', targetMiles: 0.8, question: 'Wood-fired brick oven pizza & patio seating.', color: 'yellow', accountType: 'business', category: 'utensils', openTime: '11:00', closeTime: '22:00', hours: 'Open 11:00 AM • Closes 10:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'CoastlineCafe', peerId: 'sim-peer-restaurant-04mi', targetMiles: 0.2, question: 'Fresh local seafood & artisan espresso.', color: 'yellow', accountType: 'business', category: 'coffee', openTime: '06:00', closeTime: '18:00', hours: 'Open 6:00 AM • Closes 6:00 PM', interestFilter: 'Food', isBot: true },
         { name: 'OceanRx', peerId: 'sim-peer-business-2', targetMiles: 1.5, question: 'Licensed compounding rx & sterile consultations.', color: 'emerald', accountType: 'business', category: 'pill', openTime: '08:00', closeTime: '20:00', hours: 'Open 8:00 AM • Closes 8:00 PM', interestFilter: 'Life', isBot: true }
@@ -4654,6 +4669,7 @@
         const otherId = otherDmParticipant(roomId);
         if (!otherId) return;
         const msgs = localChatCache[roomId] || [];
+        if (!msgs.length && chatRoomClearedAt[roomId]) return; // V11.27: deleted here and nothing new since - keep it out of the list
         const peer = globalActiveDirectory[otherId];
         const lastMsg = msgs[msgs.length - 1];
         dmList.push({
@@ -4703,7 +4719,7 @@
             </div>
           `;
         } else {
-          const cardOutline = item.isDm ? 'border-[2px] border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.65)]' : (item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : (item.isFriend ? 'border-[2px] border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.6)]' : 'border border-white/80 shadow-xl')); // V11.24: private threads get a blue outline
+          const cardOutline = item.isDm ? 'border-[2px] border-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.6)]' : (item.isMainUser ? 'border-[2px] border-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.6)]' : 'border border-white/40 shadow-xl'); // V11.27 (Shane): private threads take over the sky border; group chats (friends + regular) lose the coloured border - plain now. Your own bubble keeps its amber.
           container.innerHTML += `
             <div onclick="${onClickJs}" class="glass-card px-3 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 ${cardOutline} ${jiggleClass} cursor-pointer hover:scale-105 transition-all max-w-[240px]">
               <div class="w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 bubble-node overflow-hidden ${getNodeIconVisual(item.accountType, item.category, item.isBot).borderClass}" style="background: ${getNodeIconVisual(item.accountType, item.category, item.isBot).bg}; border-radius: 50%;">
@@ -4889,7 +4905,7 @@
           question: hasSelfTopic ? activeTopicState.text : '',
           peerId: 'you', roomId: 'room-you', accountType: userState.type,
           category: userState.category, hours: userState.hours, hideMyName: userState.hideMyName,
-          createdAt: activeTopicState.createdAt, isAdmin: isUserAdmin, isMainUser: !isUserAdmin, isFriend: false, isBot: false,
+          createdAt: activeTopicState.createdAt, isAdmin: isUserAdmin, isMainUser: !isUserAdmin, isFriend: false, isBot: false, address: userState.address || '', businessInfo: userState.type === 'business' ? (userState.businessInfo || '') : '',
           hasUnread: unreadRoomIds.has('room-you')
         };
         if (isUserAdmin) adminBubbles.push(item);
@@ -4913,7 +4929,7 @@
               name: getDisplayName(p.rawSender, p.hideMyName, p.accountType),
               question: hasValidQuestion ? p.question : '',
               peerId: p.peerId, roomId, accountType: p.accountType,
-              category: p.category, hours: p.hours, isParticipated: isParticipated && !inRadius,
+              category: p.category, hours: p.hours, address: p.address || '', businessInfo: p.businessInfo || '', isParticipated: isParticipated && !inRadius,
               createdAt: p.createdAt, isAdmin: peerIsAdmin, isMainUser: false, isFriend, isBot: !!p.isBot,
               hasUnread: unreadRoomIds.has(roomId)
             };
@@ -4924,7 +4940,29 @@
         }
       });
 
-      const validBubbles = [...adminBubbles, ...mainUserBubbles, ...friendBubbles, ...otherBubbles];
+      // V11.27: private chats the user is part of belong in this list
+      // too - they have no map bubble, so the peer loop above can never
+      // include them.
+      const dmBubbles = [];
+      participatedChatRoomIds.forEach(roomId => {
+        if (!parseDmRoom(roomId)) return;
+        const otherId = otherDmParticipant(roomId);
+        if (!otherId) return;
+        if ((localChatCache[roomId] || []).length === 0 && chatRoomClearedAt[roomId]) return;
+        const peer = globalActiveDirectory[otherId];
+        const dmMsgs = localChatCache[roomId] || [];
+        const lastDmMsg = dmMsgs[dmMsgs.length - 1];
+        dmBubbles.push({
+          name: peer ? getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType) : (friendRequestsIn[otherId]?.name || 'Private Chat'),
+          question: lastDmMsg ? lastDmMsg.text : 'Private messages',
+          peerId: otherId, roomId, accountType: peer?.accountType || 'personal',
+          category: peer?.category || 'store', hours: '', hideMyName: peer?.hideMyName || false,
+          createdAt: null, isAdmin: false, isMainUser: false, isFriend: friendPeerIds.has(otherId), isBot: !!peer?.isBot,
+          hasUnread: unreadRoomIds.has(roomId), isDm: true
+        });
+      });
+
+      const validBubbles = [...adminBubbles, ...mainUserBubbles, ...dmBubbles, ...friendBubbles, ...otherBubbles];
 
       const countElem = document.getElementById('rightSidebarCount');
       if (countElem) countElem.innerText = validBubbles.length;
@@ -4938,7 +4976,7 @@
       validBubbles.forEach(b => {
         const isBiz = b.accountType === 'business';
         const neonStyle = getBusinessNeonStyle(b.accountType, b.category);
-        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${escapeJsArg(b.name)}', '${escapeJsArg(b.question)}', '${escapeJsArg(b.peerId)}', ${safeTimestampMs(b.createdAt)})`;
+        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${escapeJsArg(b.name)}', '${escapeJsArg(b.isDm ? '' : b.question)}', '${escapeJsArg(b.peerId)}', ${safeTimestampMs(b.createdAt)})`;
 
         container.innerHTML += `
           <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
@@ -4948,7 +4986,7 @@
             </div>
             ${b.isAdmin ? '</div>' : ''}
             <div class="flex-1 min-w-0">
-              <div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin, b.hasUnread, b.address || '') : renderUserBubbleCardHtml(b.question, b.name, onClickJs, b.isAdmin, false, b.isMainUser, b.isAdmin, b.hasUnread)}</div>
+              ${b.isDm ? `<div class="min-w-0"><div class="flex items-center gap-2"><span class="text-xs font-bold text-slate-900 truncate">@${escapeChatHTML(b.name)}</span><span class="text-[8px] font-mono font-bold uppercase tracking-wider text-sky-600">Private</span></div><p class="text-[11px] font-light text-slate-600 leading-snug break-words line-clamp-2 mt-0.5">${escapeChatHTML(b.question)}</p></div>` : `<div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin, b.hasUnread, b.address || '', null, b.businessInfo || '') : renderUserBubbleCardHtml(b.question, b.name, onClickJs, b.isAdmin, false, b.isMainUser, b.isAdmin, b.hasUnread)}</div>`}
             </div>
           </div>
         `;
@@ -4964,7 +5002,7 @@
         type: 'PEER_PRESENCE', sender: userState.alias, bubbleColor: userState.bubbleColor,
         peerId: myPeerId, lat: coords.lat, lng: coords.lng, accountType: userState.type,
         category: userState.category, openTime: userState.openTime, closeTime: userState.closeTime,
-        hours: userState.hours, address: userState.type === 'business' ? (userState.address || '') : '', interestFilter: userState.interestFilter, hideMyName: userState.hideMyName, // V11.11: address rides along so business bubbles can show it in their info section
+        hours: userState.hours, address: userState.type === 'business' ? (userState.address || '') : '', businessInfo: userState.type === 'business' ? (userState.businessInfo || '') : '', interestFilter: userState.interestFilter, hideMyName: userState.hideMyName, // V11.11: address rides along so business bubbles can show it in their info section (V11.27: the store info text rides along the same way)
         isBot: false,
         isAdmin: isAdminUser,
         question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.text : null,
@@ -5078,7 +5116,7 @@
       const onClickJs = `playAudioEffect('chime'); openChatDrawer('${roomId}', '${escapeJsArg(chatRoomName)}', '${escapeJsArg(peer.question || '')}', '${escapeJsArg(peer.peerId)}', ${safeTimestampMs(peer.createdAt)})`;
       const onIconClickJs = `playAudioEffect('chime'); openPeerActions('${escapeJsArg(peer.peerId)}')`; // V11.20: icon tap offers Bubble Chat / Private Message
 
-      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', peerIsAdmin ? 'admin' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.address || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', currentLayoutMode === 'right' ? 'listR' : 'map', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length, peer.peerId === WELCOME_GUIDE_PEER_ID ? (welcomeGuideOpened ? 'wg-open' : 'wg-new') : ''].join('|'); // V11.13: layout mode in the signature so bubbles hide/show with the right list
+      const renderSig = [peer.question || '', peer.createdAt || '', peer.accountType || '', peer.category || '', peer.isBot ? 'bot' : '', peer.isOffline ? 'off' : '', peerIsAdmin ? 'admin' : '', hasUnread ? 'unread' : '', peer.hours || '', peer.address || '', peer.businessInfo || '', peer.rawSender || '', peer.hideMyName ? 'anon' : '', userState.interestFilter || '', unlimitedRadarActive ? 'unlim' : '', currentLayoutMode === 'right' ? 'listR' : 'map', peer.distance != null ? Math.round(peer.distance / 50) : '', (localChatCache[roomId] || []).length, peer.peerId === WELCOME_GUIDE_PEER_ID ? (welcomeGuideOpened ? 'wg-open' : 'wg-new') : ''].join('|'); // V11.13: layout mode in the signature so bubbles hide/show with the right list
       if (nodeElem.dataset.renderSig === renderSig && nodeElem.innerHTML) {
         return;
       }
@@ -5088,7 +5126,7 @@
         <div class="relative flex flex-col items-center group scale-compensator pointer-events-none z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-10 h-10 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
           <div class="node-content-stack pointer-events-none z-[99999999]" style="position:absolute; z-index:2000;">
-            ${(currentLayoutMode !== 'right' && (isBiz || activeHasQuestion)) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '', (peer.peerId === WELCOME_GUIDE_PEER_ID && !welcomeGuideOpened) ? 'animate-giggle-loop' : null) : ''}
+            ${(currentLayoutMode !== 'right' && (isBiz || activeHasQuestion)) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '', (peer.peerId === WELCOME_GUIDE_PEER_ID && !welcomeGuideOpened) ? 'animate-giggle-loop' : null, peer.businessInfo || '') : ''}
           </div>
           ${showUserIcon ? `
             <div class="relative flex flex-col items-center pointer-events-auto cursor-pointer p-2.5 -m-2.5" onclick="${onIconClickJs}" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
@@ -5188,6 +5226,7 @@
       userState.hideBusinesses = document.getElementById('filterHideBusinesses').checked;
       userState.hideBots = document.getElementById('filterHideBots').checked;
       if (userState.type === 'business') userState.address = document.getElementById('businessAddressInput').value.trim();
+      if (userState.type === 'business') userState.businessInfo = document.getElementById('businessInfoInput').value.trim().slice(0, 140);
       userState.profileCreated = true;
       isAdminUser = computeIsAdmin();
 
@@ -5482,7 +5521,8 @@
       if (!currentActiveChatRoomId) return;
       if (confirm("Are you sure you want to delete this entire chat room for all participants?")) {
         if (supabaseClient) {
-          await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId(currentActiveChatRoomId));
+          const { error: roomDeleteError } = await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId(currentActiveChatRoomId));
+          if (roomDeleteError) showToast('Server delete failed - the chat is removed on this device only: ' + roomDeleteError.message, 'alert-circle'); // V11.27: was silent, so a blocked delete looked like the chat came back
           if (currentActiveChatRoomId === 'room-you' && currentAuthUser) {
             await dbUpdateById('profiles', { active_topic: null, topic_created_at: null }, currentAuthUser.id);
           }
@@ -5671,16 +5711,26 @@
       try {
         const { data: myRows, error: myErr } = await supabaseClient
           .from('chat_messages')
-          .select('room_id')
+          .select('room_id, created_at')
           .eq('sender_id', currentAuthUser.id)
           .gte('created_at', new Date(Date.now() - 30 * 24 * ONE_HOUR_MS).toISOString())
           .limit(500);
         if (!myErr && Array.isArray(myRows)) {
           let discoveredAny = false;
+          // V11.27: never resurrect a room the user deleted - a room is
+          // only (re)discovered when its newest server message is newer
+          // than the moment it was deleted here.
+          const newestSentByRoom = {};
           myRows.forEach(r => {
             const local = localChatRoomId(r.room_id);
-            if (local && !roomIds.has(local)) { roomIds.add(local); }
-            if (local && !participatedChatRoomIds.has(local)) { participatedChatRoomIds.add(local); discoveredAny = true; }
+            if (!local) return;
+            const ts = new Date(r.created_at).getTime();
+            if (!newestSentByRoom[local] || ts > newestSentByRoom[local]) newestSentByRoom[local] = ts;
+          });
+          Object.keys(newestSentByRoom).forEach(local => {
+            if ((chatRoomClearedAt[local] || 0) >= newestSentByRoom[local]) return;
+            if (!roomIds.has(local)) { roomIds.add(local); }
+            if (!participatedChatRoomIds.has(local)) { participatedChatRoomIds.add(local); discoveredAny = true; }
           });
           if (discoveredAny) savePersistentData();
         }
@@ -5694,15 +5744,22 @@
       try {
         const { data: dmRows, error: dmErr } = await supabaseClient
           .from('chat_messages')
-          .select('room_id')
+          .select('room_id, created_at')
           .like('room_id', 'room-dm-%' + currentAuthUser.id + '%')
           .gte('created_at', new Date(Date.now() - 30 * 24 * ONE_HOUR_MS).toISOString())
           .limit(500);
         if (!dmErr && Array.isArray(dmRows)) {
           let discoveredDm = false;
+          const newestDmByRoom = {};
           dmRows.forEach(r => {
             const local = localChatRoomId(r.room_id);
-            if (local && parseDmRoom(local) && otherDmParticipant(local)) {
+            if (!local) return;
+            const ts = new Date(r.created_at).getTime();
+            if (!newestDmByRoom[local] || ts > newestDmByRoom[local]) newestDmByRoom[local] = ts;
+          });
+          Object.keys(newestDmByRoom).forEach(local => {
+            if ((chatRoomClearedAt[local] || 0) >= newestDmByRoom[local]) return; // V11.27: deleted here, nothing newer - stays deleted
+            if (parseDmRoom(local) && otherDmParticipant(local)) {
               if (!roomIds.has(local)) roomIds.add(local);
               if (!participatedChatRoomIds.has(local)) { participatedChatRoomIds.add(local); discoveredDm = true; }
             }
