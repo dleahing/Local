@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.28 Alias Saving + Change Alias, Business Card Order]</title>
+  <title>LocaL - Proximity Social Network [V11.29 Account Type Reorg, Business Name Colours]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -840,7 +840,7 @@
         </div>
 
         <div>
-          <label class="settings-label">Account Mode</label>
+          <label class="settings-label">Account Type</label>
           <div class="grid grid-cols-2 gap-2">
             <button onclick="playAudioEffect('click'); selectAccountType('personal')" id="personalTypeBtn" class="p-3 rounded-2xl settings-seg-active flex flex-col items-center gap-1 transition-all shadow-sm">
               <i data-lucide="user" class="w-4 h-4 text-emerald-300"></i>
@@ -851,17 +851,50 @@
               <span class="text-[11px] font-semibold">Business (Fixed)</span>
             </button>
           </div>
+<div id="businessFields" class="hidden space-y-3 pt-2 border-t border-white/10">
+          <div>
+            <label class="settings-label">Business Category & Icon</label>
+            <select id="businessCategorySelect" class="settings-select">
+              <option value="store">General Retail Store</option>
+              <option value="coffee">Coffee & Bakery</option>
+              <option value="utensils">Restaurant & Dining</option>
+              <option value="pill">Pharmacy & Health</option>
+              <option value="home">Real Estate & Housing</option>
+              <option value="wrench">Dumpster & Services</option>
+              <option value="glass-water">Bar & Lounge</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <span class="settings-label" style="font-size:10px;">Opening Time</span>
+              <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="settings-input">
+            </div>
+            <div>
+              <span class="settings-label" style="font-size:10px;">Closing Time</span>
+              <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="settings-input">
+            </div>
+          </div>
+          <input type="hidden" id="businessHoursInput" value="Open 9:00 AM • Closes 9:00 PM">
+          <div>
+            <label class="settings-label">Store Street Address (Fixed)</label>
+            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="settings-input">
+          </div>
+          <div>
+            <label class="settings-label">About Your Store (shows in your bubble's info section)</label>
+            <textarea id="businessInfoInput" rows="2" maxlength="140" placeholder="e.g. Family-owned since 1998 - fresh catch daily, patio seating, dog friendly." class="settings-input"></textarea>
+          </div>
+        </div>
         </div>
 
         <div>
-          <label class="settings-label">Unique Account Alias (Handle)</label>
+          <label class="settings-label" id="settingsAliasLabel">Unique Account Alias (Handle)</label>
           <input type="text" id="avatarNameInput" maxlength="60" placeholder="Your unique alias..." oninput="clearAliasChangeState()" class="settings-input text-sm font-medium">
           <div class="flex items-center gap-2 mt-2">
             <button type="button" id="changeAliasBtn" onclick="changeAliasFromSettings()" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-bold shadow transition-all active:scale-95 cursor-pointer">Change Alias</button>
             <span class="settings-hint">Checks Supabase first - if the name is taken, the box gets a red border and you can try another.</span>
           </div>
           <div id="aliasChangeMessage" class="hidden"></div>
-          <p class="settings-hint mt-1">Your alias is tied securely to your Supabase profile and must be unique across the mesh.</p>
+          <p class="settings-hint mt-1" id="settingsAliasHint">Your alias is tied securely to your Supabase profile and must be unique across the mesh.</p>
         </div>
 
         <div class="settings-card p-4 space-y-2">
@@ -944,39 +977,7 @@
           <p class="settings-hint mt-1" id="locPrecisionDesc">Showing exact distance to nearby peers.</p>
         </div>
 
-        <div id="businessFields" class="hidden space-y-3 pt-2 border-t border-white/10">
-          <div>
-            <label class="settings-label">Business Category & Icon</label>
-            <select id="businessCategorySelect" class="settings-select">
-              <option value="store">General Retail Store</option>
-              <option value="coffee">Coffee & Bakery</option>
-              <option value="utensils">Restaurant & Dining</option>
-              <option value="pill">Pharmacy & Health</option>
-              <option value="home">Real Estate & Housing</option>
-              <option value="wrench">Dumpster & Services</option>
-              <option value="glass-water">Bar & Lounge</option>
-            </select>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <span class="settings-label" style="font-size:10px;">Opening Time</span>
-              <input type="time" id="businessOpenTimeInput" value="09:00" onchange="updateBusinessHoursFromTimes()" class="settings-input">
-            </div>
-            <div>
-              <span class="settings-label" style="font-size:10px;">Closing Time</span>
-              <input type="time" id="businessCloseTimeInput" value="21:00" onchange="updateBusinessHoursFromTimes()" class="settings-input">
-            </div>
-          </div>
-          <input type="hidden" id="businessHoursInput" value="Open 9:00 AM • Closes 9:00 PM">
-          <div>
-            <label class="settings-label">Store Street Address (Fixed)</label>
-            <input type="text" id="businessAddressInput" placeholder="e.g. 123 Ocean Ave, Florida" class="settings-input">
-          </div>
-          <div>
-            <label class="settings-label">About Your Store (shows in your bubble's info section)</label>
-            <textarea id="businessInfoInput" rows="2" maxlength="140" placeholder="e.g. Family-owned since 1998 - fresh catch daily, patio seating, dog friendly." class="settings-input"></textarea>
-          </div>
-        </div>
+        
 
         <div class="settings-card p-4 space-y-2">
           <label class="settings-label">Privacy & Visibility</label>
@@ -1299,6 +1300,21 @@
         case 'home': return 'text-sky-400 font-extrabold';
         case 'wrench': return 'text-yellow-400 font-extrabold';
         default: return 'text-purple-300 font-extrabold';
+      }
+    }
+
+    // V11.29: the same category colours as hex values, for the places
+    // that style text inline (map name pills, the chat drawer header).
+    // store / General Retail is the purple default.
+    function getBusinessCategoryColorHex(category) {
+      switch (category) {
+        case 'utensils': return '#f59e0b';
+        case 'glass-water': return '#ec4899';
+        case 'pill': return '#10b981';
+        case 'coffee': return '#f97316';
+        case 'home': return '#0ea5e9';
+        case 'wrench': return '#eab308';
+        default: return '#a855f7';
       }
     }
 
@@ -3735,7 +3751,7 @@
                 ${renderNodeIconContent(userState.type, userState.category)}
               </div>
             </div>
-            <div class="node-under-icon"><span id="userNameLabel" class="peer-name-label">${escapeChatHTML(getDisplayName(userState.alias, userState.hideMyName, userState.type))}</span></div>
+            <div class="node-under-icon"><span id="userNameLabel" class="peer-name-label"${userState.type === 'business' ? ` style="color: ${getBusinessCategoryColorHex(userState.category)}"` : ''}>${escapeChatHTML(getDisplayName(userState.alias, userState.hideMyName, userState.type))}</span></div>
           </div>
         </div>
       `;
@@ -5186,7 +5202,7 @@
             </div>
             <div class="node-under-icon">
               ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="personal-bot-badge">BOT</span>' : ''}
-              <span class="peer-name-label">${escapeChatHTML(chatRoomName)}${formatPeerDistance(peer) ? ' · ' + escapeChatHTML(formatPeerDistance(peer)) : ''}</span>
+              <span class="peer-name-label"${isBiz ? ` style="color: ${getBusinessCategoryColorHex(peer.category)}"` : ''}>${escapeChatHTML(chatRoomName)}${formatPeerDistance(peer) ? ' · ' + escapeChatHTML(formatPeerDistance(peer)) : ''}</span>
             </div>
           ` : ''}
         </div>
@@ -5251,6 +5267,14 @@
       document.getElementById('personalTypeBtn').className = type === 'personal' ? 'p-3 rounded-2xl settings-seg-active flex flex-col items-center gap-1 transition-all shadow-sm' : 'p-3 rounded-2xl settings-seg flex flex-col items-center gap-1 transition-all shadow-sm';
       document.getElementById('businessTypeBtn').className = type === 'business' ? 'p-3 rounded-2xl settings-seg-active flex flex-col items-center gap-1 transition-all shadow-sm' : 'p-3 rounded-2xl settings-seg flex flex-col items-center gap-1 transition-all shadow-sm';
       document.getElementById('businessFields').classList.toggle('hidden', type !== 'business');
+      // V11.29: for a business, the alias IS the business name - label
+      // the field that way (it is the name on their chat bubble).
+      const aliasLabelEl = document.getElementById('settingsAliasLabel');
+      if (aliasLabelEl) aliasLabelEl.innerText = type === 'business' ? 'Business Name (Unique Handle)' : 'Unique Account Alias (Handle)';
+      const aliasInputEl2 = document.getElementById('avatarNameInput');
+      if (aliasInputEl2) aliasInputEl2.placeholder = type === 'business' ? 'Your business name...' : 'Your unique alias...';
+      const aliasHintEl = document.getElementById('settingsAliasHint');
+      if (aliasHintEl) aliasHintEl.innerText = type === 'business' ? 'This is your business name - the name shown on your chat bubble, in your category colour. It must be unique across the mesh.' : 'Your alias is tied securely to your Supabase profile and must be unique across the mesh.';
       if (!skipSave) savePersistentData();
     }
 
@@ -5586,6 +5610,13 @@
       const expiryBar = document.getElementById('chatExpiryTimerBar');
       if (expiryBar) expiryBar.style.display = isDm ? 'none' : ''; // V11.19: private chats do not expire
       if (isDm) document.getElementById('chatTargetName').innerText = '@' + roomName + ' · Private';
+      // V11.29: a business's name shows in its category colour in the
+      // chat header too, matching its bubble.
+      const targetNameEl = document.getElementById('chatTargetName');
+      if (targetNameEl) {
+        const bizCategory = roomId === 'room-you' ? (userState.type === 'business' ? userState.category : null) : (globalActiveDirectory[peerId]?.accountType === 'business' ? globalActiveDirectory[peerId].category : null);
+        targetNameEl.style.color = bizCategory ? getBusinessCategoryColorHex(bizCategory) : '';
+      }
       
       const isSelf = roomId === 'room-you';
       const isBiz = (isSelf && userState.type === 'business') || (!isSelf && globalActiveDirectory[peerId]?.accountType === 'business');
