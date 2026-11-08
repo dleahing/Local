@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.24 Private Bubble Outline + Popover Polish]</title>
+  <title>LocaL - Proximity Social Network [V11.25 Reliable Icon Taps + Map Declutter]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1681,7 +1681,7 @@
 
       if (isAdmin) {
         return `
-          <div class="admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">
+          <div class="peer-bubble-card admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-3.5 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1.5">
               ${isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${nameColorClass}">${displayName}</span></div>`}
               <div class="flex items-center gap-1.5">
@@ -1702,7 +1702,7 @@
         const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/80 shadow-xl';
         const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${displayName}</span></div>`;
         return `
-          <div class="px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 ${animClass} z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
+          <div class="peer-bubble-card px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 ${animClass} z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
             ${headerHtml}
             <div class="flex items-center gap-1.5 py-0.5">
               <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
@@ -1721,7 +1721,7 @@
       const bizHeaderHtml = isMainUser ? '' : `<div class="flex items-center justify-between mb-0.5"><span class="text-xs truncate ${nameColorClass}">${displayName}</span><span class="text-[9px] font-mono text-slate-900 font-bold px-1.5 py-0.2 rounded bg-amber-400/90">Business</span></div>`;
       
       return `
-        <div class="dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 ${animClass} z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+        <div class="peer-bubble-card dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 ${animClass} z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
           <div class="flex items-start gap-2.5">
             <i data-lucide="${neonStyle.lucideIcon}" class="w-3.5 h-3.5 ${neonStyle.iconColor} flex-shrink-0 mt-0.5" stroke-width="2.5"></i>
             <div class="min-w-0 flex-1">
@@ -2840,7 +2840,7 @@
       if (!mapCanvas) return;
 
       const handlePanStart = (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label')) return;
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label, .node-item')) return; // V11.25: icon taps are not map gestures
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
         isDraggingMap = true;
         // V11.16: starting a drag no longer hides the left chat list -
@@ -2917,7 +2917,7 @@
       if (!mapCanvas) return;
 
       mapCanvas.addEventListener('touchend', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label')) return;
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label, .node-item')) return; // V11.25: icon taps are not map gestures
         const currentTime = new Date().getTime();
         const tapLength = currentTime - lastTapTime;
         if (tapLength < 300 && tapLength > 0) {
@@ -2929,7 +2929,7 @@
       });
 
       mapCanvas.addEventListener('dblclick', (e) => {
-        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label')) return;
+        if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label, .node-item')) return; // V11.25: icon taps are not map gestures
         recenterAndResetZoom();
         toggleLeftChatList();
       });
@@ -2995,6 +2995,7 @@
           mapCanvas.style.setProperty('--pan-x', `${panX}px`);
           mapCanvas.style.setProperty('--pan-y', `${panY}px`);
           mapCanvas.style.setProperty('--zoom-scale', Math.max(0.35, Math.min(2.5, currentZoomScale)).toFixed(4));
+          scheduleDeclutter(); // V11.25: pan/zoom changed the screen layout
         }
         animationFrameId = requestAnimationFrame(renderLoop);
       };
@@ -3260,10 +3261,93 @@
         }
       });
       refreshAllNodeVisibilities();
+      declutterMapBubbles(); // V11.25
     }
 
     function recalculateNodePositions() {
       refreshAllPeerDistancesAndPositions();
+    }
+
+    // V11.25: screen-space declutter. The deterministic spiral keeps
+    // icons apart in MAP coordinates, but zooming out compresses screen
+    // positions while icons and bubbles keep their size, so they pile
+    // up - and a bubble (or a node's transparent box) ends up covering
+    // the very icons Shane taps for the private message box. This pass
+    // works on real screen rectangles: colliding icons are nudged
+    // apart (admins, unread, friends and nearer users keep their exact
+    // spot), and a chat bubble that would cover another bubble or any
+    // icon is hidden - its icon stays visible and tappable.
+    function rectsOverlapPx(a, b, pad) {
+      return a.left - pad < b.right && a.right + pad > b.left && a.top - pad < b.bottom && a.bottom + pad > b.top;
+    }
+    function declutterMapBubbles() {
+      const container = document.getElementById('nodesContainer');
+      if (!container) return;
+      const items = [];
+      container.querySelectorAll('.node-item').forEach(el => {
+        if (el.style.display === 'none') return;
+        const icon = el.querySelector('.peer-node-icon');
+        if (!icon) return;
+        el.style.marginLeft = '0px';
+        el.style.marginTop = '0px';
+        const card = el.querySelector('.peer-bubble-card');
+        if (card) card.style.visibility = '';
+        items.push({ el, icon, card, peer: globalActiveDirectory[el.dataset.peerId] });
+      });
+      if (items.length < 2) return;
+      const roomIdOf = (peer) => peer ? 'room-peer-' + peer.peerId.replace(/[^a-zA-Z0-9]/g, '-') : '';
+      const priorityOf = (peer) => {
+        if (!peer) return 5;
+        if (isAdminPeer(peer)) return 0;
+        if (unreadRoomIds.has(roomIdOf(peer)) || unreadRoomIds.has(dmRoomIdFor(peer.peerId))) return 1;
+        if (friendPeerIds.has(peer.peerId)) return 2;
+        if (participatedChatRoomIds.has(roomIdOf(peer))) return 3;
+        return 4;
+      };
+      items.forEach(it => {
+        it.prio = priorityOf(it.peer);
+        it.dist = (it.peer && it.peer.distance != null) ? it.peer.distance : 1e12;
+        it.rect = it.icon.getBoundingClientRect();
+      });
+      const sorted = [...items].sort((a, b) => (a.prio - b.prio) || (a.dist - b.dist));
+      const placedIcons = [];
+      sorted.forEach(it => {
+        let dx = 0, dy = 0;
+        placedIcons.forEach(p => {
+          const cx = (it.rect.left + it.rect.right) / 2 + dx, cy = (it.rect.top + it.rect.bottom) / 2 + dy;
+          const px = (p.rect.left + p.rect.right) / 2 + (p.dx || 0), py = (p.rect.top + p.rect.bottom) / 2 + (p.dy || 0);
+          let vx = cx - px, vy = cy - py;
+          let d = Math.hypot(vx, vy);
+          if (d < 34) {
+            if (d < 0.01) { vx = 1; vy = 0; d = 1; }
+            const push = Math.min(22, 34 - d);
+            dx += (vx / d) * push; dy += (vy / d) * push;
+          }
+        });
+        const mag = Math.hypot(dx, dy);
+        if (mag > 22) { dx = (dx / mag) * 22; dy = (dy / mag) * 22; }
+        it.dx = dx; it.dy = dy;
+        if (dx || dy) { it.el.style.marginLeft = dx + 'px'; it.el.style.marginTop = dy + 'px'; }
+        placedIcons.push(it);
+      });
+      const iconRects = items.map(it => it.icon.getBoundingClientRect());
+      const placedCards = [];
+      sorted.forEach(it => {
+        if (!it.card) return;
+        const r = it.card.getBoundingClientRect();
+        if (!r.width) return;
+        const clashCard = placedCards.some(p => rectsOverlapPx(r, p, 6));
+        const clashIcon = items.some((other, idx) => other !== it && rectsOverlapPx(r, iconRects[idx], 2));
+        if (clashCard || clashIcon) it.card.style.visibility = 'hidden';
+        else placedCards.push(r);
+      });
+    }
+    let declutterScheduled = false, lastDeclutterAt = 0;
+    function scheduleDeclutter() {
+      if (declutterScheduled) return;
+      declutterScheduled = true;
+      const wait = Math.max(0, 280 - (performance.now() - lastDeclutterAt));
+      setTimeout(() => { declutterScheduled = false; lastDeclutterAt = performance.now(); declutterMapBubbles(); }, wait);
     }
 
     function createScreenTapPulseAt(clientX, clientY) {
@@ -4870,7 +4954,7 @@
       if (!nodeElem) {
         nodeElem = document.createElement('div');
         nodeElem.id = peerKey;
-        nodeElem.className = 'absolute z-[99999999] cursor-pointer -translate-x-1/2 -translate-y-1/2 transition-all duration-300 node-item pointer-events-auto';
+        nodeElem.className = 'absolute z-[99999999] -translate-x-1/2 -translate-y-1/2 transition-all duration-300 node-item pointer-events-none'; // V11.25: the (large, mostly transparent) node box no longer eats taps meant for icons beneath it
         container.appendChild(nodeElem);
       }
 
@@ -4923,16 +5007,17 @@
         return;
       }
       nodeElem.dataset.renderSig = renderSig;
+      nodeElem.dataset.peerId = peer.peerId; // V11.25: declutter pass lookup
       nodeElem.innerHTML = `
-        <div class="relative flex flex-col items-center group scale-compensator pointer-events-auto z-[99999999]">
+        <div class="relative flex flex-col items-center group scale-compensator pointer-events-none z-[99999999]">
           <div class="peer-sonar-ring absolute top-1/2 left-1/2 w-10 h-10 rounded-full border-2 border-purple-400 animate-peer-sonar pointer-events-none z-0 shadow-[0_0_25px_rgba(168,85,247,0.85)]" style="border-radius: 50%; border-width: 1px; display: ${showSonarRipple ? 'block' : 'none'};"></div>
-          <div class="node-content-stack pointer-events-auto z-[99999999]" style="position:absolute; z-index:2000;">
+          <div class="node-content-stack pointer-events-none z-[99999999]" style="position:absolute; z-index:2000;">
             ${(currentLayoutMode !== 'right' && (isBiz || activeHasQuestion)) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '') : ''}
           </div>
           ${showUserIcon ? `
-            <div class="relative flex flex-col items-center">
+            <div class="relative flex flex-col items-center pointer-events-auto cursor-pointer p-2.5 -m-2.5" onclick="${onIconClickJs}" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
               ${peerIsAdmin ? '<div class="admin-rainbow-icon-wrap">' : ''}
-              <div onclick="${onIconClickJs}" class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
+              <div class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;">
                 ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
               </div>
               ${peerIsAdmin ? '</div>' : ''}
