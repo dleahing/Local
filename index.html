@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.21 Received Private Chats Listed + Offline DM Delivery]</title>
+  <title>LocaL - Proximity Social Network [V11.22 Schema-Tolerant Writes + Private Message Box]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -588,9 +588,8 @@
         </div>
         <button onclick="closePeerActions()" class="p-1.5 rounded-full bg-white/10 text-slate-300 flex-shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
       </div>
-      <div class="grid grid-cols-2 gap-2">
-        <button onclick="peerActionOpenChat()" class="py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"><i data-lucide="message-circle" class="w-4 h-4"></i>Bubble Chat</button>
-        <button onclick="peerActionPrivateMessage()" class="py-2.5 rounded-2xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"><i data-lucide="mail" class="w-4 h-4"></i>Private Message</button>
+      <div>
+        <button onclick="peerActionPrivateMessage()" class="w-full py-2.5 rounded-2xl bg-sky-400 hover:bg-sky-300 text-slate-950 font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"><i data-lucide="mail" class="w-4 h-4"></i>Private Message</button>
       </div>
       <p class="text-[9px] text-slate-500 mt-2 text-center">Private messages are only shown to you and this person.</p>
     </div>
@@ -1523,7 +1522,7 @@
           if (supabaseClient) {
             await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId('room-you'));
             if (currentAuthUser) {
-              await supabaseClient.from('profiles').update({ active_topic: null, topic_created_at: null }).eq('id', currentAuthUser.id);
+              await dbUpdateById('profiles', { active_topic: null, topic_created_at: null }, currentAuthUser.id);
             }
           }
           broadcastData({ id: 'exp-' + Math.random().toString(36).substring(2, 9), type: 'DELETE_ROOM', roomId: canonicalChatRoomId('room-you'), peerId: ownPeerId });
@@ -2120,7 +2119,7 @@
               // session. Before email confirmation there is no session, so
               // the old upsert here was silently rejected (and the row only
               // appeared later via the sign-in heal path anyway).
-              const profRes = await supabaseClient.from('profiles').upsert({
+              const profRes = await dbUpsert('profiles', {
                 id: currentAuthUser.id,
                 alias: usernameInput,
                 account_type: userState.type,
@@ -2172,7 +2171,7 @@
                 const metaAlias = (currentAuthUser.user_metadata && currentAuthUser.user_metadata.alias) || null;
                 userState.alias = metaAlias || emailInput.split('@')[0];
                 try {
-                  await supabaseClient.from('profiles').upsert({
+                  await dbUpsert('profiles', {
                     id: currentAuthUser.id, alias: userState.alias, account_type: userState.type,
                     category: userState.category, interest_filter: userState.interestFilter,
                     hide_my_name: userState.hideMyName, updated_at: new Date()
@@ -2607,7 +2606,7 @@
       pendingPeerActionId = peerId;
       const name = getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
       document.getElementById('peerActionName').innerText = '@' + name;
-      document.getElementById('peerActionSub').innerText = peer.question ? 'Bubble: ' + peer.question : 'No active bubble right now';
+      document.getElementById('peerActionSub').innerText = 'Private conversation - only you two can see it';
       const visual = getNodeIconVisual(peer.accountType, peer.category, peer.isBot);
       const avatarEl = document.getElementById('peerActionAvatar');
       avatarEl.className = `w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md overflow-hidden flex-shrink-0 ${visual.borderClass}`;
@@ -2621,14 +2620,8 @@
       const pop = document.getElementById('peerActionPopover');
       if (pop) pop.classList.add('hidden');
     }
-    function peerActionOpenChat() {
-      const peerId = pendingPeerActionId;
-      const peer = peerId ? globalActiveDirectory[peerId] : null;
-      closePeerActions();
-      if (!peer) return;
-      const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
-      openChatDrawer(roomId, getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType), peer.question || '', peerId, peer.createdAt);
-    }
+    // V11.22: the popover is private-message only (Shane) - the bubble
+    // chat is still one tap on the floating bubble card itself.
     function peerActionPrivateMessage() {
       const peerId = pendingPeerActionId;
       const peer = peerId ? globalActiveDirectory[peerId] : null;
@@ -3990,7 +3983,7 @@
           userState.alias = metaAlias;
           userState.profileCreated = true;
           try {
-            await supabaseClient.from('profiles').upsert({
+            await dbUpsert('profiles', {
               id: userId, alias: metaAlias, account_type: userState.type,
               category: userState.category, interest_filter: userState.interestFilter,
               hide_my_name: userState.hideMyName, updated_at: new Date()
@@ -4031,11 +4024,11 @@
       // plain update of the existing row, then re-read the row and only
       // report success when the database actually holds the new alias.
       let writeError = null;
-      const upsertRes = await supabaseClient.from('profiles').upsert(profileRow);
+      const upsertRes = await dbUpsert('profiles', profileRow);
       writeError = (upsertRes && upsertRes.error) || null;
       if (writeError) {
         const updateRow = { alias: profileRow.alias, account_type: profileRow.account_type, category: profileRow.category, interest_filter: profileRow.interest_filter, hide_my_name: profileRow.hide_my_name, updated_at: profileRow.updated_at };
-        const updateRes = await supabaseClient.from('profiles').update(updateRow).eq('id', currentAuthUser.id);
+        const updateRes = await dbUpdateById('profiles', updateRow, currentAuthUser.id);
         writeError = (updateRes && updateRes.error) || null;
       }
       if (!writeError) {
@@ -4593,7 +4586,7 @@
         return `
           <div class="p-3 rounded-2xl bg-white/5 border border-white/10 shadow-sm flex items-center justify-between ${peer.isOffline ? 'opacity-60' : ''}">
             <div class="flex items-center gap-3">
-              <div class="w-7.5 h-7.5 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden ${visual.borderClass}" style="background: ${visual.bg}; border-radius: 50%;">
+              <div onclick="closeFriendsPanel(); openPeerActions('${escapeJsArg(peerId)}')" class="w-7.5 h-7.5 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden cursor-pointer ${visual.borderClass}" style="background: ${visual.bg}; border-radius: 50%;" title="Message @${escapeChatHTML(displayLabel)} privately">
                 ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
               </div>
               <div>
@@ -4811,7 +4804,7 @@
           if (presenceDue) {
           lastPresenceUpsertKey = presenceKey;
           lastPresenceUpsertAt = Date.now();
-          const presenceUpsert = supabaseClient.from('profiles').upsert({
+          const presenceUpsert = dbUpsert('profiles', {
             id: currentAuthUser.id,
             alias: userState.alias,
             account_type: userState.type,
@@ -5108,7 +5101,7 @@
 
       const coords = getBroadcastCoordinates();
       if (supabaseClient && currentAuthUser) {
-        await supabaseClient.from('profiles').upsert({
+        await dbUpsert('profiles', {
           id: currentAuthUser.id, alias: userState.alias, account_type: userState.type,
           category: userState.category, active_topic: text, topic_created_at: new Date(activeTopicState.createdAt).toISOString(),
           lat: coords.lat, lng: coords.lng, hide_my_name: userState.hideMyName, updated_at: new Date()
@@ -5204,7 +5197,7 @@
       }
 
       if (supabaseClient) {
-        const { error } = await supabaseClient.from('chat_messages').insert({
+        const { error } = await dbInsert('chat_messages', {
           room_id: databaseRoomId,
           client_id: clientMessageId,
           sender_id: currentAuthUser ? currentAuthUser.id : null,
@@ -5304,7 +5297,7 @@
         if (supabaseClient) {
           await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId(currentActiveChatRoomId));
           if (currentActiveChatRoomId === 'room-you' && currentAuthUser) {
-            await supabaseClient.from('profiles').update({ active_topic: null, topic_created_at: null }).eq('id', currentAuthUser.id);
+            await dbUpdateById('profiles', { active_topic: null, topic_created_at: null }, currentAuthUser.id);
           }
         }
         // V11.15 (#7): capture the room/peer first, then clear the room
@@ -5372,6 +5365,58 @@
         }
         renderPinnedChats();
       } catch (e) {}
+    }
+
+    // V11.22: schema-tolerant database writes. Verified live against
+    // the project (read-only probes, 2026-11-07): the tables are
+    // missing several columns the app writes - chat_messages.client_id
+    // and profiles.hide_my_name / lat / lng / active_topic /
+    // topic_created_at. PostgREST rejects ANY write naming a missing
+    // column (error PGRST204), so every chat insert and most profile
+    // saves were failing outright. Live mesh chat masked it, but
+    // nothing persisted - the root cause behind private messages,
+    // offline messages and restores "not working". These helpers drop
+    // the named missing column and retry, so the write lands with the
+    // columns the table actually has. (Adding the columns in the
+    // Supabase dashboard - SQL file provided - restores full fidelity.)
+    function missingColumnFromError(error) {
+      if (!error || !error.message) return null;
+      const m = /Could not find the '([^']+)' column/.exec(error.message);
+      return m ? m[1] : null;
+    }
+    async function dbInsert(table, fields) {
+      const payload = { ...fields };
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const res = await supabaseClient.from(table).insert(payload);
+        if (!res.error) return res;
+        const missing = missingColumnFromError(res.error);
+        if (missing && (missing in payload)) { delete payload[missing]; continue; }
+        return res;
+      }
+      return { error: { message: 'Insert failed after column retries' } };
+    }
+    async function dbUpsert(table, fields) {
+      const payload = { ...fields };
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const res = await supabaseClient.from(table).upsert(payload);
+        if (!res.error) return res;
+        const missing = missingColumnFromError(res.error);
+        if (missing && (missing in payload)) { delete payload[missing]; continue; }
+        return res;
+      }
+      return { error: { message: 'Upsert failed after column retries' } };
+    }
+    async function dbUpdateById(table, fields, id) {
+      const payload = { ...fields };
+      for (let attempt = 0; attempt < 6; attempt++) {
+        if (!Object.keys(payload).length) return { error: null };
+        const res = await supabaseClient.from(table).update(payload).eq('id', id);
+        if (!res.error) return res;
+        const missing = missingColumnFromError(res.error);
+        if (missing && (missing in payload)) { delete payload[missing]; continue; }
+        return res;
+      }
+      return { error: { message: 'Update failed after column retries' } };
     }
 
     // V11.18: merge database rows into a room's local cache - dedupes by
