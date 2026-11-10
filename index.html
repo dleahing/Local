@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.34 Bigger Show Button, Chat Buttons]</title>
+  <title>LocaL - Proximity Social Network [V11.35 Steady Show Button, Swipe-Up Close]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -511,8 +511,8 @@
   <div id="pinnedChatsWrapper" class="fixed top-20 left-4 z-40 flex flex-col gap-2 max-w-xs pointer-events-auto">
     <div class="flex items-center justify-between px-1">
       <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider drop-shadow-sm">Pinned Chats</span>
-      <button onclick="playAudioEffect('click'); toggleLeftChatList()" id="leftListToggleBtn" class="liquid-glass-icon px-4 py-3 rounded-2xl text-slate-800 text-xs font-bold flex items-center gap-1.5 shadow-md hover:scale-105 transition-all">
-        <i data-lucide="eye-off" class="w-5 h-5"></i> <span id="leftListToggleText">Hide</span>
+      <button onclick="playAudioEffect('click'); toggleLeftChatList()" id="leftListToggleBtn" class="liquid-glass-icon px-3 py-2.5 rounded-2xl text-slate-800 text-[10px] font-bold flex items-center shadow-md hover:scale-105 transition-all">
+        <span id="leftListToggleInner" class="flex items-center gap-1.5"><i data-lucide="eye-off" class="w-4 h-4"></i> <span id="leftListToggleText">Hide</span></span>
       </button>
     </div>
     <div id="pinnedChatsContainer" class="flex flex-col gap-2.5 transition-all duration-300"></div>
@@ -1099,9 +1099,9 @@
       <button onclick="chooseReaction('❗')" class="text-xl px-1.5 py-0.5 active:scale-90 transition-all" title="Exclamation">❗</button>
     </div>
 
-    <div class="pt-3 pb-1 mt-auto flex-shrink-0 pointer-events-auto">
+    <div id="chatInputSection" class="pt-3 pb-1 mt-auto flex-shrink-0 pointer-events-auto" onpointerdown="chatInputSwipeStart(event)" onpointermove="chatInputSwipeMove(event)" onpointerup="chatInputSwipeEnd()" onpointercancel="chatInputSwipeEnd()">
       <div class="glass-card rounded-[28px] p-2 pl-4 border border-white/90 shadow-xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-emerald-400 transition-all bg-white/95 pointer-events-auto">
-        <textarea id="chatInput" rows="1" maxlength="500" aria-label="Type a reply" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
+        <textarea id="chatInput" rows="1" maxlength="500" aria-label="Type a reply" placeholder="Type a reply..." class="w-full bg-transparent text-slate-900 text-xs font-light focus:outline-none resize-none max-h-24 pt-1.5 pointer-events-auto" onblur="setTimeout(() => { if (syncDrawerToViewport) syncDrawerToViewport(); }, 60)" oninput="autoResizeTextArea(this)" onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}" style="min-height: 26px; height: 26px;"></textarea>
         
         <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 pointer-events-auto">
           <div class="flex items-center gap-1">
@@ -1909,8 +1909,12 @@
     // V11.34: the Show/Hide button giggles while any chat has an
     // unread reply, so a hidden list still calls for attention.
     function updateShowChatsGiggle() {
-      const btn = document.getElementById('leftListToggleBtn');
-      if (btn) btn.classList.toggle('animate-jiggle-continuous', unreadRoomIds.size > 0);
+      // V11.35: the giggle rides on the button's INNER content, never
+      // the button box itself - a moving box is hard to hit, and Show
+      // is tapped exactly while it giggles (unread waiting), which is
+      // why Show felt broken while Hide (tapped after reading) worked.
+      const el = document.getElementById('leftListToggleInner') || document.getElementById('leftListToggleBtn');
+      if (el) el.classList.toggle('animate-jiggle-continuous', unreadRoomIds.size > 0);
     }
 
     function syncUnreadChimeLoop() {
@@ -3012,16 +3016,17 @@
         container.classList.add('hidden');
         if (toggleText) toggleText.innerText = 'Show';
         if (toggleBtn) {
-          toggleBtn.innerHTML = `<i data-lucide="eye" class="w-5 h-5"></i> <span id="leftListToggleText">Show</span>`;
+          toggleBtn.innerHTML = `<span id="leftListToggleInner" class="flex items-center gap-1.5"><i data-lucide="eye" class="w-4 h-4"></i> <span id="leftListToggleText">Show</span></span>`;
         }
       } else {
         container.classList.remove('hidden');
         if (toggleText) toggleText.innerText = 'Hide';
         if (toggleBtn) {
-          toggleBtn.innerHTML = `<i data-lucide="eye-off" class="w-5 h-5"></i> <span id="leftListToggleText">Hide</span>`;
+          toggleBtn.innerHTML = `<span id="leftListToggleInner" class="flex items-center gap-1.5"><i data-lucide="eye-off" class="w-4 h-4"></i> <span id="leftListToggleText">Hide</span></span>`;
         }
       }
       lucide.createIcons();
+      updateShowChatsGiggle(); // V11.35: the toggle rebuild drops the giggle class - re-apply it
     }
 
     function setLayoutMode(mode) {
@@ -3176,6 +3181,8 @@
     // computed from the visual viewport on every change: the dock
     // rises by exactly the keyboard height and returns when it hides;
     // the drawer rises by however much of it the keyboard covers.
+    let syncDrawerToViewport = null; // V11.35: set by initKeyboardAvoidance
+
     function initKeyboardAvoidance() {
       const vv = window.visualViewport;
       if (!vv) return;
@@ -3205,8 +3212,10 @@
           drawer.style.translate = '';
         }
       };
+      syncDrawerToViewport = update; // V11.35
       vv.addEventListener('resize', update);
       vv.addEventListener('scroll', update);
+      window.addEventListener('resize', update); // V11.35: some keyboard hides only surface here
       update();
     }
 
@@ -5967,6 +5976,7 @@
 
       document.getElementById('actionDockContainer').classList.add('hidden');
       document.getElementById('chatDrawer').classList.remove('hidden');
+      if (syncDrawerToViewport) syncDrawerToViewport(); // V11.35: never inherit a stale half-height from an earlier keyboard session
       document.getElementById('chatBackdrop').classList.remove('hidden');
       await loadDbChatHistory(roomId);
     }
@@ -6359,9 +6369,26 @@
       merged.forEach(msg => appendMessage(msg.sender, msg.text, msg.time, msg.isMe, msg.id, roomId));
     }
 
+    // V11.35: drag upward from the text box to close the chat.
+    let chatSwipeStartY = null;
+    function chatInputSwipeStart(e) {
+      if (e.isPrimary === false) return;
+      chatSwipeStartY = e.clientY;
+    }
+    function chatInputSwipeMove(e) {
+      if (chatSwipeStartY === null) return;
+      if (chatSwipeStartY - e.clientY >= 70) {
+        chatSwipeStartY = null;
+        closeChatDrawer();
+      }
+    }
+    function chatInputSwipeEnd() { chatSwipeStartY = null; }
+
     function closeChatDrawer() {
       hideReactionPicker(); // V11.33
       document.getElementById('chatDrawer').classList.add('hidden');
+      const drawerEl = document.getElementById('chatDrawer'); // V11.35: drop any keyboard-session sizing
+      if (drawerEl) { drawerEl.style.top = ''; drawerEl.style.height = ''; }
       document.getElementById('chatBackdrop').classList.add('hidden');
       document.getElementById('actionDockContainer').classList.remove('hidden');
       if (currentActiveChatRoomId) delete chatRenderSigs[currentActiveChatRoomId];
