@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.35 Steady Show Button, Swipe-Up Close]</title>
+  <title>LocaL - Proximity Social Network [V11.36 Bottom-Anchored Chat, More Reactions]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -481,6 +481,12 @@
       box-shadow: 0 24px 50px -12px rgba(10, 6, 32, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.22);
     }
     #chatDrawer { border-radius: 28px !important; }
+    /* V11.36: the conversation is anchored to the bottom of the chat
+       box - messages sit down at the text box and grow upward to fill
+       the box; when they overflow, the auto margin collapses to zero
+       and the list scrolls normally (the known-safe pattern). */
+    #chatMessages { display: flex; flex-direction: column; }
+    #chatMessages > :first-child { margin-top: auto; }
     #chatMessages::-webkit-scrollbar, #rightSidebarBubblesContainer::-webkit-scrollbar, #globalUsersDirectory::-webkit-scrollbar { width: 5px; }
     #chatMessages::-webkit-scrollbar-thumb, #rightSidebarBubblesContainer::-webkit-scrollbar-thumb, #globalUsersDirectory::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.35); border-radius: 9999px; }
     .glass-card { box-shadow: 0 14px 34px -8px rgba(15, 23, 42, 0.16); }
@@ -1097,6 +1103,8 @@
       <button onclick="chooseReaction('❤️')" class="text-xl px-1.5 py-0.5 active:scale-90 transition-all" title="Heart">❤️</button>
       <button onclick="chooseReaction('👍')" class="text-xl px-1.5 py-0.5 active:scale-90 transition-all" title="Thumbs up">👍</button>
       <button onclick="chooseReaction('❗')" class="text-xl px-1.5 py-0.5 active:scale-90 transition-all" title="Exclamation">❗</button>
+      <button onclick="chooseReaction('😂')" class="text-xl px-1.5 py-0.5 active:scale-90 transition-all" title="Laughing">😂</button>
+      <button onclick="chooseReaction('😢')" class="text-xl px-1.5 py-0.5 active:scale-90 transition-all" title="Sad">😢</button>
     </div>
 
     <div id="chatInputSection" class="pt-3 pb-1 mt-auto flex-shrink-0 pointer-events-auto" onpointerdown="chatInputSwipeStart(event)" onpointermove="chatInputSwipeMove(event)" onpointerup="chatInputSwipeEnd()" onpointercancel="chatInputSwipeEnd()">
@@ -5004,7 +5012,7 @@
         return `
           <div class="p-3 rounded-2xl bg-white/5 border border-white/10 shadow-sm flex items-center justify-between ${peer.isOffline ? 'opacity-60' : ''}">
             <div class="flex items-center gap-3">
-              <div onclick="closeFriendsPanel(); openPeerActions('${escapeJsArg(peerId)}')" class="w-7.5 h-7.5 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden cursor-pointer ${visual.borderClass}" style="background: ${visual.bg}; border-radius: 50%;" title="Message @${escapeChatHTML(displayLabel)} privately">
+              <div onclick="closeFriendsPanel(); openPeerActions('${escapeJsArg(peerId)}')" class="w-9 h-9 rounded-full font-semibold text-xs flex items-center justify-center shadow-md bubble-node overflow-hidden cursor-pointer ${visual.borderClass}" style="background: ${visual.bg}; border-radius: 50%;" title="Message @${escapeChatHTML(displayLabel)} privately">
                 ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
               </div>
               <div>
@@ -5024,7 +5032,7 @@
               <button onclick="toggleFriendStatus('${escapeJsArg(peerId)}')" class="px-2 py-1.5 rounded-xl ${friendBtnClass} text-[10px]" title="${friendBtnTitle}">
                 <i data-lucide="${friendBtnIcon}" class="w-3.5 h-3.5"></i>
               </button>
-              <button onclick="playAudioEffect('chime'); openPrivateChat('${escapeJsArg(peerId)}', '${escapeJsArg(displayLabel)}')" class="px-3 py-1.5 rounded-xl bg-sky-500 text-white font-semibold text-xs shadow-md">Chat</button>
+              <button onclick="playAudioEffect('chime'); openPrivateChat('${escapeJsArg(peerId)}', '${escapeJsArg(displayLabel)}')" class="px-3.5 py-2 rounded-xl bg-sky-500 text-white font-semibold text-sm shadow-md">Chat</button>
             </div>
           </div>`;
       };
@@ -5104,7 +5112,7 @@
               <button onclick="toggleFriendStatus('${escapeJsArg(peerId)}')" class="px-2 py-1.5 rounded-xl ${isFriend ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-200 text-slate-700'} text-[10px]" title="Toggle Friend">
                 <i data-lucide="${isFriend ? 'user-check' : 'user-plus'}" class="w-3.5 h-3.5"></i>
               </button>
-              <button onclick="playAudioEffect('chime'); openPrivateChat('${escapeJsArg(peerId)}', '${escapeJsArg(displayLabel)}')" class="px-3 py-1.5 rounded-xl bg-sky-500 text-white font-semibold text-xs shadow-md">Chat</button>
+              <button onclick="playAudioEffect('chime'); openPrivateChat('${escapeJsArg(peerId)}', '${escapeJsArg(displayLabel)}')" class="px-3.5 py-2 rounded-xl bg-sky-500 text-white font-semibold text-sm shadow-md">Chat</button>
             </div>
           </div>
         `;
@@ -5755,7 +5763,7 @@
     // between people who are online, and are kept on this device.
     // They are not stored on the server yet, so a reaction made while
     // someone was offline does not reach them later.
-    const REACTION_EMOJIS = ['❤️', '👍', '❗'];
+    const REACTION_EMOJIS = ['❤️', '👍', '❗', '😂', '😢']; // V11.36: + laughing and sad faces
     let messageReactions = {}; // { roomId: { msgId: { emoji: [userId, ...] } } }
 
     function persistReactions() {
@@ -5846,7 +5854,7 @@
       if (!picker || !messagePressTarget) return;
       const rect = messagePressTarget.el.getBoundingClientRect();
       picker.classList.remove('hidden');
-      const pw = picker.offsetWidth || 150;
+      const pw = picker.offsetWidth || 240; // V11.36: five reactions now
       picker.style.left = Math.max(8, Math.min(window.innerWidth - pw - 8, rect.left + rect.width / 2 - pw / 2)) + 'px';
       picker.style.top = (rect.top > 70 ? rect.top - 54 : rect.bottom + 10) + 'px';
       reactionPickerOpen = true;
