@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.32 Steady Map, Admin Icon, Easier Taps]</title>
+  <title>LocaL - Proximity Social Network [V11.33 DM Archive, Full-Screen Chat, Reactions]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1030,7 +1030,7 @@
 
   <!-- Chat Drawer Overlay -->
   <div id="chatBackdrop" onclick="playAudioEffect('click'); closeChatDrawer()" class="hidden fixed inset-0 z-[9999998] bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
-  <div id="chatDrawer" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-[99999999] w-full max-w-lg glass-drawer-top p-5 rounded-3xl flex flex-col transition-all max-h-[82vh] border border-white/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] pointer-events-auto">
+  <div id="chatDrawer" class="hidden fixed inset-0 z-[99999999] w-full h-full glass-drawer-top p-5 flex flex-col transition-all pointer-events-auto" style="padding-top: max(20px, env(safe-area-inset-top)); padding-bottom: max(12px, env(safe-area-inset-bottom));">
     
     <div class="flex items-center justify-between pb-3.5 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-3">
@@ -1047,6 +1047,7 @@
         <button id="addFriendFromChatBtn" onclick="toggleFriendStatusFromChat()" title="Add / Remove Friend" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-900 text-[10px] font-bold flex items-center gap-1 transition-all">
           <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> <span id="friendBtnText">Add Friend</span>
         </button>
+        <button id="archiveDmBtn" onclick="archiveCurrentDm()" title="Archive this private chat" class="hidden px-2.5 py-1.5 rounded-xl bg-sky-500/15 border border-sky-400/50 text-sky-900 text-[10px] font-bold flex items-center gap-1 transition-all"><i data-lucide="archive" class="w-3.5 h-3.5"></i> <span>Archive</span></button>
         <button id="ownerDeleteRoomBtn" onclick="ownerDeleteEntireChatRoom()" title="Delete Entire Chat Room" class="hidden px-2.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-700 hover:bg-red-500/25 text-[10px] font-bold flex items-center gap-1 transition-all">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
         </button>
@@ -1089,7 +1090,14 @@
       <p class="text-[9px] text-slate-500">Opening hours are changed in Settings.</p>
     </div>
 
-    <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-3.5 max-h-[38vh] pr-1 pointer-events-auto"></div>
+    <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-3.5 pr-1 pointer-events-auto" onscroll="hideReactionPicker()"></div>
+
+    <!-- V11.33: long-press reaction picker -->
+    <div id="reactionPicker" class="hidden fixed z-[999999999] glass-card bg-white/95 border border-white/90 shadow-2xl rounded-full px-2 py-1.5 flex items-center gap-1 pointer-events-auto">
+      <button onclick="chooseReaction('❤️')" class="text-xl px-1.5 py-0.5 active:scale-90 transition-all" title="Heart">❤️</button>
+      <button onclick="chooseReaction('👍')" class="text-xl px-1.5 py-0.5 active:scale-90 transition-all" title="Thumbs up">👍</button>
+      <button onclick="chooseReaction('❗')" class="text-xl px-1.5 py-0.5 active:scale-90 transition-all" title="Exclamation">❗</button>
+    </div>
 
     <div class="pt-3 pb-1 flex-shrink-0 pointer-events-auto">
       <div class="glass-card rounded-[28px] p-2 pl-4 border border-white/90 shadow-xl flex flex-col gap-1.5 focus-within:ring-2 focus-within:ring-emerald-400 transition-all bg-white/95 pointer-events-auto">
@@ -1125,6 +1133,8 @@
     const STORAGE_KEY_CUSTOM_BOTS = 'local_custom_bots_v40';
     const STORAGE_KEY_OFFLINE_TOPICS_STATE = 'local_offline_topics_cache_v40';
     const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v40';
+    const STORAGE_KEY_ARCHIVED_DMS = 'local_archived_dms_v40'; // V11.33
+    const STORAGE_KEY_REACTIONS = 'local_msg_reactions_v40'; // V11.33
     const STORAGE_KEY_HIDDEN_PEERS = 'local_hidden_peers_v40';
     const STORAGE_KEY_CHAT_CACHE = 'local_chat_cache_v40';
     const STORAGE_KEY_FRIEND_REQUESTS = 'local_friend_requests_v40';
@@ -1162,7 +1172,7 @@
         if (msgs.length > 200) msgs.splice(0, msgs.length - 200);
         persistChatCache();
         if (currentActiveChatRoomId === WELCOME_GUIDE_ROOM_ID) {
-          appendMessage(WELCOME_GUIDE_NAME, text, timeStr, false);
+          appendMessage(WELCOME_GUIDE_NAME, text, timeStr, false, msgs[msgs.length - 1].id, WELCOME_GUIDE_ROOM_ID);
         } else {
           unreadRoomIds.add(WELCOME_GUIDE_ROOM_ID);
           savePersistentData();
@@ -1216,6 +1226,7 @@
     let globalActiveDirectory = {};
     let processedMsgIds = new Set();
     let participatedChatRoomIds = new Set();
+    let archivedDmRoomIds = new Set(); // V11.33: private chats the user archived off the side lists
     let friendPeerIds = new Set();
     let chatRoomClearedAt = {};
     let localKnownAdminIds = new Set();
@@ -1626,6 +1637,7 @@
       delete chatRenderSigs[roomId];
       delete chatRenderSigs[altRoomId];
       persistChatCache();
+      if (messageReactions[roomId] || messageReactions[altRoomId]) { delete messageReactions[roomId]; delete messageReactions[altRoomId]; persistReactions(); } // V11.33
       markChatRoomCleared(roomId);
       markChatRoomCleared(altRoomId);
       participatedChatRoomIds.delete(roomId);
@@ -2901,6 +2913,9 @@
         if (savedBots) customBotDefinitions = JSON.parse(savedBots);
         const savedUnread = localStorage.getItem(STORAGE_KEY_UNREAD_ROOMS);
         if (savedUnread) unreadRoomIds = new Set(JSON.parse(savedUnread));
+        const savedArchivedDms = localStorage.getItem(STORAGE_KEY_ARCHIVED_DMS); // V11.33
+        if (savedArchivedDms) archivedDmRoomIds = new Set(JSON.parse(savedArchivedDms));
+        loadReactions(); // V11.33
         const savedFriendRequests = localStorage.getItem(STORAGE_KEY_FRIEND_REQUESTS);
         if (savedFriendRequests) {
           const parsedReq = JSON.parse(savedFriendRequests);
@@ -2928,6 +2943,7 @@
         localStorage.setItem(STORAGE_KEY_HIDDEN_PEERS, JSON.stringify(Array.from(hiddenPeerIds)));
         localStorage.setItem(STORAGE_KEY_CUSTOM_BOTS, JSON.stringify(customBotDefinitions));
         localStorage.setItem(STORAGE_KEY_UNREAD_ROOMS, JSON.stringify(Array.from(unreadRoomIds)));
+        localStorage.setItem(STORAGE_KEY_ARCHIVED_DMS, JSON.stringify(Array.from(archivedDmRoomIds))); // V11.33
         localStorage.setItem(STORAGE_KEY_FRIEND_REQUESTS, JSON.stringify({ in: friendRequestsIn, out: Array.from(friendRequestsOut) }));
         captureOfflineTopicsSnapshot();
         if (currentActiveChatRoomId) localStorage.setItem(STORAGE_KEY_ACTIVE_ROOM, currentActiveChatRoomId);
@@ -3158,8 +3174,7 @@
       const dock = document.getElementById('actionDockContainer');
       const drawer = document.getElementById('chatDrawer');
       const mapEl = document.getElementById('mapCanvas');
-      let drawerLift = 0;
-      const update = () => {
+       const update = () => {
         const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
         const keyboardOpen = kb > 100;
         // V11.32: when the keyboard opens, iOS pans the whole visual
@@ -3169,15 +3184,17 @@
         if (mapEl) mapEl.style.translate = keyboardOpen ? `0px ${Math.round(vv.offsetTop)}px` : '';
         if (dock) dock.style.translate = keyboardOpen ? `0px -${Math.round(kb)}px` : '';
         if (drawer) {
+          // V11.33: the chat drawer is full-screen. While the keyboard
+          // is up it fills exactly the visible area above the keyboard;
+          // when the keyboard hides it returns to full screen.
           if (keyboardOpen && !drawer.classList.contains('hidden')) {
-            const r = drawer.getBoundingClientRect();
-            const visibleBottom = vv.offsetTop + vv.height;
-            const overlap = (r.bottom + drawerLift) - visibleBottom;
-            drawerLift = overlap > 0 ? Math.round(overlap) + 8 : 0;
+            drawer.style.top = Math.round(vv.offsetTop) + 'px';
+            drawer.style.height = Math.round(vv.height) + 'px';
           } else {
-            drawerLift = 0;
+            drawer.style.top = '';
+            drawer.style.height = '';
           }
-          drawer.style.translate = drawerLift ? `0px -${drawerLift}px` : '';
+          drawer.style.translate = '';
         }
       };
       vv.addEventListener('resize', update);
@@ -3958,6 +3975,23 @@
     // know a DM arrived. If the room is one of MY private rooms, pull
     // the new messages from the database (30-day DM window) and either
     // show them (thread open) or badge the room unread.
+    // V11.33: archiving a private chat takes it off both side lists
+    // until it is active again - a new incoming message, or a message
+    // the user sends, brings it straight back.
+    function unarchiveDmRoom(roomId) {
+      if (roomId && archivedDmRoomIds.delete(roomId)) savePersistentData();
+    }
+    function archiveCurrentDm() {
+      const roomId = currentActiveChatRoomId;
+      if (!roomId || !parseDmRoom(roomId)) return;
+      archivedDmRoomIds.add(roomId);
+      savePersistentData();
+      closeChatDrawer();
+      renderPinnedChats();
+      if (currentLayoutMode === 'right') renderRightSidebarBubbles();
+      showToast('Private chat archived - it returns when there is a new message', 'archive');
+    }
+
     async function handleDmPing(ping) {
       if (!ping || !ping.room_id) return;
       if (ping.sender_id === (currentAuthUser ? currentAuthUser.id : myPeerId)) return;
@@ -3967,6 +4001,7 @@
         participatedChatRoomIds.add(targetRoomId);
         savePersistentData();
       }
+      unarchiveDmRoom(targetRoomId); // V11.33: new private activity un-archives the thread
       if (supabaseClient && currentAuthUser) {
         try {
           const windowStartMs = Math.max(Date.now() - 30 * 24 * ONE_HOUR_MS, chatRoomClearedAt[targetRoomId] || 0);
@@ -4016,10 +4051,11 @@
         participatedChatRoomIds.add(targetRoomId);
         savePersistentData();
       }
+      if (parseDmRoom(targetRoomId)) unarchiveDmRoom(targetRoomId); // V11.33
       persistChatCache();
 
       if (currentActiveChatRoomId === targetRoomId) {
-        appendMessage(msg.sender_alias, msg.message, timeStr, false);
+        appendMessage(msg.sender_alias, msg.message, timeStr, false, msg.client_id || ('remote-' + msg.sender_id + '-' + msg.created_at), targetRoomId);
       } else {
         unreadRoomIds.add(targetRoomId);
         syncUnreadChimeLoop();
@@ -4247,7 +4283,7 @@
         }
       } catch(e) {}
       try {
-        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS, STORAGE_KEY_CHAT_CLEARED, STORAGE_KEY_ADMIN_PEERS, STORAGE_KEY_WELCOME_OPENED].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS, STORAGE_KEY_CHAT_CLEARED, STORAGE_KEY_ADMIN_PEERS, STORAGE_KEY_WELCOME_OPENED, STORAGE_KEY_ARCHIVED_DMS, STORAGE_KEY_REACTIONS].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
       } catch(e) {}
       try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch(e) {}
       currentAuthUser = null;
@@ -4476,6 +4512,13 @@
         const prevRoomId = 'room-peer-' + String(data.peerId).replace(/[^a-zA-Z0-9]/g, '-');
         deleteChatLocally(prevRoomId, data.peerId);
         refreshAllPeerDistancesAndPositions();
+        return;
+      }
+
+      // V11.33: message reactions (set-based apply is idempotent, so
+      // duplicate deliveries over the beacon + channel are harmless).
+      if (data.type === 'CHAT_REACTION') {
+        handleIncomingReaction(data);
         return;
       }
 
@@ -4831,6 +4874,7 @@
       const dmList = [];
       participatedChatRoomIds.forEach(roomId => {
         if (!parseDmRoom(roomId)) return;
+        if (archivedDmRoomIds.has(roomId)) return; // V11.33: archived private chats stay off the side lists until new activity
         const otherId = otherDmParticipant(roomId);
         if (!otherId) return;
         const msgs = localChatCache[roomId] || [];
@@ -5111,6 +5155,7 @@
       const dmBubbles = [];
       participatedChatRoomIds.forEach(roomId => {
         if (!parseDmRoom(roomId)) return;
+        if (archivedDmRoomIds.has(roomId)) return; // V11.33: archived private chats stay off the side lists until new activity
         const otherId = otherDmParticipant(roomId);
         if (!otherId) return;
         if ((localChatCache[roomId] || []).length === 0 && chatRoomClearedAt[roomId]) return;
@@ -5144,7 +5189,7 @@
         const onClickJs = `playAudioEffect('chime'); openChatDrawer('${b.roomId}', '${escapeJsArg(b.name)}', '${escapeJsArg(b.isDm ? '' : b.question)}', '${escapeJsArg(b.peerId)}', ${safeTimestampMs(b.createdAt)})`;
 
         container.innerHTML += `
-          <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''}" onclick="${onClickJs}">
+          <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer ${b.isParticipated ? 'opacity-70' : ''} ${b.isDm && b.hasUnread ? 'animate-jiggle-continuous' : ''}" onclick="${onClickJs}">
             ${b.isAdmin ? '<div class="admin-rainbow-icon-wrap">' : ''}
             <div class="w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden ${getNodeIconVisual(b.accountType, b.category, b.isBot).borderClass}" style="background: ${getNodeIconVisual(b.accountType, b.category, b.isBot).bg}; border-radius: 50%;">
               ${renderNodeIconContent(b.accountType, b.category, b.isBot)}
@@ -5610,6 +5655,7 @@
       const clientMessageId = (window.crypto && typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : ('msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9));
 
       participatedChatRoomIds.add(targetRoomId);
+      if (parseDmRoom(targetRoomId)) unarchiveDmRoom(targetRoomId); // V11.33: sending revives an archived thread
       savePersistentData();
       refreshAllNodeVisibilities();
 
@@ -5622,7 +5668,7 @@
       if (localChatCache[targetRoomId].length > 200) localChatCache[targetRoomId].splice(0, localChatCache[targetRoomId].length - 200);
       persistChatCache();
 
-      appendMessage(senderDisplayName, text, timeStr, true);
+      appendMessage(senderDisplayName, text, timeStr, true, clientMessageId, targetRoomId);
       playAudioEffect('send'); // V11.6: send sound
       input.value = ''; 
       input.style.height = '26px';
@@ -5684,16 +5730,134 @@
       renderPinnedChats();
     }
 
-    function appendMessage(sender, text, time, isMe) {
+    // ---- V11.33: message reactions ----------------------------------
+    // Press and hold a message to react: heart, thumbs up or
+    // exclamation. Counts show under the message; tapping a count
+    // toggles your own reaction. Reactions sync live over the mesh
+    // between people who are online, and are kept on this device.
+    // They are not stored on the server yet, so a reaction made while
+    // someone was offline does not reach them later.
+    const REACTION_EMOJIS = ['❤️', '👍', '❗'];
+    let messageReactions = {}; // { roomId: { msgId: { emoji: [userId, ...] } } }
+
+    function persistReactions() {
+      try { localStorage.setItem(STORAGE_KEY_REACTIONS, JSON.stringify(messageReactions)); } catch (e) {}
+    }
+    function loadReactions() {
+      try { const raw = localStorage.getItem(STORAGE_KEY_REACTIONS); if (raw) messageReactions = JSON.parse(raw) || {}; } catch (e) { messageReactions = {}; }
+    }
+    function getReactionSummary(roomId, msgId) {
+      const byMsg = (messageReactions[roomId] || {})[msgId] || {};
+      return REACTION_EMOJIS.map(emoji => ({ emoji, users: Array.isArray(byMsg[emoji]) ? byMsg[emoji] : [] })).filter(r => r.users.length > 0);
+    }
+    function applyReactionLocal(roomId, msgId, emoji, userId, action) {
+      if (!REACTION_EMOJIS.includes(emoji) || !roomId || !msgId || !userId) return;
+      if (!messageReactions[roomId]) messageReactions[roomId] = {};
+      if (!messageReactions[roomId][msgId]) messageReactions[roomId][msgId] = {};
+      const users = new Set(messageReactions[roomId][msgId][emoji] || []);
+      if (action === 'add') users.add(userId); else users.delete(userId);
+      if (users.size) messageReactions[roomId][msgId][emoji] = [...users]; else delete messageReactions[roomId][msgId][emoji];
+      if (!Object.keys(messageReactions[roomId][msgId]).length) delete messageReactions[roomId][msgId];
+      if (!Object.keys(messageReactions[roomId]).length) delete messageReactions[roomId];
+    }
+    function renderReactionRowHtml(roomId, msgId, isMe) {
+      const summary = getReactionSummary(roomId, msgId);
+      if (!summary.length) return '';
+      const myId = currentAuthUser ? currentAuthUser.id : myPeerId;
+      const pills = summary.map(r => `<button onclick="toggleReaction('${escapeJsArg(roomId)}', '${escapeJsArg(String(msgId))}', '${r.emoji}', event)" class="px-1.5 py-0.5 rounded-full text-[10px] font-bold border shadow-sm active:scale-95 transition-all ${r.users.includes(myId) ? 'bg-sky-100 border-sky-400 text-sky-900' : 'bg-white/80 border-slate-300 text-slate-700'}">${r.emoji} ${r.users.length}</button>`).join('');
+      return `<div class="flex gap-1 mt-1 px-1 ${isMe ? 'justify-end' : 'justify-start'}">${pills}</div>`;
+    }
+    function renderOpenRoomMessages() {
+      const roomId = currentActiveChatRoomId;
+      if (!roomId) return;
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
+      msgBox.innerHTML = '';
+      (localChatCache[roomId] || []).forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe, m.id, roomId));
+    }
+    function toggleReaction(roomId, msgId, emoji, ev) {
+      if (ev) ev.stopPropagation();
+      const myId = currentAuthUser ? currentAuthUser.id : myPeerId;
+      const mine = getReactionSummary(roomId, msgId).some(r => r.emoji === emoji && r.users.includes(myId));
+      const action = mine ? 'remove' : 'add';
+      applyReactionLocal(roomId, msgId, emoji, myId, action);
+      persistReactions();
+      if (roomId === currentActiveChatRoomId) renderOpenRoomMessages();
+      const entry = (localChatCache[roomId] || []).find(m => m.id === msgId);
+      broadcastData({ id: 'rxn-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), type: 'CHAT_REACTION', peerId: myPeerId, room_id: canonicalChatRoomId(roomId), message_id: msgId, msg_created_at: entry ? entry.createdAt : null, msg_text: parseDmRoom(roomId) ? null : (entry ? entry.text : null), emoji, action });
+      playAudioEffect('click');
+    }
+    function handleIncomingReaction(data) {
+      if (!data || !data.room_id || !data.message_id || !data.peerId) return;
+      const roomId = localChatRoomId(data.room_id);
+      const msgs = localChatCache[roomId] || [];
+      let entry = msgs.find(m => m.id === data.message_id);
+      if (!entry && data.msg_created_at) {
+        const ts = Date.parse(data.msg_created_at);
+        entry = msgs.find(m => Date.parse(m.createdAt || '') === ts && (!data.msg_text || m.text === data.msg_text));
+      }
+      if (!entry) return;
+      applyReactionLocal(roomId, entry.id, data.emoji, data.peerId, data.action === 'remove' ? 'remove' : 'add');
+      persistReactions();
+      if (roomId === currentActiveChatRoomId) renderOpenRoomMessages();
+    }
+
+    // Press-and-hold on a message bubble opens the reaction picker.
+    let messagePressTimer = null, messagePressTarget = null, messagePressX = 0, messagePressY = 0, reactionPickerOpen = false;
+    function messagePointerDown(e, el) {
+      if (e.isPrimary === false) return;
+      messagePressX = e.clientX; messagePressY = e.clientY;
+      messagePressTarget = { roomId: el.dataset.roomId, msgId: el.dataset.msgId, el };
+      clearTimeout(messagePressTimer);
+      messagePressTimer = setTimeout(() => { if (messagePressTarget) showReactionPicker(); }, 450);
+    }
+    function messagePointerMove(e) {
+      if (messagePressTimer && Math.hypot(e.clientX - messagePressX, e.clientY - messagePressY) > 8) messagePointerEnd();
+    }
+    function messagePointerEnd() {
+      clearTimeout(messagePressTimer);
+      messagePressTimer = null;
+      if (!reactionPickerOpen) messagePressTarget = null;
+    }
+    function onReactionOutsidePointerDown(e) {
+      const picker = document.getElementById('reactionPicker');
+      if (picker && !picker.contains(e.target)) hideReactionPicker();
+    }
+    function showReactionPicker() {
+      const picker = document.getElementById('reactionPicker');
+      if (!picker || !messagePressTarget) return;
+      const rect = messagePressTarget.el.getBoundingClientRect();
+      picker.classList.remove('hidden');
+      const pw = picker.offsetWidth || 150;
+      picker.style.left = Math.max(8, Math.min(window.innerWidth - pw - 8, rect.left + rect.width / 2 - pw / 2)) + 'px';
+      picker.style.top = (rect.top > 70 ? rect.top - 54 : rect.bottom + 10) + 'px';
+      reactionPickerOpen = true;
+      setTimeout(() => document.addEventListener('pointerdown', onReactionOutsidePointerDown, { capture: true }), 0);
+    }
+    function hideReactionPicker() {
+      const picker = document.getElementById('reactionPicker');
+      if (picker) picker.classList.add('hidden');
+      reactionPickerOpen = false;
+      messagePressTarget = null;
+      document.removeEventListener('pointerdown', onReactionOutsidePointerDown, { capture: true });
+    }
+    function chooseReaction(emoji) {
+      if (messagePressTarget) toggleReaction(messagePressTarget.roomId, messagePressTarget.msgId, emoji, null);
+      hideReactionPicker();
+    }
+
+    function appendMessage(sender, text, time, isMe, msgId = null, roomId = null) {
+      const msgBox = document.getElementById('chatMessages');
+      if (!msgBox) return;
+      const pressAttrs = (msgId && roomId) ? ` data-msg-id="${escapeChatHTML(String(msgId))}" data-room-id="${escapeChatHTML(String(roomId))}" onpointerdown="messagePointerDown(event, this)" onpointerup="messagePointerEnd()" onpointermove="messagePointerMove(event)" onpointercancel="messagePointerEnd()"` : '';
       msgBox.innerHTML += `
         <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full">
           <div class="flex items-center gap-1.5 px-1.5 mb-0.5">
             <span class="text-[10px] text-slate-700 font-bold">@${escapeChatHTML(sender)}</span>
             <span class="text-[9px] text-slate-500 font-medium">${escapeChatHTML(time || '')}</span>
           </div>
-          <div class="px-4 py-2.5 rounded-2xl text-xs max-w-[85%] font-light leading-relaxed shadow-md ${isMe ? 'bg-emerald-600 text-white rounded-br-none shadow-emerald-500/20' : 'glass-card bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none border border-white/90 shadow-sm'}">${escapeChatHTML(text).replace(/\n/g, '<br>')}</div>
+          <div${pressAttrs} class="select-none px-4 py-2.5 rounded-2xl text-xs max-w-[85%] font-light leading-relaxed shadow-md ${isMe ? 'bg-emerald-600 text-white rounded-br-none shadow-emerald-500/20' : 'glass-card bg-white/80 backdrop-blur-md text-slate-900 rounded-bl-none border border-white/90 shadow-sm'}" style="-webkit-touch-callout: none;">${escapeChatHTML(text).replace(/\n/g, '<br>')}</div>
+          ${(msgId && roomId) ? renderReactionRowHtml(roomId, msgId, isMe) : ''}
         </div>
       `;
       msgBox.scrollTop = msgBox.scrollHeight;
@@ -5714,6 +5878,8 @@
       const expiryBar = document.getElementById('chatExpiryTimerBar');
       if (expiryBar) expiryBar.style.display = isDm ? 'none' : ''; // V11.19: private chats do not expire
       if (isDm) document.getElementById('chatTargetName').innerText = '@' + roomName + ' · Private';
+      const archiveBtn = document.getElementById('archiveDmBtn'); // V11.33
+      if (archiveBtn) archiveBtn.classList.toggle('hidden', !isDm);
       // V11.29: a business's name shows in its category colour in the
       // chat header too, matching its bubble.
       const targetNameEl = document.getElementById('chatTargetName');
@@ -6181,10 +6347,11 @@
       if (chatRenderSigs[roomId] === renderSig) return;
       chatRenderSigs[roomId] = renderSig;
       msgBox.innerHTML = '';
-      merged.forEach(msg => appendMessage(msg.sender, msg.text, msg.time, msg.isMe));
+      merged.forEach(msg => appendMessage(msg.sender, msg.text, msg.time, msg.isMe, msg.id, roomId));
     }
 
     function closeChatDrawer() {
+      hideReactionPicker(); // V11.33
       document.getElementById('chatDrawer').classList.add('hidden');
       document.getElementById('chatBackdrop').classList.add('hidden');
       document.getElementById('actionDockContainer').classList.remove('hidden');
