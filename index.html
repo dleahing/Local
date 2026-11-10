@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.39 No @ Names, Friend Badge, Sky Bubbles]</title>
+  <title>LocaL - Proximity Social Network [V11.40 Remove Friend Confirm]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -626,6 +626,13 @@
       <div class="grid grid-cols-2 gap-2">
         <button onclick="peerActionPrivateMessage()" class="py-2.5 rounded-2xl bg-sky-400 hover:bg-sky-300 text-slate-950 font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"><i data-lucide="mail" class="w-4 h-4"></i>Private Message</button>
         <button onclick="peerActionToggleFriend()" class="py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"><i data-lucide="user-plus" class="w-4 h-4"></i><span id="peerActionFriendBtnText">Add Friend</span></button>
+      </div>
+      <div id="peerActionConfirm" class="hidden mt-2 p-2.5 rounded-2xl bg-red-500/15 border border-red-400/40">
+        <p class="text-[11px] text-red-100 font-semibold mb-2 text-center">Remove <span id="peerActionConfirmName">this person</span> as a friend?</p>
+        <div class="flex gap-2">
+          <button onclick="confirmRemoveFriend()" class="flex-1 py-1.5 rounded-xl bg-red-500 hover:bg-red-400 text-white text-[11px] font-bold active:scale-95 transition-all">Yes, remove</button>
+          <button onclick="cancelRemoveFriend()" class="flex-1 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold border border-white/25 active:scale-95 transition-all">Cancel</button>
+        </div>
       </div>
       <p class="text-[9px] text-slate-500 mt-2 text-center">Private messages are only shown to you and this person.</p>
     </div>
@@ -2840,10 +2847,12 @@
       avatarEl.style.background = visual.bg;
       avatarEl.innerHTML = renderNodeIconContent(peer.accountType, peer.category, peer.isBot).replace('<div class="bubble-glare"></div>', ''); // V11.32: no white glare streak inside the private chat box
       document.getElementById('peerActionPopover').classList.remove('hidden');
+      cancelRemoveFriend(); // V11.40
       updatePeerActionFriendBtn();
       lucide.createIcons();
     }
     function closePeerActions() {
+      cancelRemoveFriend(); // V11.40
       pendingPeerActionId = null;
       const pop = document.getElementById('peerActionPopover');
       if (pop) pop.classList.add('hidden');
@@ -2855,9 +2864,29 @@
     function updatePeerActionFriendBtn() {
       const el = document.getElementById('peerActionFriendBtnText');
       if (!el || !pendingPeerActionId) return;
-      el.innerText = friendPeerIds.has(pendingPeerActionId) ? 'Friends ✓' : (friendRequestsOut.has(pendingPeerActionId) ? 'Requested…' : (friendRequestsIn[pendingPeerActionId] ? 'Accept Request' : 'Add Friend'));
+      el.innerText = friendPeerIds.has(pendingPeerActionId) ? 'Remove Friend' : (friendRequestsOut.has(pendingPeerActionId) ? 'Requested…' : (friendRequestsIn[pendingPeerActionId] ? 'Accept Request' : 'Add Friend')); // V11.40: friends state reads 'Remove Friend'
     }
     function peerActionToggleFriend() {
+      if (!pendingPeerActionId) return;
+      // V11.40: removing a friend asks first (the confirm row in the
+      // popover); adding, requesting and accepting act immediately.
+      if (friendPeerIds.has(pendingPeerActionId)) { showRemoveFriendConfirm(); return; }
+      toggleFriendStatus(pendingPeerActionId);
+      updatePeerActionFriendBtn();
+    }
+    function showRemoveFriendConfirm() {
+      const row = document.getElementById('peerActionConfirm');
+      const nameEl = document.getElementById('peerActionConfirmName');
+      const peer = pendingPeerActionId ? globalActiveDirectory[pendingPeerActionId] : null;
+      if (nameEl) nameEl.innerText = peer ? getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType) : 'this person';
+      if (row) row.classList.remove('hidden');
+    }
+    function cancelRemoveFriend() {
+      const row = document.getElementById('peerActionConfirm');
+      if (row) row.classList.add('hidden');
+    }
+    function confirmRemoveFriend() {
+      cancelRemoveFriend();
       if (!pendingPeerActionId) return;
       toggleFriendStatus(pendingPeerActionId);
       updatePeerActionFriendBtn();
