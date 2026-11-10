@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.31 Alias Poison Fix, Icon Layer, Keyboard Lift]</title>
+  <title>LocaL - Proximity Social Network [V11.32 Steady Map, Admin Icon, Easier Taps]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -195,7 +195,7 @@
     .peer-node-icon { position: relative; z-index: 9600 !important; pointer-events: auto !important; box-shadow: 0 10px 24px rgba(2, 32, 71, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.85) !important; }
     /* Name shown at the bottom of each user icon (from the V7 look). */
     .peer-name-label {
-      margin-top: 4px; padding: 1px 7px; border-radius: 9999px; max-width: 96px;
+      margin-top: 4px; padding: 4px 9px; border-radius: 9999px; max-width: 96px; /* V11.32: taller pill = bigger tap target */
       background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(6px);
       border: 1px solid rgba(255, 255, 255, 0.9); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
       color: #1e293b; font-size: 9px; font-weight: 700; line-height: 1.5;
@@ -451,6 +451,15 @@
       background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
     }
 
+    /* V11.32: the private chat box gets a solid card of its own - no
+       backdrop blur (which could wash a whitish halo into the box over
+       a bright map) and no glare streak in its avatar. */
+    .peer-popover-card {
+      background: #17142a;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 18px 40px -8px rgba(0, 0, 0, 0.55);
+      pointer-events: auto !important;
+    }
     .dark-biz-bubble {
       background: #1e1b2e;
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -594,7 +603,7 @@
 
   <!-- V11.20: peer action popover - appears when a person's map icon is tapped -->
   <div id="peerActionPopover" class="hidden fixed bottom-44 left-1/2 -translate-x-1/2 z-[9999997] w-full max-w-xs px-4 pointer-events-auto">
-    <div class="dark-biz-bubble px-4 py-3 rounded-3xl shadow-2xl backdrop-blur-xl">
+    <div class="peer-popover-card px-4 py-3 rounded-3xl shadow-2xl">
       <div class="flex items-center gap-2.5 mb-3">
         <div id="peerActionAvatar" class="w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md overflow-hidden flex-shrink-0"></div>
         <div class="min-w-0 flex-1">
@@ -2716,7 +2725,7 @@
       const topicExpired = !!o.activeTopic && !!o.topicCreatedAtMs && (o.nowMs - o.topicCreatedAtMs > ONE_HOUR_MS);
       const hasValidTopic = !!o.activeTopic && !topicExpired;
       const hasTimestampedLiveTopic = !!o.activeTopic && !!o.topicCreatedAtMs && (o.nowMs - o.topicCreatedAtMs <= ONE_HOUR_MS);
-      const isStale = !o.isAdmin && (!o.updatedAtMs || (o.nowMs - o.updatedAtMs > 150000));
+      const isStale = !o.updatedAtMs || (o.nowMs - o.updatedAtMs > 150000); // V11.32: staleness is honest for the Administrator too - his bubble's survival is carried by the live-topic exemptions in hideTopic below, not by pretending he is online
       // V11.30: a mesh-learned topic whose own start time is still
       // inside the 1-hour lifetime is spared too - while the profiles
       // table lacks the topic timestamp columns, the mesh start time
@@ -2727,7 +2736,11 @@
       return {
         question: hideTopic ? null : (hasValidTopic ? o.activeTopic : (topicExpired ? null : o.existingQuestion)),
         createdAt: hideTopic ? null : (hasValidTopic ? (o.topicCreatedAtMs || o.existingCreatedAt || o.nowMs) : (topicExpired ? null : o.existingCreatedAt)),
-        isOffline: o.isAdmin ? false : isStale
+        // V11.32: the Administrator reports offline like everyone when
+        // his heartbeat is stale - his BUBBLE still survives to expiry
+        // (hideTopic above keeps its exemption); only the always-on
+        // icon is retired, per Shane.
+        isOffline: isStale
       };
     }
 
@@ -2761,6 +2774,24 @@
     // way into a private message, per Shane's spec. The bubble card
     // above the icon still opens the bubble chat directly.
     let pendingPeerActionId = null;
+    // V11.32: icons/names also open the box on pointerup (with a
+    // 10px stillness guard), which lands even when the follow-up
+    // click gets swallowed by another layer - the click handler stays
+    // as the mouse path, and opening twice is harmless.
+    function peerIconPointerDown(e) {
+      if (e.isPrimary === false) return;
+      e.currentTarget._pdx = e.clientX;
+      e.currentTarget._pdy = e.clientY;
+      const n = e.currentTarget.closest('.node-item');
+      if (n) n.style.zIndex = '9950';
+    }
+    function peerIconPointerUp(e, peerId) {
+      if (e.isPrimary === false) return;
+      const dx = e.clientX - (e.currentTarget._pdx ?? e.clientX);
+      const dy = e.clientY - (e.currentTarget._pdy ?? e.clientY);
+      if (Math.hypot(dx, dy) <= 10) openPeerActions(peerId);
+    }
+
     function openPeerActions(peerId) {
       const peer = globalActiveDirectory[peerId];
       if (!peer) return;
@@ -2772,7 +2803,7 @@
       const avatarEl = document.getElementById('peerActionAvatar');
       avatarEl.className = `w-9 h-9 rounded-full font-medium text-xs flex items-center justify-center shadow-md overflow-hidden flex-shrink-0 ${visual.borderClass}`;
       avatarEl.style.background = visual.bg;
-      avatarEl.innerHTML = renderNodeIconContent(peer.accountType, peer.category, peer.isBot);
+      avatarEl.innerHTML = renderNodeIconContent(peer.accountType, peer.category, peer.isBot).replace('<div class="bubble-glare"></div>', ''); // V11.32: no white glare streak inside the private chat box
       document.getElementById('peerActionPopover').classList.remove('hidden');
       updatePeerActionFriendBtn();
       lucide.createIcons();
@@ -3126,10 +3157,16 @@
       if (!vv) return;
       const dock = document.getElementById('actionDockContainer');
       const drawer = document.getElementById('chatDrawer');
+      const mapEl = document.getElementById('mapCanvas');
       let drawerLift = 0;
       const update = () => {
         const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
         const keyboardOpen = kb > 100;
+        // V11.32: when the keyboard opens, iOS pans the whole visual
+        // viewport (fixed layers ride along, so the map slid around
+        // while typing). Counter-translate the map layer by exactly
+        // the pan distance so the map itself stays where it was.
+        if (mapEl) mapEl.style.translate = keyboardOpen ? `0px ${Math.round(vv.offsetTop)}px` : '';
         if (dock) dock.style.translate = keyboardOpen ? `0px -${Math.round(kb)}px` : '';
         if (drawer) {
           if (keyboardOpen && !drawer.classList.contains('hidden')) {
@@ -5228,7 +5265,7 @@
       }
 
       const activeHasQuestion = peer.question && peer.createdAt;
-      const showUserIcon = !peer.isOffline || peerIsAdmin; // V11.6: the Administrator's icon/chat stays visible while he is offline, until the bubble expires
+      const showUserIcon = !peer.isOffline || (peerIsAdmin && !!activeHasQuestion); // V11.32 (was V11.6): an offline Administrator's icon shows only while he has a live bubble; logged out with no bubble, no icon - his chats still stay pinned until expiry
       const shouldDisplay = isEnabled && (activeHasQuestion || showUserIcon);
 
       nodeElem.style.display = shouldDisplay ? 'block' : 'none';
@@ -5257,7 +5294,7 @@
             ${(currentLayoutMode !== 'right' && (isBiz || activeHasQuestion)) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '', (peer.peerId === WELCOME_GUIDE_PEER_ID && !welcomeGuideOpened) ? 'animate-giggle-loop' : null, peer.businessInfo || '') : ''}
           </div>
           ${showUserIcon ? `
-            <div class="node-icon-tap relative z-[3000] flex flex-col items-center pointer-events-auto cursor-pointer p-3.5 -m-3.5" onclick="${onIconClickJs}" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
+            <div class="node-icon-tap relative z-[3000] flex flex-col items-center pointer-events-auto cursor-pointer p-5 -m-5" onclick="${onIconClickJs}" onpointerdown="peerIconPointerDown(event)" onpointerup="peerIconPointerUp(event, '${escapeJsArg(peer.peerId)}')" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
               ${peerIsAdmin ? '<div class="admin-rainbow-icon-wrap">' : ''}
               <div class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;">
                 ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
@@ -5267,7 +5304,7 @@
             </div>
             <div class="node-under-icon">
               ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="personal-bot-badge">BOT</span>' : ''}
-              <span class="peer-name-label pointer-events-auto cursor-pointer" onclick="${onIconClickJs}"${isBiz ? ` style="color: ${getBusinessCategoryColorHex(peer.category)}"` : ''}>${escapeChatHTML(chatRoomName)}${formatPeerDistance(peer) ? ' · ' + escapeChatHTML(formatPeerDistance(peer)) : ''}</span>
+              <span class="peer-name-label pointer-events-auto cursor-pointer" onclick="${onIconClickJs}" onpointerdown="peerIconPointerDown(event)" onpointerup="peerIconPointerUp(event, '${escapeJsArg(peer.peerId)}')"${isBiz ? ` style="color: ${getBusinessCategoryColorHex(peer.category)}"` : ''}>${escapeChatHTML(chatRoomName)}${formatPeerDistance(peer) ? ' · ' + escapeChatHTML(formatPeerDistance(peer)) : ''}</span>
             </div>
           ` : ''}
         </div>
@@ -5553,8 +5590,10 @@
     }
 
     function autoResizeTextArea(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; }
-    function handleDockFocus(e) { if (e) e.stopPropagation(); window.scrollTo(0, 0); document.body.scrollTop = 0; }
-    function handleDockBlur(e) { if (e) e.stopPropagation(); window.scrollTo(0, 0); document.body.scrollTop = 0; }
+    // V11.32: the old scrollTo(0,0) here fought the keyboard's own pan
+    // and made the map jump - the visual-viewport lift handles it now.
+    function handleDockFocus(e) { if (e) e.stopPropagation(); }
+    function handleDockBlur(e) { if (e) e.stopPropagation(); }
 
     async function sendChatMessage() {
       const input = document.getElementById('chatInput');
