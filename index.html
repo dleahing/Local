@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.30 Duplicate Fix, Missing Bubbles, Icon Taps]</title>
+  <title>LocaL - Proximity Social Network [V11.31 Alias Poison Fix, Icon Layer, Keyboard Lift]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -173,6 +173,11 @@
     #nodesContainer { isolation: isolate; z-index: 9000 !important; pointer-events: none !important; }
     #nodesContainer .node-item { z-index: 9000 !important; pointer-events: auto; }
     #nodesContainer .node-content-stack { z-index: 9500 !important; }
+    /* V11.31: the icon must win taps over its own bubble card - the
+       card layer above sat at 9500 !important, so taps on the icon's
+       covered half opened the bubble chat instead of the options box,
+       while the name pill below the card worked. */
+    #nodesContainer .node-icon-tap { position: relative; z-index: 9700 !important; }
     #nodesContainer .node-item:focus-within,
     #nodesContainer .node-item:hover { z-index: 9900 !important; }
     /* Radar artwork is decoration only: rings and sweep never intercept taps.
@@ -1197,6 +1202,7 @@
     };
 
     let currentAuthUser = null;
+    let profileAliasConfirmedFor = null; // V11.31: the auth id whose real alias this session has loaded/confirmed. The presence writer stays silent until it is set - an early write used to create the profile row with the factory-default 'Traveler' alias before the sign-up alias loaded, and that row then overrode the real alias forever.
     let myPeerId = 'local-' + Math.random().toString(36).substring(2, 9);
     let globalActiveDirectory = {};
     let processedMsgIds = new Set();
@@ -2336,6 +2342,7 @@
 
       isAdminUser = computeIsAdmin();
 
+      profileAliasConfirmedFor = currentAuthUser ? currentAuthUser.id : null; // V11.31: the branches above resolved this account's alias
       userState.profileCreated = true;
       savePersistentData();
       document.getElementById('welcomeProfileModal').classList.add('hidden');
@@ -2625,6 +2632,7 @@
         initTapRippleHandler();
         initMapPanHandlers();
         initSidebarTapClose(); // V11.12
+        initKeyboardAvoidance(); // V11.31
         initPinchZoomHandlers();
         initWheelZoomHandler();
         initDoubleTapHandler();
@@ -3104,6 +3112,40 @@
         if (e.target.closest('button, input, select, textarea, header, .glass-card, #chatDrawer, #profileModal, #p2pModal, #friendsModal, #pinnedChatsWrapper, #rightSideBubblesSidebar, .node-item, .scale-compensator, #radarBoundaryRing, .radar-distance-label')) return;
         setLayoutMode('map');
       });
+    }
+
+    // V11.31: keep the composer dock and the chat drawer above the
+    // on-screen keyboard. iOS moves position:fixed elements
+    // unreliably when the keyboard opens (sometimes it pans the page,
+    // sometimes the keyboard simply covers the input), so the lift is
+    // computed from the visual viewport on every change: the dock
+    // rises by exactly the keyboard height and returns when it hides;
+    // the drawer rises by however much of it the keyboard covers.
+    function initKeyboardAvoidance() {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const dock = document.getElementById('actionDockContainer');
+      const drawer = document.getElementById('chatDrawer');
+      let drawerLift = 0;
+      const update = () => {
+        const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        const keyboardOpen = kb > 100;
+        if (dock) dock.style.translate = keyboardOpen ? `0px -${Math.round(kb)}px` : '';
+        if (drawer) {
+          if (keyboardOpen && !drawer.classList.contains('hidden')) {
+            const r = drawer.getBoundingClientRect();
+            const visibleBottom = vv.offsetTop + vv.height;
+            const overlap = (r.bottom + drawerLift) - visibleBottom;
+            drawerLift = overlap > 0 ? Math.round(overlap) + 8 : 0;
+          } else {
+            drawerLift = 0;
+          }
+          drawer.style.translate = drawerLift ? `0px -${drawerLift}px` : '';
+        }
+      };
+      vv.addEventListener('resize', update);
+      vv.addEventListener('scroll', update);
+      update();
     }
 
     function recenterAndResetZoom() {
@@ -4194,12 +4236,24 @@
       if (!supabaseClient) return;
       const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
       if (data && !error) {
-        userState.alias = data.alias || userState.alias;
+        // V11.31: a row whose alias is the factory default 'Traveler'
+        // while the login itself carries a different sign-up alias was
+        // poisoned by an early presence write that landed before the
+        // real alias loaded - repair it from the alias stored on the
+        // login, and adopt the repaired name.
+        let rowAlias = data.alias || null;
+        const metaAliasForRepair = (currentAuthUser && currentAuthUser.id === userId && currentAuthUser.user_metadata && currentAuthUser.user_metadata.alias) || null;
+        if (rowAlias === 'Traveler' && metaAliasForRepair && metaAliasForRepair !== 'Traveler') {
+          rowAlias = await claimableAlias(metaAliasForRepair, userId);
+          try { await dbUpsert('profiles', { id: userId, alias: rowAlias, updated_at: new Date() }); } catch(e) {}
+        }
+        userState.alias = rowAlias || userState.alias;
         userState.type = data.account_type || userState.type;
         userState.category = data.category || userState.category;
         userState.interestFilter = data.interest_filter || userState.interestFilter;
         userState.hideMyName = data.hide_my_name || false;
         userState.profileCreated = true;
+        profileAliasConfirmedFor = userId; // V11.31
         isAdminUser = computeIsAdmin();
 
         if (data.active_topic) {
@@ -4245,6 +4299,7 @@
           userState.alias = await claimableAlias(metaAlias, userId);
           if (userState.alias !== metaAlias) showToast('The alias "' + metaAlias + '" was claimed while your email was unconfirmed, so your alias is "' + userState.alias + '" - change it any time in Settings.', 'alert-circle');
           userState.profileCreated = true;
+          profileAliasConfirmedFor = userId; // V11.31
           try {
             await dbUpsert('profiles', {
               id: userId, alias: userState.alias, account_type: userState.type,
@@ -4304,6 +4359,7 @@
       }
       const peerDisplay = document.getElementById('myPeerIdDisplay');
       if (peerDisplay) peerDisplay.value = `${myPeerId} (@${userState.alias})`;
+      profileAliasConfirmedFor = currentAuthUser.id; // V11.31
       showToast('Profile and unique alias updated!', 'check-circle');
       return true;
     }
@@ -5081,7 +5137,7 @@
         createdAt: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.createdAt : null
       };
 
-      if (supabaseClient && currentAuthUser) {
+      if (supabaseClient && currentAuthUser && profileAliasConfirmedFor === currentAuthUser.id) { // V11.31: never write the profile row before this account's real alias is confirmed (see profileAliasConfirmedFor)
         try {
           const topicIsLive = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
           const presenceKey = [userState.alias, userState.type, userState.category, topicIsLive ? activeTopicState.text : '', topicIsLive ? activeTopicState.createdAt : '', Math.round(coords.lat * 10000), Math.round(coords.lng * 10000)].join('|');
@@ -5201,7 +5257,7 @@
             ${(currentLayoutMode !== 'right' && (isBiz || activeHasQuestion)) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '', (peer.peerId === WELCOME_GUIDE_PEER_ID && !welcomeGuideOpened) ? 'animate-giggle-loop' : null, peer.businessInfo || '') : ''}
           </div>
           ${showUserIcon ? `
-            <div class="relative z-[3000] flex flex-col items-center pointer-events-auto cursor-pointer p-3.5 -m-3.5" onclick="${onIconClickJs}" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
+            <div class="node-icon-tap relative z-[3000] flex flex-col items-center pointer-events-auto cursor-pointer p-3.5 -m-3.5" onclick="${onIconClickJs}" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap @${escapeChatHTML(chatRoomName)} for chat options">
               ${peerIsAdmin ? '<div class="admin-rainbow-icon-wrap">' : ''}
               <div class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;">
                 ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
