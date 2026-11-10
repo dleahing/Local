@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.36 Bottom-Anchored Chat, More Reactions]</title>
+  <title>LocaL - Proximity Social Network [V11.37 Drag-to-Close Chat]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3217,7 +3217,7 @@
             drawer.style.top = '';
             drawer.style.height = '';
           }
-          drawer.style.translate = '';
+          if (!chatDragInProgress) drawer.style.translate = ''; // V11.37: a finger drag owns the translate while it lasts
         }
       };
       syncDrawerToViewport = update; // V11.35
@@ -6377,26 +6377,55 @@
       merged.forEach(msg => appendMessage(msg.sender, msg.text, msg.time, msg.isMe, msg.id, roomId));
     }
 
-    // V11.35: drag upward from the text box to close the chat.
-    let chatSwipeStartY = null;
+    // V11.37 (was V11.35): drag upward from the text box and the chat
+    // box follows your finger. Let go past ~90px and it slides the
+    // rest of the way up and closes; let go sooner and it springs
+    // back into place.
+    let chatSwipeStartY = null, chatSwipeDy = 0, chatDragInProgress = false;
     function chatInputSwipeStart(e) {
       if (e.isPrimary === false) return;
       chatSwipeStartY = e.clientY;
+      chatSwipeDy = 0;
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
     }
     function chatInputSwipeMove(e) {
       if (chatSwipeStartY === null) return;
-      if (chatSwipeStartY - e.clientY >= 70) {
-        chatSwipeStartY = null;
-        closeChatDrawer();
+      const dy = chatSwipeStartY - e.clientY;
+      chatSwipeDy = dy;
+      const drawer = document.getElementById('chatDrawer');
+      if (!drawer) return;
+      if (dy > 0) {
+        chatDragInProgress = true;
+        drawer.style.transition = 'none';
+        drawer.style.translate = `0px -${Math.round(dy)}px`;
+      } else if (chatDragInProgress) {
+        drawer.style.translate = '';
       }
     }
-    function chatInputSwipeEnd() { chatSwipeStartY = null; }
+    function chatInputSwipeEnd() {
+      const dy = chatSwipeDy;
+      const wasDragging = chatDragInProgress;
+      chatSwipeStartY = null;
+      chatSwipeDy = 0;
+      chatDragInProgress = false;
+      const drawer = document.getElementById('chatDrawer');
+      if (!drawer || !wasDragging) return;
+      drawer.style.transition = '';
+      if (dy >= 90) {
+        const input = document.getElementById('chatInput');
+        if (input) input.blur();
+        drawer.style.translate = '0px -105%';
+        setTimeout(() => closeChatDrawer(), 170);
+      } else {
+        drawer.style.translate = '';
+      }
+    }
 
     function closeChatDrawer() {
       hideReactionPicker(); // V11.33
       document.getElementById('chatDrawer').classList.add('hidden');
       const drawerEl = document.getElementById('chatDrawer'); // V11.35: drop any keyboard-session sizing
-      if (drawerEl) { drawerEl.style.top = ''; drawerEl.style.height = ''; }
+      if (drawerEl) { drawerEl.style.top = ''; drawerEl.style.height = ''; drawerEl.style.translate = ''; drawerEl.style.transition = ''; }
       document.getElementById('chatBackdrop').classList.add('hidden');
       document.getElementById('actionDockContainer').classList.remove('hidden');
       if (currentActiveChatRoomId) delete chatRenderSigs[currentActiveChatRoomId];
