@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.40 Remove Friend Confirm]</title>
+  <title>LocaL - Proximity Social Network [V11.41 Reactions Persist + Zoom]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -284,6 +284,30 @@
     html.zoom-lite #radarBoundaryRing { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65) !important; }
     html.zoom-lite .peer-name-label { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
     html.zoom-lite .dark-biz-bubble, html.zoom-lite .glass-card { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+    /* V11.41: lite mode is stronger (the crash still happened with the
+       V11.16 version). The sweep KEEPS rotating - it is the radar - but
+       it is drawn on a much smaller layer: the old disc was inset -50%
+       (4x the ring's area). A conic gradient only depends on angle, so
+       a disc at inset -10% (1.44x area) covers the ring at every angle
+       for well under half the repaint cost. The purely decorative
+       infinite animations (float, bubble wobble, sonar pulse, glow) are
+       switched off in lite mode, icon shadows shrink to a cheap one,
+       the rainbow filter animation stops, and glare streaks go. The
+       unread jiggle/giggle stays: it is a signal, not decoration. */
+    html.zoom-lite .animate-radar-sweep { top: -10% !important; right: -10% !important; bottom: -10% !important; left: -10% !important; }
+    html.zoom-lite .animate-float, html.zoom-lite .animate-bubble-subtle, html.zoom-lite .animate-pulse-glow { animation: none !important; will-change: auto !important; }
+    html.zoom-lite .peer-sonar-ring { display: none !important; }
+    html.zoom-lite .bubble-glare { display: none !important; }
+    html.zoom-lite .peer-node-icon { box-shadow: 0 4px 10px rgba(2, 32, 71, 0.30), 0 0 0 2px rgba(255, 255, 255, 0.85) !important; }
+    html.zoom-lite .admin-rainbow-border-wrap, html.zoom-lite .admin-rainbow-icon-wrap { animation: none !important; box-shadow: 0 0 8px rgba(255, 215, 0, 0.55) !important; }
+    /* V11.41: extreme zoom-out tier (under 0.55x) - the declutter pass
+       also hides most bubble CARDS there (icons stay), see
+       declutterMapBubbles. */
+    html.zoom-x-lite #worldMaxBoundaryRing { opacity: 0.5; }
+    /* V11.41: nodes far outside the viewport never need their
+       animations running - the declutter pass tags them and every
+       decorative animation pauses (at any zoom). */
+    .node-offscreen .animate-float, .node-offscreen .animate-bubble-subtle, .node-offscreen .animate-peer-sonar, .node-offscreen .animate-pulse-glow, .node-offscreen .animate-giggle-loop, .node-offscreen .animate-jiggle-continuous { animation-play-state: paused !important; }
 
     .node-item {
       pointer-events: auto !important;
@@ -1153,6 +1177,8 @@
     const STORAGE_KEY_UNREAD_ROOMS = 'local_unread_rooms_v40';
     const STORAGE_KEY_ARCHIVED_DMS = 'local_archived_dms_v40'; // V11.33
     const STORAGE_KEY_REACTIONS = 'local_msg_reactions_v40'; // V11.33
+    const STORAGE_KEY_REACTION_OUTBOX = 'local_msg_reaction_outbox_v41'; // V11.41: reactions waiting to reach the server
+    const STORAGE_KEY_REACTION_SYNCED = 'local_msg_reaction_synced_v41'; // V11.41: rooms whose server reactions have been fetched
     const STORAGE_KEY_HIDDEN_PEERS = 'local_hidden_peers_v40';
     const STORAGE_KEY_CHAT_CACHE = 'local_chat_cache_v40';
     const STORAGE_KEY_FRIEND_REQUESTS = 'local_friend_requests_v40';
@@ -1656,6 +1682,7 @@
       delete chatRenderSigs[altRoomId];
       persistChatCache();
       if (messageReactions[roomId] || messageReactions[altRoomId]) { delete messageReactions[roomId]; delete messageReactions[altRoomId]; persistReactions(); } // V11.33
+      clearReactionRoomState(roomId); // V11.41: pending reaction uploads + sync marks for a deleted room must not resurrect its reactions
       markChatRoomCleared(roomId);
       markChatRoomCleared(altRoomId);
       participatedChatRoomIds.delete(roomId);
@@ -1687,6 +1714,7 @@
           renderUserTopBubbleContent();
           if (supabaseClient) {
             await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId('room-you'));
+            await deleteServerReactionsForRoom('room-you'); // V11.41
             if (currentAuthUser) {
               await dbUpdateById('profiles', { active_topic: null, topic_created_at: null }, currentAuthUser.id);
             }
@@ -2968,6 +2996,7 @@
         const savedArchivedDms = localStorage.getItem(STORAGE_KEY_ARCHIVED_DMS); // V11.33
         if (savedArchivedDms) archivedDmRoomIds = new Set(JSON.parse(savedArchivedDms));
         loadReactions(); // V11.33
+        loadReactionSyncState(); // V11.41
         const savedFriendRequests = localStorage.getItem(STORAGE_KEY_FRIEND_REQUESTS);
         if (savedFriendRequests) {
           const parsedReq = JSON.parse(savedFriendRequests);
@@ -3275,6 +3304,21 @@
       showToast('Map recentered (0.50 Mi)', 'navigation');
     }
 
+    // V11.41: zoom tiers for the lite modes. 'lite' starts earlier
+    // (0.90x, was 0.75x) and a second 'xlite' tier under 0.55x caps how
+    // many bubble cards render (see declutterMapBubbles).
+    function zoomLiteTier(scale) {
+      if (!Number.isFinite(scale)) return 'full';
+      if (scale < 0.55) return 'xlite';
+      if (scale < 0.90) return 'lite';
+      return 'full';
+    }
+    function declutterKeepCardAtXLite(prio, protectedCard) {
+      // Administrator / Welcome Guide (protected), unread (incl. DM
+      // unread, prio 1) and friends (prio 2) keep their cards.
+      return !!protectedCard || prio <= 2;
+    }
+
     function startSmoothAnimationLoop() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
@@ -3282,6 +3326,7 @@
       animationLoopStarted = true;
       let lastPanX = 0, lastPanY = 0, lastZoomOut = 1;
       let liteModeOn = false; // V11.14
+      let xLiteModeOn = false; // V11.41
       const renderLoop = () => {
         panX += (targetPanX - panX) * 0.25;
         panY += (targetPanY - panY) * 0.25;
@@ -3289,11 +3334,19 @@
         if (!Number.isFinite(currentZoomScale)) currentZoomScale = 1;
         currentZoomScale = Math.max(0.35, Math.min(2.5, currentZoomScale));
 
-        // V11.14: lite mode under 0.75x zoom (see the zoom-lite CSS).
-        const shouldLite = currentZoomScale < 0.75;
+        // V11.14/V11.41: lite tiers (see zoomLiteTier + the zoom-lite CSS).
+        const tier = zoomLiteTier(currentZoomScale);
+        const shouldLite = tier !== 'full';
         if (shouldLite !== liteModeOn) {
           liteModeOn = shouldLite;
           document.documentElement.classList.toggle('zoom-lite', shouldLite);
+          scheduleDeclutter();
+        }
+        const shouldXLite = tier === 'xlite';
+        if (shouldXLite !== xLiteModeOn) {
+          xLiteModeOn = shouldXLite;
+          document.documentElement.classList.toggle('zoom-x-lite', shouldXLite);
+          scheduleDeclutter();
         }
 
         if (Math.abs(panX - lastPanX) > 0.05 || Math.abs(panY - lastPanY) > 0.05 || Math.abs(currentZoomScale - lastZoomOut) > 0.0005) {
@@ -3620,6 +3673,11 @@
         it.prio = priorityOf(it.peer);
         it.dist = (it.peer && it.peer.distance != null) ? it.peer.distance : 1e12;
         it.rect = it.icon.getBoundingClientRect();
+        // V11.41: decorative animations pause on nodes far outside the
+        // viewport - they are invisible there, so animating them is
+        // pure compositing cost (a crash contributor at any zoom).
+        const offscreen = it.rect.right < -80 || it.rect.left > window.innerWidth + 80 || it.rect.bottom < -80 || it.rect.top > window.innerHeight + 80;
+        it.el.classList.toggle('node-offscreen', offscreen);
       });
       const sorted = [...items].sort((a, b) => (a.prio - b.prio) || (a.dist - b.dist));
       const placedIcons = [];
@@ -3654,6 +3712,13 @@
         // or the Welcome Guide's bubble (both must always show).
         const clashIcon = items.some((other, idx) => other !== it && rectsOverlapPx(r, iconRects[idx], 2));
         const protectedCard = it.prio === 0 || (it.peer && it.peer.peerId === WELCOME_GUIDE_PEER_ID);
+        // V11.41: at extreme zoom-out every rendered bubble card is a
+        // large blurred, shadowed, animated layer; with the whole
+        // world on screen that is the compositing load that kills the
+        // page. Cards are capped there - icons (small, cheap) all
+        // stay visible and tappable, and the important cards stay:
+        // Administrator, Welcome Guide, unread and friends.
+        if (zoomLiteTier(currentZoomScale) === 'xlite' && !declutterKeepCardAtXLite(it.prio, protectedCard)) { it.card.style.visibility = 'hidden'; return; }
         if (clashIcon && !protectedCard) it.card.style.visibility = 'hidden';
       });
     }
@@ -4081,6 +4146,7 @@
         showToast(`Private message from ${ping.sender_alias || 'someone'}`, 'mail');
         notifyDevice('Private message', `${ping.sender_alias || 'Someone'} sent you a private message`);
       }
+      fetchAndMergeReactions(targetRoomId); // V11.41: reactions on private messages persist too
       refreshAllNodeVisibilities();
     }
 
@@ -4340,7 +4406,7 @@
         }
       } catch(e) {}
       try {
-        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS, STORAGE_KEY_CHAT_CLEARED, STORAGE_KEY_ADMIN_PEERS, STORAGE_KEY_WELCOME_OPENED, STORAGE_KEY_ARCHIVED_DMS, STORAGE_KEY_REACTIONS].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+        [STORAGE_KEY_PROFILE, STORAGE_BEACON_KEY, STORAGE_KEY_ACTIVE_ROOM, STORAGE_KEY_TOPIC_STATE, STORAGE_KEY_PARTICIPATED_ROOMS, STORAGE_KEY_FRIENDS, STORAGE_KEY_CUSTOM_BOTS, STORAGE_KEY_OFFLINE_TOPICS_STATE, STORAGE_KEY_UNREAD_ROOMS, STORAGE_KEY_HIDDEN_PEERS, STORAGE_KEY_CHAT_CACHE, STORAGE_KEY_FRIEND_REQUESTS, STORAGE_KEY_CHAT_CLEARED, STORAGE_KEY_ADMIN_PEERS, STORAGE_KEY_WELCOME_OPENED, STORAGE_KEY_ARCHIVED_DMS, STORAGE_KEY_REACTIONS, STORAGE_KEY_REACTION_OUTBOX, STORAGE_KEY_REACTION_SYNCED].forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
       } catch(e) {}
       try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch(e) {}
       currentAuthUser = null;
@@ -5806,8 +5872,13 @@
     // exclamation. Counts show under the message; tapping a count
     // toggles your own reaction. Reactions sync live over the mesh
     // between people who are online, and are kept on this device.
-    // They are not stored on the server yet, so a reaction made while
-    // someone was offline does not reach them later.
+    // V11.41: reactions ALSO persist on the server (the
+    // message_reactions table - see LocaL_V11.41_reactions.sql), so a
+    // reaction added, changed or removed while the other person is
+    // offline is waiting for them when they come back. The device
+    // store below remains as the cache/fallback: if the table does
+    // not exist yet, everything degrades to the V11.33 behaviour and
+    // queued changes upload automatically once it does.
     const REACTION_EMOJIS = ['❤️', '👍', '❗', '😂', '😢']; // V11.36: + laughing and sad faces
     let messageReactions = {}; // { roomId: { msgId: { emoji: [userId, ...] } } }
 
@@ -5816,6 +5887,182 @@
     }
     function loadReactions() {
       try { const raw = localStorage.getItem(STORAGE_KEY_REACTIONS); if (raw) messageReactions = JSON.parse(raw) || {}; } catch (e) { messageReactions = {}; }
+    }
+
+    // ---- V11.41: server persistence for reactions -------------------
+    // One row per (room, message, emoji, user) in message_reactions.
+    // A removal DELETES the row, and a room's fetched rows are treated
+    // as the authoritative set for that room - so a removal made
+    // while someone was offline propagates to them on their next
+    // fetch instead of their stale device copy resurrecting it. Two
+    // exceptions keep that rule safe: (1) this device's own reactions
+    // that predate the first successful fetch for a room (the
+    // V11.33-V11.40 local-only era) are uploaded once, not dropped;
+    // (2) changes not yet uploaded (the outbox below) are re-applied
+    // over the fetched set, so an offline-made change is never lost
+    // to a fetch that raced it. Reaction rows carry NO message text,
+    // for any room - private-message privacy is unchanged.
+    const REACTION_TABLE = 'message_reactions';
+    let reactionOutbox = {}; // opKey -> { roomId, msgId, emoji, userId, action, msgCreatedAt, ts }
+    let reactionRoomsSynced = {}; // local roomId -> ms of last successful server fetch
+    let reactionServerAvailable = true; // false once the table is known missing - local + mesh only, ops stay queued
+    let reactionFlushInFlight = false;
+
+    function reactionOpKey(roomId, msgId, emoji, userId) { return [roomId, String(msgId), emoji, userId].join('|'); }
+    function persistReactionOutbox() { try { localStorage.setItem(STORAGE_KEY_REACTION_OUTBOX, JSON.stringify(reactionOutbox)); } catch (e) {} }
+    function persistReactionSynced() { try { localStorage.setItem(STORAGE_KEY_REACTION_SYNCED, JSON.stringify(reactionRoomsSynced)); } catch (e) {} }
+    function loadReactionSyncState() {
+      try { const raw = localStorage.getItem(STORAGE_KEY_REACTION_OUTBOX); if (raw) reactionOutbox = JSON.parse(raw) || {}; } catch (e) { reactionOutbox = {}; }
+      try { const raw2 = localStorage.getItem(STORAGE_KEY_REACTION_SYNCED); if (raw2) reactionRoomsSynced = JSON.parse(raw2) || {}; } catch (e) { reactionRoomsSynced = {}; }
+    }
+    function isReactionTableMissing(error) {
+      if (!error) return false;
+      const code = String(error.code || '');
+      const msg = String(error.message || '');
+      return code === '42P01' || code === 'PGRST205' || (/message_reactions/.test(msg) && /(does not exist|schema cache|Could not find)/.test(msg));
+    }
+    function queueReactionSync(roomId, msgId, emoji, userId, action, msgCreatedAt) {
+      if (!REACTION_EMOJIS.includes(emoji) || !roomId || !msgId || !userId) return;
+      if (roomId === WELCOME_GUIDE_ROOM_ID) return; // the Guide's room is local-only, so its reactions stay local too
+      if (!currentAuthUser || userId !== currentAuthUser.id) return; // server rows must belong to the signed-in account (the table's RLS checks this); signed-out/local reactions stay on-device + mesh, as before
+      reactionOutbox[reactionOpKey(roomId, msgId, emoji, userId)] = { roomId, msgId: String(msgId), emoji, userId, action: action === 'remove' ? 'remove' : 'add', msgCreatedAt: msgCreatedAt || null, ts: Date.now() };
+      persistReactionOutbox();
+      flushReactionOutbox();
+    }
+    async function dbUpsertReactionRow(row) {
+      const payload = { ...row };
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const res = await supabaseClient.from(REACTION_TABLE).upsert(payload, { onConflict: 'room_id,message_id,emoji,user_id' });
+        if (!res.error) return res;
+        const missing = missingColumnFromError(res.error);
+        if (missing && (missing in payload)) { delete payload[missing]; continue; }
+        return res;
+      }
+      return { error: { message: 'Reaction upsert failed after column retries' } };
+    }
+    async function syncReactionOpToServer(op) {
+      if (!supabaseClient || !currentAuthUser) return false;
+      const dbRoom = canonicalChatRoomId(op.roomId);
+      try {
+        if (op.action === 'remove') {
+          const res = await supabaseClient.from(REACTION_TABLE).delete().eq('room_id', dbRoom).eq('message_id', op.msgId).eq('emoji', op.emoji).eq('user_id', op.userId);
+          if (res.error) { if (isReactionTableMissing(res.error)) reactionServerAvailable = false; return false; }
+          return true;
+        }
+        const res = await dbUpsertReactionRow({ room_id: dbRoom, message_id: op.msgId, msg_created_at: op.msgCreatedAt || null, emoji: op.emoji, user_id: op.userId });
+        if (res.error) { if (isReactionTableMissing(res.error)) reactionServerAvailable = false; return false; }
+        return true;
+      } catch (e) { return false; }
+    }
+    async function flushReactionOutbox() {
+      if (reactionFlushInFlight || !reactionServerAvailable) return;
+      if (!supabaseClient || !currentAuthUser) return;
+      if (!Object.keys(reactionOutbox).length) return;
+      reactionFlushInFlight = true;
+      try {
+        // Drain until empty: a change made while an upload was in
+        // flight lands in the outbox mid-flush and must not be left
+        // stranded until the next trigger.
+        while (reactionServerAvailable) {
+          const ops = Object.values(reactionOutbox);
+          if (!ops.length) break;
+          let progressed = false;
+          for (const op of ops) {
+            const ok = await syncReactionOpToServer(op);
+            if (ok) { delete reactionOutbox[reactionOpKey(op.roomId, op.msgId, op.emoji, op.userId)]; progressed = true; }
+            if (!reactionServerAvailable) break;
+          }
+          persistReactionOutbox();
+          if (!progressed) break;
+        }
+      } finally { reactionFlushInFlight = false; }
+    }
+    function resolveReactionRowMessageId(roomId, row) {
+      const msgs = localChatCache[roomId] || [];
+      const byId = msgs.find(m => m.id && String(m.id) === String(row.message_id));
+      if (byId) return byId.id;
+      if (row.msg_created_at) {
+        const ts = Date.parse(row.msg_created_at);
+        if (Number.isFinite(ts)) { const byTs = msgs.find(m => Date.parse(m.createdAt || '') === ts); if (byTs) return byTs.id; }
+      }
+      return null;
+    }
+    function mergeServerReactions(roomId, rows) {
+      const serverState = {};
+      (rows || []).forEach(row => {
+        if (!row || !REACTION_EMOJIS.includes(row.emoji) || !row.user_id) return;
+        if (row.msg_created_at && (chatRoomClearedAt[roomId] || 0) && Date.parse(row.msg_created_at) < (chatRoomClearedAt[roomId] || 0)) return; // deleted rooms stay deleted
+        const mid = resolveReactionRowMessageId(roomId, row);
+        if (!mid) return;
+        if (!serverState[mid]) serverState[mid] = {};
+        if (!serverState[mid][row.emoji]) serverState[mid][row.emoji] = [];
+        if (!serverState[mid][row.emoji].includes(row.user_id)) serverState[mid][row.emoji].push(row.user_id);
+      });
+      const localRoom = messageReactions[roomId] || {};
+      const next = {};
+      Object.keys(serverState).forEach(mid => { next[mid] = {}; Object.keys(serverState[mid]).forEach(em => { next[mid][em] = [...serverState[mid][em]]; }); });
+      const myId = currentAuthUser ? currentAuthUser.id : null;
+      if (myId && !reactionRoomsSynced[roomId]) {
+        // First successful fetch for this room on this device: my own
+        // locally-held reactions may be pre-server (V11.33-V11.40)
+        // reactions that were never uploaded - keep and upload them
+        // instead of letting the authoritative set wipe them. After
+        // the first fetch this no longer applies, so a reaction I
+        // removed on another device stays removed here.
+        Object.keys(localRoom).forEach(mid => {
+          Object.keys(localRoom[mid] || {}).forEach(em => {
+            if ((localRoom[mid][em] || []).includes(myId)) {
+              if (!next[mid]) next[mid] = {};
+              if (!next[mid][em]) next[mid][em] = [];
+              if (!next[mid][em].includes(myId)) next[mid][em].push(myId);
+              const entry = (localChatCache[roomId] || []).find(m => m.id === mid);
+              queueReactionSync(roomId, mid, em, myId, 'add', entry ? entry.createdAt : null);
+            }
+          });
+        });
+      }
+      Object.values(reactionOutbox).filter(op => op.roomId === roomId).forEach(op => {
+        if (op.action === 'add') {
+          if (!next[op.msgId]) next[op.msgId] = {};
+          if (!next[op.msgId][op.emoji]) next[op.msgId][op.emoji] = [];
+          if (!next[op.msgId][op.emoji].includes(op.userId)) next[op.msgId][op.emoji].push(op.userId);
+        } else {
+          if (next[op.msgId] && next[op.msgId][op.emoji]) {
+            next[op.msgId][op.emoji] = next[op.msgId][op.emoji].filter(u => u !== op.userId);
+            if (!next[op.msgId][op.emoji].length) delete next[op.msgId][op.emoji];
+          }
+          if (next[op.msgId] && !Object.keys(next[op.msgId]).length) delete next[op.msgId];
+        }
+      });
+      const changed = JSON.stringify(next) !== JSON.stringify(localRoom);
+      if (Object.keys(next).length) messageReactions[roomId] = next; else delete messageReactions[roomId];
+      return changed;
+    }
+    async function fetchAndMergeReactions(roomId) {
+      if (!roomId || roomId === WELCOME_GUIDE_ROOM_ID) return;
+      if (!supabaseClient || !currentAuthUser || !reactionServerAvailable) return;
+      await flushReactionOutbox();
+      if (!reactionServerAvailable) return;
+      try {
+        const { data, error } = await supabaseClient.from(REACTION_TABLE).select('*').eq('room_id', canonicalChatRoomId(roomId)).limit(500);
+        if (error) { if (isReactionTableMissing(error)) reactionServerAvailable = false; return; }
+        if (!Array.isArray(data)) return;
+        const changed = mergeServerReactions(roomId, data);
+        reactionRoomsSynced[roomId] = Date.now();
+        persistReactionSynced();
+        if (changed) { persistReactions(); if (roomId === currentActiveChatRoomId) renderOpenRoomMessages(); }
+      } catch (e) {}
+    }
+    function clearReactionRoomState(roomId) {
+      const alt = localChatRoomId(canonicalChatRoomId(roomId));
+      [roomId, alt].forEach(r => { delete reactionRoomsSynced[r]; });
+      Object.keys(reactionOutbox).forEach(k => { if (reactionOutbox[k].roomId === roomId || reactionOutbox[k].roomId === alt) delete reactionOutbox[k]; });
+      persistReactionOutbox();
+      persistReactionSynced();
+    }
+    async function deleteServerReactionsForRoom(roomId) {
+      if (!supabaseClient || !currentAuthUser || !reactionServerAvailable) return;
+      try { await supabaseClient.from(REACTION_TABLE).delete().eq('room_id', canonicalChatRoomId(roomId)); } catch (e) {}
     }
     function getReactionSummary(roomId, msgId) {
       const byMsg = (messageReactions[roomId] || {})[msgId] || {};
@@ -5855,6 +6102,7 @@
       persistReactions();
       if (roomId === currentActiveChatRoomId) renderOpenRoomMessages();
       const entry = (localChatCache[roomId] || []).find(m => m.id === msgId);
+      queueReactionSync(roomId, msgId, emoji, myId, action, entry ? entry.createdAt : null); // V11.41: persist it for anyone offline (no message text is stored or sent for this)
       broadcastData({ id: 'rxn-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), type: 'CHAT_REACTION', peerId: myPeerId, room_id: canonicalChatRoomId(roomId), message_id: msgId, msg_created_at: entry ? entry.createdAt : null, msg_text: parseDmRoom(roomId) ? null : (entry ? entry.text : null), emoji, action });
       playAudioEffect('click');
     }
@@ -6037,6 +6285,7 @@
       if (syncDrawerToViewport) syncDrawerToViewport(); // V11.35: never inherit a stale half-height from an earlier keyboard session
       document.getElementById('chatBackdrop').classList.remove('hidden');
       await loadDbChatHistory(roomId);
+      fetchAndMergeReactions(roomId); // V11.41: reactions made/changed/removed while either side was offline
     }
 
     async function ownerDeleteEntireChatRoom() {
@@ -6044,6 +6293,7 @@
       if (confirm("Are you sure you want to delete this entire chat room for all participants?")) {
         if (supabaseClient) {
           const { error: roomDeleteError } = await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId(currentActiveChatRoomId));
+          await deleteServerReactionsForRoom(currentActiveChatRoomId); // V11.41
           if (roomDeleteError) showToast('Server delete failed - the chat is removed on this device only: ' + roomDeleteError.message, 'alert-circle'); // V11.27: was silent, so a blocked delete looked like the chat came back
           if (currentActiveChatRoomId === 'room-you' && currentAuthUser) {
             await dbUpdateById('profiles', { active_topic: null, topic_created_at: null }, currentAuthUser.id);
@@ -6228,6 +6478,7 @@
     async function restoreChatsFromSupabase() {
       if (chatsRestoredFromSupabase || !supabaseClient || !currentAuthUser) return;
       chatsRestoredFromSupabase = true;
+      flushReactionOutbox(); // V11.41: upload any reaction changes made offline last session
       const roomIds = new Set(participatedChatRoomIds);
       roomIds.add('room-you');
       // V11.19: also discover rooms from the server - every room this
@@ -6323,6 +6574,7 @@
               }
             }
           }
+          try { await fetchAndMergeReactions(roomId); } catch (e) {}
         } catch (e) {}
       }));
       if (unreadChanged) {
