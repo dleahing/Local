@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.41 Reactions Persist + Zoom]</title>
+  <title>LocaL - Proximity Social Network [V11.42 Archive Revive + Day Dividers]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1216,7 +1216,7 @@
         if (msgs.length > 200) msgs.splice(0, msgs.length - 200);
         persistChatCache();
         if (currentActiveChatRoomId === WELCOME_GUIDE_ROOM_ID) {
-          appendMessage(WELCOME_GUIDE_NAME, text, timeStr, false, msgs[msgs.length - 1].id, WELCOME_GUIDE_ROOM_ID);
+          appendMessage(WELCOME_GUIDE_NAME, text, timeStr, false, msgs[msgs.length - 1].id, WELCOME_GUIDE_ROOM_ID, msgs[msgs.length - 1].createdAt || null); // V11.42: day dividers
         } else {
           unreadRoomIds.add(WELCOME_GUIDE_ROOM_ID);
           savePersistentData();
@@ -4101,7 +4101,10 @@
     // until it is active again - a new incoming message, or a message
     // the user sends, brings it straight back.
     function unarchiveDmRoom(roomId) {
-      if (roomId && archivedDmRoomIds.delete(roomId)) savePersistentData();
+      // V11.42: returns true when the room really was archived, so
+      // callers can refresh the side lists only on an actual revival.
+      if (roomId && archivedDmRoomIds.delete(roomId)) { savePersistentData(); return true; }
+      return false;
     }
     function archiveCurrentDm() {
       const roomId = currentActiveChatRoomId;
@@ -4123,7 +4126,7 @@
         participatedChatRoomIds.add(targetRoomId);
         savePersistentData();
       }
-      unarchiveDmRoom(targetRoomId); // V11.33: new private activity un-archives the thread
+      const dmPingRevivedArchive = unarchiveDmRoom(targetRoomId); // V11.33: new private activity un-archives the thread
       if (supabaseClient && currentAuthUser) {
         try {
           const windowStartMs = Math.max(Date.now() - 30 * 24 * ONE_HOUR_MS, chatRoomClearedAt[targetRoomId] || 0);
@@ -4145,6 +4148,10 @@
         savePersistentData();
         showToast(`Private message from ${ping.sender_alias || 'someone'}`, 'mail');
         notifyDevice('Private message', `${ping.sender_alias || 'Someone'} sent you a private message`);
+      }
+      if (dmPingRevivedArchive) { // V11.42: the not-open branch above unarchived the thread but nothing re-rendered the side lists, so it only appeared on some later tick - render them now
+        renderPinnedChats();
+        if (currentLayoutMode === 'right') renderRightSidebarBubbles();
       }
       fetchAndMergeReactions(targetRoomId); // V11.41: reactions on private messages persist too
       refreshAllNodeVisibilities();
@@ -4178,7 +4185,7 @@
       persistChatCache();
 
       if (currentActiveChatRoomId === targetRoomId) {
-        appendMessage(msg.sender_alias, msg.message, timeStr, false, msg.client_id || ('remote-' + msg.sender_id + '-' + msg.created_at), targetRoomId);
+        appendMessage(msg.sender_alias, msg.message, timeStr, false, msg.client_id || ('remote-' + msg.sender_id + '-' + msg.created_at), targetRoomId, msg.created_at || null); // V11.42: day dividers
       } else {
         unreadRoomIds.add(targetRoomId);
         syncUnreadChimeLoop();
@@ -5805,7 +5812,7 @@
       if (localChatCache[targetRoomId].length > 200) localChatCache[targetRoomId].splice(0, localChatCache[targetRoomId].length - 200);
       persistChatCache();
 
-      appendMessage(senderDisplayName, text, timeStr, true, clientMessageId, targetRoomId);
+      appendMessage(senderDisplayName, text, timeStr, true, clientMessageId, targetRoomId, sentAt); // V11.42: day dividers
       playAudioEffect('send'); // V11.6: send sound
       input.value = ''; 
       input.style.height = '26px';
@@ -6091,7 +6098,7 @@
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
       msgBox.innerHTML = '';
-      (localChatCache[roomId] || []).forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe, m.id, roomId));
+      (localChatCache[roomId] || []).forEach(m => appendMessage(m.sender, m.text, m.time, m.isMe, m.id, roomId, m.createdAt || null)); // V11.42: day dividers
     }
     function toggleReaction(roomId, msgId, emoji, ev) {
       if (ev) ev.stopPropagation();
@@ -6165,12 +6172,54 @@
       hideReactionPicker();
     }
 
-    function appendMessage(sender, text, time, isMe, msgId = null, roomId = null) {
+    // V11.42: day dividers in the chat box. Shane liked the per-message
+    // time but had no way to tell when a set of messages was from
+    // another day, so the conversation now gets a small centred date
+    // pill between messages from different local calendar days.
+    function chatDayKey(createdAt) {
+      if (!createdAt) return null;
+      const d = new Date(createdAt);
+      if (isNaN(d.getTime())) return null;
+      return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+    }
+    function chatDayDividerLabel(createdAt, nowMs) {
+      const d = new Date(createdAt);
+      if (isNaN(d.getTime())) return null;
+      const now = new Date(typeof nowMs === 'number' ? nowMs : Date.now());
+      const startOfDayMs = t => { const x = new Date(t); x.setHours(0, 0, 0, 0); return x.getTime(); };
+      const diffDays = Math.round((startOfDayMs(now) - startOfDayMs(d)) / (24 * 60 * 60 * 1000));
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      const base = d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      return d.getFullYear() === now.getFullYear() ? base : base + ', ' + d.getFullYear();
+    }
+    function chatDayDividerHtml(createdAt) {
+      const label = chatDayDividerLabel(createdAt);
+      if (!label) return '';
+      return '<div class="chat-day-divider flex items-center justify-center w-full select-none" aria-hidden="true"><span class="px-2.5 py-0.5 rounded-full bg-slate-600/15 text-slate-500 text-[10px] font-bold tracking-wide shadow-sm">' + label + '</span></div>';
+    }
+    // Pure decision used by appendMessage: a divider goes in only when
+    // this message's local day differs from the previous message's.
+    function chatDayDividerForAppend(prevCreatedAt, createdAt) {
+      const key = chatDayKey(createdAt);
+      if (!key || key === chatDayKey(prevCreatedAt)) return '';
+      return chatDayDividerHtml(createdAt);
+    }
+
+    function appendMessage(sender, text, time, isMe, msgId = null, roomId = null, createdAt = null) {
       const msgBox = document.getElementById('chatMessages');
       if (!msgBox) return;
       const pressAttrs = (msgId && roomId) ? ` data-msg-id="${escapeChatHTML(String(msgId))}" data-room-id="${escapeChatHTML(String(roomId))}" onpointerdown="messagePointerDown(event, this)" onpointerup="messagePointerEnd()" onpointermove="messagePointerMove(event)" onpointercancel="messagePointerEnd()"` : '';
-      msgBox.innerHTML += `
-        <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full">
+      // V11.42: derive the divider from the last message actually in
+      // the box (its data-created-at), so bulk renders rebuild exactly
+      // one divider per day boundary, re-renders never duplicate one,
+      // and a live message landing after midnight gets one too. The
+      // divider is a plain div - no message id, no press handlers.
+      const renderedItems = msgBox.querySelectorAll('.message-item');
+      const lastRenderedItem = renderedItems.length ? renderedItems[renderedItems.length - 1] : null;
+      const dayDividerHtml = chatDayDividerForAppend(lastRenderedItem ? lastRenderedItem.getAttribute('data-created-at') : null, createdAt);
+      msgBox.innerHTML += dayDividerHtml + `
+        <div class="flex flex-col message-item ${isMe ? 'items-end' : 'items-start'} w-full" data-created-at="${escapeChatHTML(createdAt || '')}">
           <div class="flex items-center gap-1.5 px-1.5 mb-0.5">
             <span class="text-[10px] text-slate-700 font-bold">${escapeChatHTML(sender)}</span>
             <span class="text-[9px] text-slate-500 font-medium">${escapeChatHTML(time || '')}</span>
@@ -6547,6 +6596,7 @@
       } catch (e) {}
       let anyChanged = false;
       let unreadChanged = false;
+      let unarchivedChanged = false; // V11.42
       await Promise.all(Array.from(roomIds).map(async roomId => {
         try {
           const isDmRoom = !!parseDmRoom(roomId);
@@ -6571,6 +6621,16 @@
               if (gainedForeign && roomId !== currentActiveChatRoomId && !unreadRoomIds.has(roomId)) {
                 unreadRoomIds.add(roomId);
                 unreadChanged = true;
+                // V11.42: the same genuinely-new-message signal revives
+                // an ARCHIVED thread. The restore merge never called
+                // unarchiveDmRoom, so a private message that arrived
+                // while the app was closed marked the room unread but
+                // left it hidden off both side lists for good. Already-
+                // seen messages cannot reach this branch (gainedForeign
+                // is false for them), so archiving still survives a
+                // plain restart, and the delete watermark floored into
+                // windowStartMs above still keeps deleted rooms deleted.
+                if (parseDmRoom(roomId) && unarchiveDmRoom(roomId)) unarchivedChanged = true;
               }
             }
           }
@@ -6586,6 +6646,7 @@
         renderPinnedChats();
         if (currentActiveChatRoomId) loadDbChatHistory(currentActiveChatRoomId);
       }
+      if (unarchivedChanged && currentLayoutMode === 'right') renderRightSidebarBubbles(); // V11.42: a revived thread returns to the right list too, not just the pinned list
     }
 
     async function loadDbChatHistory(roomId) {
@@ -6676,7 +6737,7 @@
       if (chatRenderSigs[roomId] === renderSig) return;
       chatRenderSigs[roomId] = renderSig;
       msgBox.innerHTML = '';
-      merged.forEach(msg => appendMessage(msg.sender, msg.text, msg.time, msg.isMe, msg.id, roomId));
+      merged.forEach(msg => appendMessage(msg.sender, msg.text, msg.time, msg.isMe, msg.id, roomId, msg.createdAt || null)); // V11.42: day dividers
     }
 
     // V11.37 (was V11.35): drag upward from the text box and the chat
