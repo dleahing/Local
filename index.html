@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.44 12h Bubbles, Always Location, Range Text]</title>
+  <title>LocaL - Proximity Social Network [V11.45 Merged Topic & Expiry Card]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1095,21 +1095,26 @@
       </div>
     </div>
 
-    <div id="chatExpiryTimerBar" class="relative overflow-hidden my-2 px-3.5 py-2 rounded-2xl bg-white/60 backdrop-blur-md border border-amber-400/40 text-amber-950 text-xs font-semibold flex items-center justify-between flex-shrink-0 shadow-sm">
-      <div class="flex items-center gap-2">
-        <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
-        <span>Chat bubble expires in:</span>
+    <!-- V11.45 (per Shane): ONE merged header card - the pinned topic (now
+         big and bold) with the "expires in" row shrunk 40% and tucked under
+         it, and the progress bar along the card's bottom edge. DMs hide the
+         whole card; a room without a topic shows only the small expires
+         row - the same visibility the two separate sections had before. -->
+    <div id="mainTopicContainer" class="hidden relative overflow-hidden my-2 p-3 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-md flex-shrink-0">
+      <div id="mainTopicRow" class="flex items-start gap-2.5">
+        <i data-lucide="pin" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+        <div>
+          <p id="mainTopicText" class="text-base font-bold text-slate-900 leading-snug"></p>
+        </div>
       </div>
-      <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900 px-2 py-0.5 rounded-lg bg-amber-400/20 border border-amber-400/40">60m 00s</span>
+      <div id="chatExpiryRow" class="flex items-center justify-between gap-2 mt-2 px-2 py-1 rounded-lg bg-amber-400/15 border border-amber-400/30 text-amber-950 text-[7.2px] font-semibold">
+        <div class="flex items-center gap-1">
+          <i data-lucide="clock" class="w-2.5 h-2.5 text-amber-600"></i>
+          <span>Chat bubble expires in:</span>
+        </div>
+        <span id="chatExpiryCountdown" class="font-mono font-bold text-amber-900 px-1 py-px rounded bg-amber-400/20 border border-amber-400/40">60m 00s</span>
+      </div>
       <div id="chatExpiryProgress" class="absolute bottom-0 left-0 h-[3px] bg-amber-500 rounded-full" style="width: 100%; transition: width 1s linear, background-color 0.4s ease;"></div>
-    </div>
-
-    <div id="mainTopicContainer" class="hidden my-2 p-3 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/80 shadow-md flex items-start gap-2.5 flex-shrink-0">
-      <i data-lucide="pin" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
-      <div>
-        <p id="mainTopicText" class="text-xs font-normal text-slate-900 leading-snug"></p>
-        <span id="topicExpiryBadge" class="text-[9px] font-semibold text-emerald-700 mt-0.5 block">Chat Topic</span>
-      </div>
     </div>
 
     <div id="businessPeerInfoStrip" class="hidden my-2 p-3 rounded-2xl bg-amber-400/10 backdrop-blur-xl border border-amber-300/40 shadow-md flex-shrink-0">
@@ -1777,8 +1782,8 @@
       const remainingMs = BUBBLE_LIFETIME_MS - (Date.now() - createdMs);
       const urgent = remainingMs > 0 && remainingMs < 5 * 60 * 1000;
       countdownEl.classList.toggle('expiry-urgent', urgent);
-      const bar = document.getElementById('chatExpiryTimerBar');
-      if (bar) bar.classList.toggle('expiry-urgent', urgent);
+      const mergedCard = document.getElementById('mainTopicContainer'); // V11.45: the under-5-min urgency wash now lands on the merged topic/expiry card (the standalone timer bar is gone)
+      if (mergedCard) mergedCard.classList.toggle('expiry-urgent', urgent);
       const progress = document.getElementById('chatExpiryProgress');
       if (progress) {
         progress.style.width = Math.max(0, Math.min(100, (remainingMs / BUBBLE_LIFETIME_MS) * 100)) + '%';
@@ -6410,8 +6415,8 @@
 
       document.getElementById('chatTargetName').innerText = roomName;
       const isDm = !!parseDmRoom(roomId);
-      const expiryBar = document.getElementById('chatExpiryTimerBar');
-      if (expiryBar) expiryBar.style.display = isDm ? 'none' : ''; // V11.19: private chats do not expire
+      const expiryRow = document.getElementById('chatExpiryRow');
+      if (expiryRow) expiryRow.style.display = isDm ? 'none' : ''; // V11.19: private chats do not expire (V11.45: the row now lives inside the merged topic card)
       if (isDm) document.getElementById('chatTargetName').innerText = roomName + ' · Private';
       const archiveBtn = document.getElementById('archiveDmBtn'); // V11.33
       if (archiveBtn) archiveBtn.classList.toggle('hidden', !isDm);
@@ -6489,12 +6494,17 @@
       const targetCreatedAt = isDm ? null : (createdAtVal || (isSelf ? activeTopicState.createdAt : globalActiveDirectory[peerId]?.createdAt));
       if (targetCreatedAt) updateExpiryCountdownUi(targetCreatedAt);
 
-      if ((topic || (isSelf && activeTopicState.text)) && targetCreatedAt) {
+      // V11.45: one merged card. The topic row shows under exactly the old
+      // topic-card condition; the card itself shows for every non-DM room
+      // (the small expires row lives in it now) and never for DMs - the
+      // same show/hide outcomes the two separate sections had before.
+      const hasTopic = !!((topic || (isSelf && activeTopicState.text)) && targetCreatedAt);
+      if (hasTopic) {
         document.getElementById('mainTopicText').innerText = topic || activeTopicState.text;
-        document.getElementById('mainTopicContainer').classList.remove('hidden');
-      } else {
-        document.getElementById('mainTopicContainer').classList.add('hidden');
       }
+      const topicRow = document.getElementById('mainTopicRow');
+      if (topicRow) topicRow.classList.toggle('hidden', !hasTopic);
+      document.getElementById('mainTopicContainer').classList.toggle('hidden', isDm);
 
       document.getElementById('actionDockContainer').classList.add('hidden');
       document.getElementById('chatDrawer').classList.remove('hidden');
