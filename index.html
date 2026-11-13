@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.42 Archive Revive + Day Dividers]</title>
+  <title>LocaL - Proximity Social Network [V11.43 Reaction Notify + Offline Reaction Log]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1046,10 +1046,11 @@
             <input type="checkbox" id="privacyGhostMode" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
           </label>
           <label class="flex items-center justify-between text-xs font-medium text-slate-200 cursor-pointer">
-            <span>Device Notifications (replies & requests)</span>
+            <span>Device Notifications (replies, reactions & requests)</span>
             <input type="checkbox" id="deviceNotifyToggle" onchange="toggleDeviceNotifications(this.checked)" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
           </label>
-          <p class="text-[10px] text-slate-400">Phone notification for new replies and friend requests while LocaL is in the background. On iPhone, add LocaL to your Home Screen first - iOS only allows notifications for home-screen web apps.</p>
+          <p class="text-[10px] text-slate-400">Phone notification for new replies, reactions and friend requests while LocaL is in the background. On iPhone, add LocaL to your Home Screen first - iOS only allows notifications for home-screen web apps.</p>
+          <p id="deviceNotifyStatus" class="text-[10px] font-semibold text-teal-300"></p>
         </div>
 
         <div class="settings-card p-4 space-y-2">
@@ -2731,6 +2732,7 @@
       document.getElementById('bgModeSelect').value = userState.bgMode || 'aurora';
       document.getElementById('privacyGhostMode').checked = !!userState.ghostMode;
       document.getElementById('deviceNotifyToggle').checked = !!userState.notifyEnabled;
+      updateDeviceNotifyStatus(); // V11.43
       document.getElementById('privacyMakeNamePublic').checked = !!userState.hideMyName;
       document.getElementById('filterHideBusinesses').checked = !!userState.hideBusinesses;
       document.getElementById('filterHideBots').checked = !!userState.hideBots;
@@ -5703,15 +5705,30 @@
         }
       }
       savePersistentData();
+      updateDeviceNotifyStatus(); // V11.43
     }
-    function notifyDevice(title, body) {
+    function notifyDevice(title, body, tag) {
       try {
         if (!userState.notifyEnabled || !deviceNotificationsSupported()) return;
         if (Notification.permission !== 'granted') return;
         if (document.visibilityState === 'visible') return;
-        const n = new Notification(title, { body: body || '', tag: 'local-notify' });
+        const n = new Notification(title, { body: body || '', tag: tag || 'local-notify' });
         n.onclick = () => { try { window.focus(); } catch (e) {} n.close(); };
       } catch (e) {}
+    }
+    // V11.43: plain-words status for the Settings notifications row,
+    // so "notifications don't work" can be told apart from "the app
+    // was fully closed" (no web app can notify then - that needs a
+    // push server). On iOS these only exist in the Home-Screen app.
+    function deviceNotifyStatusText() {
+      if (!deviceNotificationsSupported()) return 'Not supported in this browser view — add LocaL to your Home Screen to get notifications (iOS)';
+      if (!userState.notifyEnabled) return 'Off';
+      if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return 'Permission not granted — tap the switch and allow notifications';
+      return "On — you'll be notified of replies and reactions while the app is in the background";
+    }
+    function updateDeviceNotifyStatus() {
+      const el = document.getElementById('deviceNotifyStatus');
+      if (el) el.textContent = deviceNotifyStatusText();
     }
 
     function updateMeshUI() {
@@ -5886,6 +5903,13 @@
     // store below remains as the cache/fallback: if the table does
     // not exist yet, everything degrades to the V11.33 behaviour and
     // queued changes upload automatically once it does.
+    // V11.43: the table STILL does not exist in the live project
+    // (verified 2026-11-13 - the REST probe returns 404 PGRST205),
+    // so "once it does" never came and offline reactions were still
+    // lost. The fallback no longer waits for the table: when it is
+    // missing, reaction changes persist as an append-only event log
+    // inside chat_messages (which exists) and fold back on fetch.
+    // See REACTION_EVENT_PREFIX below.
     const REACTION_EMOJIS = ['❤️', '👍', '❗', '😂', '😢']; // V11.36: + laughing and sad faces
     let messageReactions = {}; // { roomId: { msgId: { emoji: [userId, ...] } } }
 
@@ -5910,9 +5934,38 @@
     // to a fetch that raced it. Reaction rows carry NO message text,
     // for any room - private-message privacy is unchanged.
     const REACTION_TABLE = 'message_reactions';
+    // V11.43: fallback transport for when the dedicated table is
+    // missing - an append-only event log inside chat_messages. One
+    // row per reaction change; the message column is the prefix plus
+    // a small JSON payload ({m: message id, t: message createdAt,
+    // e: emoji, a: 'add'|'remove'} - NO message text, so private-chat
+    // privacy holds). Reads fold the log (latest event per message /
+    // emoji / user wins) into the same row shape the table returns,
+    // so mergeServerReactions - and its authoritative semantics -
+    // are shared by both transports. Event rows are filtered out of
+    // every chat_messages message read; they are not messages.
+    const REACTION_EVENT_PREFIX = '__LRXN1__';
+    const REACTION_EVENT_LIKE = REACTION_EVENT_PREFIX.split('_').join(String.fromCharCode(92) + '_') + '%'; // prefix with LIKE wildcards escaped, for PostgREST like/not filters
+    function isReactionEventText(text) { return typeof text === 'string' && text.startsWith(REACTION_EVENT_PREFIX); }
+    function reactionEventMessage(op) { return REACTION_EVENT_PREFIX + JSON.stringify({ m: String(op.msgId), t: op.msgCreatedAt || null, e: op.emoji, a: op.action === 'remove' ? 'remove' : 'add' }); }
+    function parseReactionEventRow(row) {
+      if (!row || !isReactionEventText(row.message) || !row.sender_id) return null;
+      try {
+        const ev = JSON.parse(row.message.slice(REACTION_EVENT_PREFIX.length));
+        if (!ev || !ev.m || !REACTION_EMOJIS.includes(ev.e)) return null;
+        return { message_id: String(ev.m), msg_created_at: ev.t || null, emoji: ev.e, user_id: row.sender_id, action: ev.a === 'remove' ? 'remove' : 'add', created_at: row.created_at || null };
+      } catch (e) { return null; }
+    }
+    function foldReactionEventRows(rows) {
+      const events = (rows || []).map(parseReactionEventRow).filter(Boolean)
+        .sort((a, b) => (Date.parse(a.created_at || '') || 0) - (Date.parse(b.created_at || '') || 0));
+      const latest = {};
+      events.forEach(ev => { latest[ev.message_id + '|' + (ev.msg_created_at || '') + '|' + ev.emoji + '|' + ev.user_id] = ev; });
+      return Object.values(latest).filter(ev => ev.action === 'add').map(ev => ({ message_id: ev.message_id, msg_created_at: ev.msg_created_at, emoji: ev.emoji, user_id: ev.user_id }));
+    }
     let reactionOutbox = {}; // opKey -> { roomId, msgId, emoji, userId, action, msgCreatedAt, ts }
     let reactionRoomsSynced = {}; // local roomId -> ms of last successful server fetch
-    let reactionServerAvailable = true; // false once the table is known missing - local + mesh only, ops stay queued
+    let reactionServerAvailable = true; // V11.43: false once the table is known missing - from then on the chat_messages event log is the transport, not local + mesh only
     let reactionFlushInFlight = false;
 
     function reactionOpKey(roomId, msgId, emoji, userId) { return [roomId, String(msgId), emoji, userId].join('|'); }
@@ -5950,19 +6003,45 @@
     async function syncReactionOpToServer(op) {
       if (!supabaseClient || !currentAuthUser) return false;
       const dbRoom = canonicalChatRoomId(op.roomId);
+      // V11.43: with the table known missing, the op goes to the
+      // chat_messages event log instead. The outbox contract is
+      // unchanged either way: an op clears only when SOME server
+      // write for it succeeded, so a network-down toggle stays
+      // queued and flushes later.
+      if (!reactionServerAvailable) return syncReactionOpAsEvent(op, dbRoom);
       try {
         if (op.action === 'remove') {
           const res = await supabaseClient.from(REACTION_TABLE).delete().eq('room_id', dbRoom).eq('message_id', op.msgId).eq('emoji', op.emoji).eq('user_id', op.userId);
-          if (res.error) { if (isReactionTableMissing(res.error)) reactionServerAvailable = false; return false; }
+          if (res.error) { if (isReactionTableMissing(res.error)) { reactionServerAvailable = false; return syncReactionOpAsEvent(op, dbRoom); } return false; }
           return true;
         }
         const res = await dbUpsertReactionRow({ room_id: dbRoom, message_id: op.msgId, msg_created_at: op.msgCreatedAt || null, emoji: op.emoji, user_id: op.userId });
-        if (res.error) { if (isReactionTableMissing(res.error)) reactionServerAvailable = false; return false; }
+        if (res.error) { if (isReactionTableMissing(res.error)) { reactionServerAvailable = false; return syncReactionOpAsEvent(op, dbRoom); } return false; }
         return true;
       } catch (e) { return false; }
     }
+    // V11.43: write one reaction change as an event row in
+    // chat_messages (see REACTION_EVENT_PREFIX). chat_messages
+    // exists and accepts signed-in inserts today, so this lands
+    // even though the dedicated table was never created.
+    async function syncReactionOpAsEvent(op, dbRoom) {
+      try {
+        const res = await dbInsert('chat_messages', {
+          room_id: dbRoom,
+          client_id: 'rxn-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9),
+          sender_id: currentAuthUser.id,
+          sender_alias: getDisplayName(userState.alias, userState.hideMyName, userState.type),
+          message: reactionEventMessage(op),
+          created_at: new Date().toISOString()
+        });
+        return !res.error;
+      } catch (e) { return false; }
+    }
     async function flushReactionOutbox() {
-      if (reactionFlushInFlight || !reactionServerAvailable) return;
+      // V11.43: no reactionServerAvailable gate here any more - with
+      // the table missing, ops drain through the event-log transport
+      // instead of waiting forever for a table that may never exist.
+      if (reactionFlushInFlight) return;
       if (!supabaseClient || !currentAuthUser) return;
       if (!Object.keys(reactionOutbox).length) return;
       reactionFlushInFlight = true;
@@ -5970,14 +6049,13 @@
         // Drain until empty: a change made while an upload was in
         // flight lands in the outbox mid-flush and must not be left
         // stranded until the next trigger.
-        while (reactionServerAvailable) {
+        while (true) {
           const ops = Object.values(reactionOutbox);
           if (!ops.length) break;
           let progressed = false;
           for (const op of ops) {
             const ok = await syncReactionOpToServer(op);
             if (ok) { delete reactionOutbox[reactionOpKey(op.roomId, op.msgId, op.emoji, op.userId)]; progressed = true; }
-            if (!reactionServerAvailable) break;
           }
           persistReactionOutbox();
           if (!progressed) break;
@@ -6047,14 +6125,36 @@
     }
     async function fetchAndMergeReactions(roomId) {
       if (!roomId || roomId === WELCOME_GUIDE_ROOM_ID) return;
-      if (!supabaseClient || !currentAuthUser || !reactionServerAvailable) return;
+      if (!supabaseClient || !currentAuthUser) return;
       await flushReactionOutbox();
-      if (!reactionServerAvailable) return;
       try {
-        const { data, error } = await supabaseClient.from(REACTION_TABLE).select('*').eq('room_id', canonicalChatRoomId(roomId)).limit(500);
-        if (error) { if (isReactionTableMissing(error)) reactionServerAvailable = false; return; }
-        if (!Array.isArray(data)) return;
-        const changed = mergeServerReactions(roomId, data);
+        if (reactionServerAvailable) {
+          const { data, error } = await supabaseClient.from(REACTION_TABLE).select('*').eq('room_id', canonicalChatRoomId(roomId)).limit(500);
+          if (!error && Array.isArray(data)) {
+            const changed = mergeServerReactions(roomId, data);
+            reactionRoomsSynced[roomId] = Date.now();
+            persistReactionSynced();
+            if (changed) { persistReactions(); if (roomId === currentActiveChatRoomId) renderOpenRoomMessages(); }
+            return;
+          }
+          if (error && isReactionTableMissing(error)) reactionServerAvailable = false;
+          else if (error) return;
+        }
+        // V11.43: the table is missing - read this room's reaction
+        // event log from chat_messages instead and fold it into
+        // table-shaped rows, so the merge keeps the exact V11.41
+        // semantics (authoritative set, first-fetch legacy
+        // self-heal, outbox re-apply). The first successful fallback
+        // fetch marks the room synced just like a table fetch.
+        const { data: eventRows, error: eventError } = await supabaseClient
+          .from('chat_messages')
+          .select('sender_id, message, created_at')
+          .eq('room_id', canonicalChatRoomId(roomId))
+          .like('message', REACTION_EVENT_LIKE)
+          .order('created_at', { ascending: true })
+          .limit(500);
+        if (eventError || !Array.isArray(eventRows)) return;
+        const changed = mergeServerReactions(roomId, foldReactionEventRows(eventRows));
         reactionRoomsSynced[roomId] = Date.now();
         persistReactionSynced();
         if (changed) { persistReactions(); if (roomId === currentActiveChatRoomId) renderOpenRoomMessages(); }
@@ -6068,8 +6168,15 @@
       persistReactionSynced();
     }
     async function deleteServerReactionsForRoom(roomId) {
-      if (!supabaseClient || !currentAuthUser || !reactionServerAvailable) return;
-      try { await supabaseClient.from(REACTION_TABLE).delete().eq('room_id', canonicalChatRoomId(roomId)); } catch (e) {}
+      if (!supabaseClient || !currentAuthUser) return;
+      if (reactionServerAvailable) {
+        try { await supabaseClient.from(REACTION_TABLE).delete().eq('room_id', canonicalChatRoomId(roomId)); } catch (e) {}
+        return;
+      }
+      // V11.43 fallback: drop this room's reaction event rows. (The
+      // owner-delete paths also delete every chat_messages row in
+      // the room, events included - this covers reaction-only calls.)
+      try { await supabaseClient.from('chat_messages').delete().eq('room_id', canonicalChatRoomId(roomId)).like('message', REACTION_EVENT_LIKE); } catch (e) {}
     }
     function getReactionSummary(roomId, msgId) {
       const byMsg = (messageReactions[roomId] || {})[msgId] || {};
@@ -6113,6 +6220,27 @@
       broadcastData({ id: 'rxn-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), type: 'CHAT_REACTION', peerId: myPeerId, room_id: canonicalChatRoomId(roomId), message_id: msgId, msg_created_at: entry ? entry.createdAt : null, msg_text: parseDmRoom(roomId) ? null : (entry ? entry.text : null), emoji, action });
       playAudioEffect('click');
     }
+    // V11.43: notification content for an incoming reaction. Pure,
+    // so it can be unit-tested: returns the body text, or null when
+    // no notification should fire (a removal, an emoji outside the
+    // whitelist, or the room is the one currently open). Private
+    // chats never put message text in the body - DM privacy holds
+    // in notifications too.
+    function reactionNotifyBody(roomId, entry, emoji, action) {
+      if (action === 'remove' || !entry || !REACTION_EMOJIS.includes(emoji)) return null;
+      if (roomId === currentActiveChatRoomId) return null;
+      if (entry.isMe) return emoji + ' to your message';
+      if (parseDmRoom(roomId)) return emoji + ' in your private chat';
+      const text = String(entry.text || '').trim();
+      if (!text) return emoji + ' to a message';
+      return emoji + ' to: ' + (text.length > 40 ? text.slice(0, 40) + '…' : text);
+    }
+    function reactionSenderName(peerId) {
+      if (peerId && knownProfileAliasById[peerId]) return knownProfileAliasById[peerId];
+      const peer = peerId ? globalActiveDirectory[peerId] : null;
+      if (peer && peer.rawSender) return getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType);
+      return 'Someone';
+    }
     function handleIncomingReaction(data) {
       if (!data || !data.room_id || !data.message_id || !data.peerId) return;
       const roomId = localChatRoomId(data.room_id);
@@ -6126,6 +6254,16 @@
       applyReactionLocal(roomId, entry.id, data.emoji, data.peerId, data.action === 'remove' ? 'remove' : 'add');
       persistReactions();
       if (roomId === currentActiveChatRoomId) renderOpenRoomMessages();
+      // V11.43: a reaction from someone else is news too - notify
+      // the device. notifyDevice's own gates still apply (toggle
+      // on, permission granted, app not on screen), and the helper
+      // above excludes removals and the currently open room. The
+      // dedicated tag keeps it from replacing a message notification.
+      const isRemoteReaction = data.peerId !== myPeerId && (!currentAuthUser || data.peerId !== currentAuthUser.id);
+      if (isRemoteReaction) {
+        const notifyBody = reactionNotifyBody(roomId, entry, data.emoji, data.action === 'remove' ? 'remove' : 'add');
+        if (notifyBody) notifyDevice('Reaction from ' + reactionSenderName(data.peerId), notifyBody, 'local-notify-reaction');
+      }
     }
 
     // Press-and-hold on a message bubble opens the reaction picker.
@@ -6393,7 +6531,7 @@
         const existingIds = new Set(existing.map(m => m.id));
         const existingKeys = new Set(existing.map(m => m.sender + '|' + m.text + '|' + Date.parse(m.createdAt || ''))); // V11.30: content guard for rows whose client_id was stripped
         let added = 0;
-        data.map(msg => ({
+        data.filter(msg => !isReactionEventText(msg.message)).map(msg => ({ // V11.43: reaction event rows must not trigger the arrived-while-away logic
           id: msg.client_id || msg.id,
           sender: msg.sender_alias,
           text: msg.message,
@@ -6474,7 +6612,13 @@
     // when the cache changed.
     function mergeDbRowsIntoCache(roomId, rows) {
       if (!Array.isArray(rows) || !rows.length) return false;
-      const mapped = rows.map(msg => ({
+      // V11.43: reaction event rows live in chat_messages but are
+      // not messages - they must never enter the chat cache, so they
+      // cannot mark a room unread, revive an archived thread, or
+      // show up in side-list previews or the chat box.
+      const messageRows = rows.filter(msg => !isReactionEventText(msg && msg.message));
+      if (!messageRows.length) return false;
+      const mapped = messageRows.map(msg => ({
         id: msg.client_id || msg.id,
         sender: msg.sender_alias,
         text: msg.message,
@@ -6540,6 +6684,7 @@
           .from('chat_messages')
           .select('room_id, created_at')
           .eq('sender_id', currentAuthUser.id)
+          .not('message', 'like', REACTION_EVENT_LIKE) // V11.43: my reaction event rows must not rebuild participation or defeat the delete watermark
           .gte('created_at', new Date(Date.now() - 30 * 24 * ONE_HOUR_MS).toISOString())
           .limit(500);
         if (!myErr && Array.isArray(myRows)) {
@@ -6573,6 +6718,7 @@
           .from('chat_messages')
           .select('room_id, created_at')
           .like('room_id', 'room-dm-%' + currentAuthUser.id + '%')
+          .not('message', 'like', REACTION_EVENT_LIKE) // V11.43: reaction event rows are not messages here either
           .gte('created_at', new Date(Date.now() - 30 * 24 * ONE_HOUR_MS).toISOString())
           .limit(500);
         if (!dmErr && Array.isArray(dmRows)) {
@@ -6686,7 +6832,7 @@
             .limit(200);
           if (currentActiveChatRoomId !== roomId) return;
           if (!error && Array.isArray(data)) {
-            const dbMessages = data.map(msg => ({
+            const dbMessages = data.filter(msg => !isReactionEventText(msg.message)).map(msg => ({ // V11.43: reaction event rows are not messages
               id: msg.client_id || msg.id,
               sender: msg.sender_alias,
               text: msg.message,
@@ -6798,6 +6944,7 @@
 
     function openProfileModal() {
       document.getElementById('profileModal').classList.remove('hidden');
+      updateDeviceNotifyStatus(); // V11.43: the status line reflects the live permission state each time Settings opens
       renderProfileFriendsList();
     }
 
