@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.43 Reaction Notify + Offline Reaction Log]</title>
+  <title>LocaL - Proximity Social Network [V11.44 12h Bubbles, Always Location, Range Text]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -346,7 +346,7 @@
 
     .radar-distance-label {
       font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 5.5px !important;
+      font-size: 6.6px !important; /* V11.44: +20% (was 5.5px) - Shane asked for the radar range text bigger */
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -620,7 +620,7 @@
             <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
           </svg>
         </div>
-        <input type="text" id="quickPostInput" maxlength="140" aria-label="Broadcast a chat bubble" placeholder="Ask or broadcast to LocaLs (1h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
+        <input type="text" id="quickPostInput" maxlength="140" aria-label="Broadcast a chat bubble" placeholder="Ask or broadcast to LocaLs (12h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
         <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-sky-400 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-sky-300 transition-all">
           <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
         </button>
@@ -1161,6 +1161,7 @@
   <script>
     const MESH_ROOM_KEY = 'local-proximity-public';
     const ONE_HOUR_MS = 60 * 60 * 1000;
+    const BUBBLE_LIFETIME_MS = 12 * ONE_HOUR_MS; // V11.44 (per Shane): bubbles/chats live 12 hours, not 1. ONE_HOUR_MS itself is unchanged - DM windows (30 * 24 * ONE_HOUR_MS) stay 30 days.
     const METERS_PER_MILE = 1609.34;
     const DEFAULT_RADIUS_METERS = 804.67; // V11.5: default radar range is 0.5 miles
     const MIN_RADIUS_METERS = 402.34; // V11.6: smallest radar range is 0.25 miles
@@ -1333,6 +1334,7 @@
     let authSubscription = null;
     let storageListenerAdded = false;
     let gpsWatchId = null;
+    let gpsWatchStarted = false; // V11.44: GPS starts once per page load - a sign-out/sign-in cycle must never restart it (each fresh start can re-trigger the iOS location prompt)
     let expiryLoopStarted = false;
     let lastProfilesSignature = '';
     let bellSyncInProgress = false; // V11.15 (#1): re-entrancy guard for the unread chime
@@ -1510,7 +1512,7 @@
         const snapshot = {};
         Object.keys(globalActiveDirectory).forEach(id => {
           const peer = globalActiveDirectory[id];
-          if (peer.question && peer.createdAt && (Date.now() - peer.createdAt <= ONE_HOUR_MS)) {
+          if (peer.question && peer.createdAt && (Date.now() - peer.createdAt <= BUBBLE_LIFETIME_MS)) {
             snapshot[id] = { question: peer.question, createdAt: peer.createdAt, rawSender: peer.rawSender || null, isAdmin: isAdminPeer(peer), accountType: peer.accountType || 'personal', category: peer.category || 'store', lat: (typeof peer.lat === 'number' ? peer.lat : null), lng: (typeof peer.lng === 'number' ? peer.lng : null), hideMyName: !!peer.hideMyName, isBot: !!peer.isBot, hours: peer.hours || '', address: peer.address || '', businessInfo: peer.businessInfo || '', interestFilter: peer.interestFilter || 'none' }; // V11.6: keep the peer's identity so a restored bubble is not rebuilt as a nameless 'Offline Peer' duplicate
           }
         });
@@ -1530,7 +1532,7 @@
             const cachedData = snapshot[id];
             const parsedCreated = typeof cachedData.createdAt === 'number' ? cachedData.createdAt : new Date(cachedData.createdAt).getTime();
 
-            if (Date.now() - parsedCreated > ONE_HOUR_MS) return;
+            if (Date.now() - parsedCreated > BUBBLE_LIFETIME_MS) return;
 
             if (globalActiveDirectory[id]) {
               if (!globalActiveDirectory[id].question || globalActiveDirectory[id].createdAt < parsedCreated) {
@@ -1667,7 +1669,7 @@
     }
 
     // ---- Chat expiry = chat deletion --------------------------------------
-    // A chat lives for ONE_HOUR_MS from its bubble's createdAt. When that
+    // A chat lives for BUBBLE_LIFETIME_MS (12 hours, V11.44) from its bubble's createdAt. When that
     // passes, the chat is DELETED, not just hidden: its messages, room
     // membership, unread flag and bubble are removed, the drawer closes if
     // it is open on that room, and for your own room the Supabase messages
@@ -1772,26 +1774,33 @@
       countdownEl.innerText = formatCountdownTime(createdAt);
       const createdMs = safeTimestampMs(createdAt);
       if (!createdMs) return;
-      const remainingMs = ONE_HOUR_MS - (Date.now() - createdMs);
+      const remainingMs = BUBBLE_LIFETIME_MS - (Date.now() - createdMs);
       const urgent = remainingMs > 0 && remainingMs < 5 * 60 * 1000;
       countdownEl.classList.toggle('expiry-urgent', urgent);
       const bar = document.getElementById('chatExpiryTimerBar');
       if (bar) bar.classList.toggle('expiry-urgent', urgent);
       const progress = document.getElementById('chatExpiryProgress');
       if (progress) {
-        progress.style.width = Math.max(0, Math.min(100, (remainingMs / ONE_HOUR_MS) * 100)) + '%';
+        progress.style.width = Math.max(0, Math.min(100, (remainingMs / BUBBLE_LIFETIME_MS) * 100)) + '%';
         progress.style.backgroundColor = urgent ? '#ef4444' : '';
       }
     }
 
     function formatCountdownTime(createdAt) {
-      if (!createdAt) return '60m 00s';
+      if (!createdAt) return '12h 00m 00s'; // V11.44: the full bubble lifetime is 12 hours
       const parsedCreatedAt = typeof createdAt === 'number' ? createdAt : new Date(createdAt).getTime();
       const elapsed = Date.now() - parsedCreatedAt;
-      const remaining = ONE_HOUR_MS - elapsed;
+      const remaining = BUBBLE_LIFETIME_MS - elapsed;
       if (remaining <= 0) return '0m 00s';
-      const mins = Math.floor(remaining / 60000);
       const secs = Math.floor((remaining % 60000) / 1000);
+      if (remaining >= ONE_HOUR_MS) {
+        // V11.44: with a 12-hour lifetime the countdown needs hours -
+        // "11h 24m 36s"; under an hour it keeps the old "24m 36s" form.
+        const hours = Math.floor(remaining / ONE_HOUR_MS);
+        const mins = Math.floor((remaining % ONE_HOUR_MS) / 60000);
+        return `${hours}h ${mins < 10 ? '0' : ''}${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
+      }
+      const mins = Math.floor(remaining / 60000);
       return `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
     }
 
@@ -2778,32 +2787,32 @@
     // V11.17: the start of the history window for a room. With a live
     // bubble it is the bubble's start (5s clock-skew grace, as before);
     // without one - e.g. you messaged someone while they were offline -
-    // it is one hour back, the bubble lifetime. Either way the delete
+    // it is 12 hours back, the bubble lifetime. Either way the delete
     // watermark wins when it is later.
     function computeHistoryWindowStartMs(roomStartMs, clearedAtMs, nowMs) {
       const watermark = clearedAtMs || 0;
       if (roomStartMs) return Math.max(roomStartMs - 5000, watermark);
-      return Math.max(nowMs - ONE_HOUR_MS, watermark);
+      return Math.max(nowMs - BUBBLE_LIFETIME_MS, watermark);
     }
 
     // V11.18: decides what a profiles-table row contributes to a peer's
-    // bubble. A topic whose own timestamp is inside the 1-hour lifetime
+    // bubble. A topic whose own timestamp is inside the 12-hour lifetime
     // is shown until it expires - the poster's presence heartbeat
     // (updated_at) going stale when they close the app now only marks
     // them offline, it no longer deletes a live bubble. Staleness still
     // hides topics that carry no usable timestamp (they could otherwise
     // show forever), and the Administrator is exempt by recognition.
     function resolveProfileTopic(o) {
-      const topicExpired = !!o.activeTopic && !!o.topicCreatedAtMs && (o.nowMs - o.topicCreatedAtMs > ONE_HOUR_MS);
+      const topicExpired = !!o.activeTopic && !!o.topicCreatedAtMs && (o.nowMs - o.topicCreatedAtMs > BUBBLE_LIFETIME_MS);
       const hasValidTopic = !!o.activeTopic && !topicExpired;
-      const hasTimestampedLiveTopic = !!o.activeTopic && !!o.topicCreatedAtMs && (o.nowMs - o.topicCreatedAtMs <= ONE_HOUR_MS);
+      const hasTimestampedLiveTopic = !!o.activeTopic && !!o.topicCreatedAtMs && (o.nowMs - o.topicCreatedAtMs <= BUBBLE_LIFETIME_MS);
       const isStale = !o.updatedAtMs || (o.nowMs - o.updatedAtMs > 150000); // V11.32: staleness is honest for the Administrator too - his bubble's survival is carried by the live-topic exemptions in hideTopic below, not by pretending he is online
       // V11.30: a mesh-learned topic whose own start time is still
-      // inside the 1-hour lifetime is spared too - while the profiles
+      // inside the 12-hour lifetime is spared too - while the profiles
       // table lacks the topic timestamp columns, the mesh start time
       // is the only one there is, and bubbles were dying ~2.5 minutes
       // after the poster backgrounded the app.
-      const existingLiveTopic = !!o.existingQuestion && !!o.existingCreatedAt && (o.nowMs - o.existingCreatedAt <= ONE_HOUR_MS);
+      const existingLiveTopic = !!o.existingQuestion && !!o.existingCreatedAt && (o.nowMs - o.existingCreatedAt <= BUBBLE_LIFETIME_MS);
       const hideTopic = isStale && !hasTimestampedLiveTopic && !existingLiveTopic;
       return {
         question: hideTopic ? null : (hasValidTopic ? o.activeTopic : (topicExpired ? null : o.existingQuestion)),
@@ -2820,9 +2829,9 @@
     // two participants' account ids, sorted, so both phones compute the
     // SAME room: 'room-dm-<idA>__<idB>'. Only the two participants ever
     // open it. DM messages live in chat_messages under that room id
-    // like any other room, but DMs are not bubble chats: no 1-hour
+    // like any other room, but DMs are not bubble chats: no 12-hour
     // expiry - they keep a 30-day window and are exempt from the
-    // 1-hour restore pruning below.
+    // 12-hour restore pruning below.
     function cleanRoomIdPart(id) { return String(id || '').replace(/[^a-zA-Z0-9-]/g, '-'); }
     function dmRoomIdFor(peerId) {
       const me = cleanRoomIdPart(currentAuthUser?.id || myPeerId);
@@ -2949,10 +2958,10 @@
           Object.keys(parsed || {}).forEach(roomId => {
             if (roomId !== 'room-you' && !participatedChatRoomIds.has(roomId)) return;
             const msgs = (parsed[roomId] || []).filter(m => {
-              if (parseDmRoom(roomId)) return true; // V11.19: DMs are not 1-hour bubble chats
+              if (parseDmRoom(roomId)) return true; // V11.19: DMs are not bubble chats (no 12-hour expiry, V11.44)
               if (roomId === WELCOME_GUIDE_ROOM_ID) return true; // V11.26: the tutorial conversation is kept
               const ts = safeTimestampMs(m.createdAt);
-              return ts && (Date.now() - ts <= ONE_HOUR_MS);
+              return ts && (Date.now() - ts <= BUBBLE_LIFETIME_MS);
             });
             if (msgs.length) localChatCache[roomId] = msgs.slice(-200);
           });
@@ -3010,7 +3019,7 @@
         const savedCleared = localStorage.getItem(STORAGE_KEY_CHAT_CLEARED);
         if (savedCleared) {
           const parsedCleared = JSON.parse(savedCleared);
-          Object.keys(parsedCleared || {}).forEach(k => { const clearAge = Date.now() - parsedCleared[k]; if (clearAge <= ONE_HOUR_MS || (parseDmRoom(k) && clearAge <= 30 * 24 * ONE_HOUR_MS)) chatRoomClearedAt[k] = parsedCleared[k]; }); // V11.27: private-chat delete marks live as long as private chats do (30 days), or a restart resurrected deleted threads
+          Object.keys(parsedCleared || {}).forEach(k => { const clearAge = Date.now() - parsedCleared[k]; if (clearAge <= BUBBLE_LIFETIME_MS || (parseDmRoom(k) && clearAge <= 30 * 24 * ONE_HOUR_MS)) chatRoomClearedAt[k] = parsedCleared[k]; }); // V11.27: private-chat delete marks live as long as private chats do (30 days), or a restart resurrected deleted threads
         }
         restoreChatCache();
         syncUnreadChimeLoop();
@@ -3042,8 +3051,8 @@
           const peerData = globalActiveDirectory[peerIdMatch];
           // V11.4: never resurrect an expired or vanished room on startup.
           if (savedRoomId === 'room-you') {
-            if (!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS))) { localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM); return; }
-          } else if (!(peerData && peerData.question && peerData.createdAt && (Date.now() - peerData.createdAt <= ONE_HOUR_MS))) {
+            if (!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= BUBBLE_LIFETIME_MS))) { localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM); return; }
+          } else if (!(peerData && peerData.question && peerData.createdAt && (Date.now() - peerData.createdAt <= BUBBLE_LIFETIME_MS))) {
             localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM); return;
           }
           const roomName = savedRoomId === 'room-you' ? getDisplayName(userState.alias, userState.hideMyName, userState.type) : (peerData ? getDisplayName(peerData.rawSender, peerData.hideMyName, peerData.accountType) : 'Active Session');
@@ -3542,25 +3551,45 @@
       return { lat: userState.lat, lng: userState.lng };
     }
 
-    function initGPSLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-          if (!userState.lat || Math.abs(userState.lat - pos.coords.latitude) > 0.00005 || Math.abs(userState.lng - pos.coords.longitude) > 0.00005) {
-            userState.lat = pos.coords.latitude;
-            userState.lng = pos.coords.longitude;
-            announcePresence();
-            refreshAllPeerDistancesAndPositions();
-          }
-        }, (err) => {}, { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 });
+    // V11.44: pure decision helper for the GPS start, kept separate so
+    // it can be unit-tested - start only when not already started and the
+    // permission is not known to be denied.
+    function shouldStartGps(permissionState, alreadyStarted) {
+      if (alreadyStarted) return false;
+      if (permissionState === 'denied') return false;
+      return true;
+    }
 
-        gpsWatchId = navigator.geolocation.watchPosition((pos) => {
-          if (!userState.lat || Math.abs(userState.lat - pos.coords.latitude) > 0.00005 || Math.abs(userState.lng - pos.coords.longitude) > 0.00005) {
-            userState.lat = pos.coords.latitude;
-            userState.lng = pos.coords.longitude;
-            announcePresence();
-            refreshAllPeerDistancesAndPositions();
-          }
-        }, (err) => {}, { enableHighAccuracy: true, maximumAge: 5000 });
+    function initGPSLocation() {
+      if (!navigator.geolocation) return;
+      // V11.44 (per Shane: "it keeps asking each time I log in"): GPS now
+      // starts ONCE per page load. Session teardown no longer clears the
+      // watch, so a sign-out/sign-in cycle inside the same page session
+      // never restarts it - a restart is what made iOS ask again. The
+      // single watchPosition below is the only request (the old code also
+      // fired a redundant getCurrentPosition first; a watch delivers an
+      // initial fix on its own).
+      if (!shouldStartGps(null, gpsWatchStarted)) return;
+      gpsWatchStarted = true;
+      const onPosition = (pos) => {
+        if (!userState.lat || Math.abs(userState.lat - pos.coords.latitude) > 0.00005 || Math.abs(userState.lng - pos.coords.longitude) > 0.00005) {
+          userState.lat = pos.coords.latitude;
+          userState.lng = pos.coords.longitude;
+          // The watch now outlives sign-out (see teardownSessionState):
+          // keep the saved coordinates fresh, but only announce presence
+          // while a session is actually running.
+          if (appSessionInitialized) announcePresence();
+          refreshAllPeerDistancesAndPositions();
+        }
+      };
+      const beginWatch = (permissionState) => {
+        if (!shouldStartGps(permissionState, false)) return; // known 'denied': never badger - the map works from the saved coordinates
+        gpsWatchId = navigator.geolocation.watchPosition(onPosition, (err) => {}, { enableHighAccuracy: true, maximumAge: 5000 });
+      };
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' }).then((res) => beginWatch(res ? res.state : null)).catch(() => beginWatch(null));
+      } else {
+        beginWatch(null);
       }
     }
 
@@ -3783,8 +3812,8 @@
       // hidden (they are in the list) until the list is closed.
       if (currentLayoutMode === 'right') { topBubble.classList.add('hidden'); return; }
 
-      const hasValidActiveTopic = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
-      if (!hasValidActiveTopic && userState.type !== 'business') {
+      const hasValidActiveTopic = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= BUBBLE_LIFETIME_MS));
+      if (!hasValidActiveTopic) { // V11.44 (per Shane): the own map bubble card also stays hidden until a bubble is actually posted - business accounts used to get a placeholder card ('Anyone here?') before posting; icon + name pill are separate and stay
         topBubble.classList.add('hidden');
         return;
       }
@@ -4232,9 +4261,9 @@
           if (p.id !== currentAuthUser?.id && !hiddenPeerIds.has(p.id)) {
             const parsedTopicTime = p.topic_created_at ? new Date(p.topic_created_at).getTime() : null;
             const createdAtTime = Number.isFinite(parsedTopicTime) ? parsedTopicTime : null;
-            // A topic older than one hour is an expired chat: it is treated as
+            // A topic older than the 12-hour bubble lifetime is an expired
             // deleted and is never resurrected by this fetch.
-            const topicExpired = !!p.active_topic && !!createdAtTime && (Date.now() - createdAtTime > ONE_HOUR_MS);
+            const topicExpired = !!p.active_topic && !!createdAtTime && (Date.now() - createdAtTime > BUBBLE_LIFETIME_MS);
             const hasValidTopic = !!p.active_topic && !topicExpired;
             if (hasValidTopic) clearPreviousBubbleChat(p.id, createdAtTime, p.active_topic);
 
@@ -4280,7 +4309,7 @@
           profiles.forEach(p => {
             if (p.id === currentAuthUser?.id || !p.active_topic || !p.topic_created_at) return;
             const t = new Date(p.topic_created_at).getTime();
-            if (Number.isFinite(t) && Date.now() - t > ONE_HOUR_MS) {
+            if (Number.isFinite(t) && Date.now() - t > BUBBLE_LIFETIME_MS) {
               deleteChatLocally('room-peer-' + String(p.id).replace(/[^a-zA-Z0-9]/g, '-'), p.id);
             }
           });
@@ -4326,7 +4355,7 @@
       if (supabasePollInterval) { clearInterval(supabasePollInterval); supabasePollInterval = null; }
       if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
       stopChatExpiryLoop();
-      if (gpsWatchId !== null && navigator.geolocation) { try { navigator.geolocation.clearWatch(gpsWatchId); } catch(e) {} gpsWatchId = null; }
+      // V11.44: the GPS watch is deliberately NOT cleared on session teardown - it belongs to the page, not the login session, so signing back in does not restart it and re-trigger the iOS location prompt. It dies with the page itself.
       if (realtimeChannel && supabaseClient) { try { supabaseClient.removeChannel(realtimeChannel); } catch(e) {} }
       realtimeChannel = null;
       if (dbMessagesChannel && supabaseClient) { try { supabaseClient.removeChannel(dbMessagesChannel); } catch(e) {} }
@@ -4464,7 +4493,7 @@
         if (data.active_topic) {
           const parsedTime = data.topic_created_at ? new Date(data.topic_created_at).getTime() : Date.now();
           const safeTime = Number.isFinite(parsedTime) ? parsedTime : Date.now();
-          if (Date.now() - safeTime > ONE_HOUR_MS) {
+          if (Date.now() - safeTime > BUBBLE_LIFETIME_MS) {
             // Saved topic already expired: the chat is deleted, not restored.
             activeTopicState.text = null;
             activeTopicState.createdAt = null;
@@ -4483,7 +4512,7 @@
           // reading that back used to delete the Administrator's (and
           // anyone's) own bubble on reopen. The next presence announce
           // rewrites the row from the surviving local state.
-          const localTopicLive = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
+          const localTopicLive = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= BUBBLE_LIFETIME_MS));
           if (!localTopicLive) {
             activeTopicState.text = null;
             activeTopicState.createdAt = null;
@@ -4730,7 +4759,7 @@
       const newQuestionText = data.text !== undefined ? data.text : data.question;
       const rawIncomingTs = safeTimestampMs(data.createdAt);
       // V11.15 (#3): never accept a bubble timestamp in the future - it
-      // would never satisfy the 1-hour expiry test.
+      // would never satisfy the 12-hour expiry test.
       const incomingTs = (rawIncomingTs && rawIncomingTs > Date.now() + 60000) ? Date.now() : rawIncomingTs;
       const questionCreatedAt = incomingTs || Date.now();
       // New bubble from this sender overrides (deletes) their previous chat.
@@ -4922,7 +4951,7 @@
       const hasSelfTopic = activeTopicState.text && activeTopicState.createdAt;
       const isUserAdmin = isAdminUser;
       
-      if (participatedChatRoomIds.has('room-you') || userState.type === 'business' || hasSelfTopic) {
+      if (hasSelfTopic) { // V11.44 (per Shane): no own entry - and no 'Your Broadcast' placeholder - in this list until you actually post a bubble (was: shown whenever you had participated, were a business, or had a topic)
         const item = {
           roomId: 'room-you',
           name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
@@ -4982,7 +5011,7 @@
         const peer = globalActiveDirectory[peerId];
         if (!peer || !peer.question || !peer.createdAt) return;
         if (!isAdminPeer(peer)) return; // V11.8: pinned for the admin account (name or flag)
-        if (Date.now() - peer.createdAt > ONE_HOUR_MS) return;
+        if (Date.now() - peer.createdAt > BUBBLE_LIFETIME_MS) return;
         const roomId = 'room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
         if (adminList.some(it => it.roomId === roomId)) return;
         adminList.push({
@@ -5361,13 +5390,13 @@
         hours: userState.hours, address: userState.type === 'business' ? (userState.address || '') : '', businessInfo: userState.type === 'business' ? (userState.businessInfo || '') : '', interestFilter: userState.interestFilter, hideMyName: userState.hideMyName, // V11.11: address rides along so business bubbles can show it in their info section (V11.27: the store info text rides along the same way)
         isBot: false,
         isAdmin: isAdminUser,
-        question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.text : null,
-        createdAt: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS)) ? activeTopicState.createdAt : null
+        question: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= BUBBLE_LIFETIME_MS)) ? activeTopicState.text : null,
+        createdAt: (activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= BUBBLE_LIFETIME_MS)) ? activeTopicState.createdAt : null
       };
 
       if (supabaseClient && currentAuthUser && profileAliasConfirmedFor === currentAuthUser.id) { // V11.31: never write the profile row before this account's real alias is confirmed (see profileAliasConfirmedFor)
         try {
-          const topicIsLive = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= ONE_HOUR_MS));
+          const topicIsLive = !!(activeTopicState.text && activeTopicState.createdAt && (Date.now() - activeTopicState.createdAt <= BUBBLE_LIFETIME_MS));
           const presenceKey = [userState.alias, userState.type, userState.category, topicIsLive ? activeTopicState.text : '', topicIsLive ? activeTopicState.createdAt : '', Math.round(coords.lat * 10000), Math.round(coords.lng * 10000)].join('|');
           const presenceDue = presenceKey !== lastPresenceUpsertKey || (Date.now() - lastPresenceUpsertAt > 60000);
           if (presenceDue) {
@@ -5450,7 +5479,7 @@
       }
 
       const hasValidQuestion = peer.question && peer.createdAt;
-      const isExpired = hasValidQuestion && (Date.now() - peer.createdAt > ONE_HOUR_MS);
+      const isExpired = hasValidQuestion && (Date.now() - peer.createdAt > BUBBLE_LIFETIME_MS);
       if (isExpired) {
         deleteExpiredChat(roomId, peer.peerId);
       }
@@ -5516,7 +5545,7 @@
       expiryIntervalId = setInterval(() => {
         let expiryChanged = false;
         if (activeTopicState.createdAt) {
-          const remainingMs = ONE_HOUR_MS - (Date.now() - activeTopicState.createdAt);
+          const remainingMs = BUBBLE_LIFETIME_MS - (Date.now() - activeTopicState.createdAt);
           if (remainingMs <= 0) {
             expiryChanged = true;
             deleteExpiredChat('room-you', currentAuthUser ? currentAuthUser.id : myPeerId);
@@ -5540,7 +5569,7 @@
 
         Object.keys(globalActiveDirectory).forEach(peerId => {
           const peer = globalActiveDirectory[peerId];
-          if (peer.createdAt && (Date.now() - peer.createdAt > ONE_HOUR_MS)) {
+          if (peer.createdAt && (Date.now() - peer.createdAt > BUBBLE_LIFETIME_MS)) {
             expiryChanged = true;
             deleteExpiredChat('room-peer-' + peerId.replace(/[^a-zA-Z0-9]/g, '-'), peerId);
           }
