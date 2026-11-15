@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.47 Drag Edge + Unread List Fallback]</title>
+  <title>LocaL - Proximity Social Network [V11.48 Background Off Canvas + Lite While Zooming]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -161,9 +161,20 @@
     #mapCanvas {
       transform: translate3d(var(--pan-x), var(--pan-y), 0) scale(var(--zoom-scale, 1));
       transform-origin: center center;
-      will-change: transform;
+      z-index: 1; /* V11.48: above #mapBackground, below every UI layer */
       cursor: grab;
       touch-action: none;
+    }
+    /* V11.48: the map background lives on its own fixed, screen-size
+       layer behind the canvas - it is NOT painted across the canvas's
+       700%-of-screen sheet any more (see #mapBackground in the body).
+       The bg-mode-* classes (gradients, the layered topocamo images)
+       apply to this layer unchanged. */
+    #mapBackground {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
     }
     #mapCanvas:active { cursor: grabbing; }
     /* Foreground layer for user icons: the nodes layer sits ABOVE all radar
@@ -263,7 +274,9 @@
 
     .scale-compensator {
       transform: scale(calc(1 / max(0.20, var(--zoom-scale, 1))));
-      will-change: transform;
+      /* V11.48: the permanent compositor hint that used to sit here is
+         gone - it forced a full-size backing store for every node
+         icon on the map, repainted on every zoom frame. */
     }
 
     /* V11.14: zooming out crashed the app on phones. At low zoom the whole
@@ -313,6 +326,12 @@
     html.zoom-deep .animate-radar-sweep { display: none !important; }
     html.zoom-deep #radarBoundaryRing { box-shadow: none !important; background: transparent !important; }
     html.zoom-deep #worldMaxBoundaryRing { display: none !important; }
+    /* V11.48: at deep zoom the repeating grid is dense moire paint
+       over the whole sheet for zero information - hide it outright.
+       In lite it only fades: this rule's specificity beats the
+       opacity-20 utility class on the overlay element. */
+    html.zoom-deep #mapGridOverlay { display: none; }
+    html.zoom-lite #mapGridOverlay { opacity: 0.08; }
     /* V11.41: nodes far outside the viewport never need their
        animations running - the declutter pass tags them and every
        decorative animation pauses (at any zoom). */
@@ -531,11 +550,16 @@
 </head>
 <body id="appBody" class="bg-slate-900 text-slate-900 font-sans antialiased overflow-hidden h-screen w-screen relative">
 
+  <!-- V11.48: the map background is a fixed, screen-size backdrop,
+       painted once. It no longer lives on the giant map canvas, whose
+       700%-of-screen sheet had to be repainted on every zoom frame. -->
+  <div id="mapBackground" class="bg-mode-aurora"></div>
+
   <!-- Dynamic Screen Tap Pulse Waveform Container -->
   <div id="tapPulseContainer" class="fixed inset-0 pointer-events-none z-[99999999] overflow-hidden"></div>
 
   <!-- Map Canvas -->
-  <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-aurora">
+  <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center">
     <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern pointer-events-none"></div>
     
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring z-0" style="width: 5625px; height: 5625px;">
@@ -3374,7 +3398,17 @@
 
         // V11.14/V11.41: lite tiers (see zoomLiteTier + the zoom-lite CSS).
         const tier = zoomLiteTier(currentZoomScale);
-        const shouldLite = tier !== 'full';
+        // V11.48: lite visuals also apply WHILE the zoom is moving, at
+        // any tier. Repainting the giant canvas sheet with blurs, glow
+        // shadows and decorative animations live for the whole pinch /
+        // wheel gesture is what kills the page, and the scene gains no
+        // detail from them mid-gesture. The exponential approach
+        // (x0.20 per frame) shrinks the gap by x0.80 per frame, so once
+        // the target stops changing the 0.002 threshold is crossed
+        // within a few frames and the class settles off cleanly
+        // instead of flapping.
+        const isZoomMoving = Math.abs(targetZoomScale - currentZoomScale) > 0.002;
+        const shouldLite = tier !== 'full' || isZoomMoving;
         if (shouldLite !== liteModeOn) {
           liteModeOn = shouldLite;
           document.documentElement.classList.toggle('zoom-lite', shouldLite);
@@ -3989,10 +4023,13 @@
 
     function applyBackgroundMode(mode) {
       userState.bgMode = mode;
-      const mapCanvas = document.getElementById('mapCanvas');
+      // V11.48: the bg-mode-* class goes on the fixed #mapBackground
+      // backdrop now, not on #mapCanvas - the canvas className no
+      // longer carries any bg-mode-* part.
+      const mapBackground = document.getElementById('mapBackground');
       const gridOverlay = document.getElementById('mapGridOverlay');
-      if (!mapCanvas) return;
-      mapCanvas.className = `absolute -inset-[300%] overflow-hidden scale-100 origin-center bg-mode-${mode}`;
+      if (!mapBackground) return;
+      mapBackground.className = `bg-mode-${mode}`;
       if (gridOverlay) {
         gridOverlay.className = (mode === 'cyber' || mode === 'midnight' || mode === 'ocean' || mode === 'forest' || mode === 'grape' || mode === 'topocamo') ? 'absolute inset-0 opacity-20 map-grid-pattern-dark pointer-events-none' : 'absolute inset-0 opacity-20 map-grid-pattern pointer-events-none';
       }
