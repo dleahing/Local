@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.50 Background Corrections + Dot Layer Removed]</title>
+  <title>LocaL - Proximity Social Network [V11.51 Radius-Render Throttle + Zoom-Var Quantize]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3379,6 +3379,26 @@
       return !!protectedCard || prio <= 2;
     }
 
+    // V11.51 (lab-measured, zoom-crash-lab/results.md): the render loop
+    // rewrote the --zoom-scale CSS variable on #mapCanvas every frame,
+    // and the whole canvas subtree consumes that variable (ring
+    // borders, distance labels, icon counter-scales), so every frame
+    // forced a subtree-wide style recalc + repaint - measured 28 long
+    // tasks / 2,666ms for one pinch-style zoom glide on a desktop CPU.
+    // The variable now moves only in >0.004 steps while gliding, and
+    // once the zoom has settled (|current - target| <= 0.0005) the
+    // exact settled value is written, so the resting state is always
+    // precise. Returns the value to write, or null to skip the write.
+    function zoomScaleVarWrite(lastWritten, current, target) {
+      const clampZoom = (z) => Math.max(minZoomForCurrentRing(), Math.min(2.5, z));
+      const settled = Math.abs(current - target) <= 0.0005;
+      const candidate = settled ? clampZoom(target) : clampZoom(current);
+      if (lastWritten === null || lastWritten === undefined) return candidate;
+      if (Math.abs(candidate - lastWritten) > 0.004) return candidate;
+      if (settled && candidate !== lastWritten) return candidate;
+      return null;
+    }
+
     function startSmoothAnimationLoop() {
       const mapCanvas = document.getElementById('mapCanvas');
       if (!mapCanvas) return;
@@ -3388,6 +3408,7 @@
       let liteModeOn = false; // V11.14
       let xLiteModeOn = false; // V11.41
       let deepModeOn = false; // V11.46
+      let lastZoomVarWritten = null; // V11.51: last --zoom-scale value actually written (see zoomScaleVarWrite)
       const renderLoop = () => {
         panX += (targetPanX - panX) * 0.25;
         panY += (targetPanY - panY) * 0.25;
@@ -3434,9 +3455,17 @@
           lastPanX = panX; lastPanY = panY; lastZoomOut = currentZoomScale;
           mapCanvas.style.setProperty('--pan-x', `${panX}px`);
           mapCanvas.style.setProperty('--pan-y', `${panY}px`);
-          mapCanvas.style.setProperty('--zoom-scale', Math.max(minZoomForCurrentRing(), Math.min(2.5, currentZoomScale)).toFixed(4));
           applyDragEdgeGeometry(); // V11.47: zoom changed - keep the drag band's on-screen thickness constant
           scheduleDeclutter(); // V11.25: pan/zoom changed the screen layout
+        }
+        // V11.51: --zoom-scale is written through the quantizer (see
+        // zoomScaleVarWrite above) - >0.004 steps while the zoom is
+        // gliding, the exact settled value once it lands - instead of
+        // a fresh subtree-wide style recalc on every frame.
+        const zoomVarValue = zoomScaleVarWrite(lastZoomVarWritten, currentZoomScale, targetZoomScale);
+        if (zoomVarValue !== null) {
+          mapCanvas.style.setProperty('--zoom-scale', zoomVarValue.toFixed(4));
+          lastZoomVarWritten = zoomVarValue;
         }
         animationFrameId = requestAnimationFrame(renderLoop);
       };
@@ -3509,6 +3538,50 @@
       return n;
     }
 
+    // V11.51 (lab-measured, zoom-crash-lab/results.md): ONE
+    // updateRadius() call used to re-render nearly the whole UI -
+    // measured ~11,453 transient DOM nodes per call (peer nodes
+    // re-created, the users directory and the friends/pinned/right
+    // lists rebuilt via innerHTML, every Lucide icon re-created).
+    // At drag rates (a call every ~33ms) that peaked at 147,312
+    // Performance nodes - ~345,000 nodes/sec of garbage, ~37% of
+    // wall time in style recalc on a desktop CPU. The ring, labels,
+    // slider and userState updates in updateRadius stay per-call
+    // (cheap); the two refresh passes move behind this 150ms
+    // throttle: leading edge immediate (single calls - session init,
+    // double-tap home, Unlimited toggle, slider steps - render
+    // exactly as before), calls inside the window coalesce into ONE
+    // trailing render, and the radius drag's handleEnd flushes the
+    // final state immediately. Peer positions follow the ring at
+    // ~7 renders/sec mid-drag and land exact at drag end.
+    const EXPENSIVE_RADIUS_RENDER_MS = 150;
+    let lastExpensiveRadiusRenderAt = 0;
+    let expensiveRadiusRenderTimer = null;
+    function runExpensiveRadiusRender() {
+      lastExpensiveRadiusRenderAt = performance.now();
+      refreshAllPeerDistancesAndPositions();
+      refreshAllNodeVisibilities();
+    }
+    function scheduleExpensiveRadiusRender() {
+      const now = performance.now();
+      const elapsed = now - lastExpensiveRadiusRenderAt;
+      if (elapsed >= EXPENSIVE_RADIUS_RENDER_MS) {
+        if (expensiveRadiusRenderTimer) { clearTimeout(expensiveRadiusRenderTimer); expensiveRadiusRenderTimer = null; }
+        runExpensiveRadiusRender();
+        return;
+      }
+      if (!expensiveRadiusRenderTimer) {
+        expensiveRadiusRenderTimer = setTimeout(() => {
+          expensiveRadiusRenderTimer = null;
+          runExpensiveRadiusRender();
+        }, EXPENSIVE_RADIUS_RENDER_MS - elapsed);
+      }
+    }
+    function flushExpensiveRadiusRender() {
+      if (expensiveRadiusRenderTimer) { clearTimeout(expensiveRadiusRenderTimer); expensiveRadiusRenderTimer = null; }
+      runExpensiveRadiusRender();
+    }
+
     function updateRadius(val, autoZoom = false) {
       const parsedRadius = Number(val);
       // V11.46 (#6): userState.radius ALWAYS holds the real chosen radius.
@@ -3552,8 +3625,7 @@
         }
       }
 
-      refreshAllPeerDistancesAndPositions();
-      refreshAllNodeVisibilities();
+      scheduleExpensiveRadiusRender(); // V11.51: throttled (see above) - was a direct refreshAllPeerDistancesAndPositions() + refreshAllNodeVisibilities() on every call
       // V11.49: during an edge drag updateRadius runs on EVERY move
       // event - a synchronous localStorage write per move is pure
       // cost on the gesture that already repaints the most. The
@@ -3602,6 +3674,7 @@
       const handleEnd = (e) => {
         if (isDraggingRadius) {
           isDraggingRadius = false;
+          flushExpensiveRadiusRender(); // V11.51: the final radius state renders NOW, not on the throttle's trailing edge
           savePersistentData(); // V11.49: the one save for the whole drag (updateRadius skips it per-move while dragging)
           showToast(`Radar Radius set to ${(userState.radius / METERS_PER_MILE).toFixed(2)} Mi`, 'radar');
         }
