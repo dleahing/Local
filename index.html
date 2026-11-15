@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.45 Merged Topic & Expiry Card]</title>
+  <title>LocaL - Proximity Social Network [V11.46 Audit Fixes + Radar Zoom Fix]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -189,7 +189,7 @@
        trick .scale-compensator uses for user icons) instead of shrinking
        away when you zoom out. */
     #radarBoundaryRing .radar-distance-label {
-      transform: translateY(-50%) scale(calc(1 / max(0.20, var(--zoom-scale, 1)))) !important;
+      transform: translateY(-50%) scale(calc(1 / max(0.04, var(--zoom-scale, 1)))) !important; /* V11.46: counter-scale floor follows the dynamic zoom floor (was 0.20) */
     }
     #radarCenter, #worldMaxBoundaryRing { pointer-events: none !important; z-index: 0 !important; }
     .peer-node-icon { position: relative; z-index: 9600 !important; pointer-events: auto !important; box-shadow: 0 10px 24px rgba(2, 32, 71, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.85) !important; }
@@ -304,6 +304,15 @@
        also hides most bubble CARDS there (icons stay), see
        declutterMapBubbles. */
     html.zoom-x-lite #worldMaxBoundaryRing { opacity: 0.5; }
+    /* V11.46: deep zoom-out tier (under 0.12x, reachable now that the
+       zoom floor follows the ring). At world view the rotating conic
+       sweep is the single most expensive layer on the page, so it is
+       not drawn at all; the ring becomes a plain border (no glow
+       shadow, no fill) and the dashed world boundary ring is hidden -
+       the radar ring itself now sits on that boundary. */
+    html.zoom-deep .animate-radar-sweep { display: none !important; }
+    html.zoom-deep #radarBoundaryRing { box-shadow: none !important; background: transparent !important; }
+    html.zoom-deep #worldMaxBoundaryRing { display: none !important; }
     /* V11.41: nodes far outside the viewport never need their
        animations running - the declutter pass tags them and every
        decorative animation pauses (at any zoom). */
@@ -327,16 +336,16 @@
        thickness that stays constant on screen at any zoom - the width is
        divided by the zoom scale, like the counter-scaled text. */
     #radarBoundaryRing {
-      border-width: calc(2.5px / max(0.35, var(--zoom-scale, 1))) !important;
+      border-width: calc(2.5px / max(0.04, var(--zoom-scale, 1))) !important; /* V11.46: floor follows the dynamic zoom floor (was 0.35) */
       border-color: rgba(30, 58, 138, 0.97) !important;
       box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65), 0 0 22px rgba(30, 58, 138, 0.55), inset 0 0 18px rgba(30, 58, 138, 0.20) !important;
     }
     #radarBoundaryRing .hairline-ring, #worldMaxBoundaryRing, #radarCenter .hairline-ring {
-      border-width: calc(2.5px / max(0.35, var(--zoom-scale, 1))) !important;
+      border-width: calc(2.5px / max(0.04, var(--zoom-scale, 1))) !important; /* V11.46: floor follows the dynamic zoom floor (was 0.35) */
     }
     .radar-drag-hint {
       position: absolute; left: 50%; bottom: -11px;
-      transform: translateX(-50%) scale(calc(1 / max(0.20, var(--zoom-scale, 1))));
+      transform: translateX(-50%) scale(calc(1 / max(0.04, var(--zoom-scale, 1)))); /* V11.46: counter-scale floor follows the dynamic zoom floor (was 0.20) */
       z-index: 30; pointer-events: auto; cursor: ew-resize; white-space: nowrap;
       background: rgba(30, 58, 138, 0.95); color: #fff;
       font-size: 9.5px; font-weight: 800; letter-spacing: 0.02em;
@@ -1346,6 +1355,7 @@
     let knownProfileAliasById = {}; // V11.15 (#3): alias per user id from the profiles table, cross-checked against mesh broadcasts
     let knownAdminPeerIds = new Set(); // V11.15 (#3): verified admin user ids from the optional admin_users table
     let adminVerificationActive = false; // V11.15 (#3): true once admin_users returns rows
+    let adminUsersFetchedOk = false; // V11.46 (#9): admin_users is queried once per session until it first succeeds - not on every 2.5s profiles poll
     let appChromeInitialized = false; // V11.15 (#4): one-time-per-page-load UI wiring
     let animationLoopStarted = false; // V11.15 (#4)
     let expiryIntervalId = null; // V11.15 (#4)
@@ -2549,6 +2559,14 @@
       showToast(`Successfully created bot: ${name}!`, 'check-circle');
     }
 
+    // V11.46 (#2): bot ids land inside HTML id attributes in the admin
+    // editor; reduce them to a safe key alphabet (the matching lookups in
+    // saveBotProfileEdit use the same helper). Normal bot ids
+    // (sim-peer-*, custom-bot-*, uuids) are unchanged by this.
+    function adminEditKey(id) {
+      return String(id ?? '').replace(/[^a-zA-Z0-9_-]/g, '-');
+    }
+
     function renderAdminBotEditorList() {
       const container = document.getElementById('adminBotEditorList');
       if (!container) return;
@@ -2563,12 +2581,12 @@
         container.innerHTML += `
           <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col gap-2">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-white">${escapeChatHTML(formatBotNameWithSpaces(peer.rawSender))} (${peer.accountType})</span>
+              <span class="text-xs font-bold text-white">${escapeChatHTML(formatBotNameWithSpaces(peer.rawSender))} (${escapeChatHTML(peer.accountType)})</span>
               <button onclick="deleteBotProfile('${escapeJsArg(id)}')" class="px-2 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Remove</button>
             </div>
             <div class="space-y-1">
-              <input type="text" id="edit-name-${id}" value="${escapeChatHTML(peer.rawSender)}" class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
-              <input type="text" id="edit-q-${id}" value="${escapeChatHTML(peer.question || '')}" placeholder="Chat bubble message..." class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
+              <input type="text" id="edit-name-${adminEditKey(id)}" value="${escapeChatHTML(peer.rawSender)}" class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
+              <input type="text" id="edit-q-${adminEditKey(id)}" value="${escapeChatHTML(peer.question || '')}" placeholder="Chat bubble message..." class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
               <button onclick="saveBotProfileEdit('${escapeJsArg(id)}')" class="px-3 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-bold">Save Changes</button>
             </div>
           </div>
@@ -2584,8 +2602,8 @@
       let html = `
         <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
           <div>
-            <span class="text-xs font-bold text-white">${userState.alias} (You)</span>
-            <span class="text-[10px] text-emerald-400 block font-mono">ID: ${myPeerId}</span>
+            <span class="text-xs font-bold text-white">${escapeChatHTML(userState.alias)} (You)</span>
+            <span class="text-[10px] text-emerald-400 block font-mono">ID: ${escapeChatHTML(myPeerId)}</span>
           </div>
           <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">Authenticated</span>
         </div>
@@ -2601,7 +2619,7 @@
         html += `
           <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between mt-2">
             <div>
-              <span class="text-xs font-bold text-white">${formatBotNameWithSpaces(peer.rawSender)} (${peer.accountType})</span>
+              <span class="text-xs font-bold text-white">${escapeChatHTML(formatBotNameWithSpaces(peer.rawSender))} (${escapeChatHTML(peer.accountType)})</span>
               <span class="text-[10px] text-sky-400 block font-mono">Distance: ${escapeChatHTML(formatPeerDistance(peer) || '—')}</span>
             </div>
             <button onclick="kickNetworkUser('${escapeJsArg(id)}')" class="px-2.5 py-1 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 text-[10px] font-bold">Disconnect</button>
@@ -2639,8 +2657,8 @@
     }
 
     function saveBotProfileEdit(id) {
-      const newName = document.getElementById(`edit-name-${id}`).value.trim();
-      const newQ = document.getElementById(`edit-q-${id}`).value.trim();
+      const newName = document.getElementById(`edit-name-${adminEditKey(id)}`).value.trim();
+      const newQ = document.getElementById(`edit-q-${adminEditKey(id)}`).value.trim();
       if (globalActiveDirectory[id]) {
         clearPreviousBubbleChat(id, Date.now(), newQ);
         globalActiveDirectory[id].rawSender = newName;
@@ -2690,7 +2708,7 @@
       }
       appSessionInitialized = true;
       initBackgroundKeepAlive(); // V11.15 (#4): (re)starts the 10s presence heartbeat - sign-out cleared it, and page load is no longer the only chance it gets
-      if (!Number.isFinite(userState.radius) || userState.radius <= 0) userState.radius = DEFAULT_RADIUS_METERS;
+      userState.radius = sanitizeRadiusMeters(userState.radius); // V11.46 (#6): catches a persisted 999999 / over-max radius too
       initGPSLocation();
       initUserNode();
       initSupabaseNetwork();
@@ -3198,7 +3216,7 @@
           const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
           const factor = currentDistance / initialPinchDistance;
           if (!isNaN(factor) && isFinite(factor)) {
-            targetZoomScale = Math.max(0.35, Math.min(2.5, initialPinchScale * factor));
+            targetZoomScale = Math.max(minZoomForCurrentRing(), Math.min(2.5, initialPinchScale * factor));
           }
         }
       }, { passive: true });
@@ -3213,7 +3231,7 @@
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #adminManagementModal, #pinnedChatsWrapper')) return;
         e.preventDefault();
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
-        targetZoomScale = Math.max(0.35, Math.min(2.5, targetZoomScale * zoomFactor));
+        targetZoomScale = Math.max(minZoomForCurrentRing(), Math.min(2.5, targetZoomScale * zoomFactor));
       }, { passive: false });
     }
 
@@ -3323,8 +3341,11 @@
     // V11.41: zoom tiers for the lite modes. 'lite' starts earlier
     // (0.90x, was 0.75x) and a second 'xlite' tier under 0.55x caps how
     // many bubble cards render (see declutterMapBubbles).
+    // V11.46: a third 'deep' tier under 0.12x (reachable now that the
+    // zoom floor follows the ring) drops the sweep disc entirely.
     function zoomLiteTier(scale) {
       if (!Number.isFinite(scale)) return 'full';
+      if (scale < 0.12) return 'deep';
       if (scale < 0.55) return 'xlite';
       if (scale < 0.90) return 'lite';
       return 'full';
@@ -3343,12 +3364,13 @@
       let lastPanX = 0, lastPanY = 0, lastZoomOut = 1;
       let liteModeOn = false; // V11.14
       let xLiteModeOn = false; // V11.41
+      let deepModeOn = false; // V11.46
       const renderLoop = () => {
         panX += (targetPanX - panX) * 0.25;
         panY += (targetPanY - panY) * 0.25;
         currentZoomScale += (targetZoomScale - currentZoomScale) * 0.20;
         if (!Number.isFinite(currentZoomScale)) currentZoomScale = 1;
-        currentZoomScale = Math.max(0.35, Math.min(2.5, currentZoomScale));
+        currentZoomScale = Math.max(minZoomForCurrentRing(), Math.min(2.5, currentZoomScale));
 
         // V11.14/V11.41: lite tiers (see zoomLiteTier + the zoom-lite CSS).
         const tier = zoomLiteTier(currentZoomScale);
@@ -3358,10 +3380,16 @@
           document.documentElement.classList.toggle('zoom-lite', shouldLite);
           scheduleDeclutter();
         }
-        const shouldXLite = tier === 'xlite';
+        const shouldXLite = tier === 'xlite' || tier === 'deep'; // V11.46: deep shares the xlite card-capping
         if (shouldXLite !== xLiteModeOn) {
           xLiteModeOn = shouldXLite;
           document.documentElement.classList.toggle('zoom-x-lite', shouldXLite);
+          scheduleDeclutter();
+        }
+        const shouldDeep = tier === 'deep'; // V11.46
+        if (shouldDeep !== deepModeOn) {
+          deepModeOn = shouldDeep;
+          document.documentElement.classList.toggle('zoom-deep', shouldDeep);
           scheduleDeclutter();
         }
 
@@ -3369,7 +3397,7 @@
           lastPanX = panX; lastPanY = panY; lastZoomOut = currentZoomScale;
           mapCanvas.style.setProperty('--pan-x', `${panX}px`);
           mapCanvas.style.setProperty('--pan-y', `${panY}px`);
-          mapCanvas.style.setProperty('--zoom-scale', Math.max(0.35, Math.min(2.5, currentZoomScale)).toFixed(4));
+          mapCanvas.style.setProperty('--zoom-scale', Math.max(minZoomForCurrentRing(), Math.min(2.5, currentZoomScale)).toFixed(4));
           scheduleDeclutter(); // V11.25: pan/zoom changed the screen layout
         }
         animationFrameId = requestAnimationFrame(renderLoop);
@@ -3379,9 +3407,38 @@
 
     const MAP_PIXELS_PER_MILE = 187.5;
 
+    // V11.46: the rendered radar ring is capped at the app's 30-mile
+    // world boundary (5625px, the #worldMaxBoundaryRing size). Beyond
+    // ~2 miles radius the old fixed 0.35 zoom floor stopped the map
+    // zooming out while the ring kept growing off-screen, and the giant
+    // compositing layers crashed the page. The zoom floor is now
+    // dynamic: it follows the ring's fit scale, so map and radar keep
+    // zooming together down to the world view.
+    const MAX_RING_PX = 5625;
+    let currentRingDiameterPx = 188; // 0.5 mi default ring; kept in sync by updateRadius/getRadarStyleHtml
+    function radarFitScaleForDiameter(px) {
+      const viewportMin = Math.min(window.innerWidth, window.innerHeight);
+      return (viewportMin * 0.65) / Math.max(100, px);
+    }
+    function minZoomForCurrentRing() {
+      return Math.max(0.04, Math.min(0.35, radarFitScaleForDiameter(currentRingDiameterPx)));
+    }
+    // V11.46 (#6): a persisted radius outside the real range (e.g. the
+    // old 999999 Unlimited sentinel) falls back to the 0.5 mi default;
+    // a normal radius passes through untouched.
+    function sanitizeRadiusMeters(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0 || n > MAX_RADIUS_METERS || n >= 999999) return DEFAULT_RADIUS_METERS;
+      return n;
+    }
+
     function updateRadius(val, autoZoom = false) {
       const parsedRadius = Number(val);
-      const meters = unlimitedRadarActive ? 999999 : Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number.isFinite(parsedRadius) ? parsedRadius : DEFAULT_RADIUS_METERS));
+      // V11.46 (#6): userState.radius ALWAYS holds the real chosen radius.
+      // Unlimited is a display/visibility mode only - the old code wrote
+      // the 999999 sentinel into userState.radius while Unlimited was on,
+      // savePersistentData persisted it, and the chosen radius was lost.
+      const meters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number.isFinite(parsedRadius) ? parsedRadius : DEFAULT_RADIUS_METERS));
       userState.radius = meters;
 
       const ring = document.getElementById('radarBoundaryRing');
@@ -3399,7 +3456,12 @@
 
       if (ring) {
         const milesVal = unlimitedRadarActive ? 30 : Math.min(30, currentMilesVal);
-        const pixelDiameter = Math.round(milesVal * MAP_PIXELS_PER_MILE * 2);
+        // V11.46: the RENDERED ring never exceeds the 5625px world
+        // boundary - at the 30-mile cap the raw diameter would be
+        // 11,250px (sweep layer ~22,500px), the compositing load that
+        // killed the page on zoom-out. The radius DATA cap stays 30 mi.
+        const pixelDiameter = Math.min(MAX_RING_PX, Math.round(milesVal * MAP_PIXELS_PER_MILE * 2));
+        currentRingDiameterPx = pixelDiameter;
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
         if (leftBadge) leftBadge.innerText = labelText;
@@ -3408,7 +3470,7 @@
         if (autoZoom || isDraggingRadius) {
           const viewportMin = Math.min(window.innerWidth, window.innerHeight);
           const targetScaleFactor = (viewportMin * 0.65) / Math.max(100, pixelDiameter);
-          targetZoomScale = Math.max(0.35, Math.min(2.0, targetScaleFactor)); // V11.27: auto-fit only - on tablets the fit used to slam into the 2.5x ceiling, and iOS renders the giant map layer from a capped-size bitmap, so the whole map opened blurry until the user zoomed out. Manual pinch/wheel zoom still reaches 2.5x.
+          targetZoomScale = Math.max(minZoomForCurrentRing(), Math.min(2.0, targetScaleFactor)); // V11.27: auto-fit only - on tablets the fit used to slam into the 2.5x ceiling, and iOS renders the giant map layer from a capped-size bitmap, so the whole map opened blurry until the user zoomed out. Manual pinch/wheel zoom still reaches 2.5x.
         }
       }
 
@@ -3754,7 +3816,7 @@
         // page. Cards are capped there - icons (small, cheap) all
         // stay visible and tappable, and the important cards stay:
         // Administrator, Welcome Guide, unread and friends.
-        if (zoomLiteTier(currentZoomScale) === 'xlite' && !declutterKeepCardAtXLite(it.prio, protectedCard)) { it.card.style.visibility = 'hidden'; return; }
+        if ((zoomLiteTier(currentZoomScale) === 'xlite' || zoomLiteTier(currentZoomScale) === 'deep') && !declutterKeepCardAtXLite(it.prio, protectedCard)) { it.card.style.visibility = 'hidden'; return; } // V11.46: deep caps cards like xlite
         if (clashIcon && !protectedCard) it.card.style.visibility = 'hidden';
       });
     }
@@ -3933,7 +3995,8 @@
     function getRadarStyleHtml(styleType) {
       const palette = RADAR_PALETTES[userState.radarColor || 'cyan'] || RADAR_PALETTES.cyan;
       const initialMiles = unlimitedRadarActive ? 'Unlimited' : (userState.radius / METERS_PER_MILE).toFixed(1);
-      const initialPx = Math.round((unlimitedRadarActive ? 30 : (userState.radius / METERS_PER_MILE)) * MAP_PIXELS_PER_MILE * 2);
+      const initialPx = Math.min(MAX_RING_PX, Math.round((unlimitedRadarActive ? 30 : (userState.radius / METERS_PER_MILE)) * MAP_PIXELS_PER_MILE * 2)); // V11.46: rendered ring capped at the 5625px world boundary
+      currentRingDiameterPx = initialPx;
       const style = styleType || 'futuristic';
 
       // Each radar style renders genuinely different artwork (previously the
@@ -4065,11 +4128,18 @@
           setupSupabaseRealtimeSubscriptions();
           
           if (supabasePollInterval) clearInterval(supabasePollInterval);
-          supabasePollInterval = setInterval(() => {
-            if (currentActiveChatRoomId) {
+          // V11.46 (#9): the poll used to reload the open chat's history
+          // AND rebuild the whole directory every 2.5s, fighting the
+          // realtime mesh. Now the history reloads only when the profiles
+          // signature actually changed, plus a slow safety net every 12th
+          // tick (~30s); realtime/open/restore paths load history anyway.
+          let supabasePollTick = 0;
+          supabasePollInterval = setInterval(async () => {
+            supabasePollTick++;
+            const profilesChanged = await fetchProfilesAndTopicsFromSupabase();
+            if (currentActiveChatRoomId && (profilesChanged || supabasePollTick % 12 === 0)) {
               loadDbChatHistory(currentActiveChatRoomId);
             }
-            fetchProfilesAndTopicsFromSupabase();
           }, 2500);
           
           updatePeerServerStatus(true, "Connected to Supabase Realtime & Mesh");
@@ -4121,8 +4191,11 @@
     // argument. Names/questions with quotes used to break tap handlers and
     // could inject markup; visible text uses escapeChatHTML, handler
     // arguments use this.
+    // V11.46 (#2): '&' is escaped too - left raw, a name containing an HTML
+    // entity like &#39; was decoded by the browser BEFORE the handler ran
+    // and could break out of the quoted string.
     function escapeJsArg(value) {
-      return String(value ?? '').split('').map(ch => ch === String.fromCharCode(92) ? String.fromCharCode(92, 92) : ch === "'" ? String.fromCharCode(92) + "'" : ch === '<' ? String.fromCharCode(92) + 'u003c' : ch === '"' ? String.fromCharCode(92) + 'u0022' : ch).join('').replace(/[\r\n]/g, ' ');
+      return String(value ?? '').split('').map(ch => ch === String.fromCharCode(92) ? String.fromCharCode(92, 92) : ch === "'" ? String.fromCharCode(92) + "'" : ch === '&' ? String.fromCharCode(92) + 'u0026' : ch === '<' ? String.fromCharCode(92) + 'u003c' : ch === '"' ? String.fromCharCode(92) + 'u0022' : ch).join('').replace(/[\r\n]/g, ' ');
     }
 
     function escapeChatHTML(value) {
@@ -4240,19 +4313,28 @@
         const profilesSignature = profiles.map(pr => [pr.id, pr.alias, pr.active_topic, pr.topic_created_at, pr.lat, pr.lng, pr.account_type, pr.category, pr.interest_filter, pr.hide_my_name, pr.hours, pr.updated_at].join(':')).join('|');
         const profilesUnchanged = profilesSignature === lastProfilesSignature && Object.keys(globalActiveDirectory).length > 0;
         lastProfilesSignature = profilesSignature;
+        // V11.46 (#9): nothing changed - skip the directory rebuild, the
+        // offline-marking pass and the admin_users re-query entirely.
+        // Callers (the 2.5s poll) use the return value: true = changed.
+        if (profilesUnchanged) return false;
         const activeSupabaseIds = new Set(profiles.map(p => p.id));
         profiles.forEach(p => { if (p.id && p.alias) knownProfileAliasById[p.id] = p.alias; }); // V11.15 (#3)
         // V11.15 (#3): load the verified admin id list when the project has
         // an admin_users table (a user_id column, maintained from the
         // dashboard). A missing/empty table keeps the legacy behaviour; a
         // populated one switches broadcast-admin verification ON.
-        try {
-          const { data: adminRows, error: adminErr } = await supabaseClient.from('admin_users').select('user_id');
-          if (!adminErr && Array.isArray(adminRows) && adminRows.length > 0) {
-            knownAdminPeerIds = new Set(adminRows.map(r => r.user_id).filter(Boolean));
-            adminVerificationActive = knownAdminPeerIds.size > 0;
-          }
-        } catch(e) {}
+        if (!adminUsersFetchedOk) { // V11.46 (#9): once per session until first success (was: every poll)
+          try {
+            const { data: adminRows, error: adminErr } = await supabaseClient.from('admin_users').select('user_id');
+            if (!adminErr) {
+              adminUsersFetchedOk = true;
+              if (Array.isArray(adminRows) && adminRows.length > 0) {
+                knownAdminPeerIds = new Set(adminRows.map(r => r.user_id).filter(Boolean));
+                adminVerificationActive = knownAdminPeerIds.size > 0;
+              }
+            }
+          } catch(e) {}
+        }
 
         Object.keys(globalActiveDirectory).forEach(peerId => {
           if (!peerId.startsWith('custom-bot-') && !peerId.startsWith('sim-peer-')) {
@@ -4321,7 +4403,9 @@
           refreshAllPeerDistancesAndPositions();
           updateMeshUI();
         }
+        return true; // V11.46 (#9): profiles changed and the directory was rebuilt
       }
+      return false;
     }
 
     async function initAuthListener() {
@@ -4384,6 +4468,7 @@
       currentActiveChatRoomId = null;
       activeTopicState = { text: null, createdAt: null, persistent: false };
       lastProfilesSignature = '';
+      adminUsersFetchedOk = false; // V11.46 (#9): the next session re-checks admin_users once
       const nodesEl = document.getElementById('nodesContainer');
       if (nodesEl) nodesEl.innerHTML = '';
       try { localStorage.removeItem(STORAGE_KEY_ACTIVE_ROOM); } catch(e) {}
