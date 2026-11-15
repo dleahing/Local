@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.46 Audit Fixes + Radar Zoom Fix]</title>
+  <title>LocaL - Proximity Social Network [V11.47 Drag Edge + Unread List Fallback]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -214,7 +214,7 @@
        click-through and user icons underneath remain selectable. */
     .radar-drag-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 6; }
     .radar-drag-edge { fill: none; stroke: rgba(56, 189, 248, 0); stroke-width: 22; pointer-events: stroke; cursor: ew-resize; transition: stroke 0.2s ease; }
-    .radar-drag-edge:hover { stroke: rgba(30, 58, 138, 0.25); }
+    .radar-drag-edge:hover, .radar-drag-edge:active { stroke: rgba(30, 58, 138, 0.25); } /* V11.47: :active too - touch has no hover, so the band must also show while a finger is pressing the edge */
     .personal-bot-badge {
       margin-top: 3px; padding: 1px 6px; border-radius: 9999px;
       background: #7c3aed; color: #fff; font-size: 8px; font-weight: 800;
@@ -281,7 +281,7 @@
     /* V11.16: lite mode no longer freezes any animation - Shane wants the
        radar sweep and icon motion kept at low zoom. Only the costly
        compositing (backdrop blurs, the ring's glow shadow) is stripped. */
-    html.zoom-lite #radarBoundaryRing { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65) !important; }
+    html.zoom-lite #radarBoundaryRing { box-shadow: 0 0 0 calc(1.5px / max(0.04, var(--zoom-scale, 1))) rgba(255, 255, 255, 0.65) !important; } /* V11.47: the spread is counter-scaled like the ring border, so the lite outline keeps its on-screen thickness at deep zoom instead of thinning away */
     html.zoom-lite .peer-name-label { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
     html.zoom-lite .dark-biz-bubble, html.zoom-lite .glass-card { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
     /* V11.41: lite mode is stronger (the crash still happened with the
@@ -3398,6 +3398,7 @@
           mapCanvas.style.setProperty('--pan-x', `${panX}px`);
           mapCanvas.style.setProperty('--pan-y', `${panY}px`);
           mapCanvas.style.setProperty('--zoom-scale', Math.max(minZoomForCurrentRing(), Math.min(2.5, currentZoomScale)).toFixed(4));
+          applyDragEdgeGeometry(); // V11.47: zoom changed - keep the drag band's on-screen thickness constant
           scheduleDeclutter(); // V11.25: pan/zoom changed the screen layout
         }
         animationFrameId = requestAnimationFrame(renderLoop);
@@ -3423,6 +3424,37 @@
     function minZoomForCurrentRing() {
       return Math.max(0.04, Math.min(0.35, radarFitScaleForDiameter(currentRingDiameterPx)));
     }
+    // V11.47: the blue drag band on the ring's edge (the .radar-drag-edge
+    // SVG circle in a 0 0 100 100 viewBox; the ring's edge is at 50
+    // units). Its geometry is now set explicitly from JS. Under 1 mile
+    // the legacy band (stroke 22, r 47) is kept untouched. From 1 mile
+    // up the band targets a constant 26px ON SCREEN, and r is chosen so
+    // the stroke's outer edge lands exactly on 50 - flush with the
+    // ring's edge, the band extending inward. Before, the fixed r=47
+    // left a gap to the edge, the fixed stroke-width thinned on screen
+    // as the ring grew, and the circle's vector-effect=
+    // "non-scaling-stroke" attribute made stroke-width mean screen px
+    // in some browsers and viewBox units in others - it is removed in
+    // getRadarStyleHtml and stripped defensively below, so the maths
+    // here is authoritative everywhere.
+    const DRAG_EDGE_MIN_RADIUS_M = 1609.34; // 1 mile
+    const DRAG_EDGE_SCREEN_PX = 26;
+    function dragEdgeGeometry(radiusMeters, ringDiameterPx, zoomScale) {
+      const radius = Number(radiusMeters);
+      if (!Number.isFinite(radius) || radius < DRAG_EDGE_MIN_RADIUS_M) return { strokeUnits: 22, rUnits: 47 };
+      const screenDiameterPx = Math.max(50, (Number(ringDiameterPx) || 0) * (Number(zoomScale) || 1));
+      const strokeUnits = Math.max(1.2, Math.min(22, (DRAG_EDGE_SCREEN_PX / screenDiameterPx) * 100));
+      return { strokeUnits, rUnits: 50 - strokeUnits / 2 };
+    }
+    function applyDragEdgeGeometry() {
+      const el = document.querySelector('#radarBoundaryRing .radar-drag-edge');
+      if (!el) return;
+      const g = dragEdgeGeometry(userState.radius, currentRingDiameterPx, currentZoomScale);
+      el.style.strokeWidth = String(g.strokeUnits); // inline style: the stylesheet's stroke-width: 22 beats a presentation attribute, so the attribute alone could not move the band
+      el.setAttribute('r', String(g.rUnits)); // no CSS sets r on the circle, so the attribute is authoritative
+      el.removeAttribute('vector-effect');
+    }
+
     // V11.46 (#6): a persisted radius outside the real range (e.g. the
     // old 999999 Unlimited sentinel) falls back to the 0.5 mi default;
     // a normal radius passes through untouched.
@@ -3477,6 +3509,7 @@
       refreshAllPeerDistancesAndPositions();
       refreshAllNodeVisibilities();
       savePersistentData();
+      applyDragEdgeGeometry(); // V11.47: the ring just changed size - re-fit the drag band
     }
 
     function updateRadiusFromSlider(val) {
@@ -4045,7 +4078,7 @@
           <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-20 pointer-events-auto">${initialMiles} Mi</div>
           <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-20 pointer-events-auto">${initialMiles} Mi</div>
           <div class="radar-drag-hint">Click and drag Radar</div>
-          <svg class="radar-drag-svg" viewBox="0 0 100 100" aria-hidden="true"><title>Drag the edge to resize the radar</title><circle class="radar-drag-edge" cx="50" cy="50" r="47" vector-effect="non-scaling-stroke"></circle></svg>
+          <svg class="radar-drag-svg" viewBox="0 0 100 100" aria-hidden="true"><title>Drag the edge to resize the radar</title><circle class="radar-drag-edge" cx="50" cy="50" r="47"></circle></svg>
         </div>
       `;
     }
@@ -5028,6 +5061,121 @@
       lucide.createIcons();
     }
 
+    // V11.47: the Show/Hide button giggles whenever unreadRoomIds is
+    // non-empty, but a room only reached the side lists through narrow
+    // gates - a participated bubble room needs its peer in the directory
+    // WITH a live bubble (and non-friend business/bot rooms are skipped
+    // outright), the own 'room-you' entry needs a live topic (V11.44),
+    // and an offline peer drops out entirely. Any of those left the
+    // button giggling for a chat that had no row anywhere. This fallback
+    // enforces the invariant "every unread room has a giggling row":
+    // both side lists call it with the room ids they already represent,
+    // and it builds rows for the rest from local data only (directory
+    // entry when there is one, otherwise the message cache). Deleted
+    // stays deleted: a room whose delete watermark is at or after its
+    // newest cached message is skipped (the V11.27 rule) - a genuinely
+    // newer cached message still revives it, exactly like restore.
+    function unreadFallbackItems(excludeRoomIds) {
+      const excluded = excludeRoomIds || new Set();
+      const items = [];
+      unreadRoomIds.forEach(roomId => {
+        if (!roomId || excluded.has(roomId)) return;
+        const msgs = localChatCache[roomId] || [];
+        const clearedAt = chatRoomClearedAt[roomId] || 0;
+        if (clearedAt) {
+          let newestCachedMs = 0;
+          msgs.forEach(m => {
+            if (!m || m.createdAt == null) return;
+            const t = typeof m.createdAt === 'number' ? m.createdAt : Date.parse(m.createdAt);
+            if (Number.isFinite(t) && t > newestCachedMs) newestCachedMs = t;
+          });
+          if (clearedAt >= newestCachedMs) return; // deleted here, nothing newer - stays deleted
+        }
+        const lastMsg = msgs[msgs.length - 1];
+        if (roomId === 'room-you') {
+          items.push({
+            roomId,
+            name: getDisplayName(userState.alias, userState.hideMyName, userState.type),
+            question: (lastMsg && lastMsg.text) || 'Your Broadcast',
+            accountType: userState.type,
+            category: userState.category,
+            peerId: 'you',
+            createdAt: null,
+            isBot: false,
+            isAdmin: isAdminUser,
+            isMainUser: !isAdminUser,
+            isFriend: false,
+            hasUnread: true
+          });
+          return;
+        }
+        if (parseDmRoom(roomId)) {
+          const otherId = otherDmParticipant(roomId);
+          if (!otherId) return;
+          unarchiveDmRoom(roomId); // V11.33: unread on an archived DM means new activity arrived - it comes back
+          const peer = globalActiveDirectory[otherId];
+          items.push({
+            roomId,
+            name: peer ? getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType) : (friendRequestsIn[otherId]?.name || 'Private Chat'),
+            question: lastMsg ? lastMsg.text : 'Private messages',
+            accountType: peer?.accountType || 'personal',
+            category: peer?.category || 'store',
+            peerId: otherId,
+            createdAt: null,
+            isBot: !!peer?.isBot,
+            isAdmin: false,
+            isMainUser: false,
+            isFriend: friendPeerIds.has(otherId),
+            hasUnread: true,
+            isDm: true
+          });
+          return;
+        }
+        if (roomId === WELCOME_GUIDE_ROOM_ID) {
+          const peer = globalActiveDirectory[WELCOME_GUIDE_PEER_ID];
+          items.push({
+            roomId,
+            name: WELCOME_GUIDE_NAME,
+            question: (peer && peer.question) || 'Tap here to get started.',
+            accountType: peer?.accountType || 'personal',
+            category: peer?.category || 'store',
+            peerId: WELCOME_GUIDE_PEER_ID,
+            createdAt: peer?.createdAt || null,
+            isBot: true,
+            isAdmin: false,
+            isMainUser: false,
+            isFriend: false,
+            hasUnread: true
+          });
+          return;
+        }
+        if (roomId.startsWith('room-peer-')) {
+          const peerId = roomId.replace('room-peer-', '');
+          const peer = globalActiveDirectory[peerId];
+          let foreignText = '';
+          for (let i = msgs.length - 1; i >= 0; i--) {
+            if (msgs[i] && !msgs[i].isMe && msgs[i].text) { foreignText = msgs[i].text; break; }
+          }
+          items.push({
+            roomId,
+            name: peer ? getDisplayName(peer.rawSender, peer.hideMyName, peer.accountType) : (knownProfileAliasById[peerId] || (lastMsg && (lastMsg.sender || lastMsg.sender_alias)) || 'Chat'),
+            question: (peer && peer.question) || foreignText || 'New reply',
+            accountType: peer?.accountType || 'personal',
+            category: peer?.category || 'store',
+            peerId,
+            createdAt: peer?.createdAt || null,
+            isBot: !!peer?.isBot,
+            isAdmin: peer ? isAdminPeer(peer) : false,
+            isMainUser: false,
+            isFriend: friendPeerIds.has(peerId),
+            hasUnread: true
+          });
+          return;
+        }
+      });
+      return items;
+    }
+
     function renderPinnedChats() {
       updateShowChatsGiggle(); // V11.34
       const container = document.getElementById('pinnedChatsContainer');
@@ -5150,7 +5298,13 @@
         });
       });
 
-      const pinnedList = [...adminList, ...mainUserList, ...friendList, ...participantList, ...dmList];
+      // V11.47: fallback rows for unread rooms none of the lists above
+      // represented - inserted right after the admin/own rows so an
+      // unread chat is prominent; they render through the same loop
+      // below (jiggle, borders, avatar popover, drawer wiring).
+      const representedRoomIds = new Set([...adminList, ...mainUserList, ...friendList, ...participantList, ...dmList].map(it => it.roomId));
+      const fallbackList = unreadFallbackItems(representedRoomIds);
+      const pinnedList = [...adminList, ...mainUserList, ...fallbackList, ...friendList, ...participantList, ...dmList];
 
       if (pinnedList.length === 0) {
         container.innerHTML = '';
@@ -5439,10 +5593,16 @@
 
       const validBubbles = [...adminBubbles, ...mainUserBubbles, ...dmBubbles, ...friendBubbles, ...otherBubbles];
 
-      const countElem = document.getElementById('rightSidebarCount');
-      if (countElem) countElem.innerText = validBubbles.length;
+      // V11.47: fallback rows for unread rooms the peer loop above
+      // could not represent (peer offline or out of range, own topic
+      // expired, a business/bot room) - the same invariant as the
+      // pinned list: every unread room gets a giggling row.
+      const fallbackBubbles = unreadFallbackItems(new Set(validBubbles.map(b => b.roomId)));
 
-      if (validBubbles.length === 0) {
+      const countElem = document.getElementById('rightSidebarCount');
+      if (countElem) countElem.innerText = validBubbles.length + fallbackBubbles.length;
+
+      if (validBubbles.length === 0 && fallbackBubbles.length === 0) {
         container.innerHTML = `<div class="p-3 rounded-2xl bg-white/40 border border-white/60 text-center text-xs text-slate-600 font-light">No active chat bubbles in range.</div>`;
         return;
       }
@@ -5462,6 +5622,23 @@
             ${b.isAdmin ? '</div>' : ''}
             <div class="flex-1 min-w-0">
               ${b.isDm ? `<div class="min-w-0"><div class="flex items-center gap-2"><span class="text-xs font-bold text-slate-900 truncate">${escapeChatHTML(b.name)}</span><span class="text-[8px] font-mono font-bold uppercase tracking-wider text-sky-600">Private</span></div><p class="text-[11px] font-light text-slate-600 leading-snug break-words line-clamp-2 mt-0.5">${escapeChatHTML(b.question)}</p></div>` : `<div class="mt-1">${isBiz ? renderBusinessBubbleCardHtml(b.accountType, b.category, b.question, b.name, onClickJs, b.hours, b.hideMyName, b.isMainUser, b.isAdmin, b.hasUnread, b.address || '', null, b.businessInfo || '') : renderUserBubbleCardHtml(b.question, b.name, onClickJs, b.isAdmin, false, b.isMainUser, b.isAdmin, b.hasUnread)}</div>`}
+            </div>
+          </div>
+        `;
+      });
+      // V11.47: compact fallback rows in the DM-row style. Every
+      // fallback item is unread by construction, so every row giggles.
+      fallbackBubbles.forEach(item => {
+        const onClickJs = `playAudioEffect('chime'); openChatDrawer('${item.roomId}', '${escapeJsArg(item.name)}', '${escapeJsArg(item.isDm ? '' : item.question)}', '${escapeJsArg(item.peerId)}', ${safeTimestampMs(item.createdAt)})`;
+        container.innerHTML += `
+          <div class=\"flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-white/70 shadow-sm hover:bg-white/85 transition-all cursor-pointer animate-jiggle-continuous\" onclick=\"${onClickJs}\">
+            ${item.isAdmin ? '<div class=\"admin-rainbow-icon-wrap\">' : ''}
+            <div onclick=\"event.stopPropagation(); openPeerActions('${escapeJsArg(item.peerId)}')\" class=\"w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-xl flex-shrink-0 overflow-hidden cursor-pointer ${getNodeIconVisual(item.accountType, item.category, item.isBot).borderClass}\" style=\"background: ${getNodeIconVisual(item.accountType, item.category, item.isBot).bg}; border-radius: 50%;\">
+              ${renderNodeIconContent(item.accountType, item.category, item.isBot)}
+            </div>
+            ${item.isAdmin ? '</div>' : ''}
+            <div class=\"flex-1 min-w-0\">
+              <div class=\"min-w-0\"><div class=\"flex items-center gap-2\"><span class=\"text-xs font-bold text-slate-900 truncate\">${escapeChatHTML(item.name)}</span>${item.isDm ? '<span class=\"text-[8px] font-mono font-bold uppercase tracking-wider text-sky-600\">Private</span>' : ''}</div><p class=\"text-[11px] font-light text-slate-600 leading-snug break-words line-clamp-2 mt-0.5\">${escapeChatHTML(item.question || 'New reply')}</p></div>
             </div>
           </div>
         `;
