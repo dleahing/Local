@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.49 Softer Background + Thin Band + Large-Ring Lite]</title>
+  <title>LocaL - Proximity Social Network [V11.50 Background Corrections + Dot Layer Removed]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -175,10 +175,6 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      /* V11.49: Shane asked for the gradient decreased by 20% - the
-         backdrop renders at 80% strength over the slate-900 body for
-         every bg mode (topocamo included). */
-      opacity: 0.8;
     }
     #mapCanvas:active { cursor: grabbing; }
     /* Foreground layer for user icons: the nodes layer sits ABOVE all radar
@@ -330,12 +326,6 @@
     html.zoom-deep .animate-radar-sweep { display: none !important; }
     html.zoom-deep #radarBoundaryRing { box-shadow: none !important; background: transparent !important; }
     html.zoom-deep #worldMaxBoundaryRing { display: none !important; }
-    /* V11.48: at deep zoom the repeating grid is dense moire paint
-       over the whole sheet for zero information - hide it outright.
-       In lite it only fades: this rule's specificity beats the
-       opacity-20 utility class on the overlay element. */
-    html.zoom-deep #mapGridOverlay { display: none; }
-    html.zoom-lite #mapGridOverlay { opacity: 0.08; }
     /* V11.49: large-ring mode (toggled from JS once the rendered ring
        passes 900px across, ~2.4 miles - safely below the ~3-mile size
        where Shane's crash now triggers). What still scales with the
@@ -424,19 +414,10 @@
       z-index: 99999999 !important;
     }
 
-    .bg-mode-aurora { background: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f472b6 100%); }
+    .bg-mode-aurora { background: radial-gradient(circle at 50% 50%, #fdf2f8 0%, #fbcfe8 50%, #f9a8d4 100%); }
     .bg-mode-cyber { background: radial-gradient(circle at 50% 50%, #090d16 0%, #030712 60%, #000000 100%); }
     .bg-mode-minimal { background: radial-gradient(circle at 50% 50%, #f8fafc 0%, #f1f5f9 60%, #e2e8f0 100%); }
     .bg-mode-midnight { background: radial-gradient(circle at 50% 50%, #0f172a 0%, #090d16 60%, #020617 100%); }
-
-    .map-grid-pattern {
-      background-image: radial-gradient(rgba(0,0,0,0.15) 1.2px, transparent 1.2px);
-      background-size: 40px 40px; background-repeat: repeat;
-    }
-    .map-grid-pattern-dark {
-      background-image: radial-gradient(rgba(255,255,255,0.12) 1.2px, transparent 1.2px);
-      background-size: 40px 40px; background-repeat: repeat;
-    }
 
     .glass-panel {
       background: rgba(255, 255, 255, 0.65);
@@ -579,7 +560,6 @@
 
   <!-- Map Canvas -->
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center">
-    <div id="mapGridOverlay" class="absolute inset-0 opacity-20 map-grid-pattern pointer-events-none"></div>
     
     <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring z-0" style="width: 5625px; height: 5625px;">
       <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
@@ -4065,12 +4045,8 @@
       // backdrop now, not on #mapCanvas - the canvas className no
       // longer carries any bg-mode-* part.
       const mapBackground = document.getElementById('mapBackground');
-      const gridOverlay = document.getElementById('mapGridOverlay');
       if (!mapBackground) return;
       mapBackground.className = `bg-mode-${mode}`;
-      if (gridOverlay) {
-        gridOverlay.className = (mode === 'cyber' || mode === 'midnight' || mode === 'ocean' || mode === 'forest' || mode === 'grape' || mode === 'topocamo') ? 'absolute inset-0 opacity-20 map-grid-pattern-dark pointer-events-none' : 'absolute inset-0 opacity-20 map-grid-pattern pointer-events-none';
-      }
     }
 
     function updateBackgroundStyle(mode) {
