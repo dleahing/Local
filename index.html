@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.48 Background Off Canvas + Lite While Zooming]</title>
+  <title>LocaL - Proximity Social Network [V11.49 Softer Background + Thin Band + Large-Ring Lite]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -175,6 +175,10 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
+      /* V11.49: Shane asked for the gradient decreased by 20% - the
+         backdrop renders at 80% strength over the slate-900 body for
+         every bg mode (topocamo included). */
+      opacity: 0.8;
     }
     #mapCanvas:active { cursor: grabbing; }
     /* Foreground layer for user icons: the nodes layer sits ABOVE all radar
@@ -224,7 +228,7 @@
        band itself is draggable (SVG stroke hit-area), so the ring fill stays
        click-through and user icons underneath remain selectable. */
     .radar-drag-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 6; }
-    .radar-drag-edge { fill: none; stroke: rgba(56, 189, 248, 0); stroke-width: 22; pointer-events: stroke; cursor: ew-resize; transition: stroke 0.2s ease; }
+    .radar-drag-edge { fill: none; stroke: rgba(56, 189, 248, 0); stroke-width: 15.4; pointer-events: stroke; cursor: ew-resize; transition: stroke 0.2s ease; } /* V11.49: 15.4 = 22 less 30% - the below-1-mile band (see dragEdgeGeometry) */
     .radar-drag-edge:hover, .radar-drag-edge:active { stroke: rgba(30, 58, 138, 0.25); } /* V11.47: :active too - touch has no hover, so the band must also show while a finger is pressing the edge */
     .personal-bot-badge {
       margin-top: 3px; padding: 1px 6px; border-radius: 9999px;
@@ -332,6 +336,21 @@
        opacity-20 utility class on the overlay element. */
     html.zoom-deep #mapGridOverlay { display: none; }
     html.zoom-lite #mapGridOverlay { opacity: 0.08; }
+    /* V11.49: large-ring mode (toggled from JS once the rendered ring
+       passes 900px across, ~2.4 miles - safely below the ~3-mile size
+       where Shane's crash now triggers). What still scales with the
+       radius at that size is the ring's own artwork: the rotating
+       conic sweep disc (inset -50%, ~2,250px across at 3 miles,
+       repainted every frame), the inner decorative hairline rings,
+       and the layered glow shadow. In large mode the sweep and the
+       inner rings are not drawn and the ring keeps only the cheap
+       counter-scaled outline the lite tier uses. The ring border,
+       distance labels, drag hint and drag edge all stay. The
+       descendant .hairline-ring selector hides only the INNER rings;
+       the ring's own hairline-ring class is on the ring itself. */
+    #radarBoundaryRing.ring-large { box-shadow: 0 0 0 calc(1.5px / max(0.04, var(--zoom-scale, 1))) rgba(255, 255, 255, 0.65) !important; }
+    #radarBoundaryRing.ring-large .animate-radar-sweep { display: none !important; }
+    #radarBoundaryRing.ring-large .hairline-ring { display: none; }
     /* V11.41: nodes far outside the viewport never need their
        animations running - the declutter pass tags them and every
        decorative animation pauses (at any zoom). */
@@ -3408,7 +3427,11 @@
         // within a few frames and the class settles off cleanly
         // instead of flapping.
         const isZoomMoving = Math.abs(targetZoomScale - currentZoomScale) > 0.002;
-        const shouldLite = tier !== 'full' || isZoomMoving;
+        // V11.49: lite also applies while the radar edge is being
+        // dragged (isDraggingRadius) - a radius drag repaints the ring
+        // and re-fits the zoom on every move event, the same expensive
+        // frames as a moving zoom.
+        const shouldLite = tier !== 'full' || isZoomMoving || isDraggingRadius;
         if (shouldLite !== liteModeOn) {
           liteModeOn = shouldLite;
           document.documentElement.classList.toggle('zoom-lite', shouldLite);
@@ -3451,6 +3474,13 @@
     // zooming together down to the world view.
     const MAX_RING_PX = 5625;
     let currentRingDiameterPx = 188; // 0.5 mi default ring; kept in sync by updateRadius/getRadarStyleHtml
+    // V11.49: large-ring mode threshold. Shane's crash now triggers
+    // when the radar passes ~3 miles (rendered diameter ~1,125px);
+    // past 900px (~2.4 mi) the ring switches to its cheap artwork
+    // (see the .ring-large CSS) so the sweep disc and glow shadows
+    // are gone before the trigger size is reached.
+    const RING_LARGE_MIN_PX = 900;
+    function ringLargeForDiameter(px) { return Number(px) > RING_LARGE_MIN_PX; }
     function radarFitScaleForDiameter(px) {
       const viewportMin = Math.min(window.innerWidth, window.innerHeight);
       return (viewportMin * 0.65) / Math.max(100, px);
@@ -3461,7 +3491,8 @@
     // V11.47: the blue drag band on the ring's edge (the .radar-drag-edge
     // SVG circle in a 0 0 100 100 viewBox; the ring's edge is at 50
     // units). Its geometry is now set explicitly from JS. Under 1 mile
-    // the legacy band (stroke 22, r 47) is kept untouched. From 1 mile
+    // the legacy band (stroke 15.4, r 47) is kept - V11.49 thinned
+    // it by 30% (was 22) at Shane's request, below 1 mile only. From 1 mile
     // up the band targets a constant 26px ON SCREEN, and r is chosen so
     // the stroke's outer edge lands exactly on 50 - flush with the
     // ring's edge, the band extending inward. Before, the fixed r=47
@@ -3475,7 +3506,7 @@
     const DRAG_EDGE_SCREEN_PX = 26;
     function dragEdgeGeometry(radiusMeters, ringDiameterPx, zoomScale) {
       const radius = Number(radiusMeters);
-      if (!Number.isFinite(radius) || radius < DRAG_EDGE_MIN_RADIUS_M) return { strokeUnits: 22, rUnits: 47 };
+      if (!Number.isFinite(radius) || radius < DRAG_EDGE_MIN_RADIUS_M) return { strokeUnits: 15.4, rUnits: 47 }; // V11.49: 15.4 = 22 x 0.7 (30% thinner, below 1 mile only)
       const screenDiameterPx = Math.max(50, (Number(ringDiameterPx) || 0) * (Number(zoomScale) || 1));
       const strokeUnits = Math.max(1.2, Math.min(22, (DRAG_EDGE_SCREEN_PX / screenDiameterPx) * 100));
       return { strokeUnits, rUnits: 50 - strokeUnits / 2 };
@@ -3484,7 +3515,7 @@
       const el = document.querySelector('#radarBoundaryRing .radar-drag-edge');
       if (!el) return;
       const g = dragEdgeGeometry(userState.radius, currentRingDiameterPx, currentZoomScale);
-      el.style.strokeWidth = String(g.strokeUnits); // inline style: the stylesheet's stroke-width: 22 beats a presentation attribute, so the attribute alone could not move the band
+      el.style.strokeWidth = String(g.strokeUnits); // inline style: the stylesheet's stroke-width: 15.4 beats a presentation attribute, so the attribute alone could not move the band
       el.setAttribute('r', String(g.rUnits)); // no CSS sets r on the circle, so the attribute is authoritative
       el.removeAttribute('vector-effect');
     }
@@ -3530,6 +3561,7 @@
         currentRingDiameterPx = pixelDiameter;
         ring.style.width = `${pixelDiameter}px`;
         ring.style.height = `${pixelDiameter}px`;
+        ring.classList.toggle('ring-large', ringLargeForDiameter(pixelDiameter)); // V11.49
         if (leftBadge) leftBadge.innerText = labelText;
         if (rightBadge) rightBadge.innerText = labelText;
 
@@ -3542,7 +3574,12 @@
 
       refreshAllPeerDistancesAndPositions();
       refreshAllNodeVisibilities();
-      savePersistentData();
+      // V11.49: during an edge drag updateRadius runs on EVERY move
+      // event - a synchronous localStorage write per move is pure
+      // cost on the gesture that already repaints the most. The
+      // drag's handleEnd saves the final radius exactly once instead.
+      // Slider and programmatic calls keep saving as before.
+      if (!isDraggingRadius) savePersistentData();
       applyDragEdgeGeometry(); // V11.47: the ring just changed size - re-fit the drag band
     }
 
@@ -3585,6 +3622,7 @@
       const handleEnd = (e) => {
         if (isDraggingRadius) {
           isDraggingRadius = false;
+          savePersistentData(); // V11.49: the one save for the whole drag (updateRadius skips it per-move while dragging)
           showToast(`Radar Radius set to ${(userState.radius / METERS_PER_MILE).toFixed(2)} Mi`, 'radar');
         }
       };
@@ -4110,7 +4148,7 @@
       }
 
       return `
-        <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-75 z-0 shadow-2xl pointer-events-none backdrop-blur-xs hairline-ring" style="width: ${initialPx}px; height: ${initialPx}px; border-style: ${style === 'cyberpunk' ? 'dashed' : 'solid'}; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click and drag Radar to change its size">
+        <div id="radarBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-75 z-0 shadow-2xl pointer-events-none backdrop-blur-xs hairline-ring${ringLargeForDiameter(initialPx) ? ' ring-large' : ''}" style="width: ${initialPx}px; height: ${initialPx}px; border-style: ${style === 'cyberpunk' ? 'dashed' : 'solid'}; border-color: ${palette.line}; background: ${palette.bg}; overflow: visible;" title="Click and drag Radar to change its size">
           ${inner}
           <div id="radarRingDistanceLabelLeft" class="radar-distance-label absolute top-1/2 -left-12 -translate-y-1/2 z-20 pointer-events-auto">${initialMiles} Mi</div>
           <div id="radarRingDistanceLabelRight" class="radar-distance-label absolute top-1/2 -right-12 -translate-y-1/2 z-20 pointer-events-auto">${initialMiles} Mi</div>
