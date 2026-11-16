@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.52 Ring in Screen Space + Shrinking Bubbles]</title>
+  <title>LocaL - Proximity Social Network [V11.53 Illustration Everywhere + Drag Band Back + Boundary Ring Diet]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -232,6 +232,18 @@
       transform: translateY(-50%) scale(calc(1 / max(0.04, var(--zoom-scale, 1)))) !important; /* V11.46: counter-scale floor follows the dynamic zoom floor (was 0.20) */
     }
     #radarCenter, #worldMaxBoundaryRing { pointer-events: none !important; z-index: 0 !important; }
+    /* V11.53: the 30-mile boundary ring is display:none by default and
+       renders only in the narrow settled zoom window where it can
+       actually be on screen (boundaryRingVisible, toggled as
+       #radarOverlay.boundary-on by the render loop). As its own
+       5,625px layer in the overlay it became the largest composited
+       layer on the page (31.65 MP of bounds, V11.52 lab) and was
+       composited on every drag/zoom frame even at radii where its
+       edge is far off-screen - the leading suspect for the crash
+       returning at ~3 miles. The html.zoom-deep display:none rule
+       further down stays as a belt-and-braces guard. */
+    #worldMaxBoundaryRing { display: none; }
+    #radarOverlay.boundary-on #worldMaxBoundaryRing { display: block; }
     .peer-node-icon { position: relative; z-index: 9600 !important; pointer-events: auto !important; box-shadow: 0 10px 24px rgba(2, 32, 71, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.85) !important; }
     /* Name shown at the bottom of each user icon (from the V7 look). */
     .peer-name-label {
@@ -241,6 +253,15 @@
       color: #1e293b; font-size: 9px; font-weight: 700; line-height: 1.5;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
     }
+    /* V11.53: at a 10+ mile radius the peer avatar icons and name
+       pills hide (html.range-icons-off, from updateRadius via
+       rangeIconsHidden) - at that range the bubble cards are
+       already icon-only chips (V11.52), so the map shows just the
+       conversation chips. The peer's card/chip itself stays visible;
+       the user's own avatar (#userAvatarNode) is not a peer node
+       and stays. Side lists and the directory are unaffected. */
+    html.range-icons-off #nodesContainer .node-item .node-icon-tap,
+    html.range-icons-off #nodesContainer .node-item .peer-name-label { display: none !important; }
     .unread-badge {
       position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px;
       border-radius: 9999px; background: #ef4444; color: #fff; border: 2px solid #fff;
@@ -255,6 +276,12 @@
     .radar-drag-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 6; }
     .radar-drag-edge { fill: none; stroke: rgba(56, 189, 248, 0); stroke-width: 15.4; pointer-events: stroke; cursor: ew-resize; transition: stroke 0.2s ease; } /* V11.49: 15.4 = 22 less 30% - the below-1-mile band (see dragEdgeGeometry) */
     .radar-drag-edge:hover, .radar-drag-edge:active { stroke: rgba(30, 58, 138, 0.25); } /* V11.47: :active too - touch has no hover, so the band must also show while a finger is pressing the edge */
+    /* V11.53: V11.52 made the ring subtree pointer-events:none, so the
+       :hover/:active highlight above can never fire - the band Shane
+       grabs went invisible. The band now lights from JS instead:
+       'band-active' is toggled by the canvas hover hit-test
+       (ringEdgeHitAt) and held for the whole radius drag. */
+    #radarBoundaryRing.band-active .radar-drag-edge { stroke: rgba(30, 58, 138, 0.25); }
     .personal-bot-badge {
       margin-top: 3px; padding: 1px 6px; border-radius: 9999px;
       background: #7c3aed; color: #fff; font-size: 8px; font-weight: 800;
@@ -412,7 +439,7 @@
 
     .radar-distance-label {
       font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 6.6px !important; /* V11.44: +20% (was 5.5px) - Shane asked for the radar range text bigger */
+      font-size: 8.6px !important; /* V11.53: +30% on V11.44's 6.6px (was 5.5px) - Shane asked for the radar range text bigger again */
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -626,12 +653,7 @@
   <div id="rightSideBubblesSidebar" class="hidden fixed top-20 right-4 bottom-36 z-30 w-80 glass-card rounded-3xl p-4 border border-white/50 shadow-2xl flex flex-col pointer-events-auto">
     <div class="flex items-center justify-between pb-3 mb-2 border-b border-white/40 flex-shrink-0">
       <div class="flex items-center gap-2">
-        <div class="w-5.5 h-5.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
-          <div class="bubble-glare"></div>
-          <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
-          </svg>
-        </div>
+        <i data-lucide="message-circle" class="w-5 h-5 flex-shrink-0 text-purple-500" stroke-width="2.2"></i>
         <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Chat Bubbles (<span id="rightSidebarCount">0</span>)</h3>
       </div>
       <button onclick="playAudioEffect('click'); setLayoutMode('map')" class="text-slate-500 hover:text-slate-800 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
@@ -684,12 +706,7 @@
   <div id="actionDockContainer" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-auto w-full max-w-sm px-4 transform-gpu">
     <div class="dark-biz-bubble px-4 py-3 rounded-3xl flex flex-col gap-2.5 shadow-2xl backdrop-blur-xl">
       <div class="flex items-center gap-2.5">
-        <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(56,189,248,0.7)] relative overflow-hidden">
-          <div class="bubble-glare"></div>
-          <svg class="w-3 h-3 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
-          </svg>
-        </div>
+        <i data-lucide="message-circle" class="w-6 h-6 flex-shrink-0 text-amber-500" stroke-width="2.2"></i>
         <input type="text" id="quickPostInput" maxlength="140" aria-label="Broadcast a chat bubble" placeholder="Ask or broadcast to LocaLs (12h expiry)..." class="w-full bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-none" onfocus="handleDockFocus(event)" onblur="handleDockBlur(event)" onkeypress="if(event.key==='Enter'){quickPostFromDock(); this.blur();}" />
         <button onclick="quickPostFromDock()" class="p-1.5 rounded-xl bg-sky-400 text-white shadow-md active:scale-95 flex-shrink-0 hover:bg-sky-300 transition-all">
           <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
@@ -3229,8 +3246,12 @@
     }
 
     function getPanBounds() {
-      const worldRing = document.getElementById('worldMaxBoundaryRing');
-      const radiusPx = worldRing ? (worldRing.offsetWidth / 2) : 2812.5;
+      // V11.53: the boundary ring is display:none outside its settled
+      // zoom window (see boundaryRingVisible), when offsetWidth would
+      // read 0 and collapse the pan bounds - the world radius is a
+      // constant 2812.5px (the ring's fixed 5625px size), so use the
+      // constant, not the element.
+      const radiusPx = 2812.5;
       const safeScale = Math.max(0.20, currentZoomScale);
       return Math.max(200, (radiusPx * safeScale) - 150);
     }
@@ -3249,6 +3270,7 @@
         const gestureY = e.touches ? e.touches[0].clientY : e.clientY;
         if (ringEdgeHitAt(gestureX, gestureY) && beginRadiusDrag(gestureX, gestureY)) return;
         isDraggingMap = true;
+        setBandActive(false); // V11.53: a pan is not a band grab - the highlight belongs to the edge only
         // V11.16: starting a drag no longer hides the left chat list -
         // it hides on a tap instead (see initTapRippleHandler).
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -3276,6 +3298,26 @@
       mapCanvas.addEventListener('touchstart', handlePanStart, { passive: true });
       window.addEventListener('touchmove', handlePanMove, { passive: true });
       window.addEventListener('touchend', handlePanEnd);
+
+      // V11.53: restore the visible drag band. The ring lives in the
+      // pointer-events:none overlay, so its old :hover/:active CSS
+      // can never fire; instead the band lights when the pointer is
+      // geometrically over the ring's edge (ringEdgeHitAt - the same
+      // hit-test a press uses to start the drag). One geometry check
+      // per move event, only while no gesture is active - during a
+      // drag beginRadiusDrag/handleEnd own the class, and a pan
+      // clears it at pan start (handlePanStart above).
+      const setBandActive = (on) => {
+        const ringEl = document.getElementById('radarBoundaryRing');
+        if (!ringEl) return;
+        if (ringEl.classList.contains('band-active') === on) return;
+        ringEl.classList.toggle('band-active', on);
+      };
+      mapCanvas.addEventListener('pointermove', (e) => {
+        if (isDraggingRadius || isDraggingMap) return;
+        setBandActive(ringEdgeHitAt(e.clientX, e.clientY));
+      }, { passive: true });
+      mapCanvas.addEventListener('pointerleave', () => { if (!isDraggingRadius) setBandActive(false); }, { passive: true });
     }
 
     let initialPinchDistance = null;
@@ -3438,6 +3480,19 @@
       if (scale < 0.90) return 'lite';
       return 'full';
     }
+    // V11.53: the 30-mile boundary ring (a 5,625px element) renders
+    // only when it can actually be on screen AND the view is settled.
+    // Its on-screen radius is 2812.5 x zoom: below ~0.125 its edge is
+    // still beyond the phone's screen (pure compositing cost, zero
+    // visible pixels), and above ~0.185 the user is zoomed in well
+    // inside the world, where the boundary is not the frame of
+    // reference. While anything is moving (zoom glide, radius drag,
+    // pan) it stays off - those frames are the expensive ones.
+    function boundaryRingVisible(zoomScale, isMoving) {
+      if (isMoving) return false;
+      if (!Number.isFinite(zoomScale)) return false;
+      return zoomScale >= 0.125 && zoomScale <= 0.185;
+    }
     function declutterKeepCardAtXLite(prio, protectedCard) {
       // Administrator / Welcome Guide (protected), unread (incl. DM
       // unread, prio 1) and friends (prio 2) keep their cards.
@@ -3467,6 +3522,7 @@
     function startSmoothAnimationLoop() {
       const mapCanvas = document.getElementById('mapCanvas');
       const radarPanZoom = document.getElementById('radarPanZoom'); // V11.52: the ring overlay receives the same pan/zoom variables as the canvas
+      const radarOverlay = document.getElementById('radarOverlay'); // V11.53: carries the boundary-on class (see boundaryRingVisible)
       if (!mapCanvas) return;
       if (animationLoopStarted) return; // V11.15 (#4): never run two render loops
       animationLoopStarted = true;
@@ -3474,6 +3530,7 @@
       let liteModeOn = false; // V11.14
       let xLiteModeOn = false; // V11.41
       let deepModeOn = false; // V11.46
+      let boundaryRingOn = false; // V11.53
       let lastZoomVarWritten = null; // V11.51: last --zoom-scale value actually written (see zoomScaleVarWrite)
       const renderLoop = () => {
         panX += (targetPanX - panX) * 0.25;
@@ -3515,6 +3572,15 @@
           deepModeOn = shouldDeep;
           document.documentElement.classList.toggle('zoom-deep', shouldDeep);
           scheduleDeclutter();
+        }
+        // V11.53: the boundary ring renders only in its settled zoom
+        // window (see boundaryRingVisible) - while the zoom glides,
+        // the radar is dragged or the map pans it stays display:none,
+        // so its 5,625px layer never composites mid-gesture.
+        const shouldBoundary = boundaryRingVisible(currentZoomScale, isZoomMoving || isDraggingRadius || isDraggingMap);
+        if (shouldBoundary !== boundaryRingOn) {
+          boundaryRingOn = shouldBoundary;
+          if (radarOverlay) radarOverlay.classList.toggle('boundary-on', shouldBoundary);
         }
 
         if (Math.abs(panX - lastPanX) > 0.05 || Math.abs(panY - lastPanY) > 0.05 || Math.abs(currentZoomScale - lastZoomOut) > 0.0005) {
@@ -3558,6 +3624,14 @@
     // are gone before the trigger size is reached.
     const RING_LARGE_MIN_PX = 900;
     function ringLargeForDiameter(px) { return Number(px) > RING_LARGE_MIN_PX; }
+    // V11.53: at a 10+ mile radius the peer avatar icons and name
+    // pills hide (html.range-icons-off, toggled in updateRadius) -
+    // at that range the bubble cards are already icon-only chips
+    // (V11.52), so the map shows just the conversation chips.
+    function rangeIconsHidden(radiusMeters) {
+      const meters = Number(radiusMeters);
+      return Number.isFinite(meters) && meters >= 10 * METERS_PER_MILE;
+    }
     function radarFitScaleForDiameter(px) {
       const viewportMin = Math.min(window.innerWidth, window.innerHeight);
       return (viewportMin * 0.65) / Math.max(100, px);
@@ -3669,6 +3743,7 @@
       // savePersistentData persisted it, and the chosen radius was lost.
       const meters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number.isFinite(parsedRadius) ? parsedRadius : DEFAULT_RADIUS_METERS));
       userState.radius = meters;
+      document.documentElement.classList.toggle('range-icons-off', rangeIconsHidden(meters)); // V11.53: peer icons + name pills hide at 10+ miles (bubble cards stay)
 
       const ring = document.getElementById('radarBoundaryRing');
       const leftBadge = document.getElementById('radarRingDistanceLabelLeft');
@@ -3753,6 +3828,8 @@
       if (unlimitedRadarActive) return false;
       isDraggingRadius = true;
       isDraggingMap = false;
+      const ringEl = document.getElementById('radarBoundaryRing');
+      if (ringEl) ringEl.classList.add('band-active'); // V11.53: the band stays lit for the whole drag (see the .band-active CSS)
       const centerX = window.innerWidth / 2, centerY = window.innerHeight / 2;
       const safeScale = Math.max(0.20, currentZoomScale);
       dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
@@ -3790,6 +3867,8 @@
       const handleEnd = (e) => {
         if (isDraggingRadius) {
           isDraggingRadius = false;
+          const ringEl = document.getElementById('radarBoundaryRing');
+          if (ringEl) ringEl.classList.remove('band-active'); // V11.53
           flushExpensiveRadiusRender(); // V11.51: the final radius state renders NOW, not on the throttle's trailing edge
           savePersistentData(); // V11.49: the one save for the whole drag (updateRadius skips it per-move while dragging)
           showToast(`Radar Radius set to ${(userState.radius / METERS_PER_MILE).toFixed(2)} Mi`, 'radar');
@@ -4021,6 +4100,10 @@
     function declutterMapBubbles() {
       const container = document.getElementById('nodesContainer');
       if (!container) return;
+      // V11.53: with peer icons hidden (10+ mi range) every icon rect
+      // is zero-size and the icon-cover rule would misfire on the
+      // remaining chips - there is nothing to declutter against.
+      if (document.documentElement.classList.contains('range-icons-off')) return;
       const items = [];
       container.querySelectorAll('.node-item').forEach(el => {
         if (el.style.display === 'none') return;
