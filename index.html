@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.53 Illustration Everywhere + Drag Band Back + Boundary Ring Diet]</title>
+  <title>LocaL - Proximity Social Network [V11.54 Icons Zoom With Map + Tap Reveal Radar]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -262,6 +262,42 @@
        and stays. Side lists and the directory are unaffected. */
     html.range-icons-off #nodesContainer .node-item .node-icon-tap,
     html.range-icons-off #nodesContainer .node-item .peer-name-label { display: none !important; }
+    /* V11.54 (per Shane): icon NAMES hide earlier than the icons -
+       at a 5+ mile radius (html.range-names-off, toggled in
+       updateRadius via rangeNamesHidden); the icons themselves
+       follow at 10 miles (range-icons-off above). */
+    html.range-names-off #nodesContainer .node-item .peer-name-label { display: none !important; }
+    /* V11.54: the tap reveal (triggerTapReveal) - for 4 seconds,
+       elements the range rules hid show again inside the tapped
+       area. These overrides carry one more class than the hide
+       rules, so they win on specificity as well as order. The
+       pill's natural display inside its flex-column holder is
+       block; the icon wrapper's is flex (its class list). A
+       declutter-hidden card carries inline visibility:hidden -
+       the !important below beats the inline style. */
+    html.range-names-off #nodesContainer .node-item.peek-reveal .peer-name-label,
+    html.range-icons-off #nodesContainer .node-item.peek-reveal .peer-name-label { display: block !important; }
+    html.range-icons-off #nodesContainer .node-item.peek-reveal .node-icon-tap { display: flex !important; }
+    #nodesContainer .node-item.peek-reveal .peer-bubble-card { visibility: visible !important; }
+    /* V11.54: the reveal radar itself - a 280px circle at the tap
+       point, drawn inside #tapPulseContainer next to the tap
+       ripple. It fades in fast, holds, and fades out across the
+       same 4 seconds the reveal lasts; JS removes it at 4s. */
+    .tap-reveal-area {
+      position: absolute; width: 280px; height: 280px; border-radius: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px solid rgba(56, 189, 248, 0.8);
+      background: rgba(56, 189, 248, 0.08);
+      pointer-events: none;
+      animation: tap-reveal-life 4s ease-out forwards;
+    }
+    .tap-reveal-area::after {
+      content: ''; position: absolute; inset: 0; border-radius: 50%;
+      border: 2px solid rgba(56, 189, 248, 0.55);
+      animation: tap-reveal-pulse 1.1s ease-out forwards;
+    }
+    @keyframes tap-reveal-life { 0% { opacity: 0; } 8% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes tap-reveal-pulse { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
     .unread-badge {
       position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px;
       border-radius: 9999px; background: #ef4444; color: #fff; border: 2px solid #fff;
@@ -333,6 +369,21 @@
       /* V11.48: the permanent compositor hint that used to sit here is
          gone - it forced a full-size backing store for every node
          icon on the map, repainted on every zoom frame. */
+    }
+    /* V11.54 (per Shane): once the map starts to zoom out, the icons
+       zoom out with it - but the chat bubbles do not. .icon-zoom-track
+       sits INSIDE a .scale-compensator and re-applies the map zoom
+       (clamped to at most 1) on top of the compensator's
+       counter-scale: net = (1 / max(0.20, zoom)) x min(1, max(0.20,
+       zoom)), so below 1x the element's on-screen size tracks the
+       map exactly, and at/above 1x it stays constant, exactly as
+       before (the two 0.20 floors cancel below them, so tracking
+       holds all the way down). Applied to peer icon wrappers, peer
+       name pills and the own avatar's wrapper - never to bubble
+       cards, which keep the pure counter-scale (constant size). */
+    .icon-zoom-track {
+      transform: scale(calc(min(1, max(0.20, var(--zoom-scale, 1)))));
+      transform-origin: center;
     }
 
     /* V11.14: zooming out crashed the app on phones. At low zoom the whole
@@ -1935,6 +1986,28 @@
     function bubbleCapStyle(capPx, classMaxPx) {
       return (Number.isFinite(capPx) && capPx > 0 && capPx < classMaxPx) ? ` style="max-width: ${capPx}px"` : '';
     }
+    // V11.54 (per Shane): the bubbles ALSO start getting shorter
+    // as soon as the map starts zooming out - a zoom cap alongside
+    // the V11.52 radius cap, on the same 260 -> 46 ramp: no cap at
+    // 1x and above, 145px at 0.5x, and icon-only (0) at 0.07x and
+    // below. The render loop tracks this cap live during a pinch
+    // (see startSmoothAnimationLoop), because a pinch changes no
+    // radius and rebuilds nothing.
+    function bubbleZoomCapPx(zoomScale) {
+      const z = Number(zoomScale);
+      if (!Number.isFinite(z) || z >= 1) return Infinity;
+      if (z <= 0.07) return 0;
+      return Math.round(260 - 214 * (1 - z) / (1 - 0.07));
+    }
+    // The cap a card actually gets: the tighter of the radius cap
+    // and the zoom cap. 0 (icon-only) dominates; Infinity is the
+    // identity for the other side.
+    function bubbleCapFor(radiusMeters, zoomScale) {
+      const byRadius = bubbleCardCapPx(radiusMeters);
+      const byZoom = bubbleZoomCapPx(zoomScale);
+      if (byRadius === 0 || byZoom === 0) return 0;
+      return Math.min(byRadius, byZoom);
+    }
     // V11.52 (per Shane, from his screenshot): the bubble card's
     // illustration is now a bare OUTLINE speech bubble (Lucide
     // message-circle, stroke only - no filled disc), colour-coded
@@ -1955,13 +2028,13 @@
       question = escapeChatHTML(question);
       senderName = escapeChatHTML(senderName || '');
       const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float'); // V11.17: unread map bubbles jiggle continuously, matching the pinned chats
-      const capPx = bubbleCardCapPx(userState.radius); // V11.52: cards shrink from 4 mi, icon-only from 10 mi
+      const capPx = bubbleCapFor(userState.radius, currentZoomScale); // V11.54: the tighter of the radius cap (V11.52) and the zoom cap - bubbles shorten as the map zooms out too
       const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span></div>`;
 
       if (isAdmin) {
-        if (capPx === 0) return `<div class="admin-rainbow-border-wrap cursor-pointer pointer-events-auto z-[99999999] ${animClass}" style="border-radius: 9999px;" onclick="${onClickJs}"><div class="admin-rainbow-inner px-2.5 py-2 flex items-center justify-center" style="border-radius: 9999px;">${bubbleIllustrationHtml('admin')}</div></div>`; // V11.52: icon-only chip
+        if (capPx === 0) return `<div class="bubble-icon-chip admin-rainbow-border-wrap cursor-pointer pointer-events-auto z-[99999999] ${animClass}" style="border-radius: 9999px;" onclick="${onClickJs}"><div class="admin-rainbow-inner px-2.5 py-2 flex items-center justify-center" style="border-radius: 9999px;">${bubbleIllustrationHtml('admin')}</div></div>`; // V11.52: icon-only chip
         return `
-          <div class="admin-rainbow-border-wrap cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}"${bubbleCapStyle(capPx, 260)} onclick="${onClickJs}">
+          <div class="bubble-card-el admin-rainbow-border-wrap cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}" data-card-max="260"${bubbleCapStyle(capPx, 260)} onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-4 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1">
               ${isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-white/10 pb-1"><span class="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider">${senderName}</span></div>`}
               <div class="flex items-center justify-center gap-1.5 py-0.5">
@@ -1973,9 +2046,9 @@
         `;
       }
       const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/40 shadow-xl'; // V11.27: group chat bubbles lose the strong white border
-      if (capPx === 0) return `<div class="rounded-full bg-white/95 backdrop-blur-xl ${outlineClass} px-2.5 py-2 flex items-center justify-center cursor-pointer pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">${bubbleIllustrationHtml(isMainUser ? 'own' : 'personal')}</div>`; // V11.52: icon-only chip
+      if (capPx === 0) return `<div class="bubble-icon-chip rounded-full bg-white/95 backdrop-blur-xl ${outlineClass} px-2.5 py-2 flex items-center justify-center cursor-pointer pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">${bubbleIllustrationHtml(isMainUser ? 'own' : 'personal')}</div>`; // V11.52: icon-only chip
       return `
-        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}"${bubbleCapStyle(capPx, 260)} onclick="${onClickJs}">
+        <div class="bubble-card-el px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}" data-card-max="260"${bubbleCapStyle(capPx, 260)} onclick="${onClickJs}">
           ${headerHtml}
           <div class="flex items-center justify-center gap-1.5 py-0.5">
             ${bubbleIllustrationHtml(isAdmin ? 'admin' : (isMainUser ? 'own' : 'personal'))}
@@ -2001,12 +2074,12 @@
       const categoryLabel = escapeChatHTML(getBusinessCategoryLabel(category));
       const nameColorClass = getBusinessCategoryTextColorClass(category);
       const animClass = forceAnimClass || (hasUnread ? 'animate-jiggle-continuous' : 'animate-float'); // V11.17 (+ V11.26 forced class)
-      const capPx = bubbleCardCapPx(userState.radius); // V11.52: cards shrink from 4 mi, icon-only from 10 mi
+      const capPx = bubbleCapFor(userState.radius, currentZoomScale); // V11.54: the tighter of the radius cap (V11.52) and the zoom cap - bubbles shorten as the map zooms out too
 
       if (isAdmin) {
-        if (capPx === 0) return `<div class="peer-bubble-card admin-rainbow-border-wrap cursor-pointer pointer-events-auto z-[99999999] ${animClass}" style="border-radius: 9999px;" onclick="${onClickJs}"><div class="admin-rainbow-inner px-2.5 py-2 flex items-center justify-center" style="border-radius: 9999px;">${bubbleIllustrationHtml('admin')}</div></div>`; // V11.52: icon-only chip
+        if (capPx === 0) return `<div class="bubble-icon-chip peer-bubble-card admin-rainbow-border-wrap cursor-pointer pointer-events-auto z-[99999999] ${animClass}" style="border-radius: 9999px;" onclick="${onClickJs}"><div class="admin-rainbow-inner px-2.5 py-2 flex items-center justify-center" style="border-radius: 9999px;">${bubbleIllustrationHtml('admin')}</div></div>`; // V11.52: icon-only chip
         return `
-          <div class="peer-bubble-card admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] ${animClass}"${bubbleCapStyle(capPx, 240)} onclick="${onClickJs}">
+          <div class="bubble-card-el peer-bubble-card admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] ${animClass}" data-card-max="240"${bubbleCapStyle(capPx, 240)} onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-3.5 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1.5">
               ${isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${nameColorClass}">${displayName}</span></div>`}
               <div class="flex items-center gap-1.5">
@@ -2021,9 +2094,9 @@
         if (!question) return '';
         const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/40 shadow-xl'; // V11.27: group chat bubbles lose the strong white border
         const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${displayName}</span></div>`;
-        if (capPx === 0) return `<div class="peer-bubble-card rounded-full glass-card ${outlineClass} px-2.5 py-2 flex items-center justify-center cursor-pointer z-[99999999] pointer-events-auto ${animClass}" onclick="${onClickJs}">${bubbleIllustrationHtml(isMainUser ? 'own' : 'personal')}</div>`; // V11.52: icon-only chip
+        if (capPx === 0) return `<div class="bubble-icon-chip peer-bubble-card rounded-full glass-card ${outlineClass} px-2.5 py-2 flex items-center justify-center cursor-pointer z-[99999999] pointer-events-auto ${animClass}" onclick="${onClickJs}">${bubbleIllustrationHtml(isMainUser ? 'own' : 'personal')}</div>`; // V11.52: icon-only chip
         return `
-          <div class="peer-bubble-card px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 ${animClass} z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto"${bubbleCapStyle(capPx, 220)} onclick="${onClickJs}">
+          <div class="bubble-card-el peer-bubble-card px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 ${animClass} z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" data-card-max="220"${bubbleCapStyle(capPx, 220)} onclick="${onClickJs}">
             ${headerHtml}
             <div class="flex items-center gap-1.5 py-0.5">
               ${bubbleIllustrationHtml(isMainUser ? 'own' : 'personal')}
@@ -2036,9 +2109,9 @@
       const bizOutline = isMainUser ? 'border-[3.5px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.9)]' : 'border border-amber-300/60 shadow-2xl'; // V11.11: business bubbles get a warm amber tint so they read differently from personal bubbles
       const bizHeaderHtml = isMainUser ? '' : `<div class="flex items-center justify-between mb-0.5"><span class="text-xs truncate ${nameColorClass}">${displayName}</span><span class="text-[9px] font-mono text-slate-900 font-bold px-1.5 py-0.2 rounded bg-amber-400/90">Business</span></div>`;
       
-      if (capPx === 0) return `<div class="peer-bubble-card dark-biz-bubble rounded-full ${bizOutline} px-2.5 py-2 flex items-center justify-center cursor-pointer z-[9999999] pointer-events-auto ${animClass}" onclick="${onClickJs}">${bubbleIllustrationHtml(isMainUser ? 'own' : 'business')}</div>`; // V11.52: icon-only chip
+      if (capPx === 0) return `<div class="bubble-icon-chip peer-bubble-card dark-biz-bubble rounded-full ${bizOutline} px-2.5 py-2 flex items-center justify-center cursor-pointer z-[9999999] pointer-events-auto ${animClass}" onclick="${onClickJs}">${bubbleIllustrationHtml(isMainUser ? 'own' : 'business')}</div>`; // V11.52: icon-only chip
       return `
-        <div class="peer-bubble-card dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 ${animClass} z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95"${bubbleCapStyle(capPx, 240)} onclick="${onClickJs}">
+        <div class="bubble-card-el peer-bubble-card dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 ${animClass} z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" data-card-max="240"${bubbleCapStyle(capPx, 240)} onclick="${onClickJs}">
           ${bizHeaderHtml}
           <div class="pb-1.5 mb-1 border-b border-white/10 flex flex-col gap-1">
             <div class="flex items-center gap-1.5"><i data-lucide="${neonStyle.lucideIcon}" class="w-3 h-3 text-amber-300 flex-shrink-0"></i><span class="text-[9.5px] text-slate-200 font-bold tracking-wide">${categoryLabel}</span><span class="text-[8px] font-mono font-bold uppercase tracking-wider text-amber-300/90 ml-auto">Info</span></div>
@@ -3532,6 +3605,7 @@
       let deepModeOn = false; // V11.46
       let boundaryRingOn = false; // V11.53
       let lastZoomVarWritten = null; // V11.51: last --zoom-scale value actually written (see zoomScaleVarWrite)
+      let lastBubbleCap = { iconOnly: false, px: null }; // V11.54: last live-applied bubble cap state (see the Part 2 tracker in the loop)
       const renderLoop = () => {
         panX += (targetPanX - panX) * 0.25;
         panY += (targetPanY - panY) * 0.25;
@@ -3601,6 +3675,33 @@
           if (radarPanZoom) radarPanZoom.style.setProperty('--zoom-scale', zoomVarValue.toFixed(4)); // V11.52: the ring's labels/borders consume the same variable, now from the overlay
           lastZoomVarWritten = zoomVarValue;
         }
+        // V11.54 (Part 2): the bubble cap also depends on the zoom
+        // (bubbleCapFor), and a pinch changes no radius, so nothing
+        // rebuilds the cards mid-gesture - the loop tracks the cap
+        // itself. Crossing into or out of icon-only schedules a
+        // rebuild so the builders pick the right form (card vs
+        // chip); otherwise a moved cap is written straight onto the
+        // live card roots as an inline max-width, and when the cap
+        // lifts entirely each root's own class max-width is
+        // restored. Only state changes and >=3px cap moves touch
+        // the DOM, so a settled view costs nothing per frame.
+        const bubbleCapNow = bubbleCapFor(userState.radius, currentZoomScale);
+        const bubbleIconOnlyNow = bubbleCapNow === 0;
+        if (bubbleIconOnlyNow !== lastBubbleCap.iconOnly) {
+          lastBubbleCap.iconOnly = bubbleIconOnlyNow;
+          lastBubbleCap.px = bubbleIconOnlyNow ? 0 : null;
+          scheduleExpensiveRadiusRender();
+        } else if (!bubbleIconOnlyNow) {
+          if (bubbleCapNow === Infinity) {
+            if (lastBubbleCap.px !== null) {
+              document.querySelectorAll('.bubble-card-el').forEach(el => { el.style.maxWidth = `${el.dataset.cardMax}px`; });
+              lastBubbleCap.px = null;
+            }
+          } else if (lastBubbleCap.px === null || Math.abs(bubbleCapNow - lastBubbleCap.px) >= 3) {
+            document.querySelectorAll('.bubble-card-el').forEach(el => { const cm = Number(el.dataset.cardMax); el.style.maxWidth = `${(Number.isFinite(cm) && cm > 0) ? Math.min(cm, bubbleCapNow) : bubbleCapNow}px`; });
+            lastBubbleCap.px = bubbleCapNow;
+          }
+        }
         animationFrameId = requestAnimationFrame(renderLoop);
       };
       animationFrameId = requestAnimationFrame(renderLoop);
@@ -3631,6 +3732,14 @@
     function rangeIconsHidden(radiusMeters) {
       const meters = Number(radiusMeters);
       return Number.isFinite(meters) && meters >= 10 * METERS_PER_MILE;
+    }
+    // V11.54 (per Shane): icon NAMES hide earlier than the icons
+    // themselves - at a 5+ mile radius the name pills go
+    // (html.range-names-off, toggled beside range-icons-off in
+    // updateRadius); the icons follow at 10 miles.
+    function rangeNamesHidden(radiusMeters) {
+      const meters = Number(radiusMeters);
+      return Number.isFinite(meters) && meters >= 5 * METERS_PER_MILE;
     }
     function radarFitScaleForDiameter(px) {
       const viewportMin = Math.min(window.innerWidth, window.innerHeight);
@@ -3744,6 +3853,7 @@
       const meters = Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, Number.isFinite(parsedRadius) ? parsedRadius : DEFAULT_RADIUS_METERS));
       userState.radius = meters;
       document.documentElement.classList.toggle('range-icons-off', rangeIconsHidden(meters)); // V11.53: peer icons + name pills hide at 10+ miles (bubble cards stay)
+      document.documentElement.classList.toggle('range-names-off', rangeNamesHidden(meters)); // V11.54: name pills hide earlier, at 5+ miles
 
       const ring = document.getElementById('radarBoundaryRing');
       const leftBadge = document.getElementById('radarRingDistanceLabelLeft');
@@ -4203,6 +4313,50 @@
       setTimeout(() => wave.remove(), 1200);
     }
 
+    // V11.54 (per Shane): tapping the map creates a small radar at
+    // the tap point - for 4 seconds, peer elements inside it that
+    // the range/zoom rules currently hide show again: name pills
+    // hidden at 5+ miles, icons hidden at 10+ miles, and bubble
+    // cards the declutter pass hid. Then everything hides again.
+    // A re-tap restarts the 4 seconds (the old reveal is cleared
+    // first). Peers the visibility pass removed entirely (node
+    // display:none - out of radius, filtered out, offline without
+    // a live bubble) are NOT resurrected: the peek only un-hides
+    // what the range/zoom rules hid.
+    const TAP_REVEAL_RADIUS_PX = 140;
+    const TAP_REVEAL_MS = 4000;
+    let tapRevealTimer = null;
+    let tapRevealEl = null;
+    function clearTapReveal() {
+      if (tapRevealTimer) { clearTimeout(tapRevealTimer); tapRevealTimer = null; }
+      document.querySelectorAll('#nodesContainer .node-item.peek-reveal').forEach(el => el.classList.remove('peek-reveal'));
+      if (tapRevealEl) { tapRevealEl.remove(); tapRevealEl = null; }
+    }
+    function triggerTapReveal(clientX, clientY) {
+      clearTapReveal();
+      const container = document.getElementById('tapPulseContainer');
+      if (container) {
+        const area = document.createElement('div');
+        area.className = 'tap-reveal-area';
+        area.style.left = `${clientX}px`;
+        area.style.top = `${clientY}px`;
+        container.appendChild(area);
+        tapRevealEl = area;
+      }
+      document.querySelectorAll('#nodesContainer .node-item').forEach(nodeEl => {
+        if (nodeEl.style.display === 'none') return;
+        const iconEl = nodeEl.querySelector('.node-icon-tap');
+        const cardEl = nodeEl.querySelector('.peer-bubble-card');
+        let rect = iconEl ? iconEl.getBoundingClientRect() : null;
+        if (!rect || !(rect.width > 0 && rect.height > 0)) rect = cardEl ? cardEl.getBoundingClientRect() : null;
+        if (!rect || !(rect.width > 0 && rect.height > 0)) rect = nodeEl.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        if (Math.hypot(cx - clientX, cy - clientY) <= TAP_REVEAL_RADIUS_PX) nodeEl.classList.add('peek-reveal');
+      });
+      tapRevealTimer = setTimeout(clearTapReveal, TAP_REVEAL_MS);
+    }
+
     function initTapRippleHandler() {
       // V11.16: the left chat list hides on a TAP only. A drag/pan also
       // ends in a click event, so the press position is recorded and the
@@ -4222,6 +4376,7 @@
         }
         closePeerActions(); // V11.24: tapping the map hides the private message box
         createScreenTapPulseAt(e.clientX, e.clientY);
+        triggerTapReveal(e.clientX, e.clientY); // V11.54: the same genuine map tap also pops the 4-second reveal radar
       });
     }
 
@@ -4429,7 +4584,7 @@
               <div id="userTopBubble" class="hidden z-[99999999] pointer-events-auto"></div>
             </div>
             <div id="userAvatarGlow" class="absolute -inset-3 rounded-full bg-emerald-400/40 blur-lg animate-pulse-glow pointer-events-none"></div>
-            <div id="userAvatarRainbowWrap" class="relative flex-shrink-0" style="border-radius: 50%;">
+            <div id="userAvatarRainbowWrap" class="icon-zoom-track relative flex-shrink-0" style="border-radius: 50%;">
               <div id="userAvatarCircle" onclick="refreshRadarAndSearch()" class="w-[52.2px] h-[52.2px] rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle animate-float z-[99999999] pointer-events-auto cursor-pointer hover:scale-105 transition-transform overflow-hidden ${borderClass}" style="background: ${circleBg}; ${shadowStyle}; border-radius: 50%;" title="Tap to refresh radar & search chats">
                 ${renderNodeIconContent(userState.type, userState.category)}
               </div>
@@ -6115,7 +6270,7 @@
             ${(currentLayoutMode !== 'right' && (isBiz || activeHasQuestion)) ? renderBusinessBubbleCardHtml(peer.accountType, peer.category, activeHasQuestion ? peer.question : '', chatRoomName, onClickJs, peer.hours, peer.hideMyName, false, peerIsAdmin, hasUnread, peer.address || '', (peer.peerId === WELCOME_GUIDE_PEER_ID && !welcomeGuideOpened) ? 'animate-giggle-loop' : null, peer.businessInfo || '') : ''}
           </div>
           ${showUserIcon ? `
-            <div class="node-icon-tap relative z-[3000] flex flex-col items-center pointer-events-auto cursor-pointer p-5 -m-5" onclick="${onIconClickJs}" onpointerdown="peerIconPointerDown(event)" onpointerup="peerIconPointerUp(event, '${escapeJsArg(peer.peerId)}')" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap ${escapeChatHTML(chatRoomName)} for chat options">
+            <div class="node-icon-tap icon-zoom-track relative z-[3000] flex flex-col items-center pointer-events-auto cursor-pointer p-5 -m-5" onclick="${onIconClickJs}" onpointerdown="peerIconPointerDown(event)" onpointerup="peerIconPointerUp(event, '${escapeJsArg(peer.peerId)}')" title="${isPersonalBot(peer.accountType, peer.isBot) ? 'Personal bot' : 'Active user'} - tap ${escapeChatHTML(chatRoomName)} for chat options">
               ${peerIsAdmin ? '<div class="admin-rainbow-icon-wrap">' : ''}
               <div class="peer-node-icon w-10 h-10 rounded-full bubble-node font-bold flex items-center justify-center shadow-2xl animate-bubble-subtle z-[99999] pointer-events-auto cursor-pointer overflow-hidden ${iconVisual.borderClass}" style="background: ${circleBg}; ${iconVisual.shadowStyle || ''} border-radius: 50%;">
                 ${renderNodeIconContent(peer.accountType, peer.category, peer.isBot)}
@@ -6125,7 +6280,7 @@
             </div>
             <div class="node-under-icon">
               ${isPersonalBot(peer.accountType, peer.isBot) ? '<span class="personal-bot-badge">BOT</span>' : ''}
-              <span class="peer-name-label pointer-events-auto cursor-pointer" onclick="${onIconClickJs}" onpointerdown="peerIconPointerDown(event)" onpointerup="peerIconPointerUp(event, '${escapeJsArg(peer.peerId)}')"${isBiz ? ` style="color: ${getBusinessCategoryColorHex(peer.category)}"` : ''}>${escapeChatHTML(chatRoomName)}${formatPeerDistance(peer) ? ' · ' + escapeChatHTML(formatPeerDistance(peer)) : ''}</span>
+              <span class="peer-name-label icon-zoom-track pointer-events-auto cursor-pointer" onclick="${onIconClickJs}" onpointerdown="peerIconPointerDown(event)" onpointerup="peerIconPointerUp(event, '${escapeJsArg(peer.peerId)}')"${isBiz ? ` style="color: ${getBusinessCategoryColorHex(peer.category)}"` : ''}>${escapeChatHTML(chatRoomName)}${formatPeerDistance(peer) ? ' · ' + escapeChatHTML(formatPeerDistance(peer)) : ''}</span>
             </div>
           ` : ''}
         </div>
