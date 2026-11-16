@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.51 Radius-Render Throttle + Zoom-Var Quantize]</title>
+  <title>LocaL - Proximity Social Network [V11.52 Ring in Screen Space + Shrinking Bubbles]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -161,7 +161,7 @@
     #mapCanvas {
       transform: translate3d(var(--pan-x), var(--pan-y), 0) scale(var(--zoom-scale, 1));
       transform-origin: center center;
-      z-index: 1; /* V11.48: above #mapBackground, below every UI layer */
+      z-index: 2; /* V11.52: above #radarOverlay (z-1), below every UI layer */
       cursor: grab;
       touch-action: none;
     }
@@ -176,6 +176,35 @@
       z-index: 0;
       pointer-events: none;
     }
+    /* V11.52: the radar ring group lives in SCREEN space, in a fixed
+       overlay between the background (z-0) and the map canvas (z-2).
+       The ring used to be a child of the canvas sheet, whose
+       overflow-hidden sliced it once its diameter passed the canvas
+       width (2,730px = ~7.3 miles of ring) - Shane's "the radar
+       starts to clip around 7 miles and above". #radarPanZoom
+       receives the same pan/zoom transform as the canvas (driven by
+       the same custom properties, written by the render loop at the
+       same points), so the ring still pans and zooms in lockstep
+       with the map - but no canvas edge can ever cut it, and the
+       icons (inside the canvas, above) still sit over the ring.
+       The whole overlay is visual only: edge-dragging is detected
+       geometrically on the canvas gesture path (isRingEdgeHit /
+       beginRadiusDrag). */
+    #radarOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    #radarPanZoom {
+      position: absolute;
+      inset: 0;
+      transform: translate3d(var(--pan-x, 0px), var(--pan-y, 0px), 0) scale(var(--zoom-scale, 1));
+      transform-origin: center center;
+      pointer-events: none;
+    }
+    #radarPanZoom #radarBoundaryRing,
+    #radarPanZoom #radarBoundaryRing * { pointer-events: none !important; }
     #mapCanvas:active { cursor: grabbing; }
     /* Foreground layer for user icons: the nodes layer sits ABOVE all radar
        artwork, and the container itself never swallows taps (only the icons
@@ -555,16 +584,25 @@
        700%-of-screen sheet had to be repainted on every zoom frame. -->
   <div id="mapBackground" class="bg-mode-aurora"></div>
 
+  <!-- V11.52: radar ring group in screen space (see the #radarOverlay
+       CSS). The 30-mile boundary ring is static markup here; the
+       radar ring itself is mounted into #radarPanZoom by initUserNode
+       via getRadarStyleHtml, exactly as it used to be mounted inside
+       the user's map node. -->
+  <div id="radarOverlay">
+    <div id="radarPanZoom">
+      <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring z-0" style="width: 5625px; height: 5625px;">
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Dynamic Screen Tap Pulse Waveform Container -->
   <div id="tapPulseContainer" class="fixed inset-0 pointer-events-none z-[99999999] overflow-hidden"></div>
 
   <!-- Map Canvas -->
   <div id="mapCanvas" class="absolute -inset-[300%] overflow-hidden scale-100 origin-center">
     
-    <div id="worldMaxBoundaryRing" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-sky-600/30 pointer-events-none hairline-ring z-0" style="width: 5625px; height: 5625px;">
-      <div class="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md text-white text-[11px] font-semibold uppercase tracking-widest border border-white/20 shadow-xl">30-Mile World Boundary Edge</div>
-    </div>
-
     <div id="radarCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none origin-center z-0">
       <div class="w-[210px] h-[210px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_20px_rgba(56,189,248,0.2)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
       <div class="w-[170px] h-[170px] rounded-full absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_0_15px_rgba(56,189,248,0.15)] hairline-ring pointer-events-none" style="border-style: solid; border-color: var(--radar-line-color);"></div>
@@ -1862,25 +1900,55 @@
       return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
     }
 
+    // V11.52 (per Shane): from 4 miles up, map bubble cards shrink
+    // steadily until only the bubble illustration remains. Pure
+    // helper, unit-tested: under 4 miles -> Infinity (no cap,
+    // today's widths); at 4 miles -> 260px; linear down to 46px at
+    // 10 miles (at 7 miles the cap is 153px); 10 miles and beyond
+    // -> 0, the icon-only signal the card builders render as a
+    // compact chip instead of the full card.
+    function bubbleCardCapPx(radiusMeters) {
+      const miles = Number(radiusMeters) / METERS_PER_MILE;
+      if (!Number.isFinite(miles) || miles < 4) return Infinity;
+      if (miles >= 10) return 0;
+      return Math.round(260 - ((miles - 4) / 6) * (260 - 46));
+    }
+    // Inline max-width for a capped card: the radius cap when it is
+    // tighter than the card's own class max-width, else ''.
+    function bubbleCapStyle(capPx, classMaxPx) {
+      return (Number.isFinite(capPx) && capPx > 0 && capPx < classMaxPx) ? ` style="max-width: ${capPx}px"` : '';
+    }
+    // V11.52 (per Shane, from his screenshot): the bubble card's
+    // illustration is now a bare OUTLINE speech bubble (Lucide
+    // message-circle, stroke only - no filled disc), colour-coded
+    // by the card's outline category: purple for personal cards
+    // (as in the screenshot), amber for own and business cards
+    // (amber outline), and a small rainbow disc carrying a white
+    // glyph for the Administrator's rainbow-outlined card.
+    function bubbleIllustrationHtml(kind) {
+      if (kind === 'admin') {
+        return `<span class="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full flex-shrink-0 shadow-[0_0_10px_rgba(255,215,0,0.55)]" style="background: conic-gradient(from 0deg, #ff0055, #ffd700, #ffae00, #00ff66, #ffdf00, #00ffff, #ffc107, #cc00ff, #ff0055);"><i data-lucide="message-circle" class="w-[12px] h-[12px] text-white" stroke-width="2.6"></i></span>`;
+      }
+      const colorClass = (kind === 'own' || kind === 'business') ? 'text-amber-500' : 'text-purple-500';
+      return `<i data-lucide="message-circle" class="w-[18px] h-[18px] flex-shrink-0 ${colorClass}" stroke-width="2.2"></i>`;
+    }
+
     function renderUserBubbleCardHtml(question, senderName, onClickJs, routerIsAdmin = false, isGiggle = false, isMainUser = false, isAdmin = false, hasUnread = false) {
       if (!question) return '';
       question = escapeChatHTML(question);
       senderName = escapeChatHTML(senderName || '');
       const animClass = hasUnread ? 'animate-jiggle-continuous' : (isGiggle ? 'animate-giggle' : 'animate-float'); // V11.17: unread map bubbles jiggle continuously, matching the pinned chats
+      const capPx = bubbleCardCapPx(userState.radius); // V11.52: cards shrink from 4 mi, icon-only from 10 mi
       const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${senderName}</span></div>`;
 
       if (isAdmin) {
+        if (capPx === 0) return `<div class="admin-rainbow-border-wrap cursor-pointer pointer-events-auto z-[99999999] ${animClass}" style="border-radius: 9999px;" onclick="${onClickJs}"><div class="admin-rainbow-inner px-2.5 py-2 flex items-center justify-center" style="border-radius: 9999px;">${bubbleIllustrationHtml('admin')}</div></div>`; // V11.52: icon-only chip
         return `
-          <div class="admin-rainbow-border-wrap cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">
+          <div class="admin-rainbow-border-wrap cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}"${bubbleCapStyle(capPx, 260)} onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-4 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1">
               ${isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-white/10 pb-1"><span class="text-[9px] text-amber-400 font-mono font-bold uppercase tracking-wider">${senderName}</span></div>`}
               <div class="flex items-center justify-center gap-1.5 py-0.5">
-                <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
-                  <div class="bubble-glare"></div>
-                  <svg class="w-2.5 h-2.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
-                  </svg>
-                </div>
+                ${bubbleIllustrationHtml(isAdmin ? 'admin' : (isMainUser ? 'own' : 'personal'))}
                 <span class="truncate">${question}</span>
               </div>
             </div>
@@ -1888,16 +1956,12 @@
         `;
       }
       const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/40 shadow-xl'; // V11.27: group chat bubbles lose the strong white border
+      if (capPx === 0) return `<div class="rounded-full bg-white/95 backdrop-blur-xl ${outlineClass} px-2.5 py-2 flex items-center justify-center cursor-pointer pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">${bubbleIllustrationHtml(isMainUser ? 'own' : 'personal')}</div>`; // V11.52: icon-only chip
       return `
-        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">
+        <div class="px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-xl text-xs font-bold text-slate-900 ${outlineClass} flex flex-col gap-1 cursor-pointer max-w-[260px] text-center pointer-events-auto z-[99999999] ${animClass}"${bubbleCapStyle(capPx, 260)} onclick="${onClickJs}">
           ${headerHtml}
           <div class="flex items-center justify-center gap-1.5 py-0.5">
-            <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
-              <div class="bubble-glare"></div>
-              <svg class="w-2.5 h-2.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
-              </svg>
-            </div>
+            ${bubbleIllustrationHtml(isAdmin ? 'admin' : (isMainUser ? 'own' : 'personal'))}
             <span class="truncate">${question}</span>
           </div>
         </div>
@@ -1920,19 +1984,16 @@
       const categoryLabel = escapeChatHTML(getBusinessCategoryLabel(category));
       const nameColorClass = getBusinessCategoryTextColorClass(category);
       const animClass = forceAnimClass || (hasUnread ? 'animate-jiggle-continuous' : 'animate-float'); // V11.17 (+ V11.26 forced class)
+      const capPx = bubbleCardCapPx(userState.radius); // V11.52: cards shrink from 4 mi, icon-only from 10 mi
 
       if (isAdmin) {
+        if (capPx === 0) return `<div class="peer-bubble-card admin-rainbow-border-wrap cursor-pointer pointer-events-auto z-[99999999] ${animClass}" style="border-radius: 9999px;" onclick="${onClickJs}"><div class="admin-rainbow-inner px-2.5 py-2 flex items-center justify-center" style="border-radius: 9999px;">${bubbleIllustrationHtml('admin')}</div></div>`; // V11.52: icon-only chip
         return `
-          <div class="peer-bubble-card admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] ${animClass}" onclick="${onClickJs}">
+          <div class="peer-bubble-card admin-rainbow-border-wrap cursor-pointer max-w-[240px] text-left pointer-events-auto z-[99999999] ${animClass}"${bubbleCapStyle(capPx, 240)} onclick="${onClickJs}">
             <div class="admin-rainbow-inner px-3.5 py-2.5 rounded-[15px] text-xs font-bold text-white flex flex-col gap-1.5">
               ${isMainUser ? '' : `<div class="flex items-center justify-between text-[9px] font-mono uppercase"><span class="truncate ${nameColorClass}">${displayName}</span></div>`}
               <div class="flex items-center gap-1.5">
-                <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
-                  <div class="bubble-glare"></div>
-                  <svg class="w-2.5 h-2.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
-                  </svg>
-                </div>
+                ${bubbleIllustrationHtml('admin')}
                 <p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>
               </div>
             </div>
@@ -1943,16 +2004,12 @@
         if (!question) return '';
         const outlineClass = isMainUser ? 'border-[3px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.8)]' : 'border border-white/40 shadow-xl'; // V11.27: group chat bubbles lose the strong white border
         const headerHtml = isMainUser ? '' : `<div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1 mb-0.5"><span class="text-[9px] text-sky-700 font-mono font-bold uppercase tracking-wider truncate">${displayName}</span></div>`;
+        if (capPx === 0) return `<div class="peer-bubble-card rounded-full glass-card ${outlineClass} px-2.5 py-2 flex items-center justify-center cursor-pointer z-[99999999] pointer-events-auto ${animClass}" onclick="${onClickJs}">${bubbleIllustrationHtml(isMainUser ? 'own' : 'personal')}</div>`; // V11.52: icon-only chip
         return `
-          <div class="peer-bubble-card px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 ${animClass} z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto" onclick="${onClickJs}">
+          <div class="peer-bubble-card px-3.5 py-2 rounded-2xl glass-card text-xs font-semibold text-slate-900 ${outlineClass} flex flex-col gap-0.5 ${animClass} z-[99999999] cursor-pointer max-w-[220px] text-left pointer-events-auto"${bubbleCapStyle(capPx, 220)} onclick="${onClickJs}">
             ${headerHtml}
             <div class="flex items-center gap-1.5 py-0.5">
-              <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
-                <div class="bubble-glare"></div>
-                <svg class="w-2.5 h-2.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
-                </svg>
-              </div>
+              ${bubbleIllustrationHtml(isMainUser ? 'own' : 'personal')}
               <span class="truncate">${question}</span>
             </div>
           </div>
@@ -1962,8 +2019,9 @@
       const bizOutline = isMainUser ? 'border-[3.5px] border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.9)]' : 'border border-amber-300/60 shadow-2xl'; // V11.11: business bubbles get a warm amber tint so they read differently from personal bubbles
       const bizHeaderHtml = isMainUser ? '' : `<div class="flex items-center justify-between mb-0.5"><span class="text-xs truncate ${nameColorClass}">${displayName}</span><span class="text-[9px] font-mono text-slate-900 font-bold px-1.5 py-0.2 rounded bg-amber-400/90">Business</span></div>`;
       
+      if (capPx === 0) return `<div class="peer-bubble-card dark-biz-bubble rounded-full ${bizOutline} px-2.5 py-2 flex items-center justify-center cursor-pointer z-[9999999] pointer-events-auto ${animClass}" onclick="${onClickJs}">${bubbleIllustrationHtml(isMainUser ? 'own' : 'business')}</div>`; // V11.52: icon-only chip
       return `
-        <div class="peer-bubble-card dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 ${animClass} z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95" onclick="${onClickJs}">
+        <div class="peer-bubble-card dark-biz-bubble px-3.5 py-2.5 rounded-2xl ${bizOutline} flex flex-col gap-1.5 ${animClass} z-[9999999] cursor-pointer max-w-[240px] text-left pointer-events-auto transition-transform hover:scale-105 active:scale-95"${bubbleCapStyle(capPx, 240)} onclick="${onClickJs}">
           ${bizHeaderHtml}
           <div class="pb-1.5 mb-1 border-b border-white/10 flex flex-col gap-1">
             <div class="flex items-center gap-1.5"><i data-lucide="${neonStyle.lucideIcon}" class="w-3 h-3 text-amber-300 flex-shrink-0"></i><span class="text-[9.5px] text-slate-200 font-bold tracking-wide">${categoryLabel}</span><span class="text-[8px] font-mono font-bold uppercase tracking-wider text-amber-300/90 ml-auto">Info</span></div>
@@ -1976,12 +2034,7 @@
             <div class="min-w-0 flex-1">
               ${question ? `
                 <div class="flex items-center gap-1.5 mt-1">
-                  <div class="w-4.5 h-4.5 rounded-full bg-gradient-to-tr from-sky-400 via-sky-300 to-sky-600 border border-white/90 flex items-center justify-center flex-shrink-0 shadow-[0_0_8px_rgba(56,189,248,0.7)] relative overflow-hidden">
-                    <div class="bubble-glare"></div>
-                    <svg class="w-2.5 h-2.5 text-white z-10 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 3C6.477 3 2 6.978 2 11.889c0 2.766 1.42 5.234 3.655 6.947-.19 1.488-.85 2.894-1.92 4.02 2.213 0 4.316-.9 5.86-2.02.775.148 1.578.223 2.405.223 5.523 0 10-3.978 10-8.889C22 6.978 17.523 3 12 3z"/>
-                    </svg>
-                  </div>
+                  ${bubbleIllustrationHtml(isMainUser ? 'own' : 'business')}
                   <p class="text-[11px] font-light text-white/95 leading-snug break-words line-clamp-3">${question}</p>
                 </div>
               ` : ''}
@@ -3189,6 +3242,12 @@
       const handlePanStart = (e) => {
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label, .node-item')) return; // V11.25: icon taps are not map gestures
         if (isDraggingRadius || (e.touches && e.touches.length > 1)) return;
+        // V11.52: a press on the ring's edge band starts a radius
+        // drag, not a pan - the ring lives in the pointer-events:
+        // none overlay now, so the band is detected geometrically.
+        const gestureX = e.touches ? e.touches[0].clientX : e.clientX;
+        const gestureY = e.touches ? e.touches[0].clientY : e.clientY;
+        if (ringEdgeHitAt(gestureX, gestureY) && beginRadiusDrag(gestureX, gestureY)) return;
         isDraggingMap = true;
         // V11.16: starting a drag no longer hides the left chat list -
         // it hides on a tap instead (see initTapRippleHandler).
@@ -3265,6 +3324,8 @@
 
       mapCanvas.addEventListener('touchend', (e) => {
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label, .node-item')) return; // V11.25: icon taps are not map gestures
+        const touchPoint = (e.changedTouches && e.changedTouches[0]) || e;
+        if (ringEdgeHitAt(touchPoint.clientX, touchPoint.clientY)) { lastTapTime = 0; return; } // V11.52: ring-edge taps start radius drags - not map double-taps
         const currentTime = new Date().getTime();
         const tapLength = currentTime - lastTapTime;
         if (tapLength < 300 && tapLength > 0) {
@@ -3277,6 +3338,7 @@
 
       mapCanvas.addEventListener('dblclick', (e) => {
         if (e.target.closest('header, button, input, textarea, select, .glass-card, .glass-drawer-top, .glass-panel, #chatDrawer, #profileModal, #p2pModal, #rightSideBubblesSidebar, #quickPostInput, #radarRangeSlider, #adminManagementModal, #pinnedChatsWrapper, #radarBoundaryRing, .radar-distance-label, .node-item')) return; // V11.25: icon taps are not map gestures
+        if (ringEdgeHitAt(e.clientX, e.clientY)) return; // V11.52: ring-edge presses start radius drags - not map double-clicks
         recenterAndResetZoom();
         toggleLeftChatList();
       });
@@ -3295,6 +3357,7 @@
         const moved = Math.hypot(e.clientX - tapX, e.clientY - tapY);
         tapX = null; tapY = null;
         if (moved > 8) return;
+        if (ringEdgeHitAt(e.clientX, e.clientY)) return; // V11.52: ring-edge presses belong to the radius drag, not to list-closing map taps
         if (e.target.closest('button, input, select, textarea, header, .glass-card, #chatDrawer, #profileModal, #p2pModal, #friendsModal, #pinnedChatsWrapper, #rightSideBubblesSidebar, .node-item, .scale-compensator, #radarBoundaryRing, .radar-distance-label')) return;
         setLayoutMode('map');
       });
@@ -3315,6 +3378,7 @@
       const dock = document.getElementById('actionDockContainer');
       const drawer = document.getElementById('chatDrawer');
       const mapEl = document.getElementById('mapCanvas');
+      const radarOverlayEl = document.getElementById('radarOverlay'); // V11.52: the ring overlay takes the same keyboard counter-translation as the canvas, so the ring stays glued to the map while typing
        const update = () => {
         const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
         const keyboardOpen = kb > 100;
@@ -3323,6 +3387,7 @@
         // while typing). Counter-translate the map layer by exactly
         // the pan distance so the map itself stays where it was.
         if (mapEl) mapEl.style.translate = keyboardOpen ? `0px ${Math.round(vv.offsetTop)}px` : '';
+        if (radarOverlayEl) radarOverlayEl.style.translate = keyboardOpen ? `0px ${Math.round(vv.offsetTop)}px` : ''; // V11.52
         if (dock) dock.style.translate = keyboardOpen ? `0px -${Math.round(kb)}px` : '';
         if (drawer) {
           // V11.33: the chat drawer is full-screen. While the keyboard
@@ -3401,6 +3466,7 @@
 
     function startSmoothAnimationLoop() {
       const mapCanvas = document.getElementById('mapCanvas');
+      const radarPanZoom = document.getElementById('radarPanZoom'); // V11.52: the ring overlay receives the same pan/zoom variables as the canvas
       if (!mapCanvas) return;
       if (animationLoopStarted) return; // V11.15 (#4): never run two render loops
       animationLoopStarted = true;
@@ -3455,6 +3521,7 @@
           lastPanX = panX; lastPanY = panY; lastZoomOut = currentZoomScale;
           mapCanvas.style.setProperty('--pan-x', `${panX}px`);
           mapCanvas.style.setProperty('--pan-y', `${panY}px`);
+          if (radarPanZoom) { radarPanZoom.style.setProperty('--pan-x', `${panX}px`); radarPanZoom.style.setProperty('--pan-y', `${panY}px`); } // V11.52
           applyDragEdgeGeometry(); // V11.47: zoom changed - keep the drag band's on-screen thickness constant
           scheduleDeclutter(); // V11.25: pan/zoom changed the screen layout
         }
@@ -3465,6 +3532,7 @@
         const zoomVarValue = zoomScaleVarWrite(lastZoomVarWritten, currentZoomScale, targetZoomScale);
         if (zoomVarValue !== null) {
           mapCanvas.style.setProperty('--zoom-scale', zoomVarValue.toFixed(4));
+          if (radarPanZoom) radarPanZoom.style.setProperty('--zoom-scale', zoomVarValue.toFixed(4)); // V11.52: the ring's labels/borders consume the same variable, now from the overlay
           lastZoomVarWritten = zoomVarValue;
         }
         animationFrameId = requestAnimationFrame(renderLoop);
@@ -3559,8 +3627,19 @@
     let expensiveRadiusRenderTimer = null;
     function runExpensiveRadiusRender() {
       lastExpensiveRadiusRenderAt = performance.now();
-      refreshAllPeerDistancesAndPositions();
-      refreshAllNodeVisibilities();
+      // V11.52: ONE positions pass only. The positions pass already
+      // ends with a visibility pass; the old code then ran the
+      // visibility pass a SECOND time directly, and every visibility
+      // pass rebuilt the users directory + friends panel - lab
+      // bisection put the directory at ~5.8k of the ~11.5k transient
+      // nodes per radius render. The radius path now threads
+      // { skipDirectory: true } through: a radius change cannot
+      // alter directory or friends content (their only radius input
+      // is the directory rows' in-range fade, which the next
+      // presence/GPS render refreshes with the full pass). Final
+      // state is otherwise identical - positions, node visibility,
+      // pinned and right lists all render exactly once, same data.
+      refreshAllPeerDistancesAndPositions({ skipDirectory: true });
     }
     function scheduleExpensiveRadiusRender() {
       const now = performance.now();
@@ -3639,22 +3718,59 @@
       updateRadius(val, true);
     }
 
+    // V11.52: with the ring in the screen-space overlay it can no
+    // longer receive the drag gesture itself (the overlay is
+    // pointer-events: none), so ring-edge hits are detected
+    // geometrically on the canvas gesture path. Pure predicate,
+    // unit-tested: a press counts as a ring-edge grab when its
+    // distance from the ring's centre is within half the visible
+    // band plus 8px of the ring's on-screen radius - and never less
+    // than a 20px tolerance, so the band stays grabbable at any zoom.
+    function isRingEdgeHit(distanceFromCentrePx, ringRadiusPx, bandPx) {
+      if (!Number.isFinite(distanceFromCentrePx) || !Number.isFinite(ringRadiusPx) || ringRadiusPx <= 0) return false;
+      const tolerance = Math.max(20, (Number(bandPx) || 0) / 2 + 8);
+      return Math.abs(distanceFromCentrePx - ringRadiusPx) <= tolerance;
+    }
+    // The ring's on-screen centre is the viewport centre plus the
+    // current rendered pan; its on-screen radius and band width come
+    // from the same geometry the drag-edge renderer uses.
+    function ringEdgeHitAt(clientX, clientY) {
+      if (unlimitedRadarActive) return false;
+      const centerX = window.innerWidth / 2 + panX;
+      const centerY = window.innerHeight / 2 + panY;
+      const distance = Math.hypot(clientX - centerX, clientY - centerY);
+      const screenDiameterPx = Math.max(50, currentRingDiameterPx * currentZoomScale);
+      const bandPx = (dragEdgeGeometry(userState.radius, currentRingDiameterPx, currentZoomScale).strokeUnits / 100) * screenDiameterPx;
+      return isRingEdgeHit(distance, screenDiameterPx / 2, bandPx);
+    }
+    // Starts the one and only radius-drag flow (the window move/end
+    // handlers bound by initRadiusDragHandlers do the rest). Shared
+    // by the legacy label/handle listeners and the V11.52 canvas
+    // hit-test in handlePanStart. The drag maths keep their historic
+    // reference point (viewport centre, un-panned), exactly as the
+    // pre-V11.52 handleStart computed them.
+    function beginRadiusDrag(clientX, clientY) {
+      if (unlimitedRadarActive) return false;
+      isDraggingRadius = true;
+      isDraggingMap = false;
+      const centerX = window.innerWidth / 2, centerY = window.innerHeight / 2;
+      const safeScale = Math.max(0.20, currentZoomScale);
+      dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
+      dragStartRadiusMeters = userState.radius;
+      return true;
+    }
+
     function initRadiusDragHandlers() {
       const ring = document.getElementById('radarBoundaryRing');
       if (!ring) return;
 
       const handleStart = (e) => {
         if (unlimitedRadarActive) return;
-        isDraggingRadius = true;
-        isDraggingMap = false;
-        e.stopPropagation(); 
+        e.stopPropagation();
         e.preventDefault();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const centerX = window.innerWidth / 2, centerY = window.innerHeight / 2;
-        const safeScale = Math.max(0.20, currentZoomScale);
-        dragStartDistancePx = Math.hypot(clientX - centerX, clientY - centerY) / safeScale;
-        dragStartRadiusMeters = userState.radius;
+        beginRadiusDrag(clientX, clientY); // V11.52: shared with the canvas hit-test path
       };
 
       const handleMove = (e) => {
@@ -3728,7 +3844,8 @@
       return userState.interestFilter.toLowerCase() === peerInterestFilter.toLowerCase();
     }
 
-    function refreshAllNodeVisibilities() {
+    function refreshAllNodeVisibilities(options) {
+      const skipDirectory = !!(options && options.skipDirectory); // V11.52: radius-only renders skip the directory/friends rebuild (see runExpensiveRadiusRender)
       Object.keys(globalActiveDirectory).forEach(peerId => {
         const peer = globalActiveDirectory[peerId];
         let peerKey = 'node-' + peerId.replace(/[^a-zA-Z0-9]/g, '-');
@@ -3753,7 +3870,7 @@
           }
         }
       });
-      renderGlobalUsersDirectory();
+      if (!skipDirectory) renderGlobalUsersDirectory();
       renderPinnedChats();
       if (currentLayoutMode === 'right') renderRightSidebarBubbles();
     }
@@ -3843,7 +3960,7 @@
       return (Math.abs(hash) % 360) * (Math.PI / 180);
     }
 
-    function refreshAllPeerDistancesAndPositions() {
+    function refreshAllPeerDistancesAndPositions(options) {
       const peerIds = Object.keys(globalActiveDirectory).sort((a, b) => (a === WELCOME_GUIDE_PEER_ID ? -1 : (b === WELCOME_GUIDE_PEER_ID ? 1 : (a < b ? -1 : 1)))); // V11.27: the Welcome Guide is placed first so the separation spiral can never shove it away from the user
       const placedNodes = [];
       const minNodeGap = 76;
@@ -3881,7 +3998,7 @@
           updatePeerNodeOnMapObject(peer, leftPercent, topPercent);
         }
       });
-      refreshAllNodeVisibilities();
+      refreshAllNodeVisibilities(options);
       declutterMapBubbles(); // V11.25
     }
 
@@ -4015,6 +4132,7 @@
         const movedPx = (tapDownX === null) ? 0 : Math.hypot(e.clientX - tapDownX, e.clientY - tapDownY);
         tapDownX = null; tapDownY = null;
         if (movedPx > 10) return; // it was a drag, not a tap
+        if (ringEdgeHitAt(e.clientX, e.clientY)) return; // V11.52: ring-edge taps start radius drags - they do not hide the list or close the peer box
         if (!leftChatListHidden) {
           leftChatListHidden = true;
           applyLeftChatListVisibility();
@@ -4223,7 +4341,6 @@
       userDiv.innerHTML = `
         <div class="relative flex flex-col items-center group pointer-events-auto">
           <div id="radiusRippleContainer" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
-          ${getRadarStyleHtml(userState.radarStyle || 'futuristic')}
           <div class="scale-compensator flex flex-col items-center relative z-[99999999] pointer-events-auto">
             <div class="node-content-stack z-[99999999] pointer-events-auto">
               <div id="userTopBubble" class="hidden z-[99999999] pointer-events-auto"></div>
@@ -4239,6 +4356,16 @@
         </div>
       `;
       container.appendChild(userDiv);
+      // V11.52: the radar ring is mounted into the screen-space
+      // overlay (see #radarPanZoom), NOT inside this map node - as a
+      // canvas child, the canvas's overflow-hidden sliced it once
+      // its diameter passed the canvas width (~7.3 miles). Same
+      // markup and geometry from getRadarStyleHtml, new home.
+      const radarPanZoomEl = document.getElementById('radarPanZoom');
+      if (radarPanZoomEl && !document.getElementById('radarBoundaryRing')) {
+        radarPanZoomEl.insertAdjacentHTML('beforeend', getRadarStyleHtml(userState.radarStyle || 'futuristic'));
+        initRadiusDragHandlers();
+      }
       renderUserTopBubbleContent(false);
 
       const circle = document.getElementById('userAvatarCircle');
