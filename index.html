@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-  <title>LocaL - Proximity Social Network [V11.55 Compact Bubbles + Icons Hide On Zoom-Out + Tap Reveal Restores All]</title>
+  <title>LocaL - Proximity Social Network [V11.56 Icons Stay At Every Zoom + Rainbow Outline Admin Illustration]</title>
   
   <meta name="theme-color" content="#fbcfe8">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -267,14 +267,11 @@
        updateRadius via rangeNamesHidden); the icons themselves
        follow at 10 miles (range-icons-off above). */
     html.range-names-off #nodesContainer .node-item .peer-name-label { display: none !important; }
-    /* V11.55 (per Shane, replacing V11.54's icon shrinking): once
-       the map starts zooming out, peer icons and their name pills
-       HIDE outright - only the chat bubbles stay on the map. The
-       render loop toggles html.zoom-icons-off with hysteresis
-       (off below 0.98x, back at 1.0x). The user's own avatar is
-       not a peer node and stays, exactly as in the range rules. */
-    html.zoom-icons-off #nodesContainer .node-item .node-icon-tap,
-    html.zoom-icons-off #nodesContainer .node-item .peer-name-label { display: none !important; }
+    /* V11.56 (per Shane): the zoom-based icon hiding from V11.55 is
+       REMOVED - it hid the icons too early, because the map
+       auto-zooms as the radar widens. Icons are pure counter-scale
+       (constant size) at every zoom again; only the range rules
+       hide anything (names at 5+ mi, icons at 10+ mi, above). */
     /* V11.55 (per Shane): once a bubble starts to shorten (a finite
        cap from the radius or zoom rule), its name header hides too -
        and for a business bubble the info section (category, about,
@@ -298,15 +295,14 @@
     html.range-icons-off #nodesContainer .node-item.peek-reveal .node-icon-tap { display: flex !important; }
     #nodesContainer .node-item.peek-reveal .peer-bubble-card { visibility: visible !important; }
     /* V11.55: the tap reveal restores EVERYTHING to normal inside
-       its radius - the zoom-hidden icons and pills too, and a
-       shortened bubble comes back in full: header and info section
-       shown again, the cap width lifted (the !important beats the
-       inline max-width the builders and the render loop write).
-       A chip-form bubble has no text in the DOM, so CSS cannot
-       restore it - those rebuild at full size via peekFullPeerIds
-       (see triggerTapReveal). */
-    html.zoom-icons-off #nodesContainer .node-item.peek-reveal .peer-name-label { display: block !important; }
-    html.zoom-icons-off #nodesContainer .node-item.peek-reveal .node-icon-tap { display: flex !important; }
+       its radius - a shortened bubble comes back in full: header
+       and info section shown again, the cap width lifted (the
+       !important beats the inline max-width the builders and the
+       render loop write). A chip-form bubble has no text in the
+       DOM, so CSS cannot restore it - those rebuild at full size
+       via peekFullPeerIds (see triggerTapReveal). (V11.56: the
+       zoom-variant overrides that sat here are gone together with
+       the zoom-based hiding itself.) */
     #nodesContainer .node-item.peek-reveal .bubble-card-el { max-width: none !important; }
     #nodesContainer .node-item.peek-reveal .bubble-card-el .bubble-card-head { display: flex !important; }
     #nodesContainer .node-item.peek-reveal .bubble-card-el .bubble-card-info { display: block !important; }
@@ -401,12 +397,10 @@
          gone - it forced a full-size backing store for every node
          icon on the map, repainted on every zoom frame. */
     }
-    /* V11.55: V11.54's .icon-zoom-track (icons shrinking with the
-       map as it zoomed out) is GONE - Shane replaced it the same
-       evening: on zoom-out the icons and name pills now hide
-       instead (see html.zoom-icons-off above). Whenever icons are
-       visible they are back to the pure .scale-compensator
-       counter-scale (constant size). */
+    /* V11.56: icons are the pure .scale-compensator counter-scale
+       (constant size) at every zoom - V11.54's shrinking track and
+       V11.55's zoom-based hiding are both gone; only the range
+       rules (names 5+ mi, icons 10+ mi) ever hide an icon. */
 
     /* V11.14: zooming out crashed the app on phones. At low zoom the whole
        world is on screen at once, and the combined cost of the rotating
@@ -2046,11 +2040,13 @@
     // message-circle, stroke only - no filled disc), colour-coded
     // by the card's outline category: purple for personal cards
     // (as in the screenshot), amber for own and business cards
-    // (amber outline), and a small rainbow disc carrying a white
-    // glyph for the Administrator's rainbow-outlined card.
+    // (amber outline), and for the Administrator a rainbow outline
+    // (V11.56: the glyph's own stroke carries a rainbow gradient -
+    // there is no disc behind it; the earlier rainbow disc with a
+    // white glyph read as a white bubble inside a rainbow ring).
     function bubbleIllustrationHtml(kind) {
       if (kind === 'admin') {
-        return `<span class="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full flex-shrink-0 shadow-[0_0_10px_rgba(255,215,0,0.55)]" style="background: conic-gradient(from 0deg, #ff0055, #ffd700, #ffae00, #00ff66, #ffdf00, #00ffff, #ffc107, #cc00ff, #ff0055);"><i data-lucide="message-circle" class="w-[12px] h-[12px] text-white" stroke-width="2.6"></i></span>`;
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="url(#localAdminBubbleGrad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-[18px] h-[18px] flex-shrink-0" aria-hidden="true"><defs><linearGradient id="localAdminBubbleGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff0055"/><stop offset="0.2" stop-color="#ff8a00"/><stop offset="0.4" stop-color="#ffd700"/><stop offset="0.6" stop-color="#00c853"/><stop offset="0.8" stop-color="#2979ff"/><stop offset="1" stop-color="#aa00ff"/></linearGradient></defs><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>`;
       }
       const colorClass = (kind === 'own' || kind === 'business') ? 'text-amber-500' : 'text-purple-500';
       return `<i data-lucide="message-circle" class="w-[18px] h-[18px] flex-shrink-0 ${colorClass}" stroke-width="2.2"></i>`;
@@ -3641,7 +3637,6 @@
       let boundaryRingOn = false; // V11.53
       let lastZoomVarWritten = null; // V11.51: last --zoom-scale value actually written (see zoomScaleVarWrite)
       let lastBubbleCap = { mode: 'full', px: null }; // V11.55: last live-applied bubble cap state - mode ('full' | 'compact' | 'chip') + px (see the tracker in the loop)
-      let lastZoomIconsOff = false; // V11.55: html.zoom-icons-off state (peer icons + name pills hide while zoomed out)
       const renderLoop = () => {
         panX += (targetPanX - panX) * 0.25;
         panY += (targetPanY - panY) * 0.25;
@@ -3692,17 +3687,6 @@
           boundaryRingOn = shouldBoundary;
           if (radarOverlay) radarOverlay.classList.toggle('boundary-on', shouldBoundary);
         }
-        // V11.55: while the map is zoomed out, peer icons and name
-        // pills hide (see the html.zoom-icons-off CSS) - only the
-        // chat bubbles stay. Hysteresis: the class sets below
-        // 0.98x and clears at 1.0x, so the exponential glide across
-        // the boundary never flaps it.
-        const shouldZoomIconsOff = lastZoomIconsOff ? currentZoomScale < 1.0 : currentZoomScale < 0.98;
-        if (shouldZoomIconsOff !== lastZoomIconsOff) {
-          lastZoomIconsOff = shouldZoomIconsOff;
-          document.documentElement.classList.toggle('zoom-icons-off', shouldZoomIconsOff);
-        }
-
         if (Math.abs(panX - lastPanX) > 0.05 || Math.abs(panY - lastPanY) > 0.05 || Math.abs(currentZoomScale - lastZoomOut) > 0.0005) {
           lastPanX = panX; lastPanY = panY; lastZoomOut = currentZoomScale;
           mapCanvas.style.setProperty('--pan-x', `${panX}px`);
@@ -4273,8 +4257,7 @@
       // V11.53: with peer icons hidden (10+ mi range) every icon rect
       // is zero-size and the icon-cover rule would misfire on the
       // remaining chips - there is nothing to declutter against.
-      // V11.55: the same holds while zoomed out (html.zoom-icons-off).
-      if (document.documentElement.classList.contains('range-icons-off') || document.documentElement.classList.contains('zoom-icons-off')) return;
+      if (document.documentElement.classList.contains('range-icons-off')) return;
       const items = [];
       container.querySelectorAll('.node-item').forEach(el => {
         if (el.style.display === 'none') return;
